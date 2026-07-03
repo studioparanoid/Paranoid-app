@@ -11,6 +11,7 @@ export type EventSubmission = {
   event_time: string | null;
   price: string | null;
   description: string | null;
+  image_url: string | null;
   status: string;
   created_at: string;
 };
