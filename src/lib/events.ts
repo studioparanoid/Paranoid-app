@@ -27,6 +27,8 @@ type SupabaseEventRow = {
   slug: string;
   title: string;
   city: string;
+venue_name: string | null;
+organizer_name: string | null;
   display_date: string | null;
   display_time: string | null;
   category: string;
@@ -59,9 +61,10 @@ function mapEvent(event: SupabaseEventRow): AppEvent {
     slug: event.slug,
     title: event.title,
     city: event.city,
-    venue: event.venues?.name || "Espaço por definir",
+    venue: event.venues?.name || event.venue_name || "Espaço por definir",
     venueSlug: event.venues?.slug || "",
-    organizer: event.organizers?.name || "Organizador por definir",
+    organizer:
+  event.organizers?.name || event.organizer_name || "Organizador por definir",
     organizerSlug: event.organizers?.slug || "",
     artists:
       event.event_artists
@@ -84,6 +87,8 @@ const eventSelect = `
   slug,
   title,
   city,
+venue_name,
+organizer_name,
   display_date,
   display_time,
   category,

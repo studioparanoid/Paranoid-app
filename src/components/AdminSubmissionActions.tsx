@@ -45,6 +45,8 @@ export function AdminSubmissionActions({
       title: submission.title,
       city: submission.city,
       venue_id: null,
+	venue_name: submission.venue || "Espaço por definir",
+	organizer_name: submission.organizer || "Organizador por definir",
       organizer_id: null,
       start_at: startAt,
       display_date: submission.event_date || "Data por definir",
