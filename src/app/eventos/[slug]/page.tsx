@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { events } from "@/data/events";
+import { SaveEventButton } from "@/components/SaveEventButton";
 
 export function generateStaticParams() {
   return events.map((event) => ({
@@ -89,9 +90,7 @@ export default async function EventPage({
         </p>
 
         <div className="mt-8 flex gap-3">
-          <button className="rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black">
-            Guardar
-          </button>
+          <SaveEventButton eventId={event.id} />
 
           <button className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300">
             Partilhar
