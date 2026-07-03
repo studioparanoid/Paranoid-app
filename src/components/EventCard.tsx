@@ -10,6 +10,7 @@ type EventCardProps = {
     time: string;
     category: string;
     price: string;
+    image?: string | null;
   };
 };
 
@@ -17,7 +18,12 @@ export function EventCard({ event }: EventCardProps) {
   return (
     <Link href={`/eventos/${event.slug}`}>
       <article className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-red-900">
-        <div className="mb-4 h-44 rounded-2xl bg-gradient-to-br from-zinc-800 to-red-950" />
+        <div
+          className={`mb-4 h-44 rounded-2xl bg-cover bg-center ${
+            event.image ? "" : "bg-gradient-to-br from-zinc-800 to-red-950"
+          }`}
+          style={event.image ? { backgroundImage: `url(${event.image})` } : {}}
+        />
 
         <div className="flex items-start justify-between gap-4">
           <div>

@@ -64,6 +64,7 @@ export function SubmitEventClient() {
   const [description, setDescription] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageName, setImageName] = useState("");
+const [imageFile, setImageFile] = useState<File | null>(null);
 const [submitting, setSubmitting] = useState(false);
 const [submitMessage, setSubmitMessage] = useState("");
 
@@ -74,22 +75,57 @@ const [submitMessage, setSubmitMessage] = useState("");
   const previewTime = time || "Hora";
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  const file = event.target.files?.[0];
 
-    if (!file) return;
+  if (!file) return;
 
-    const objectUrl = URL.createObjectURL(file);
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Imagem demasiado pesada. Máximo 5MB.");
+    return;
+  }
 
-    setImagePreview((currentUrl) => {
-      if (currentUrl) {
-        URL.revokeObjectURL(currentUrl);
-      }
+  const objectUrl = URL.createObjectURL(file);
 
-      return objectUrl;
+  setImagePreview((currentUrl) => {
+    if (currentUrl) {
+      URL.revokeObjectURL(currentUrl);
+    }
+
+    return objectUrl;
+  });
+
+  setImageFile(file);
+  setImageName(file.name);
+}
+async function uploadEventImage() {
+  if (!imageFile) return null;
+
+  const fileExtension = imageFile.name.split(".").pop();
+  const fileName = `${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}.${fileExtension}`;
+
+  const filePath = `submissions/${fileName}`;
+
+  const { error } = await supabase.storage
+    .from("event-images")
+    .upload(filePath, imageFile, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: imageFile.type,
     });
 
-    setImageName(file.name);
+  if (error) {
+    console.error(error);
+    throw new Error("Erro no upload da imagem.");
   }
+
+  const { data } = supabase.storage
+    .from("event-images")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
 async function handleSubmit() {
   setSubmitMessage("");
 
@@ -100,19 +136,29 @@ async function handleSubmit() {
 
   setSubmitting(true);
 
-  const { error } = await supabase.from("event_submissions").insert({
-    title,
-    city,
-    venue,
-    organizer,
-    category,
-    event_date: date,
-    event_time: time,
-    price: formatPriceValue(price),
-    description,
-    image_url: null,
-    status: "pending",
-  });
+  let uploadedImageUrl: string | null = null;
+
+try {
+  uploadedImageUrl = await uploadEventImage();
+} catch {
+  setSubmitting(false);
+  setSubmitMessage("Erro ao carregar imagem. Tenta outra imagem.");
+  return;
+}
+
+const { error } = await supabase.from("event_submissions").insert({
+  title,
+  city,
+  venue,
+  organizer,
+  category,
+  event_date: date,
+  event_time: time,
+  price: formatPriceValue(price),
+  description,
+  image_url: uploadedImageUrl,
+  status: "pending",
+});
 
   setSubmitting(false);
 
@@ -133,6 +179,7 @@ async function handleSubmit() {
   setTime("");
   setImagePreview(null);
   setImageName("");
+setImageFile(null);
 }
 
   return (
