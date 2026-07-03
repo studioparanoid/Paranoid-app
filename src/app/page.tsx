@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EventCard } from "@/components/EventCard";
 import { events } from "@/data/events";
+import { ForYouClient } from "@/components/ForYouClient";
 
 const todayEvents = events.filter((event) => event.date === "Hoje");
 const featuredEvents = events.filter((event) => event.featured);
@@ -65,6 +66,8 @@ export default function Home() {
             </Link>
           </div>
         </div>
+
+	<ForYouClient />
 
         <HomeSection
           title="Hoje"
