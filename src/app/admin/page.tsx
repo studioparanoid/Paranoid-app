@@ -1,26 +1,15 @@
 import Link from "next/link";
-import { events } from "@/data/events";
+import { getEvents } from "@/lib/events";
+import { getEventSubmissions } from "@/lib/submissions";
 
-const pendingEvents = [
-  {
-    id: "p1",
-    title: "Garage Ritual",
-    city: "Leiria",
-    venue: "Sala Lodo",
-    category: "Concertos",
-    status: "Pendente",
-  },
-  {
-    id: "p2",
-    title: "Noite VHS",
-    city: "Pombal",
-    venue: "Cave 13",
-    category: "Cinema",
-    status: "Pendente",
-  },
-];
+export default async function AdminPage() {
+  const events = await getEvents();
+  const submissions = await getEventSubmissions();
 
-export default function AdminPage() {
+  const pendingSubmissions = submissions.filter(
+    (submission) => submission.status === "pending"
+  );
+
   return (
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
       <section className="mx-auto max-w-md">
@@ -33,7 +22,7 @@ export default function AdminPage() {
         </h1>
 
         <p className="mt-5 text-base text-zinc-400">
-          Aprovar eventos, destacar escolhas e manter a agenda limpa.
+          Submissões reais vindas do Supabase. Agora já não é só fachada.
         </p>
 
         <div className="mt-8 grid grid-cols-3 gap-3">
@@ -45,7 +34,7 @@ export default function AdminPage() {
           </div>
 
           <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4">
-            <p className="text-3xl font-black">{pendingEvents.length}</p>
+            <p className="text-3xl font-black">{pendingSubmissions.length}</p>
             <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
               Pendentes
             </p>
@@ -62,34 +51,52 @@ export default function AdminPage() {
         </div>
 
         <section className="mt-10">
-          <h2 className="text-2xl font-black">Eventos pendentes</h2>
+          <h2 className="text-2xl font-black">Submissões pendentes</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            O que ainda precisa de validação.
+            Eventos enviados pelo formulário público.
           </p>
 
           <div className="mt-4 space-y-4">
-            {pendingEvents.map((event) => (
+            {pendingSubmissions.map((submission) => (
               <article
-                key={event.id}
+                key={submission.id}
                 className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
               >
                 <div className="mb-4 flex items-start justify-between gap-4">
                   <div>
                     <p className="mb-2 text-xs uppercase tracking-[0.25em] text-red-700">
-                      {event.category}
+                      {submission.category}
                     </p>
 
-                    <h3 className="text-2xl font-black">{event.title}</h3>
+                    <h3 className="text-2xl font-black">{submission.title}</h3>
 
                     <p className="mt-2 text-sm text-zinc-400">
-                      {event.venue}, {event.city}
+                      {submission.event_date || "Data por definir"} ·{" "}
+                      {submission.event_time || "Hora por definir"}
                     </p>
+
+                    <p className="text-sm text-zinc-500">
+                      {submission.venue || "Espaço por definir"},{" "}
+                      {submission.city}
+                    </p>
+
+                    {submission.organizer && (
+                      <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-600">
+                        {submission.organizer}
+                      </p>
+                    )}
                   </div>
 
                   <span className="rounded-full border border-yellow-900 bg-yellow-950 px-3 py-1 text-xs font-bold text-yellow-400">
-                    {event.status}
+                    {submission.status}
                   </span>
                 </div>
+
+                {submission.description && (
+                  <p className="mb-4 text-sm leading-relaxed text-zinc-400">
+                    {submission.description}
+                  </p>
+                )}
 
                 <div className="flex gap-2">
                   <button className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black">
@@ -106,14 +113,19 @@ export default function AdminPage() {
                 </div>
               </article>
             ))}
+
+            {pendingSubmissions.length === 0 && (
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
+                <p className="text-zinc-400">
+                  Não há submissões pendentes. A cave está calma.
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
         <section className="mt-10">
           <h2 className="text-2xl font-black">Eventos publicados</h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            O que já está visível na plataforma.
-          </p>
 
           <div className="mt-4 space-y-4">
             {events.map((event) => (

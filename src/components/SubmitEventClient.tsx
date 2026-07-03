@@ -1,6 +1,7 @@
 "use client";
 
 import { type ChangeEvent, useState } from "react";
+import { supabase } from "@/lib/supabase/public";
 
 const categories = [
   "Concertos",
@@ -63,6 +64,8 @@ export function SubmitEventClient() {
   const [description, setDescription] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageName, setImageName] = useState("");
+const [submitting, setSubmitting] = useState(false);
+const [submitMessage, setSubmitMessage] = useState("");
 
   const previewTitle = title || "Nome do evento";
   const previewVenue = venue || "Espaço por definir";
@@ -87,6 +90,50 @@ export function SubmitEventClient() {
 
     setImageName(file.name);
   }
+async function handleSubmit() {
+  setSubmitMessage("");
+
+  if (!title || !venue || !date || !time || !description) {
+    setSubmitMessage("Faltam dados obrigatórios. Sem evento fantasma.");
+    return;
+  }
+
+  setSubmitting(true);
+
+  const { error } = await supabase.from("event_submissions").insert({
+    title,
+    city,
+    venue,
+    organizer,
+    category,
+    event_date: date,
+    event_time: time,
+    price: formatPriceValue(price),
+    description,
+    image_url: null,
+    status: "pending",
+  });
+
+  setSubmitting(false);
+
+  if (error) {
+    console.error(error);
+    setSubmitMessage("Erro ao submeter. A cave ardeu. Tenta outra vez.");
+    return;
+  }
+
+  setSubmitMessage("Evento submetido. Está agora à espera de aprovação Paranoid.");
+
+  setTitle("");
+  setVenue("");
+  setPrice("");
+  setOrganizer("");
+  setDescription("");
+  setDate("");
+  setTime("");
+  setImagePreview(null);
+  setImageName("");
+}
 
   return (
     <div className="mt-8 space-y-8">
@@ -319,12 +366,20 @@ export function SubmitEventClient() {
         </div>
       </section>
 
-      <button
-        type="button"
-        className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-      >
-        Submeter para aprovação
-      </button>
+     <button
+  type="button"
+  onClick={handleSubmit}
+  disabled={submitting}
+  className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+>
+  {submitting ? "A submeter..." : "Submeter para aprovação"}
+</button>
+
+{submitMessage && (
+  <p className="text-center text-sm font-bold text-zinc-400">
+    {submitMessage}
+  </p>
+)}
     </div>
   );
 }
