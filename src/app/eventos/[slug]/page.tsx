@@ -49,6 +49,16 @@ export default async function EventPage({
             {event.venue}, {event.city}
           </p>
           <p>{event.price}</p>
+<p className="pt-3 text-sm uppercase tracking-[0.25em] text-zinc-600">
+  Organizador
+</p>
+
+<Link
+  href={`/organizadores/${event.organizerSlug}`}
+  className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
+>
+  {event.organizer}
+</Link>
         </div>
 
         <p className="mt-8 max-w-xl text-lg leading-relaxed text-zinc-300">
