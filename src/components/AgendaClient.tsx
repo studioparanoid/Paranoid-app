@@ -2,12 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { EventCard } from "@/components/EventCard";
-import { events } from "@/data/events";
+import { type AppEvent } from "@/lib/events";
 
-const categories = ["Todos", ...Array.from(new Set(events.map((event) => event.category)))];
-const cities = ["Todas", ...Array.from(new Set(events.map((event) => event.city)))];
+type AgendaClientProps = {
+  events: AppEvent[];
+};
 
-export function AgendaClient() {
+export function AgendaClient({ events }: AgendaClientProps) {
+  const categories = ["Todos", ...Array.from(new Set(events.map((event) => event.category)))];
+  const cities = ["Todas", ...Array.from(new Set(events.map((event) => event.city)))];
+
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedCity, setSelectedCity] = useState("Todas");
   const [search, setSearch] = useState("");
@@ -42,7 +46,7 @@ export function AgendaClient() {
 
       return categoryMatch && cityMatch && searchMatch;
     });
-  }, [selectedCategory, selectedCity, search]);
+  }, [events, selectedCategory, selectedCity, search]);
 
   return (
     <div className="mt-8">

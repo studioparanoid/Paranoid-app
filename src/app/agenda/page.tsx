@@ -1,6 +1,9 @@
 import { AgendaClient } from "@/components/AgendaClient";
+import { getEvents } from "@/lib/events";
 
-export default function AgendaPage() {
+export default async function AgendaPage() {
+  const events = await getEvents();
+
   return (
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
       <section className="mx-auto max-w-md">
@@ -16,7 +19,7 @@ export default function AgendaPage() {
           Filtra por cidade e categoria. Sem cartazes mortos.
         </p>
 
-        <AgendaClient />
+        <AgendaClient events={events} />
       </section>
     </main>
   );

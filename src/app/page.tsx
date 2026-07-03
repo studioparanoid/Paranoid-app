@@ -1,14 +1,7 @@
 import Link from "next/link";
 import { EventCard } from "@/components/EventCard";
-import { events } from "@/data/events";
 import { ForYouClient } from "@/components/ForYouClient";
-
-const todayEvents = events.filter((event) => event.date === "Hoje");
-const featuredEvents = events.filter((event) => event.featured);
-const freeEvents = events.filter((event) => event.price === "Entrada livre");
-const weekendEvents = events.filter(
-  (event) => event.date === "Sábado" || event.date === "Domingo"
-);
+import { getEvents } from "@/lib/events";
 
 function HomeSection({
   title,
@@ -33,7 +26,16 @@ function HomeSection({
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const events = await getEvents();
+
+  const todayEvents = events.filter((event) => event.date === "Hoje");
+  const featuredEvents = events.filter((event) => event.featured);
+  const freeEvents = events.filter((event) => event.price === "Entrada livre");
+  const weekendEvents = events.filter(
+    (event) => event.date === "Sábado" || event.date === "Domingo"
+  );
+
   return (
     <main className="min-h-screen bg-[#0b0b0b] text-[#f2f1ec]">
       <section className="mx-auto max-w-md px-5 py-8">
@@ -67,7 +69,7 @@ export default function Home() {
           </div>
         </div>
 
-	<ForYouClient />
+        <ForYouClient events={events} />
 
         <HomeSection
           title="Hoje"
@@ -98,7 +100,7 @@ export default function Home() {
 
         <HomeSection
           title="Este fim de semana"
-          subtitle="Sexta mental ainda não temos. Sábado e domingo já mexem."
+          subtitle="Sábado e domingo já mexem."
         >
           {weekendEvents.map((event) => (
             <EventCard key={event.id} event={event} />

@@ -2,9 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { EventCard } from "@/components/EventCard";
-import { events } from "@/data/events";
+import { type AppEvent } from "@/lib/events";
 
-export function ForYouClient() {
+type ForYouClientProps = {
+  events: AppEvent[];
+};
+
+export function ForYouClient({ events }: ForYouClientProps) {
   const [preferredCities, setPreferredCities] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
