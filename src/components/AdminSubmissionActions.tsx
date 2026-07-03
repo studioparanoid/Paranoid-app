@@ -7,6 +7,7 @@ import { type EventSubmission } from "@/lib/submissions";
 
 type AdminSubmissionActionsProps = {
   submission: EventSubmission;
+  onDone?: () => void;
 };
 
 function slugify(value: string) {
@@ -20,6 +21,7 @@ function slugify(value: string) {
 
 export function AdminSubmissionActions({
   submission,
+  onDone,
 }: AdminSubmissionActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
@@ -71,6 +73,7 @@ export function AdminSubmissionActions({
       setMessage("Evento criado, mas a submissão não foi marcada como aprovada.");
       setLoading(null);
       router.refresh();
+	onDone?.();
       return;
     }
 
@@ -98,6 +101,7 @@ export function AdminSubmissionActions({
     setMessage("Submissão rejeitada.");
     setLoading(null);
     router.refresh();
+	onDone?.();
   }
 
   return (
