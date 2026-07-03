@@ -23,7 +23,7 @@ export default async function EventPage({
 
   return (
     <main className="min-h-screen bg-[#0b0b0b] text-[#f2f1ec]">
-      <section className="px-5 py-8">
+      <section className="mx-auto max-w-md px-5 py-8">
         <Link href="/" className="mb-6 inline-block text-sm text-zinc-400">
           ← Voltar
         </Link>
@@ -38,30 +38,53 @@ export default async function EventPage({
           {event.title}
         </h1>
 
-        <div className="mt-5 space-y-1 text-zinc-400">
-          <Link
-  href={`/espacos/${event.venueSlug}`}
-  className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
->
-  {event.venue}, {event.city}
-</Link>
+        <div className="mt-5 space-y-2 text-zinc-400">
           <p>
-            {event.venue}, {event.city}
+            {event.date} · {event.time}
           </p>
-          <p>{event.price}</p>
-<p className="pt-3 text-sm uppercase tracking-[0.25em] text-zinc-600">
-  Organizador
-</p>
 
-<Link
-  href={`/organizadores/${event.organizerSlug}`}
-  className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
->
-  {event.organizer}
-</Link>
+          <Link
+            href={`/espacos/${event.venueSlug}`}
+            className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
+          >
+            {event.venue}, {event.city}
+          </Link>
+
+          <p>{event.price}</p>
         </div>
 
-        <p className="mt-8 max-w-xl text-lg leading-relaxed text-zinc-300">
+        <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+          <p className="mb-3 text-xs uppercase tracking-[0.25em] text-zinc-500">
+            Artistas
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            {event.artists.map((artist) => (
+              <Link
+                key={artist.slug}
+                href={`/artistas/${artist.slug}`}
+                className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold text-zinc-300"
+              >
+                {artist.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+          <p className="mb-3 text-xs uppercase tracking-[0.25em] text-zinc-500">
+            Organizador
+          </p>
+
+          <Link
+            href={`/organizadores/${event.organizerSlug}`}
+            className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
+          >
+            {event.organizer}
+          </Link>
+        </section>
+
+        <p className="mt-8 text-lg leading-relaxed text-zinc-300">
           {event.description}
         </p>
 
