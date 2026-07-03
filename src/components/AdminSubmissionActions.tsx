@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/public";
 import { type EventSubmission } from "@/lib/submissions";
+import Link from "next/link";
 
 type AdminSubmissionActionsProps = {
   submission: EventSubmission;
@@ -116,13 +117,12 @@ export function AdminSubmissionActions({
           {loading === "approve" ? "A aprovar..." : "Aprovar"}
         </button>
 
-        <button
-          type="button"
-          disabled
-          className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-500 opacity-60"
-        >
-          Editar
-        </button>
+        <Link
+  href={`/admin/submissoes/${submission.id}`}
+  className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+>
+  Editar
+</Link>
 
         <button
           type="button"
