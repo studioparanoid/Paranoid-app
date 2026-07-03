@@ -39,9 +39,12 @@ export default async function EventPage({
         </h1>
 
         <div className="mt-5 space-y-1 text-zinc-400">
-          <p>
-            {event.date} · {event.time}
-          </p>
+          <Link
+  href={`/espacos/${event.venueSlug}`}
+  className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
+>
+  {event.venue}, {event.city}
+</Link>
           <p>
             {event.venue}, {event.city}
           </p>
