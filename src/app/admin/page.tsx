@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getEvents } from "@/lib/events";
 import { getEventSubmissions } from "@/lib/submissions";
 import { AdminSubmissionActions } from "@/components/AdminSubmissionActions";
+import { AdminGuard } from "@/components/AdminGuard";
 
 export default async function AdminPage() {
   const events = await getEvents();
@@ -12,6 +13,7 @@ export default async function AdminPage() {
   );
 
   return (
+  <AdminGuard>
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
       <section className="mx-auto max-w-md">
         <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
@@ -163,6 +165,7 @@ export default async function AdminPage() {
           </div>
         </section>
       </section>
-    </main>
-  );
+        </main>
+  </AdminGuard>
+);
 }
