@@ -1,17 +1,15 @@
 import Link from "next/link";
-import { events } from "@/data/events";
-import { venues } from "@/data/venues";
+import { getEvents } from "@/lib/events";
+import { getVenues } from "@/lib/venues";
 
-const cities = [
-  "Pombal",
-  "Leiria",
-  "Coimbra",
-  "Figueira da Foz",
-  "Caldas da Rainha",
-  "Marinha Grande",
-];
+export default async function MapPage() {
+  const events = await getEvents();
+  const venues = await getVenues();
 
-export default function MapPage() {
+  const cities = Array.from(
+    new Set([...events.map((event) => event.city), ...venues.map((venue) => venue.city)])
+  ).sort();
+
   return (
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
       <section className="mx-auto max-w-md">
@@ -24,8 +22,7 @@ export default function MapPage() {
         </h1>
 
         <p className="mt-5 text-base text-zinc-400">
-          Cidades, espaços e eventos ativos. Mapa real vem depois; primeiro
-          interessa saber onde há vida.
+          Cidades, espaços e eventos ativos vindos da base real.
         </p>
 
         <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
@@ -96,7 +93,7 @@ export default function MapPage() {
                   </div>
 
                   <Link
-                    href={`/agenda`}
+                    href="/agenda"
                     className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-3 text-center text-sm font-black text-black"
                   >
                     Ver eventos

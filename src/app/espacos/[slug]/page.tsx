@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventCard } from "@/components/EventCard";
-import { events } from "@/data/events";
-import { venues } from "@/data/venues";
+import { getEvents } from "@/lib/events";
+import { getVenueBySlug, getVenues } from "@/lib/venues";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const venues = await getVenues();
+
   return venues.map((venue) => ({
     slug: venue.slug,
   }));
@@ -17,13 +19,21 @@ export default async function VenuePage({
 }) {
   const { slug } = await params;
 
-  const venue = venues.find((venue) => venue.slug === slug);
+  const venue = await getVenueBySlug(slug);
 
   if (!venue) {
     notFound();
   }
 
-  const venueEvents = events.filter((event) => event.venueSlug === venue.slug);
+  const events = await getEvents();
+
+  const venueEvents = events.filter(
+    (event) => event.venueSlug === venue.slug || event.venue === venue.name
+  );
+
+  const venueCategories = Array.from(
+    new Set(venueEvents.map((event) => event.category))
+  );
 
   return (
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
@@ -43,36 +53,40 @@ export default async function VenuePage({
         </h1>
 
         <p className="mt-3 text-zinc-400">
-          {venue.address}, {venue.city}
+          {venue.address || "Morada por definir"}, {venue.city}
         </p>
 
         <p className="mt-6 text-lg leading-relaxed text-zinc-300">
-          {venue.description}
+          {venue.description || "Espaço cultural dentro do mapa Paranoid."}
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {venue.categories.map((category) => (
-            <span
-              key={category}
-              className="rounded-full border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-400"
-            >
-              {category}
-            </span>
-          ))}
-        </div>
+        {venueCategories.length > 0 && (
+          <div className="mt-6 flex flex-wrap gap-2">
+            {venueCategories.map((category) => (
+              <span
+                key={category}
+                className="rounded-full border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-400"
+              >
+                {category}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="mt-8 flex gap-3">
           <button className="rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black">
             Seguir espaço
           </button>
 
-          <a
-            href={venue.instagram}
-            target="_blank"
-            className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300"
-          >
-            Instagram
-          </a>
+          {venue.instagram && (
+            <a
+              href={venue.instagram}
+              target="_blank"
+              className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300"
+            >
+              Instagram
+            </a>
+          )}
         </div>
 
         <section className="mt-10">
