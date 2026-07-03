@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getEvents } from "@/lib/events";
 import { getEventSubmissions } from "@/lib/submissions";
+import { AdminSubmissionActions } from "@/components/AdminSubmissionActions";
 
 export default async function AdminPage() {
   const events = await getEvents();
@@ -98,19 +99,7 @@ export default async function AdminPage() {
                   </p>
                 )}
 
-                <div className="flex gap-2">
-                  <button className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black">
-                    Aprovar
-                  </button>
-
-                  <button className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300">
-                    Editar
-                  </button>
-
-                  <button className="flex-1 rounded-full border border-red-900 px-4 py-3 text-sm font-bold text-red-500">
-                    Rejeitar
-                  </button>
-                </div>
+                <AdminSubmissionActions submission={submission} />
               </article>
             ))}
 

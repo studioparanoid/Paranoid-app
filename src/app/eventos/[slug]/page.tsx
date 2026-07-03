@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { events } from "@/data/events";
 import { SaveEventButton } from "@/components/SaveEventButton";
-
-export function generateStaticParams() {
-  return events.map((event) => ({
-    slug: event.slug,
-  }));
-}
+import { getEventBySlug } from "@/lib/events";
 
 export default async function EventPage({
   params,
@@ -16,7 +10,7 @@ export default async function EventPage({
 }) {
   const { slug } = await params;
 
-  const event = events.find((event) => event.slug === slug);
+  const event = await getEventBySlug(slug);
 
   if (!event) {
     notFound();
@@ -29,7 +23,12 @@ export default async function EventPage({
           ← Voltar
         </Link>
 
-        <div className="mb-6 h-72 rounded-3xl bg-gradient-to-br from-zinc-800 to-red-950" />
+        <div
+          className={`mb-6 h-72 rounded-3xl bg-cover bg-center ${
+            event.image ? "" : "bg-gradient-to-br from-zinc-800 to-red-950"
+          }`}
+          style={event.image ? { backgroundImage: `url(${event.image})` } : {}}
+        />
 
         <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
           {event.category}
@@ -44,46 +43,56 @@ export default async function EventPage({
             {event.date} · {event.time}
           </p>
 
-          <Link
-            href={`/espacos/${event.venueSlug}`}
-            className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
-          >
-            {event.venue}, {event.city}
-          </Link>
+          {event.venueSlug ? (
+            <Link
+              href={`/espacos/${event.venueSlug}`}
+              className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
+            >
+              {event.venue}, {event.city}
+            </Link>
+          ) : (
+            <p>
+              {event.venue}, {event.city}
+            </p>
+          )}
 
           <p>{event.price}</p>
         </div>
 
-        <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <p className="mb-3 text-xs uppercase tracking-[0.25em] text-zinc-500">
-            Artistas
-          </p>
+        {event.artists.length > 0 && (
+          <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+            <p className="mb-3 text-xs uppercase tracking-[0.25em] text-zinc-500">
+              Artistas
+            </p>
 
-          <div className="flex flex-wrap gap-2">
-            {event.artists.map((artist) => (
-              <Link
-                key={artist.slug}
-                href={`/artistas/${artist.slug}`}
-                className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold text-zinc-300"
-              >
-                {artist.name}
-              </Link>
-            ))}
-          </div>
-        </section>
+            <div className="flex flex-wrap gap-2">
+              {event.artists.map((artist) => (
+                <Link
+                  key={artist.slug}
+                  href={`/artistas/${artist.slug}`}
+                  className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold text-zinc-300"
+                >
+                  {artist.name}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
-        <section className="mt-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <p className="mb-3 text-xs uppercase tracking-[0.25em] text-zinc-500">
-            Organizador
-          </p>
+        {event.organizerSlug && (
+          <section className="mt-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+            <p className="mb-3 text-xs uppercase tracking-[0.25em] text-zinc-500">
+              Organizador
+            </p>
 
-          <Link
-            href={`/organizadores/${event.organizerSlug}`}
-            className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
-          >
-            {event.organizer}
-          </Link>
-        </section>
+            <Link
+              href={`/organizadores/${event.organizerSlug}`}
+              className="inline-block text-zinc-300 underline decoration-zinc-700 underline-offset-4"
+            >
+              {event.organizer}
+            </Link>
+          </section>
+        )}
 
         <p className="mt-8 text-lg leading-relaxed text-zinc-300">
           {event.description}

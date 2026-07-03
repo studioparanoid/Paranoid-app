@@ -53,48 +53,8 @@ type SupabaseEventRow = {
     | null;
 };
 
-export async function getEvents(): Promise<AppEvent[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select(
-      `
-      id,
-      slug,
-      title,
-      city,
-      display_date,
-      display_time,
-      category,
-      price,
-      description,
-      image_url,
-      featured,
-      venues (
-        slug,
-        name,
-        city
-      ),
-      organizers (
-        slug,
-        name
-      ),
-      event_artists (
-        artists (
-          slug,
-          name
-        )
-      )
-    `
-    )
-    .eq("status", "published")
-    .order("start_at", { ascending: true });
-
-  if (error) {
-    console.error("Erro ao carregar eventos:", error);
-    return [];
-  }
-
-  return ((data || []) as unknown as SupabaseEventRow[]).map((event) => ({
+function mapEvent(event: SupabaseEventRow): AppEvent {
+  return {
     id: event.id,
     slug: event.slug,
     title: event.title,
@@ -106,7 +66,9 @@ export async function getEvents(): Promise<AppEvent[]> {
     artists:
       event.event_artists
         ?.map((item) => item.artists)
-        .filter((artist): artist is { slug: string; name: string } => Boolean(artist)) || [],
+        .filter((artist): artist is { slug: string; name: string } =>
+          Boolean(artist)
+        ) || [],
     date: event.display_date || "Data por definir",
     time: event.display_time || "Hora por definir",
     category: event.category,
@@ -114,5 +76,65 @@ export async function getEvents(): Promise<AppEvent[]> {
     description: event.description || "",
     image: event.image_url,
     featured: Boolean(event.featured),
-  }));
+  };
+}
+
+const eventSelect = `
+  id,
+  slug,
+  title,
+  city,
+  display_date,
+  display_time,
+  category,
+  price,
+  description,
+  image_url,
+  featured,
+  venues (
+    slug,
+    name,
+    city
+  ),
+  organizers (
+    slug,
+    name
+  ),
+  event_artists (
+    artists (
+      slug,
+      name
+    )
+  )
+`;
+
+export async function getEvents(): Promise<AppEvent[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select(eventSelect)
+    .eq("status", "published")
+    .order("start_at", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao carregar eventos:", error);
+    return [];
+  }
+
+  return ((data || []) as unknown as SupabaseEventRow[]).map(mapEvent);
+}
+
+export async function getEventBySlug(slug: string): Promise<AppEvent | null> {
+  const { data, error } = await supabase
+    .from("events")
+    .select(eventSelect)
+    .eq("status", "published")
+    .eq("slug", slug)
+    .single();
+
+  if (error) {
+    console.error("Erro ao carregar evento:", error);
+    return null;
+  }
+
+  return mapEvent(data as unknown as SupabaseEventRow);
 }
