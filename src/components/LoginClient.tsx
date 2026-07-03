@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/public";
 
@@ -11,6 +11,20 @@ export function LoginClient() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+useEffect(() => {
+  async function checkSession() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      router.push("/admin");
+    }
+  }
+
+  checkSession();
+}, [router]);
 
   async function handleLogin() {
     setMessage("");
