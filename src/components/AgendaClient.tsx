@@ -10,20 +10,56 @@ const cities = ["Todas", ...Array.from(new Set(events.map((event) => event.city)
 export function AgendaClient() {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedCity, setSelectedCity] = useState("Todas");
+  const [search, setSearch] = useState("");
 
   const filteredEvents = useMemo(() => {
+    const normalizedSearch = search.toLowerCase().trim();
+
     return events.filter((event) => {
       const categoryMatch =
         selectedCategory === "Todos" || event.category === selectedCategory;
 
       const cityMatch = selectedCity === "Todas" || event.city === selectedCity;
 
-      return categoryMatch && cityMatch;
+      const artistsText = event.artists
+        .map((artist) => artist.name)
+        .join(" ")
+        .toLowerCase();
+
+      const searchableText = [
+        event.title,
+        event.city,
+        event.venue,
+        event.category,
+        event.organizer,
+        artistsText,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const searchMatch =
+        normalizedSearch === "" || searchableText.includes(normalizedSearch);
+
+      return categoryMatch && cityMatch && searchMatch;
     });
-  }, [selectedCategory, selectedCity]);
+  }, [selectedCategory, selectedCity, search]);
 
   return (
     <div className="mt-8">
+      <div className="mb-6">
+        <label className="mb-2 block text-sm font-bold text-zinc-300">
+          Pesquisa
+        </label>
+
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Procura evento, espaço, artista, cidade..."
+          className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+        />
+      </div>
+
       <div className="mb-5">
         <p className="mb-3 text-xs uppercase tracking-[0.25em] text-zinc-500">
           Categoria
@@ -90,7 +126,7 @@ export function AgendaClient() {
       {filteredEvents.length === 0 && (
         <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
           <p className="text-zinc-400">
-            Nada encontrado. A cidade está morta ou os filtros estão demasiado apertados.
+            Nada encontrado. Ou escreveste mal, ou a cidade ainda está morta.
           </p>
         </div>
       )}
