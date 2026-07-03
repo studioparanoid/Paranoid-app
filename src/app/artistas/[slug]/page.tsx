@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventCard } from "@/components/EventCard";
-import { artists } from "@/data/artists";
-import { events } from "@/data/events";
+import { getArtistBySlug, getArtists } from "@/lib/artists";
+import { getEvents } from "@/lib/events";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const artists = await getArtists();
+
   return artists.map((artist) => ({
     slug: artist.slug,
   }));
@@ -17,11 +19,13 @@ export default async function ArtistPage({
 }) {
   const { slug } = await params;
 
-  const artist = artists.find((artist) => artist.slug === slug);
+  const artist = await getArtistBySlug(slug);
 
   if (!artist) {
     notFound();
   }
+
+  const events = await getEvents();
 
   const artistEvents = events.filter((event) =>
     event.artists.some((eventArtist) => eventArtist.slug === artist.slug)
@@ -44,43 +48,51 @@ export default async function ArtistPage({
           {artist.name}
         </h1>
 
-        <p className="mt-3 text-zinc-400">{artist.city}</p>
-
-        <p className="mt-6 text-lg leading-relaxed text-zinc-300">
-          {artist.description}
+        <p className="mt-3 text-zinc-400">
+          {artist.city || "Cidade por definir"}
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {artist.genres.map((genre) => (
-            <span
-              key={genre}
-              className="rounded-full border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-400"
-            >
-              {genre}
-            </span>
-          ))}
-        </div>
+        <p className="mt-6 text-lg leading-relaxed text-zinc-300">
+          {artist.description || "Artista dentro da rede cultural Paranoid."}
+        </p>
 
-        <div className="mt-8 flex gap-3">
+        {artist.genres && artist.genres.length > 0 && (
+          <div className="mt-6 flex flex-wrap gap-2">
+            {artist.genres.map((genre) => (
+              <span
+                key={genre}
+                className="rounded-full border border-zinc-700 px-3 py-2 text-xs font-bold text-zinc-400"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-8 flex flex-wrap gap-3">
           <button className="rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black">
             Seguir artista
           </button>
 
-          <a
-            href={artist.instagram}
-            target="_blank"
-            className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300"
-          >
-            Instagram
-          </a>
+          {artist.instagram && (
+            <a
+              href={artist.instagram}
+              target="_blank"
+              className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300"
+            >
+              Instagram
+            </a>
+          )}
 
-          <a
-            href={artist.bandcamp}
-            target="_blank"
-            className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300"
-          >
-            Bandcamp
-          </a>
+          {artist.bandcamp && (
+            <a
+              href={artist.bandcamp}
+              target="_blank"
+              className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300"
+            >
+              Bandcamp
+            </a>
+          )}
         </div>
 
         <section className="mt-10">
