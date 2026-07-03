@@ -6,6 +6,7 @@ import { AdminSubmissionActions } from "@/components/AdminSubmissionActions";
 import { supabase } from "@/lib/supabase/public";
 import { type AppEvent } from "@/lib/events";
 import { type EventSubmission } from "@/lib/submissions";
+import { AdminEventActions } from "@/components/AdminEventActions";
 
 type AdminDashboardClientProps = {
   events: AppEvent[];
@@ -189,18 +190,7 @@ export function AdminDashboardClient({ events }: AdminDashboardClientProps) {
                   )}
                 </div>
 
-                <div className="mt-4 flex gap-2">
-                  <Link
-                    href={`/eventos/${event.slug}`}
-                    className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
-                  >
-                    Ver
-                  </Link>
-
-                  <button className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300">
-                    Destacar
-                  </button>
-                </div>
+                <AdminEventActions event={event} />
               </article>
             ))}
           </div>
