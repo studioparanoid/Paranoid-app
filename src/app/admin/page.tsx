@@ -1,0 +1,167 @@
+import Link from "next/link";
+import { events } from "@/data/events";
+
+const pendingEvents = [
+  {
+    id: "p1",
+    title: "Garage Ritual",
+    city: "Leiria",
+    venue: "Sala Lodo",
+    category: "Concertos",
+    status: "Pendente",
+  },
+  {
+    id: "p2",
+    title: "Noite VHS",
+    city: "Pombal",
+    venue: "Cave 13",
+    category: "Cinema",
+    status: "Pendente",
+  },
+];
+
+export default function AdminPage() {
+  return (
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
+      <section className="mx-auto max-w-md">
+        <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
+          Admin Paranoid
+        </p>
+
+        <h1 className="text-5xl font-black leading-none tracking-tight">
+          Controla o caos.
+        </h1>
+
+        <p className="mt-5 text-base text-zinc-400">
+          Aprovar eventos, destacar escolhas e manter a agenda limpa.
+        </p>
+
+        <div className="mt-8 grid grid-cols-3 gap-3">
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="text-3xl font-black">{events.length}</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
+              Publicados
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="text-3xl font-black">{pendingEvents.length}</p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
+              Pendentes
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="text-3xl font-black">
+              {events.filter((event) => event.featured).length}
+            </p>
+            <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
+              Destaques
+            </p>
+          </div>
+        </div>
+
+        <section className="mt-10">
+          <h2 className="text-2xl font-black">Eventos pendentes</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            O que ainda precisa de validação.
+          </p>
+
+          <div className="mt-4 space-y-4">
+            {pendingEvents.map((event) => (
+              <article
+                key={event.id}
+                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
+              >
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="mb-2 text-xs uppercase tracking-[0.25em] text-red-700">
+                      {event.category}
+                    </p>
+
+                    <h3 className="text-2xl font-black">{event.title}</h3>
+
+                    <p className="mt-2 text-sm text-zinc-400">
+                      {event.venue}, {event.city}
+                    </p>
+                  </div>
+
+                  <span className="rounded-full border border-yellow-900 bg-yellow-950 px-3 py-1 text-xs font-bold text-yellow-400">
+                    {event.status}
+                  </span>
+                </div>
+
+                <div className="flex gap-2">
+                  <button className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black">
+                    Aprovar
+                  </button>
+
+                  <button className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300">
+                    Editar
+                  </button>
+
+                  <button className="flex-1 rounded-full border border-red-900 px-4 py-3 text-sm font-bold text-red-500">
+                    Rejeitar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-2xl font-black">Eventos publicados</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            O que já está visível na plataforma.
+          </p>
+
+          <div className="mt-4 space-y-4">
+            {events.map((event) => (
+              <article
+                key={event.id}
+                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="mb-2 text-xs uppercase tracking-[0.25em] text-red-700">
+                      {event.category}
+                    </p>
+
+                    <h3 className="text-xl font-black">{event.title}</h3>
+
+                    <p className="mt-2 text-sm text-zinc-400">
+                      {event.date} · {event.time}
+                    </p>
+
+                    <p className="text-sm text-zinc-500">
+                      {event.venue}, {event.city}
+                    </p>
+                  </div>
+
+                  {event.featured && (
+                    <span className="rounded-full bg-red-950 px-3 py-1 text-xs font-bold text-red-400">
+                      Destaque
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <Link
+                    href={`/eventos/${event.slug}`}
+                    className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+                  >
+                    Ver
+                  </Link>
+
+                  <button className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300">
+                    Destacar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </main>
+  );
+}
