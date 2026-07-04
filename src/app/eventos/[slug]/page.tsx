@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EventPublicActions } from "@/components/EventPublicActions";
 import { supabase } from "@/lib/supabase/public";
 
 type EventRow = {
@@ -20,6 +21,7 @@ type EventRow = {
   featured: boolean | null;
   status: string | null;
   start_at: string | null;
+  end_at: string | null;
 };
 
 type VenueRow = {
@@ -48,7 +50,7 @@ async function getEvent(slug: string) {
   const { data, error } = await supabase
     .from("events")
     .select(
-      "id,slug,title,city,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+      "id,slug,title,city,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at,end_at"
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -305,6 +307,17 @@ export default async function EventPage({
             </div>
           </section>
         )}
+
+        <EventPublicActions
+          eventId={event.id}
+          title={event.title}
+          slug={event.slug}
+          description={event.description}
+          startAt={event.start_at}
+          endAt={event.end_at || event.start_at}
+          city={event.city}
+          venueName={event.venue_name}
+        />
 
         {event.description && (
           <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
