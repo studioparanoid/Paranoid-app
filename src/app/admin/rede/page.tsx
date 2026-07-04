@@ -7,7 +7,10 @@ export default function AdminNetworkPage() {
     <AdminGuard>
       <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
         <section className="mx-auto max-w-md">
-          <Link href="/admin" className="mb-6 inline-block text-sm text-zinc-400">
+          <Link
+            href="/admin"
+            className="mb-6 inline-block text-sm text-zinc-400"
+          >
             ← Voltar ao admin
           </Link>
 
@@ -20,8 +23,8 @@ export default function AdminNetworkPage() {
           </h1>
 
           <p className="mt-5 text-base text-zinc-400">
-            Cria artistas, espaços e organizadores que depois aparecem no
-            Descobrir, perfis públicos e feed Para ti.
+            Cria e gere artistas, espaços e organizadores que aparecem no
+            Descobrir, nos perfis públicos e no feed Para ti.
           </p>
 
           <AdminNetworkClient />
