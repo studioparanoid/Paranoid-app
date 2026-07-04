@@ -1,10 +1,7 @@
 import { AdminDashboardClient } from "@/components/AdminDashboardClient";
 import { AdminGuard } from "@/components/AdminGuard";
-import { getEvents } from "@/lib/events";
 
-export default async function AdminPage() {
-  const events = await getEvents();
-
+export default function AdminPage() {
   return (
     <AdminGuard>
       <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
@@ -22,7 +19,7 @@ export default async function AdminPage() {
             publicado.
           </p>
 
-          <AdminDashboardClient initialEvents={events} />
+          <AdminDashboardClient />
         </section>
       </main>
     </AdminGuard>

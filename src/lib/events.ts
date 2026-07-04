@@ -6,13 +6,7 @@ export type AppEvent = {
   title: string;
   city: string;
   venue: string;
-  venueSlug: string;
   organizer: string;
-  organizerSlug: string;
-  artists: {
-    name: string;
-    slug: string;
-  }[];
   date: string;
   time: string;
   category: string;
@@ -22,13 +16,13 @@ export type AppEvent = {
   featured: boolean;
 };
 
-type SupabaseEventRow = {
+type EventRow = {
   id: string;
   slug: string;
   title: string;
   city: string;
-venue_name: string | null;
-organizer_name: string | null;
+  venue_name: string | null;
+  organizer_name: string | null;
   display_date: string | null;
   display_time: string | null;
   category: string;
@@ -36,110 +30,74 @@ organizer_name: string | null;
   description: string | null;
   image_url: string | null;
   featured: boolean | null;
-  venues: {
-    slug: string;
-    name: string;
-    city: string;
-  } | null;
-  organizers: {
-    slug: string;
-    name: string;
-  } | null;
-  event_artists:
-    | {
-        artists: {
-          slug: string;
-          name: string;
-        } | null;
-      }[]
-    | null;
+  status: string | null;
+  start_at: string | null;
 };
 
-function mapEvent(event: SupabaseEventRow): AppEvent {
+function mapEvent(row: EventRow): AppEvent {
   return {
-    id: event.id,
-    slug: event.slug,
-    title: event.title,
-    city: event.city,
-    venue: event.venues?.name || event.venue_name || "Espaço por definir",
-    venueSlug: event.venues?.slug || "",
-    organizer:
-  event.organizers?.name || event.organizer_name || "Organizador por definir",
-    organizerSlug: event.organizers?.slug || "",
-    artists:
-      event.event_artists
-        ?.map((item) => item.artists)
-        .filter((artist): artist is { slug: string; name: string } =>
-          Boolean(artist)
-        ) || [],
-    date: event.display_date || "Data por definir",
-    time: event.display_time || "Hora por definir",
-    category: event.category,
-    price: event.price || "Preço por definir",
-    description: event.description || "",
-    image: event.image_url,
-    featured: Boolean(event.featured),
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    city: row.city,
+    venue: row.venue_name || "Espaço por definir",
+    organizer: row.organizer_name || "Organizador por definir",
+    date: row.display_date || "Data por definir",
+    time: row.display_time || "Hora por definir",
+    category: row.category,
+    price: row.price || "Preço por definir",
+    description: row.description || "",
+    image: row.image_url,
+    featured: Boolean(row.featured),
   };
 }
 
-const eventSelect = `
-  id,
-  slug,
-  title,
-  city,
-venue_name,
-organizer_name,
-  display_date,
-  display_time,
-  category,
-  price,
-  description,
-  image_url,
-  featured,
-  venues (
-    slug,
-    name,
-    city
-  ),
-  organizers (
-    slug,
-    name
-  ),
-  event_artists (
-    artists (
-      slug,
-      name
-    )
-  )
-`;
-
-export async function getEvents(): Promise<AppEvent[]> {
+export async function getEvents() {
   const { data, error } = await supabase
     .from("events")
-    .select(eventSelect)
+    .select(
+      "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+    )
     .eq("status", "published")
     .order("start_at", { ascending: true });
 
   if (error) {
-    console.error("Erro ao carregar eventos:", error);
     return [];
   }
 
-  return ((data || []) as unknown as SupabaseEventRow[]).map(mapEvent);
+  return ((data || []) as EventRow[]).map(mapEvent);
 }
 
-export async function getEventBySlug(slug: string): Promise<AppEvent | null> {
+export async function getFeaturedEvents() {
   const { data, error } = await supabase
     .from("events")
-    .select(eventSelect)
+    .select(
+      "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+    )
     .eq("status", "published")
-    .eq("slug", slug)
-    .single();
+    .eq("featured", true)
+    .order("start_at", { ascending: true });
 
   if (error) {
-    console.error("Erro ao carregar evento:", error);
+    return [];
+  }
+
+  return ((data || []) as EventRow[]).map(mapEvent);
+}
+
+export async function getEventBySlug(slug: string) {
+  const { data, error } = await supabase
+    .from("events")
+    .select(
+      "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+    )
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (error || !data) {
     return null;
   }
 
-  return mapEvent(data as unknown as SupabaseEventRow);
+  return mapEvent(data as EventRow);
 }
