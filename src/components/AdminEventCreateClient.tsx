@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase/public";
 
 const categories = [
   "Concertos",
+  "Festivais",
   "DJ Sets",
   "Cinema",
   "Exposições",
@@ -57,17 +58,58 @@ function slugify(value: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
-function getStartAt(displayDate: string, displayTime: string) {
-  if (!displayDate) {
+function getStartAt(startDate: string, displayTime: string) {
+  if (!startDate) {
     return new Date().toISOString();
   }
 
   const cleanTime = displayTime || "00:00";
-
   const timeWithSeconds =
     cleanTime.split(":").length === 2 ? `${cleanTime}:00` : cleanTime;
 
-  return `${displayDate}T${timeWithSeconds}+00:00`;
+  return `${startDate}T${timeWithSeconds}+00:00`;
+}
+
+function getEndAt(startDate: string, endDate: string, isMultiDay: boolean) {
+  if (!startDate) {
+    return new Date().toISOString();
+  }
+
+  const finalEndDate = isMultiDay && endDate ? endDate : startDate;
+
+  if (isMultiDay) {
+    return `${finalEndDate}T23:59:00+00:00`;
+  }
+
+  return `${finalEndDate}T23:59:00+00:00`;
+}
+
+function formatDateForDisplay(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  const parts = value.split("-");
+
+  if (parts.length !== 3) {
+    return value;
+  }
+
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+function buildDisplayDate(startDate: string, endDate: string, isMultiDay: boolean) {
+  if (!startDate) {
+    return "Data por definir";
+  }
+
+  if (isMultiDay && endDate && endDate !== startDate) {
+    return `${formatDateForDisplay(startDate)} — ${formatDateForDisplay(
+      endDate
+    )}`;
+  }
+
+  return formatDateForDisplay(startDate);
 }
 
 function getArtistNames(artistsText: string) {
@@ -113,25 +155,49 @@ export function AdminEventCreateClient() {
   const [venueName, setVenueName] = useState("");
   const [organizerName, setOrganizerName] = useState("");
   const [artistsText, setArtistsText] = useState("");
-  const [displayDate, setDisplayDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [displayTime, setDisplayTime] = useState("");
   const [category, setCategory] = useState("Concertos");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [featured, setFeatured] = useState(false);
+  const [isMultiDay, setIsMultiDay] = useState(false);
 
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
-  function generateSlugFromTitle() {
-    if (!title) {
-      return;
+  function handleTitleChange(value: string) {
+    setTitle(value);
+    setSlug(slugify(value));
+  }
+
+  function handleCategoryChange(value: string) {
+    setCategory(value);
+
+    if (value === "Festivais") {
+      setIsMultiDay(true);
+    }
+  }
+
+  function handleMultiDayChange(value: boolean) {
+    setIsMultiDay(value);
+
+    if (!value) {
+      setEndDate("");
     }
 
-    const baseSlug = slugify(title);
-    const suffix = crypto.randomUUID().slice(0, 6);
+    if (value && startDate && !endDate) {
+      setEndDate(startDate);
+    }
+  }
 
-    setSlug(`${baseSlug}-${suffix}`);
+  function handleStartDateChange(value: string) {
+    setStartDate(value);
+
+    if (isMultiDay && !endDate) {
+      setEndDate(value);
+    }
   }
 
   function handlePriceBlur() {
@@ -163,6 +229,26 @@ export function AdminEventCreateClient() {
 
     setSelectedImageFile(file);
     setImagePreviewUrl(URL.createObjectURL(file));
+  }
+
+  async function getUniqueEventSlug(baseSlug: string) {
+    const cleanBaseSlug = baseSlug || `evento-${crypto.randomUUID().slice(0, 6)}`;
+
+    const { data, error } = await supabase
+      .from("events")
+      .select("id")
+      .eq("slug", cleanBaseSlug)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return cleanBaseSlug;
+    }
+
+    return `${cleanBaseSlug}-${crypto.randomUUID().slice(0, 6)}`;
   }
 
   async function uploadSelectedImage() {
@@ -348,10 +434,20 @@ export function AdminEventCreateClient() {
   async function handleCreate() {
     setMessage("");
 
-    if (!title || !slug || !city || !venueName || !organizerName || !displayDate) {
+    if (!title || !city || !venueName || !organizerName || !startDate) {
       setMessage(
-        "Preenche pelo menos título, slug, cidade, espaço, organizador e data."
+        "Preenche pelo menos título, cidade, espaço, organizador e data de início."
       );
+      return;
+    }
+
+    if (isMultiDay && !endDate) {
+      setMessage("Mete a data de fim do festival.");
+      return;
+    }
+
+    if (isMultiDay && endDate < startDate) {
+      setMessage("A data de fim não pode ser antes da data de início.");
       return;
     }
 
@@ -360,6 +456,24 @@ export function AdminEventCreateClient() {
     let venueId: string | null = null;
     let organizerId: string | null = null;
     let imageUrl: string | null = null;
+    let finalSlug = slug;
+
+    const finalEndDate = isMultiDay ? endDate || startDate : startDate;
+    const displayDateText = buildDisplayDate(startDate, finalEndDate, isMultiDay);
+    const startAt = getStartAt(startDate, displayTime);
+    const endAt = getEndAt(startDate, finalEndDate, isMultiDay);
+
+    try {
+      finalSlug = await getUniqueEventSlug(slug || slugify(title));
+    } catch (error) {
+      setMessage(
+        `Erro ao gerar slug: ${
+          error instanceof Error ? error.message : "erro desconhecido"
+        }`
+      );
+      setSaving(false);
+      return;
+    }
 
     try {
       venueId = await findOrCreateVenue();
@@ -389,15 +503,19 @@ export function AdminEventCreateClient() {
     const { data: createdEvent, error: eventError } = await supabase
       .from("events")
       .insert({
-        slug,
+        slug: finalSlug,
         title,
         city,
         venue_id: venueId,
         venue_name: venueName,
         organizer_id: organizerId,
         organizer_name: organizerName,
-        start_at: getStartAt(displayDate, displayTime),
-        display_date: displayDate,
+        start_at: startAt,
+        end_at: endAt,
+        start_date: startDate,
+        end_date: finalEndDate,
+        is_multi_day: isMultiDay,
+        display_date: displayDateText,
         display_time: displayTime || "Hora por definir",
         category,
         price: price || "Preço por definir",
@@ -455,8 +573,8 @@ export function AdminEventCreateClient() {
         </h1>
 
         <p className="mt-5 text-base text-zinc-400">
-          Cria um evento manualmente. A Paranoid cria ou associa espaço,
-          organizador e artistas automaticamente.
+          O slug é gerado automaticamente pelo título. Para festivais, ativa a
+          opção de vários dias.
         </p>
 
         {imagePreviewUrl && (
@@ -493,36 +611,27 @@ export function AdminEventCreateClient() {
 
             <input
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              onChange={(event) => handleTitleChange(event.target.value)}
               placeholder="Nome do evento"
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
           </div>
 
           <div>
-            <div className="mb-2 flex items-center justify-between gap-4">
-              <label className="block text-sm font-bold text-zinc-300">
-                Slug
-              </label>
-
-              <button
-                type="button"
-                onClick={generateSlugFromTitle}
-                className="text-xs font-bold uppercase tracking-wide text-red-500"
-              >
-                Gerar pelo título
-              </button>
-            </div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Slug automático
+            </label>
 
             <input
               value={slug}
-              onChange={(event) => setSlug(event.target.value)}
-              placeholder="ex: noise-night-pombal-a1b2c3"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              readOnly
+              placeholder="gerado-automaticamente"
+              className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-zinc-400 outline-none placeholder:text-zinc-700"
             />
 
             <p className="mt-2 text-xs text-zinc-600">
-              Link público: /eventos/{slug || "slug"}
+              É gerado pelo título. Se já existir, a app acrescenta um código no
+              fim.
             </p>
           </div>
 
@@ -563,7 +672,7 @@ export function AdminEventCreateClient() {
 
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={(event) => handleCategoryChange(event.target.value)}
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
             >
               {categories.map((item) => (
@@ -571,6 +680,18 @@ export function AdminEventCreateClient() {
               ))}
             </select>
           </div>
+
+          <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+            <input
+              type="checkbox"
+              checked={isMultiDay}
+              onChange={(event) => handleMultiDayChange(event.target.checked)}
+            />
+
+            <span className="text-sm font-bold text-zinc-300">
+              Festival / evento de vários dias
+            </span>
+          </label>
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
@@ -601,32 +722,47 @@ export function AdminEventCreateClient() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className={isMultiDay ? "grid grid-cols-2 gap-3" : ""}>
             <div>
               <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Data
+                Data início
               </label>
 
               <input
                 type="date"
-                value={displayDate}
-                onChange={(event) => setDisplayDate(event.target.value)}
+                value={startDate}
+                onChange={(event) => handleStartDateChange(event.target.value)}
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Hora
-              </label>
+            {isMultiDay && (
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Data fim
+                </label>
 
-              <input
-                type="time"
-                value={displayTime}
-                onChange={(event) => setDisplayTime(event.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-              />
-            </div>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Hora
+            </label>
+
+            <input
+              type="time"
+              value={displayTime}
+              onChange={(event) => setDisplayTime(event.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+            />
           </div>
 
           <div>
