@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventCard } from "@/components/EventCard";
+import { FollowButton } from "@/components/FollowButton";
 import { getEvents } from "@/lib/events";
 import {
   getOrganizerBySlug,
@@ -32,7 +33,8 @@ export default async function OrganizerProfilePage({
 
   const organizerEvents = events.filter(
     (event) =>
-      event.organizerSlug === organizer.slug || event.organizer === organizer.name
+      event.organizerSlug === organizer.slug ||
+      event.organizer === organizer.name
   );
 
   return (
@@ -86,10 +88,8 @@ export default async function OrganizerProfilePage({
           </div>
         )}
 
-        <div className="mt-8 flex gap-3">
-          <button className="rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black">
-            Seguir organizador
-          </button>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <FollowButton targetId={organizer.id} targetType="organizer" />
 
           {organizer.instagram && (
             <a
@@ -104,6 +104,7 @@ export default async function OrganizerProfilePage({
 
         <section className="mt-10">
           <h2 className="text-2xl font-black">Eventos publicados</h2>
+
           <p className="mt-1 text-sm text-zinc-500">
             O que este organizador tem no mapa.
           </p>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventCard } from "@/components/EventCard";
+import { FollowButton } from "@/components/FollowButton";
 import { getEvents } from "@/lib/events";
 import { getVenueBySlug, getVenues } from "@/lib/venues";
 
@@ -73,10 +74,8 @@ export default async function VenuePage({
           </div>
         )}
 
-        <div className="mt-8 flex gap-3">
-          <button className="rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black">
-            Seguir espaço
-          </button>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <FollowButton targetId={venue.id} targetType="venue" />
 
           {venue.instagram && (
             <a
@@ -91,6 +90,7 @@ export default async function VenuePage({
 
         <section className="mt-10">
           <h2 className="text-2xl font-black">Próximos eventos</h2>
+
           <p className="mt-1 text-sm text-zinc-500">
             O que está marcado neste espaço.
           </p>
