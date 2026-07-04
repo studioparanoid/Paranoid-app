@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 
 const cities = [
@@ -15,599 +15,556 @@ const cities = [
 
 const categories = [
   "Concertos",
+  "Festivais",
   "DJ Sets",
   "Cinema",
   "Exposições",
   "Mercados",
   "Workshops",
+  "Teatro",
+  "Outros",
 ];
 
 type ProfileRow = {
   id: string;
-  display_name: string | null;
-  username: string | null;
-  city: string | null;
   role: string | null;
   preferred_cities: string[] | null;
   preferred_categories: string[] | null;
 };
 
+type OrganizerMemberRow = {
+  organizer_id: string;
+};
+
+type OrganizerRow = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
+type SavedEventRow = {
+  event_id: string;
+};
+
 type FollowRow = {
-  target_type: "artist" | "venue" | "organizer";
+  id: string;
+  target_type: string;
   target_id: string;
 };
 
-type FollowedArtist = {
-  id: string;
-  slug: string;
-  name: string;
-  city: string | null;
-};
+function toggleValue(values: string[], value: string) {
+  if (values.includes(value)) {
+    return values.filter((item) => item !== value);
+  }
 
-type FollowedVenue = {
-  id: string;
-  slug: string;
-  name: string;
-  city: string | null;
-};
+  return [...values, value];
+}
 
-type FollowedOrganizer = {
-  id: string;
-  slug: string;
-  name: string;
-  city: string | null;
-  verified: boolean | null;
-};
+function PillButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-4 py-2 text-sm font-black transition ${
+        active
+          ? "border-[#f2f1ec] bg-[#f2f1ec] text-black"
+          : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-600"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 export function ProfileClient() {
-  const [selectedCities, setSelectedCities] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [message, setMessage] = useState("");
+
+  const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<string | null>(null);
+
+  const [preferredCities, setPreferredCities] = useState<string[]>([]);
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
+
   const [savedCount, setSavedCount] = useState(0);
+  const [followsCount, setFollowsCount] = useState(0);
+  const [organizers, setOrganizers] = useState<OrganizerRow[]>([]);
 
-  const [accountLoading, setAccountLoading] = useState(true);
-  const [userId, setUserId] = useState("");
-  const [userEmail, setUserEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [accountCity, setAccountCity] = useState("");
-  const [role, setRole] = useState("public_user");
-  const [profileMessage, setProfileMessage] = useState("");
+  const isLoggedIn = Boolean(userId);
 
-  const [followedArtists, setFollowedArtists] = useState<FollowedArtist[]>([]);
-  const [followedVenues, setFollowedVenues] = useState<FollowedVenue[]>([]);
-  const [followedOrganizers, setFollowedOrganizers] = useState<
-    FollowedOrganizer[]
-  >([]);
+  const profileStrength = useMemo(() => {
+    let score = 0;
+
+    if (preferredCities.length > 0) {
+      score += 35;
+    }
+
+    if (preferredCategories.length > 0) {
+      score += 35;
+    }
+
+    if (savedCount > 0) {
+      score += 15;
+    }
+
+    if (followsCount > 0) {
+      score += 15;
+    }
+
+    return Math.min(score, 100);
+  }, [preferredCities.length, preferredCategories.length, savedCount, followsCount]);
 
   useEffect(() => {
-    async function loadAccount() {
-      const localCities = JSON.parse(
-        localStorage.getItem("preferredCities") || "[]"
-      ) as string[];
-
-      const localCategories = JSON.parse(
-        localStorage.getItem("preferredCategories") || "[]"
-      ) as string[];
-
-      const localSavedEvents = JSON.parse(
-        localStorage.getItem("savedEvents") || "[]"
-      ) as string[];
-
-      setSelectedCities(localCities);
-      setSelectedCategories(localCategories);
-      setSavedCount(localSavedEvents.length);
+    async function loadProfile() {
+      setLoading(true);
+      setMessage("");
 
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setAccountLoading(false);
+        setUserId(null);
+        setEmail("");
+        setLoading(false);
         return;
       }
 
       setUserId(user.id);
-      setUserEmail(user.email || "");
+      setEmail(user.email || "");
 
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id,role,preferred_cities,preferred_categories")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (profileError) {
-        setAccountLoading(false);
-        return;
+      if (profileData) {
+        const profile = profileData as ProfileRow;
+
+        setRole(profile.role);
+        setPreferredCities(profile.preferred_cities || []);
+        setPreferredCategories(profile.preferred_categories || []);
       }
 
-      const profile = profileData as ProfileRow;
-
-      setDisplayName(profile.display_name || "");
-      setAccountCity(profile.city || "");
-      setRole(profile.role || "public_user");
-
-      const cloudCities = profile.preferred_cities || [];
-      const cloudCategories = profile.preferred_categories || [];
-
-      if (cloudCities.length > 0) {
-        setSelectedCities(cloudCities);
-      } else if (localCities.length > 0) {
-        setSelectedCities(localCities);
-
-        await supabase
-          .from("profiles")
-          .update({
-            preferred_cities: localCities,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", user.id);
-
-        localStorage.removeItem("preferredCities");
-      }
-
-      if (cloudCategories.length > 0) {
-        setSelectedCategories(cloudCategories);
-      } else if (localCategories.length > 0) {
-        setSelectedCategories(localCategories);
-
-        await supabase
-          .from("profiles")
-          .update({
-            preferred_categories: localCategories,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", user.id);
-
-        localStorage.removeItem("preferredCategories");
-      }
-
-      const { data: savedData } = await supabase
+      const { data: savedRows } = await supabase
         .from("saved_events")
-        .select("id")
+        .select("event_id")
         .eq("user_id", user.id);
 
-      if (savedData) {
-        setSavedCount(savedData.length);
-      }
+      setSavedCount(((savedRows || []) as SavedEventRow[]).length);
 
-      const { data: followsData, error: followsError } = await supabase
+      const { data: followRows } = await supabase
         .from("follows")
-        .select("target_type,target_id")
+        .select("id,target_type,target_id")
         .eq("user_id", user.id);
 
-      if (followsError) {
-        setAccountLoading(false);
-        return;
-      }
+      setFollowsCount(((followRows || []) as FollowRow[]).length);
 
-      const follows = (followsData || []) as FollowRow[];
+      const { data: membershipRows } = await supabase
+        .from("organizer_members")
+        .select("organizer_id")
+        .eq("user_id", user.id);
 
-      const artistIds = follows
-        .filter((follow) => follow.target_type === "artist")
-        .map((follow) => follow.target_id);
-
-      const venueIds = follows
-        .filter((follow) => follow.target_type === "venue")
-        .map((follow) => follow.target_id);
-
-      const organizerIds = follows
-        .filter((follow) => follow.target_type === "organizer")
-        .map((follow) => follow.target_id);
-
-      if (artistIds.length > 0) {
-        const { data } = await supabase
-          .from("artists")
-          .select("id,slug,name,city")
-          .in("id", artistIds);
-
-        setFollowedArtists((data || []) as FollowedArtist[]);
-      }
-
-      if (venueIds.length > 0) {
-        const { data } = await supabase
-          .from("venues")
-          .select("id,slug,name,city")
-          .in("id", venueIds);
-
-        setFollowedVenues((data || []) as FollowedVenue[]);
-      }
+      const organizerIds = ((membershipRows || []) as OrganizerMemberRow[])
+        .map((row) => row.organizer_id)
+        .filter(Boolean);
 
       if (organizerIds.length > 0) {
-        const { data } = await supabase
+        const { data: organizerRows } = await supabase
           .from("organizers")
-          .select("id,slug,name,city,verified")
-          .in("id", organizerIds);
+          .select("id,slug,name")
+          .in("id", organizerIds)
+          .order("name", { ascending: true });
 
-        setFollowedOrganizers((data || []) as FollowedOrganizer[]);
+        setOrganizers((organizerRows || []) as OrganizerRow[]);
+      } else {
+        setOrganizers([]);
       }
 
-      setAccountLoading(false);
+      setLoading(false);
     }
 
-    loadAccount();
+    loadProfile();
   }, []);
 
-  async function savePreferences(nextCities: string[], nextCategories: string[]) {
+  async function savePreferences() {
+    setMessage("");
+
     if (!userId) {
-      localStorage.setItem("preferredCities", JSON.stringify(nextCities));
-      localStorage.setItem(
-        "preferredCategories",
-        JSON.stringify(nextCategories)
-      );
+      setMessage("Tens de iniciar sessão para guardar preferências.");
       return;
     }
 
-    await supabase
-      .from("profiles")
-      .update({
-        preferred_cities: nextCities,
-        preferred_categories: nextCategories,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", userId);
-  }
+    setSaving(true);
 
-  async function toggleCity(city: string) {
-    const next = selectedCities.includes(city)
-      ? selectedCities.filter((item) => item !== city)
-      : [...selectedCities, city];
+    const { error } = await supabase.from("profiles").upsert({
+      id: userId,
+      preferred_cities: preferredCities,
+      preferred_categories: preferredCategories,
+    });
 
-    setSelectedCities(next);
-    await savePreferences(next, selectedCategories);
-  }
-
-  async function toggleCategory(category: string) {
-    const next = selectedCategories.includes(category)
-      ? selectedCategories.filter((item) => item !== category)
-      : [...selectedCategories, category];
-
-    setSelectedCategories(next);
-    await savePreferences(selectedCities, next);
-  }
-
-  async function saveProfile() {
-    setProfileMessage("");
-
-    if (!userId) {
-      setProfileMessage("Tens de iniciar sessão para guardar perfil.");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        display_name: displayName,
-        city: accountCity || null,
-        preferred_cities: selectedCities,
-        preferred_categories: selectedCategories,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", userId);
+    setSaving(false);
 
     if (error) {
-      setProfileMessage("Erro ao guardar perfil.");
+      setMessage(`Erro ao guardar perfil: ${error.message}`);
       return;
     }
 
-    setProfileMessage("Perfil atualizado.");
+    setMessage("Preferências guardadas.");
   }
 
-  const totalFollows =
-    followedArtists.length + followedVenues.length + followedOrganizers.length;
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }
 
-  return (
-    <div className="mt-8 space-y-8">
-      <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-        <p className="mb-2 text-xs uppercase tracking-[0.25em] text-red-700">
-          Conta
-        </p>
+  if (loading) {
+    return (
+      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+        <p className="text-zinc-500">A carregar perfil...</p>
+      </div>
+    );
+  }
 
-        {accountLoading && (
-          <p className="text-sm text-zinc-500">A verificar sessão...</p>
-        )}
-
-        {!accountLoading && !userId && (
-          <>
-            <h2 className="text-2xl font-black">Visitante Paranoid</h2>
-
-            <p className="mt-2 text-sm text-zinc-500">
-              Podes usar a app sem conta. A conta serve para guardar eventos,
-              seguir artistas, seguir espaços e receber alertas.
+  if (!isLoggedIn) {
+    return (
+      <div className="mt-8 lg:mt-12">
+        <section className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+          <aside className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
+            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+              Conta
             </p>
 
+            <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+              Entra para guardar a tua cena.
+            </h2>
+
+            <p className="mt-5 text-sm leading-relaxed text-zinc-400 lg:text-base">
+              Sem conta consegues explorar. Com conta consegues sincronizar
+              guardados, preferências e acompanhar submissões.
+            </p>
+
+            <div className="mt-7 grid gap-3">
+              <Link
+                href="/login"
+                className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+              >
+                Entrar
+              </Link>
+
+              <Link
+                href="/registar"
+                className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+              >
+                Criar conta
+              </Link>
+            </div>
+          </aside>
+
+          <section className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+                Guardados
+              </p>
+
+              <h3 className="mt-3 text-3xl font-black">Não percas eventos.</h3>
+
+              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+                Guarda eventos para ver depois e sincroniza entre dispositivos.
+              </p>
+            </div>
+
+            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+                Para ti
+              </p>
+
+              <h3 className="mt-3 text-3xl font-black">Feed mais certeiro.</h3>
+
+              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+                Define cidades e categorias para receber eventos mais próximos
+                do teu gosto.
+              </p>
+            </div>
+          </section>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-8 lg:mt-12">
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:items-start">
+        <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            Conta
+          </p>
+
+          <h2 className="mt-3 break-words text-2xl font-black leading-tight">
+            {email}
+          </h2>
+
+          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-zinc-600">
+            {role ? `Role: ${role}` : "Utilizador"}
+          </p>
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+              <p className="text-3xl font-black">{savedCount}</p>
+
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                Guard.
+              </p>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+              <p className="text-3xl font-black">{followsCount}</p>
+
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                Seg.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+              Perfil
+            </p>
+
+            <p className="mt-3 text-3xl font-black">{profileStrength}%</p>
+
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-900">
+              <div
+                className="h-full rounded-full bg-[#f2f1ec]"
+                style={{ width: `${profileStrength}%` }}
+              />
+            </div>
+
+            <p className="mt-3 text-xs leading-relaxed text-zinc-600">
+              Quanto mais completo, melhor fica o “Para ti”.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-3">
             <Link
-              href="/login"
-              className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+              href="/guardados"
+              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
             >
-              Entrar
+              Ver guardados
             </Link>
 
             <Link
-              href="/registar"
-              className="mt-3 block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+              href="/para-ti"
+              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
             >
-              Criar conta
+              Abrir Para ti
             </Link>
-          </>
-        )}
 
-        {!accountLoading && userId && (
-          <>
-            <div className="flex items-start justify-between gap-4">
+            {role === "admin" && (
+              <Link
+                href="/admin"
+                className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-400"
+              >
+                Painel Admin
+              </Link>
+            )}
+
+            {organizers.length > 0 && (
+              <Link
+                href="/organizador"
+                className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-400"
+              >
+                Painel Organizador
+              </Link>
+            )}
+
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded-full border border-zinc-800 px-5 py-4 text-sm font-bold text-zinc-500"
+            >
+              Sair
+            </button>
+          </div>
+        </aside>
+
+        <section className="space-y-6">
+          <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
+            <div className="grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
               <div>
-                <h2 className="text-2xl font-black">
-                  {displayName || "Perfil sem nome"}
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Preferências
+                </p>
+
+                <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+                  O que queres ver?
                 </h2>
 
-                <p className="mt-2 text-sm text-zinc-500">{userEmail}</p>
+                <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+                  Escolhe cidades e categorias. Isto alimenta a página “Para ti”
+                  e ajuda a limpar ruído.
+                </p>
               </div>
 
-              <span className="rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-bold text-red-400">
-                {role}
-              </span>
-            </div>
+              <div className="space-y-8">
+                <div>
+                  <p className="mb-3 text-sm font-black text-zinc-300">
+                    Cidades
+                  </p>
 
-            <div className="mt-5 space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Nome público
-                </label>
+                  <div className="flex flex-wrap gap-2">
+                    {cities.map((city) => (
+                      <PillButton
+                        key={city}
+                        active={preferredCities.includes(city)}
+                        onClick={() =>
+                          setPreferredCities((current) =>
+                            toggleValue(current, city)
+                          )
+                        }
+                      >
+                        {city}
+                      </PillButton>
+                    ))}
+                  </div>
+                </div>
 
-                <input
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  placeholder="Ex: Damien"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                />
-              </div>
+                <div>
+                  <p className="mb-3 text-sm font-black text-zinc-300">
+                    Categorias
+                  </p>
 
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Cidade base
-                </label>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((category) => (
+                      <PillButton
+                        key={category}
+                        active={preferredCategories.includes(category)}
+                        onClick={() =>
+                          setPreferredCategories((current) =>
+                            toggleValue(current, category)
+                          )
+                        }
+                      >
+                        {category}
+                      </PillButton>
+                    ))}
+                  </div>
+                </div>
 
-                <select
-                  value={accountCity}
-                  onChange={(event) => setAccountCity(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                <button
+                  type="button"
+                  onClick={savePreferences}
+                  disabled={saving}
+                  className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
                 >
-                  <option value="">Cidade por definir</option>
-                  {cities.map((city) => (
-                    <option key={city}>{city}</option>
-                  ))}
-                </select>
+                  {saving ? "A guardar..." : "Guardar preferências"}
+                </button>
+
+                {message && (
+                  <p className="text-center text-sm font-bold text-zinc-400">
+                    {message}
+                  </p>
+                )}
               </div>
-
-              <button
-                type="button"
-                onClick={saveProfile}
-                className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-              >
-                Guardar perfil
-              </button>
-
-              {profileMessage && (
-                <p className="text-center text-sm font-bold text-zinc-400">
-                  {profileMessage}
-                </p>
-              )}
             </div>
-          </>
-        )}
+          </section>
 
-        <div className="mt-5 grid grid-cols-4 gap-3">
-          <div className="rounded-2xl bg-black p-3 text-center">
-            <p className="text-2xl font-black">{savedCount}</p>
-            <p className="text-[10px] uppercase text-zinc-600">Guardados</p>
-          </div>
+          <section className="grid gap-4 lg:grid-cols-3">
+            <Link
+              href="/agenda"
+              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 transition hover:border-red-950"
+            >
+              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+                Agenda
+              </p>
 
-          <div className="rounded-2xl bg-black p-3 text-center">
-            <p className="text-2xl font-black">{totalFollows}</p>
-            <p className="text-[10px] uppercase text-zinc-600">Segues</p>
-          </div>
+              <h3 className="mt-3 text-3xl font-black leading-none">
+                Explorar tudo
+              </h3>
 
-          <div className="rounded-2xl bg-black p-3 text-center">
-            <p className="text-2xl font-black">{selectedCities.length}</p>
-            <p className="text-[10px] uppercase text-zinc-600">Cidades</p>
-          </div>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+                Vai direto à lista completa de eventos.
+              </p>
+            </Link>
 
-          <div className="rounded-2xl bg-black p-3 text-center">
-            <p className="text-2xl font-black">{selectedCategories.length}</p>
-            <p className="text-[10px] uppercase text-zinc-600">Categorias</p>
-          </div>
-        </div>
-      </section>
+            <Link
+              href="/descobrir"
+              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 transition hover:border-red-950"
+            >
+              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+                Rede
+              </p>
 
-      {!accountLoading && userId && (
-        <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
-            Feed pessoal
-          </p>
+              <h3 className="mt-3 text-3xl font-black leading-none">
+                Descobrir
+              </h3>
 
-          <h2 className="text-2xl font-black">Para ti</h2>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+                Artistas, espaços e organizadores.
+              </p>
+            </Link>
 
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            Eventos puxados da tua rede, cidades e categorias preferidas.
-          </p>
+            <Link
+              href="/submeter"
+              className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5 transition hover:border-red-800"
+            >
+              <p className="text-xs uppercase tracking-[0.25em] text-red-500">
+                Submissão
+              </p>
 
-          <Link
-            href="/para-ti"
-            className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-          >
-            Abrir Para ti
-          </Link>
+              <h3 className="mt-3 text-3xl font-black leading-none">
+                Meter evento
+              </h3>
+
+              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+                Envia uma nova cena para revisão.
+              </p>
+            </Link>
+          </section>
+
+          {organizers.length > 0 && (
+            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
+              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                Organizador
+              </p>
+
+              <h2 className="mt-3 text-4xl font-black leading-none">
+                Contas ligadas.
+              </h2>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                {organizers.map((organizer) => (
+                  <Link
+                    key={organizer.id}
+                    href={`/organizadores/${organizer.slug}`}
+                    className="rounded-[2rem] border border-zinc-800 bg-black p-5 transition hover:border-red-950"
+                  >
+                    <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+                      Organizador
+                    </p>
+
+                    <h3 className="mt-3 text-2xl font-black">
+                      {organizer.name}
+                    </h3>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </section>
-      )}
-
-      {!accountLoading && userId && (
-        <section>
-          <h2 className="text-2xl font-black">A tua rede</h2>
-
-          <p className="mt-1 text-sm text-zinc-500">
-            Artistas, espaços e organizadores que estás a seguir.
-          </p>
-
-          <Link
-            href="/descobrir"
-            className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-          >
-            Descobrir rede
-          </Link>
-
-          <div className="mt-4 space-y-4">
-            {followedArtists.length > 0 && (
-              <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-                <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
-                  Artistas
-                </p>
-
-                <div className="space-y-3">
-                  {followedArtists.map((artist) => (
-                    <Link
-                      key={artist.id}
-                      href={`/artistas/${artist.slug}`}
-                      className="block rounded-2xl border border-zinc-800 bg-black p-4"
-                    >
-                      <h3 className="font-black">{artist.name}</h3>
-                      <p className="mt-1 text-sm text-zinc-500">
-                        {artist.city || "Cidade por definir"}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {followedVenues.length > 0 && (
-              <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-                <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
-                  Espaços
-                </p>
-
-                <div className="space-y-3">
-                  {followedVenues.map((venue) => (
-                    <Link
-                      key={venue.id}
-                      href={`/espacos/${venue.slug}`}
-                      className="block rounded-2xl border border-zinc-800 bg-black p-4"
-                    >
-                      <h3 className="font-black">{venue.name}</h3>
-                      <p className="mt-1 text-sm text-zinc-500">
-                        {venue.city || "Cidade por definir"}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {followedOrganizers.length > 0 && (
-              <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-                <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
-                  Organizadores
-                </p>
-
-                <div className="space-y-3">
-                  {followedOrganizers.map((organizer) => (
-                    <Link
-                      key={organizer.id}
-                      href={`/organizadores/${organizer.slug}`}
-                      className="block rounded-2xl border border-zinc-800 bg-black p-4"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <h3 className="font-black">{organizer.name}</h3>
-                          <p className="mt-1 text-sm text-zinc-500">
-                            {organizer.city || "Cidade por definir"}
-                          </p>
-                        </div>
-
-                        {organizer.verified && (
-                          <span className="rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-bold text-red-400">
-                            Verificado
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {totalFollows === 0 && (
-              <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-                <p className="text-zinc-400">
-                  Ainda não segues artistas, espaços ou organizadores.
-                </p>
-
-                <Link
-                  href="/descobrir"
-                  className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-                >
-                  Descobrir rede
-                </Link>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      <section>
-        <h2 className="text-2xl font-black">Cidades</h2>
-
-        <p className="mt-1 text-sm text-zinc-500">
-          Escolhe onde queres apanhar movimento.
-        </p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {cities.map((city) => {
-            const active = selectedCities.includes(city);
-
-            return (
-              <button
-                key={city}
-                type="button"
-                onClick={() => toggleCity(city)}
-                className={`rounded-full border px-4 py-2 text-sm font-bold ${
-                  active
-                    ? "border-red-800 bg-red-950 text-[#f2f1ec]"
-                    : "border-zinc-700 text-zinc-400"
-                }`}
-              >
-                {city}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-black">Categorias</h2>
-
-        <p className="mt-1 text-sm text-zinc-500">
-          Diz à Paranoid que tipo de ruído te interessa.
-        </p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {categories.map((category) => {
-            const active = selectedCategories.includes(category);
-
-            return (
-              <button
-                key={category}
-                type="button"
-                onClick={() => toggleCategory(category)}
-                className={`rounded-full border px-4 py-2 text-sm font-bold ${
-                  active
-                    ? "border-red-800 bg-red-950 text-[#f2f1ec]"
-                    : "border-zinc-700 text-zinc-400"
-                }`}
-              >
-                {category}
-              </button>
-            );
-          })}
-        </div>
-      </section>
+      </div>
     </div>
   );
 }

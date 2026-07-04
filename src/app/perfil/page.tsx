@@ -1,21 +1,27 @@
 import { ProfileClient } from "@/components/ProfileClient";
 
-export default function PerfilPage() {
+export default function ProfilePage() {
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
-      <section className="mx-auto max-w-md">
-        <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-          Perfil
-        </p>
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+      <section className="mx-auto max-w-md lg:max-w-7xl">
+        <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
+          <div>
+            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
+              Perfil
+            </p>
 
-        <h1 className="text-5xl font-black leading-none tracking-tight">
-          A tua zona Paranoid.
-        </h1>
+            <h1 className="text-5xl font-black leading-none tracking-tight lg:text-8xl">
+              Afina a tua presença.
+            </h1>
+          </div>
 
-        <p className="mt-5 text-base text-zinc-400">
-          Preferências, cidades, categorias e sinais para a app saber onde te
-          mandar.
-        </p>
+          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
+            <p className="text-base leading-relaxed text-zinc-400 lg:text-lg">
+              Guarda eventos, segue artistas, define cidades e categorias. A
+              Paranoid fica mais certeira quando sabe o que procuras.
+            </p>
+          </div>
+        </section>
 
         <ProfileClient />
       </section>
