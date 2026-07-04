@@ -249,9 +249,18 @@ export function OrganizerDashboardClient({
                   {submission.venue}, {submission.city}
                 </p>
 
-                <div className="mt-4 rounded-full border border-yellow-900 bg-yellow-950/30 px-4 py-3 text-center text-xs font-black uppercase tracking-wide text-yellow-500">
-                  A aguardar aprovação
-                </div>
+                <div className="mt-4 flex gap-2">
+  <Link
+    href={`/organizador/submissoes/${submission.id}`}
+    className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+  >
+    Editar
+  </Link>
+
+  <div className="flex-1 rounded-full border border-yellow-900 bg-yellow-950/30 px-4 py-3 text-center text-xs font-black uppercase tracking-wide text-yellow-500">
+    A aguardar
+  </div>
+</div>
               </article>
             ))}
 
