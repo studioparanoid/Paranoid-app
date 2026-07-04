@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 
 const categories = [
@@ -25,15 +25,14 @@ const cities = [
   "Marinha Grande",
 ];
 
-type OrganizerMembership = {
+type OrganizerRow = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+type OrganizerMemberRow = {
   organizer_id: string;
-  role: string;
-  organizers: {
-    id: string;
-    name: string;
-    slug: string;
-    city: string | null;
-  } | null;
 };
 
 function formatPriceValue(value: string) {
@@ -58,14 +57,26 @@ function formatPriceValue(value: string) {
   return cleanPrice;
 }
 
+function getDateLabel(startDate: string, endDate: string, isMultiDay: boolean) {
+  if (!startDate) {
+    return "Data por definir";
+  }
+
+  if (isMultiDay && endDate && endDate !== startDate) {
+    return `${startDate} → ${endDate}`;
+  }
+
+  return startDate;
+}
+
 export function SubmitEventClient() {
-  const [loading, setLoading] = useState(false);
   const [loadingAccount, setLoadingAccount] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [memberships, setMemberships] = useState<OrganizerMembership[]>([]);
-  const [selectedOrganizerId, setSelectedOrganizerId] = useState("");
+  const [organizerOptions, setOrganizerOptions] = useState<OrganizerRow[]>([]);
+  const [selectedOrganizerId, setSelectedOrganizerId] = useState<string>("");
 
   const [title, setTitle] = useState("");
   const [organizer, setOrganizer] = useState("");
@@ -99,36 +110,35 @@ export function SubmitEventClient() {
 
       setUserId(user.id);
 
-      const { data } = await supabase
+      const { data: membershipsData } = await supabase
         .from("organizer_members")
-        .select(
-          `
-          organizer_id,
-          role,
-          organizers (
-            id,
-            name,
-            slug,
-            city
-          )
-        `
-        )
+        .select("organizer_id")
         .eq("user_id", user.id);
 
-      const loadedMemberships = (data || []) as unknown as OrganizerMembership[];
+      const memberships = (membershipsData || []) as OrganizerMemberRow[];
+      const organizerIds = memberships
+        .map((membership) => membership.organizer_id)
+        .filter(Boolean);
 
-      setMemberships(loadedMemberships);
+      if (organizerIds.length === 0) {
+        setOrganizerOptions([]);
+        setLoadingAccount(false);
+        return;
+      }
 
-      if (loadedMemberships.length > 0) {
-        const firstMembership = loadedMemberships[0];
-        const firstOrganizer = firstMembership.organizers;
+      const { data: organizersData } = await supabase
+        .from("organizers")
+        .select("id,name,slug")
+        .in("id", organizerIds)
+        .order("name", { ascending: true });
 
-        setSelectedOrganizerId(firstMembership.organizer_id);
-        setOrganizer(firstOrganizer?.name || "");
+      const loadedOrganizers = (organizersData || []) as OrganizerRow[];
 
-        if (firstOrganizer?.city) {
-          setCity(firstOrganizer.city);
-        }
+      setOrganizerOptions(loadedOrganizers);
+
+      if (loadedOrganizers.length === 1) {
+        setSelectedOrganizerId(loadedOrganizers[0].id);
+        setOrganizer(loadedOrganizers[0].name);
       }
 
       setLoadingAccount(false);
@@ -136,6 +146,24 @@ export function SubmitEventClient() {
 
     loadAccount();
   }, []);
+
+  const selectedOrganizer = useMemo(() => {
+    return (
+      organizerOptions.find((item) => item.id === selectedOrganizerId) || null
+    );
+  }, [organizerOptions, selectedOrganizerId]);
+
+  const previewDate = getDateLabel(eventDate, endDate, isMultiDay);
+
+  function handleOrganizerChange(value: string) {
+    setSelectedOrganizerId(value);
+
+    const foundOrganizer = organizerOptions.find((item) => item.id === value);
+
+    if (foundOrganizer) {
+      setOrganizer(foundOrganizer.name);
+    }
+  }
 
   function handleCategoryChange(value: string) {
     setCategory(value);
@@ -166,24 +194,6 @@ export function SubmitEventClient() {
 
     if (isMultiDay && !endDate) {
       setEndDate(value);
-    }
-  }
-
-  function handleOrganizerChange(organizerId: string) {
-    setSelectedOrganizerId(organizerId);
-
-    const membership = memberships.find(
-      (item) => item.organizer_id === organizerId
-    );
-
-    if (!membership) {
-      return;
-    }
-
-    setOrganizer(membership.organizers?.name || "");
-
-    if (membership.organizers?.city) {
-      setCity(membership.organizers.city);
     }
   }
 
@@ -247,12 +257,32 @@ export function SubmitEventClient() {
     return data.publicUrl;
   }
 
+  function resetForm() {
+    setTitle("");
+    setArtistsText("");
+    setCategory("Concertos");
+    setCity("Pombal");
+    setVenue("");
+    setEventDate("");
+    setEndDate("");
+    setIsMultiDay(false);
+    setEventTime("");
+    setPrice("");
+    setDescription("");
+    setSelectedImageFile(null);
+    setImagePreviewUrl(null);
+
+    if (!selectedOrganizer) {
+      setOrganizer("");
+    }
+  }
+
   async function handleSubmit() {
     setMessage("");
 
     if (!title || !organizer || !city || !venue || !eventDate) {
       setMessage(
-        "Preenche pelo menos nome do evento, organizador, cidade, espaço e data de início."
+        "Preenche pelo menos nome do evento, organizador, cidade, espaço e data."
       );
       return;
     }
@@ -267,19 +297,19 @@ export function SubmitEventClient() {
       return;
     }
 
-    setLoading(true);
+    setSubmitting(true);
 
     let imageUrl: string | null = null;
 
     try {
       imageUrl = await uploadSelectedImage();
     } catch (error) {
+      setSubmitting(false);
       setMessage(
         `Erro ao carregar imagem: ${
           error instanceof Error ? error.message : "erro desconhecido"
         }`
       );
-      setLoading(false);
       return;
     }
 
@@ -304,206 +334,225 @@ export function SubmitEventClient() {
       status: "pending",
     });
 
-    setLoading(false);
+    setSubmitting(false);
 
     if (error) {
       setMessage(`Erro ao submeter evento: ${error.message}`);
       return;
     }
 
-    setTitle("");
-    setArtistsText("");
-    setVenue("");
-    setEventDate("");
-    setEndDate("");
-    setIsMultiDay(false);
-    setEventTime("");
-    setPrice("");
-    setDescription("");
-    setSelectedImageFile(null);
-    setImagePreviewUrl(null);
-
-    if (memberships.length === 0) {
-      setOrganizer("");
-    }
-
-    setMessage("Evento submetido. Vai ser revisto pela Paranoid.");
+    setMessage("Evento submetido. A Paranoid vai rever antes de publicar.");
+    resetForm();
   }
 
   return (
-    <div className="mt-8 space-y-6">
-      {!loadingAccount && !userId && (
-        <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <p className="text-sm leading-relaxed text-zinc-400">
-            Podes submeter sem conta, mas se tiveres conta de organizador o
-            evento fica automaticamente ligado ao teu perfil.
-          </p>
+    <div className="space-y-6">
+      <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+        <div className="grid gap-6 lg:grid-cols-[1fr_0.75fr]">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+              Formulário
+            </p>
 
-          <Link
-            href="/login"
-            className="mt-4 block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-          >
-            Entrar como organizador
-          </Link>
+            <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+              Dados do evento.
+            </h2>
+
+            <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+              Mete a informação base. Depois, se for preciso, podes corrigir a
+              submissão no painel do organizador antes de ser aprovada.
+            </p>
+          </div>
+
+          <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
+            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+              Pré-visualização
+            </p>
+
+            <h3 className="mt-3 text-2xl font-black leading-tight">
+              {title || "Nome do evento"}
+            </h3>
+
+            <div className="mt-4 space-y-1 text-sm text-zinc-500">
+              <p>{category}</p>
+              <p>{previewDate}</p>
+              <p>{eventTime || "Hora por definir"}</p>
+              <p>{[venue, city].filter(Boolean).join(" · ") || "Local"}</p>
+              <p>{price || "Preço por definir"}</p>
+            </div>
+          </div>
         </div>
-      )}
 
-      {memberships.length > 0 && (
-        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5">
-          <p className="text-xs uppercase tracking-[0.25em] text-red-500">
-            Conta de organizador
-          </p>
+        {loadingAccount && (
+          <div className="mt-6 rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-500">
+            A verificar conta...
+          </div>
+        )}
 
-          <p className="mt-3 text-sm text-zinc-400">
-            Esta submissão fica ligada ao organizador selecionado.
-          </p>
+        {!loadingAccount && !userId && (
+          <div className="mt-6 rounded-2xl border border-yellow-900 bg-yellow-950/20 px-4 py-3 text-sm leading-relaxed text-yellow-500">
+            Podes submeter sem conta, mas se iniciares sessão consegues acompanhar
+            e editar submissões pendentes.
+          </div>
+        )}
 
-          <select
-            value={selectedOrganizerId}
-            onChange={(event) => handleOrganizerChange(event.target.value)}
-            className="mt-4 w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-          >
-            {memberships.map((membership) => (
-              <option
-                key={membership.organizer_id}
-                value={membership.organizer_id}
+        {!loadingAccount && userId && organizerOptions.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-red-950 bg-red-950/20 px-4 py-3 text-sm leading-relaxed text-red-300">
+            Estás ligado a {organizerOptions.length} organizador
+            {organizerOptions.length === 1 ? "" : "es"}. Se escolheres um, a
+            submissão fica ligada ao painel desse organizador.
+          </div>
+        )}
+
+        <div className="mt-8 grid gap-5 lg:grid-cols-2">
+          {organizerOptions.length > 0 && (
+            <div className="lg:col-span-2">
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Conta de organizador
+              </label>
+
+              <select
+                value={selectedOrganizerId}
+                onChange={(event) => handleOrganizerChange(event.target.value)}
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
               >
-                {membership.organizers?.name || "Organizador"}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+                <option value="">Submissão livre</option>
 
-      {imagePreviewUrl && (
-        <div
-          className="h-64 rounded-[2rem] bg-cover bg-center"
-          style={{ backgroundImage: `url(${imagePreviewUrl})` }}
-        />
-      )}
+                {organizerOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-      <div className="space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Imagem / poster
+          <div className="lg:col-span-2">
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Poster / imagem
+            </label>
+
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(event) =>
+                handleImageChange(event.target.files?.[0] || null)
+              }
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-full file:border-0 file:bg-[#f2f1ec] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
+            />
+
+            <p className="mt-2 text-xs text-zinc-600">
+              JPG, PNG ou WEBP. Máximo 5MB.
+            </p>
+          </div>
+
+          {imagePreviewUrl && (
+            <div
+              className="h-72 rounded-[2rem] bg-cover bg-center lg:col-span-2 lg:h-96"
+              style={{ backgroundImage: `url(${imagePreviewUrl})` }}
+            />
+          )}
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Nome do evento
+            </label>
+
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Ex: Noite Paranoid Vol. I"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Organizador
+            </label>
+
+            <input
+              value={organizer}
+              onChange={(event) => setOrganizer(event.target.value)}
+              placeholder="Nome do coletivo, sala ou promotor"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+          </div>
+
+          <div className="lg:col-span-2">
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Artistas / bandas / DJs
+            </label>
+
+            <input
+              value={artistsText}
+              onChange={(event) => setArtistsText(event.target.value)}
+              placeholder="Ex: Dead Static, Cave Ritual, DJ Mau Ambiente"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+
+            <p className="mt-2 text-xs text-zinc-600">
+              Separa vários nomes por vírgula.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Categoria
+            </label>
+
+            <select
+              value={category}
+              onChange={(event) => handleCategoryChange(event.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+            >
+              {categories.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Cidade
+            </label>
+
+            <select
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+            >
+              {cities.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="lg:col-span-2">
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Espaço / local
+            </label>
+
+            <input
+              value={venue}
+              onChange={(event) => setVenue(event.target.value)}
+              placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+          </div>
+
+          <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3 lg:col-span-2">
+            <input
+              type="checkbox"
+              checked={isMultiDay}
+              onChange={(event) => handleMultiDayChange(event.target.checked)}
+            />
+
+            <span className="text-sm font-bold text-zinc-300">
+              Festival / evento de vários dias
+            </span>
           </label>
 
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(event) =>
-              handleImageChange(event.target.files?.[0] || null)
-            }
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-full file:border-0 file:bg-[#f2f1ec] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
-          />
-
-          <p className="mt-2 text-xs text-zinc-600">
-            JPG, PNG ou WEBP. Máximo 5MB.
-          </p>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Nome do evento
-          </label>
-
-          <input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Nome do evento"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Organizador
-          </label>
-
-          <input
-            value={organizer}
-            onChange={(event) => setOrganizer(event.target.value)}
-            disabled={memberships.length > 0}
-            placeholder="Nome do organizador"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Artistas / bandas / DJs
-          </label>
-
-          <input
-            value={artistsText}
-            onChange={(event) => setArtistsText(event.target.value)}
-            placeholder="Ex: Dead Static, Cave Ritual"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-
-          <p className="mt-2 text-xs text-zinc-600">
-            Separa vários nomes por vírgula.
-          </p>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Categoria
-          </label>
-
-          <select
-            value={category}
-            onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-          >
-            {categories.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </select>
-        </div>
-
-        <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
-          <input
-            type="checkbox"
-            checked={isMultiDay}
-            onChange={(event) => handleMultiDayChange(event.target.checked)}
-          />
-
-          <span className="text-sm font-bold text-zinc-300">
-            Festival / evento de vários dias
-          </span>
-        </label>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Cidade
-          </label>
-
-          <select
-            value={city}
-            onChange={(event) => setCity(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-          >
-            {cities.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Espaço / local
-          </label>
-
-          <input
-            value={venue}
-            onChange={(event) => setVenue(event.target.value)}
-            placeholder="Nome do espaço"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-        </div>
-
-        <div className={isMultiDay ? "grid grid-cols-2 gap-3" : ""}>
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
               Data início
@@ -531,64 +580,73 @@ export function SubmitEventClient() {
               />
             </div>
           )}
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Hora
+            </label>
+
+            <input
+              type="time"
+              value={eventTime}
+              onChange={(event) => setEventTime(event.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Preço
+            </label>
+
+            <input
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+              onBlur={handlePriceBlur}
+              placeholder="Ex: 5€, 10€ ou Entrada livre"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+          </div>
+
+          <div className="lg:col-span-2">
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Descrição
+            </label>
+
+            <textarea
+              rows={8}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Descrição, horários, bilhetes, contexto, links úteis..."
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Hora
-          </label>
+        <div className="mt-8 grid gap-3 lg:grid-cols-[1fr_0.35fr]">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+          >
+            {submitting ? "A submeter..." : "Submeter evento"}
+          </button>
 
-          <input
-            type="time"
-            value={eventTime}
-            onChange={(event) => setEventTime(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-          />
+          <Link
+            href="/agenda"
+            className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+          >
+            Ver agenda
+          </Link>
         </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Preço
-          </label>
-
-          <input
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            onBlur={handlePriceBlur}
-            placeholder="Ex: 5€, 10€ ou Entrada livre"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Descrição
-          </label>
-
-          <textarea
-            rows={7}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="Descrição do evento"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={loading}
-          className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-        >
-          {loading ? "A submeter..." : "Submeter evento"}
-        </button>
 
         {message && (
-          <p className="text-center text-sm font-bold text-zinc-400">
+          <p className="mt-5 text-center text-sm font-bold text-zinc-400">
             {message}
           </p>
         )}
-      </div>
+      </section>
     </div>
   );
 }
