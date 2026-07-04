@@ -30,6 +30,7 @@ const cities = [
 export function SubmitEventClient() {
   const [title, setTitle] = useState("");
   const [organizer, setOrganizer] = useState("");
+  const [artistsText, setArtistsText] = useState("");
   const [category, setCategory] = useState("Concertos");
   const [city, setCity] = useState("Pombal");
   const [venue, setVenue] = useState("");
@@ -120,7 +121,6 @@ export function SubmitEventClient() {
       .upload(filePath, imageFile);
 
     if (error) {
-      console.error(error);
       throw new Error("Erro ao carregar imagem.");
     }
 
@@ -158,7 +158,9 @@ export function SubmitEventClient() {
     setSubmitMessage("");
 
     if (!title || !organizer || !category || !city || !venue || !eventDate) {
-      setSubmitMessage("Preenche pelo menos nome, organizador, local, cidade e data.");
+      setSubmitMessage(
+        "Preenche pelo menos nome, organizador, local, cidade e data."
+      );
       return;
     }
 
@@ -173,6 +175,7 @@ export function SubmitEventClient() {
         venue,
         organizer,
         organizer_id: selectedOrganizerId,
+        artists_text: artistsText || null,
         category,
         event_date: eventDate || null,
         event_time: eventTime || null,
@@ -183,7 +186,6 @@ export function SubmitEventClient() {
       });
 
       if (error) {
-        console.error(error);
         setSubmitMessage("Erro ao submeter evento.");
         setSubmitting(false);
         return;
@@ -195,6 +197,7 @@ export function SubmitEventClient() {
 
       setTitle("");
       setVenue("");
+      setArtistsText("");
       setCategory("Concertos");
       setCity("Pombal");
       setEventDate("");
@@ -214,8 +217,7 @@ export function SubmitEventClient() {
       }
 
       setSubmitMessage("Evento submetido. Vai para aprovação Paranoid.");
-    } catch (error) {
-      console.error(error);
+    } catch {
       setSubmitMessage("Erro ao carregar imagem ou submeter evento.");
     }
 
@@ -258,9 +260,7 @@ export function SubmitEventClient() {
           />
         </label>
 
-        {imageName && (
-          <p className="mt-3 text-sm text-zinc-500">{imageName}</p>
-        )}
+        {imageName && <p className="mt-3 text-sm text-zinc-500">{imageName}</p>}
       </section>
 
       <section className="space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
@@ -320,6 +320,23 @@ export function SubmitEventClient() {
               Este evento vai entrar como submissão do teu organizador.
             </p>
           )}
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Artistas / bandas / DJs
+          </label>
+
+          <input
+            value={artistsText}
+            onChange={(event) => setArtistsText(event.target.value)}
+            placeholder="Ex: Dead Static, Cave Ritual, DJ Ruína"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+
+          <p className="mt-2 text-xs text-zinc-600">
+            Separa vários nomes por vírgula.
+          </p>
         </div>
 
         <div>
@@ -445,9 +462,13 @@ export function SubmitEventClient() {
             {category}
           </p>
 
-          <h3 className="text-2xl font-black">
-            {title || "Nome do evento"}
-          </h3>
+          <h3 className="text-2xl font-black">{title || "Nome do evento"}</h3>
+
+          {artistsText && (
+            <p className="mt-2 text-sm font-bold text-zinc-300">
+              {artistsText}
+            </p>
+          )}
 
           <p className="mt-2 text-sm text-zinc-400">
             {eventDate || "Data"} · {eventTime || "Hora"}
