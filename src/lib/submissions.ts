@@ -7,6 +7,8 @@ export type EventSubmission = {
   venue: string | null;
   organizer: string | null;
   category: string;
+submitted_by: string | null;
+organizer_id: string | null;
   event_date: string | null;
   event_time: string | null;
   price: string | null;
