@@ -14,6 +14,7 @@ export function SavedEventsClient({ events }: SavedEventsClientProps) {
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
+  const [syncedCount, setSyncedCount] = useState(0);
 
   useEffect(() => {
     async function loadSavedEvents() {
@@ -21,11 +22,11 @@ export function SavedEventsClient({ events }: SavedEventsClientProps) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) {
-        const localSavedEvents = JSON.parse(
-          localStorage.getItem("savedEvents") || "[]"
-        ) as string[];
+      const localSavedEvents = JSON.parse(
+        localStorage.getItem("savedEvents") || "[]"
+      ) as string[];
 
+      if (!user) {
         setSavedEventIds(localSavedEvents);
         setLoggedIn(false);
         setLoading(false);
@@ -33,6 +34,27 @@ export function SavedEventsClient({ events }: SavedEventsClientProps) {
       }
 
       setLoggedIn(true);
+
+      if (localSavedEvents.length > 0) {
+        const rowsToInsert = localSavedEvents.map((eventId) => ({
+          user_id: user.id,
+          event_id: eventId,
+        }));
+
+        const { error: syncError } = await supabase
+          .from("saved_events")
+          .upsert(rowsToInsert, {
+            onConflict: "user_id,event_id",
+            ignoreDuplicates: true,
+          });
+
+        if (syncError) {
+          console.error("Erro ao sincronizar guardados locais:", syncError);
+        } else {
+          setSyncedCount(localSavedEvents.length);
+          localStorage.removeItem("savedEvents");
+        }
+      }
 
       const { data, error } = await supabase
         .from("saved_events")
@@ -94,13 +116,21 @@ export function SavedEventsClient({ events }: SavedEventsClientProps) {
           </p>
 
           <h2 className="text-2xl font-black">
-            {savedEvents.length} evento{savedEvents.length !== 1 ? "s" : ""} guardado
-            {savedEvents.length !== 1 ? "s" : ""}
+            {savedEvents.length} evento{savedEvents.length !== 1 ? "s" : ""}{" "}
+            guardado{savedEvents.length !== 1 ? "s" : ""}
           </h2>
 
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
             Estes guardados já ficam ligados à tua conta.
           </p>
+
+          {syncedCount > 0 && (
+            <p className="mt-3 rounded-2xl border border-red-900 bg-red-950/30 px-4 py-3 text-sm font-bold text-red-300">
+              {syncedCount} guardado{syncedCount !== 1 ? "s" : ""} local
+              {syncedCount !== 1 ? "is" : ""} sincronizado
+              {syncedCount !== 1 ? "s" : ""} com a tua conta.
+            </p>
+          )}
         </section>
       )}
 
@@ -115,9 +145,7 @@ export function SavedEventsClient({ events }: SavedEventsClientProps) {
 
         {savedEvents.length === 0 && (
           <div className="mt-4 rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-            <p className="text-zinc-400">
-              Ainda não guardaste eventos.
-            </p>
+            <p className="text-zinc-400">Ainda não guardaste eventos.</p>
 
             <Link
               href="/agenda"
