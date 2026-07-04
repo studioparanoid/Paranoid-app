@@ -1,27 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
-import { type AppEvent } from "@/lib/events";
 import { type EventSubmission } from "@/lib/submissions";
 import { AdminSubmissionActions } from "@/components/AdminSubmissionActions";
 import { AdminEventActions } from "@/components/AdminEventActions";
-
-type AdminStats = {
-  pendingSubmissions: number;
-  publishedEvents: number;
-  archivedEvents: number;
-  featuredEvents: number;
-  totalArtists: number;
-  totalVenues: number;
-  totalOrganizers: number;
-};
-
-type AdminDashboardClientProps = {
-  initialEvents?: AppEvent[];
-  initialSubmissions?: EventSubmission[];
-};
 
 type EventRow = {
   id: string;
@@ -38,6 +22,13 @@ type EventRow = {
   image_url: string | null;
   featured: boolean | null;
   status: string | null;
+  start_at: string | null;
+};
+
+type NetworkCounts = {
+  artists: number;
+  venues: number;
+  organizers: number;
 };
 
 function formatDate(value: string | null) {
@@ -45,64 +36,252 @@ function formatDate(value: string | null) {
     return "Sem data";
   }
 
-  return value;
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pt-PT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
 }
 
-function mapEvent(event: EventRow): AppEvent {
-  return {
-    id: event.id,
-    slug: event.slug,
-    title: event.title,
-    city: event.city,
-    venue: event.venue_name || "Espaço por definir",
-    organizer: event.organizer_name || "Organizador por definir",
-    date: event.display_date || "Data por definir",
-    time: event.display_time || "Hora por definir",
-    category: event.category,
-    price: event.price || "Preço por definir",
-    description: event.description || "",
-    image: event.image_url,
-    featured: Boolean(event.featured),
-  };
-}
-
-function hasStatus(event: EventRow, status: string) {
+function SubmissionCard({ submission }: { submission: EventSubmission }) {
   return (
-    String(event.status || "")
-      .trim()
-      .toLowerCase() === status
+    <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+      {submission.image_url && (
+        <div
+          className="mb-4 h-52 rounded-[1.5rem] bg-cover bg-center"
+          style={{ backgroundImage: `url(${submission.image_url})` }}
+        />
+      )}
+
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+            {submission.category || "Submissão"}
+          </p>
+
+          <h3 className="mt-2 text-2xl font-black leading-tight">
+            {submission.title}
+          </h3>
+        </div>
+
+        <span className="shrink-0 rounded-full border border-yellow-900 bg-yellow-950/30 px-3 py-1 text-xs font-black uppercase text-yellow-500">
+          {submission.status}
+        </span>
+      </div>
+
+      <div className="mt-4 space-y-1 text-sm text-zinc-400">
+        <p>
+          <span className="font-bold text-zinc-300">Data:</span>{" "}
+          {submission.event_date || "Sem data"}
+          {submission.is_multi_day && submission.end_date
+            ? ` → ${submission.end_date}`
+            : ""}
+          {submission.event_time ? ` · ${submission.event_time}` : ""}
+        </p>
+
+        <p>
+          <span className="font-bold text-zinc-300">Cidade:</span>{" "}
+          {submission.city || "Cidade por definir"}
+        </p>
+
+        <p>
+          <span className="font-bold text-zinc-300">Espaço:</span>{" "}
+          {submission.venue || "Espaço por definir"}
+        </p>
+
+        <p>
+          <span className="font-bold text-zinc-300">Organizador:</span>{" "}
+          {submission.organizer || "Organizador por definir"}
+        </p>
+
+        {submission.artists_text && (
+          <p>
+            <span className="font-bold text-zinc-300">Artistas:</span>{" "}
+            {submission.artists_text}
+          </p>
+        )}
+      </div>
+
+      {submission.description && (
+        <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-zinc-500">
+          {submission.description}
+        </p>
+      )}
+
+      <div className="mt-5 grid gap-2">
+        <Link
+          href={`/admin/submissoes/${submission.id}`}
+          className="rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+        >
+          Editar submissão
+        </Link>
+
+        <AdminSubmissionActions submission={submission} />
+      </div>
+    </article>
   );
 }
 
-export function AdminDashboardClient({
-  initialEvents = [],
-  initialSubmissions = [],
-}: AdminDashboardClientProps) {
-  const [events, setEvents] = useState<AppEvent[]>(initialEvents);
-  const [archivedEvents, setArchivedEvents] = useState<AppEvent[]>([]);
-  const [submissions, setSubmissions] =
-    useState<EventSubmission[]>(initialSubmissions);
+function EventCard({
+  event,
+  mode,
+}: {
+  event: EventRow;
+  mode: "published" | "archived";
+}) {
+  return (
+    <article className="h-full rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+      {event.image_url && (
+        <Link
+          href={`/eventos/${event.slug}`}
+          className="mb-4 block h-52 rounded-[1.5rem] bg-cover bg-center"
+          style={{ backgroundImage: `url(${event.image_url})` }}
+        />
+      )}
 
-  const [stats, setStats] = useState<AdminStats>({
-    pendingSubmissions: initialSubmissions.length,
-    publishedEvents: initialEvents.length,
-    archivedEvents: 0,
-    featuredEvents: initialEvents.filter((event) => event.featured).length,
-    totalArtists: 0,
-    totalVenues: 0,
-    totalOrganizers: 0,
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+            {event.category || "Evento"}
+          </p>
+
+          <h3 className="mt-2 text-2xl font-black leading-tight">
+            {event.title}
+          </h3>
+        </div>
+
+        {event.featured && (
+          <span className="shrink-0 rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-black uppercase text-red-400">
+            Destaque
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4 space-y-1 text-sm text-zinc-400">
+        <p>
+          <span className="font-bold text-zinc-300">Data:</span>{" "}
+          {event.display_date || formatDate(event.start_at)}
+          {event.display_time ? ` · ${event.display_time}` : ""}
+        </p>
+
+        <p>
+          <span className="font-bold text-zinc-300">Cidade:</span>{" "}
+          {event.city || "Cidade por definir"}
+        </p>
+
+        <p>
+          <span className="font-bold text-zinc-300">Espaço:</span>{" "}
+          {event.venue_name || "Espaço por definir"}
+        </p>
+
+        <p>
+          <span className="font-bold text-zinc-300">Organizador:</span>{" "}
+          {event.organizer_name || "Organizador por definir"}
+        </p>
+      </div>
+
+      {event.description && (
+        <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-zinc-500">
+          {event.description}
+        </p>
+      )}
+
+      <div className="mt-5">
+        <AdminEventActions
+          eventId={event.id}
+          slug={event.slug}
+          featured={Boolean(event.featured)}
+          mode={mode}
+        />
+      </div>
+    </article>
+  );
+}
+
+function EmptyCard({ text }: { text: string }) {
+  return (
+    <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+      <p className="text-zinc-500">{text}</p>
+    </div>
+  );
+}
+
+export function AdminDashboardClient() {
+  const [loading, setLoading] = useState(true);
+  const [debugMessage, setDebugMessage] = useState("");
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [email, setEmail] = useState("");
+
+  const [submissions, setSubmissions] = useState<EventSubmission[]>([]);
+  const [publishedEvents, setPublishedEvents] = useState<EventRow[]>([]);
+  const [archivedEvents, setArchivedEvents] = useState<EventRow[]>([]);
+  const [networkCounts, setNetworkCounts] = useState<NetworkCounts>({
+    artists: 0,
+    venues: 0,
+    organizers: 0,
   });
 
-  const [loading, setLoading] = useState(false);
-  const [debugMessage, setDebugMessage] = useState("");
+  const featuredCount = useMemo(() => {
+    return publishedEvents.filter((event) => event.featured).length;
+  }, [publishedEvents]);
+
+  async function checkAdmin(userId: string) {
+    const { data: adminData } = await supabase
+      .from("app_admins")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (adminData) {
+      return true;
+    }
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    return profileData?.role === "admin";
+  }
 
   async function loadDashboard() {
     setLoading(true);
     setDebugMessage("");
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setEmail("");
+      setIsAdmin(false);
+      setLoading(false);
+      return;
+    }
+
+    setEmail(user.email || "");
+
+    const adminStatus = await checkAdmin(user.id);
+
+    setIsAdmin(adminStatus);
+
+    if (!adminStatus) {
+      setLoading(false);
+      return;
+    }
+
     const [
       submissionsResult,
-      eventsResult,
+      publishedEventsResult,
+      archivedEventsResult,
       artistsResult,
       venuesResult,
       organizersResult,
@@ -112,485 +291,335 @@ export function AdminDashboardClient({
         .select("*")
         .eq("status", "pending")
         .order("created_at", { ascending: false }),
+
       supabase
         .from("events")
         .select(
           "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
         )
-        .in("status", ["published", "archived"])
+        .eq("status", "published")
         .order("start_at", { ascending: true }),
+
+      supabase
+        .from("events")
+        .select(
+          "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+        )
+        .eq("status", "archived")
+        .order("start_at", { ascending: false }),
+
       supabase.from("artists").select("id", { count: "exact", head: true }),
       supabase.from("venues").select("id", { count: "exact", head: true }),
       supabase.from("organizers").select("id", { count: "exact", head: true }),
     ]);
 
-    if (submissionsResult.error) {
-      setDebugMessage(`Erro submissões: ${submissionsResult.error.message}`);
+    const errors = [
+      submissionsResult.error?.message,
+      publishedEventsResult.error?.message,
+      archivedEventsResult.error?.message,
+      artistsResult.error?.message,
+      venuesResult.error?.message,
+      organizersResult.error?.message,
+    ].filter(Boolean);
+
+    if (errors.length > 0) {
+      setDebugMessage(errors.join(" | "));
     }
 
-    if (eventsResult.error) {
-      setDebugMessage(`Erro eventos: ${eventsResult.error.message}`);
-    }
-
-    const loadedSubmissions = !submissionsResult.error
-      ? ((submissionsResult.data || []) as EventSubmission[])
-      : [];
-
-    const eventRows = !eventsResult.error
-      ? ((eventsResult.data || []) as EventRow[])
-      : [];
-
-    const publishedRows = eventRows.filter((event) =>
-      hasStatus(event, "published")
+    setSubmissions(
+      !submissionsResult.error
+        ? ((submissionsResult.data || []) as EventSubmission[])
+        : []
     );
 
-    const archivedRows = eventRows.filter((event) =>
-      hasStatus(event, "archived")
+    setPublishedEvents(
+      !publishedEventsResult.error
+        ? ((publishedEventsResult.data || []) as EventRow[])
+        : []
     );
 
-    const mappedEvents = publishedRows.map(mapEvent);
-    const mappedArchivedEvents = archivedRows.map(mapEvent);
+    setArchivedEvents(
+      !archivedEventsResult.error
+        ? ((archivedEventsResult.data || []) as EventRow[])
+        : []
+    );
 
-    setSubmissions(loadedSubmissions);
-    setEvents(mappedEvents);
-    setArchivedEvents(mappedArchivedEvents);
-
-    setStats({
-      pendingSubmissions: loadedSubmissions.length,
-      publishedEvents: mappedEvents.length,
-      archivedEvents: mappedArchivedEvents.length,
-      featuredEvents: mappedEvents.filter((event) => event.featured).length,
-      totalArtists: artistsResult.count || 0,
-      totalVenues: venuesResult.count || 0,
-      totalOrganizers: organizersResult.count || 0,
+    setNetworkCounts({
+      artists: artistsResult.count || 0,
+      venues: venuesResult.count || 0,
+      organizers: organizersResult.count || 0,
     });
 
     setLoading(false);
-  }
-
-  function removePublishedEvent(eventId: string) {
-    setEvents((currentEvents) =>
-      currentEvents.filter((event) => event.id !== eventId)
-    );
-  }
-
-  function removeArchivedEvent(eventId: string) {
-    setArchivedEvents((currentEvents) =>
-      currentEvents.filter((event) => event.id !== eventId)
-    );
   }
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+        <p className="text-zinc-500">A carregar painel admin...</p>
+      </div>
+    );
+  }
+
+  if (!email) {
+    return (
+      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          Sem sessão
+        </p>
+
+        <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+          Tens de entrar.
+        </h2>
+
+        <p className="mt-5 text-sm leading-relaxed text-zinc-400 lg:text-base">
+          O painel admin só está disponível para contas autorizadas.
+        </p>
+
+        <Link
+          href="/login"
+          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
+        >
+          Entrar
+        </Link>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          Bloqueado
+        </p>
+
+        <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+          Não tens acesso admin.
+        </h2>
+
+        <p className="mt-5 text-sm leading-relaxed text-zinc-400 lg:text-base">
+          Conta atual: {email}
+        </p>
+
+        <Link
+          href="/perfil"
+          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
+        >
+          Voltar ao perfil
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="mt-8 space-y-8">
-      <section className="grid grid-cols-2 gap-3">
-        <Link
-          href="/admin/eventos/novo"
-          className="rounded-[2rem] border border-red-950 bg-red-950/40 p-5"
-        >
-          <p className="text-xs uppercase tracking-[0.25em] text-red-500">
-            Novo
+    <div className="mt-8 lg:mt-12">
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:items-start">
+        <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            Painel
           </p>
 
-          <h2 className="mt-3 text-2xl font-black leading-none text-[#f2f1ec]">
-            Criar evento
+          <h2 className="mt-3 break-words text-2xl font-black leading-tight">
+            {email}
           </h2>
 
-          <p className="mt-3 text-sm text-zinc-500">
-            Publica direto sem submissão.
-          </p>
-        </Link>
-
-        <Link
-          href="/admin/rede"
-          className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
-        >
-          <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-            Rede
+          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-zinc-600">
+            Admin Paranoid
           </p>
 
-          <h2 className="mt-3 text-2xl font-black leading-none text-[#f2f1ec]">
-            Gerir rede
-          </h2>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+              <p className="text-3xl font-black">{submissions.length}</p>
 
-          <p className="mt-3 text-sm text-zinc-500">
-            Artistas, espaços e organizadores.
-          </p>
-        </Link>
-      </section>
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                Pend.
+              </p>
+            </div>
 
-      <section className="grid grid-cols-4 gap-3">
-        <div className="rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-4">
-          <p className="text-3xl font-black text-[#f2f1ec]">
-            {stats.pendingSubmissions}
-          </p>
+            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+              <p className="text-3xl font-black">{publishedEvents.length}</p>
 
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Pend.
-          </p>
-        </div>
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                Pub.
+              </p>
+            </div>
 
-        <div className="rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-4">
-          <p className="text-3xl font-black text-[#f2f1ec]">
-            {stats.publishedEvents}
-          </p>
+            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+              <p className="text-3xl font-black">{archivedEvents.length}</p>
 
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Ativos
-          </p>
-        </div>
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                Arq.
+              </p>
+            </div>
 
-        <div className="rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-4">
-          <p className="text-3xl font-black text-[#f2f1ec]">
-            {stats.archivedEvents}
-          </p>
+            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+              <p className="text-3xl font-black">{featuredCount}</p>
 
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Arq.
-          </p>
-        </div>
-
-        <div className="rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-4">
-          <p className="text-3xl font-black text-[#f2f1ec]">
-            {stats.featuredEvents}
-          </p>
-
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Dest.
-          </p>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-3 gap-3">
-        <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-          <p className="text-2xl font-black text-[#f2f1ec]">
-            {stats.totalArtists}
-          </p>
-
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Artistas
-          </p>
-        </div>
-
-        <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-          <p className="text-2xl font-black text-[#f2f1ec]">
-            {stats.totalVenues}
-          </p>
-
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Espaços
-          </p>
-        </div>
-
-        <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-          <p className="text-2xl font-black text-[#f2f1ec]">
-            {stats.totalOrganizers}
-          </p>
-
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-            Orgs.
-          </p>
-        </div>
-      </section>
-
-      <button
-        type="button"
-        onClick={loadDashboard}
-        disabled={loading}
-        className="w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
-      >
-        {loading ? "A atualizar..." : "Atualizar painel"}
-      </button>
-
-      {debugMessage && (
-        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-4">
-          <p className="text-sm font-bold text-red-400">{debugMessage}</p>
-        </div>
-      )}
-
-      <section>
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-              Submissões
-            </p>
-
-            <h2 className="mt-2 text-3xl font-black">Por aprovar</h2>
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                Dest.
+              </p>
+            </div>
           </div>
 
-          <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
-            {submissions.length}
-          </span>
-        </div>
-
-        <div className="mt-5 space-y-4">
-          {submissions.length === 0 && (
-            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-zinc-500">Não há submissões pendentes.</p>
-            </div>
-          )}
-
-          {submissions.map((submission) => (
-            <article
-              key={submission.id}
-              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
-            >
-              {submission.image_url && (
-                <div
-                  className="mb-4 h-48 rounded-[1.5rem] bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${submission.image_url})`,
-                  }}
-                />
-              )}
-
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-red-700">
-                    {submission.category}
-                  </p>
-
-                  <h3 className="mt-2 text-2xl font-black leading-tight">
-                    {submission.title}
-                  </h3>
-                </div>
-
-                <span className="rounded-full border border-yellow-900 bg-yellow-950/30 px-3 py-1 text-xs font-black uppercase text-yellow-500">
-                  {submission.status}
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-1 text-sm text-zinc-400">
-                <p>
-                  <span className="font-bold text-zinc-300">Cidade:</span>{" "}
-                  {submission.city}
-                </p>
-
-                <p>
-                  <span className="font-bold text-zinc-300">Espaço:</span>{" "}
-                  {submission.venue || "Por definir"}
-                </p>
-
-                <p>
-                  <span className="font-bold text-zinc-300">Organizador:</span>{" "}
-                  {submission.organizer || "Por definir"}
-                </p>
-
-                <p>
-                  <span className="font-bold text-zinc-300">Data:</span>{" "}
-                  {formatDate(submission.event_date)}{" "}
-                  {submission.event_time ? `· ${submission.event_time}` : ""}
-                </p>
-
-                {submission.price && (
-                  <p>
-                    <span className="font-bold text-zinc-300">Preço:</span>{" "}
-                    {submission.price}
-                  </p>
-                )}
-              </div>
-
-              {submission.description && (
-                <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-zinc-500">
-                  {submission.description}
-                </p>
-              )}
-
-              <AdminSubmissionActions
-                submission={submission}
-                onDone={loadDashboard}
-              />
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-              Publicados
+          <div className="mt-6 rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+              Rede
             </p>
 
-            <h2 className="mt-2 text-3xl font-black">Eventos ativos</h2>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-2xl font-black">{networkCounts.artists}</p>
+                <p className="text-[10px] font-bold uppercase text-zinc-600">
+                  Art.
+                </p>
+              </div>
+
+              <div>
+                <p className="text-2xl font-black">{networkCounts.venues}</p>
+                <p className="text-[10px] font-bold uppercase text-zinc-600">
+                  Esp.
+                </p>
+              </div>
+
+              <div>
+                <p className="text-2xl font-black">
+                  {networkCounts.organizers}
+                </p>
+                <p className="text-[10px] font-bold uppercase text-zinc-600">
+                  Orgs.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
-            {events.length}
-          </span>
-        </div>
-
-        <div className="mt-5 space-y-4">
-          {events.length === 0 && (
-            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-zinc-500">Ainda não há eventos publicados.</p>
-            </div>
-          )}
-
-          {events.map((event) => (
-            <article
-              key={event.id}
-              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
+          <div className="mt-6 grid gap-3">
+            <Link
+              href="/admin/eventos/novo"
+              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
             >
-              {event.image && (
-                <div
-                  className="mb-4 h-48 rounded-[1.5rem] bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${event.image})`,
-                  }}
-                />
-              )}
+              Criar evento
+            </Link>
 
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-red-700">
-                    {event.category}
-                  </p>
+            <Link
+              href="/admin/rede"
+              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+            >
+              Gerir rede
+            </Link>
 
-                  <h3 className="mt-2 text-2xl font-black leading-tight">
-                    {event.title}
-                  </h3>
+            <Link
+              href="/agenda"
+              className="rounded-full border border-zinc-800 px-5 py-4 text-center text-sm font-bold text-zinc-500"
+            >
+              Ver agenda
+            </Link>
 
-                  <p className="mt-2 text-xs text-zinc-600">/{event.slug}</p>
-                </div>
+            <button
+              type="button"
+              onClick={loadDashboard}
+              className="rounded-full border border-zinc-800 px-5 py-4 text-sm font-bold text-zinc-500"
+            >
+              Atualizar painel
+            </button>
+          </div>
 
-                {event.featured && (
-                  <span className="rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-black uppercase text-red-400">
-                    Destaque
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-4 space-y-1 text-sm text-zinc-400">
-                <p>
-                  <span className="font-bold text-zinc-300">Cidade:</span>{" "}
-                  {event.city}
-                </p>
-
-                <p>
-                  <span className="font-bold text-zinc-300">Espaço:</span>{" "}
-                  {event.venue}
-                </p>
-
-                <p>
-                  <span className="font-bold text-zinc-300">Organizador:</span>{" "}
-                  {event.organizer}
-                </p>
-
-                <p>
-                  <span className="font-bold text-zinc-300">Data:</span>{" "}
-                  {event.date} {event.time ? `· ${event.time}` : ""}
-                </p>
-
-                {event.price && (
-                  <p>
-                    <span className="font-bold text-zinc-300">Preço:</span>{" "}
-                    {event.price}
-                  </p>
-                )}
-              </div>
-
-              {event.description && (
-                <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-zinc-500">
-                  {event.description}
-                </p>
-              )}
-
-              <AdminEventActions
-                event={event}
-                mode="published"
-                onDone={loadDashboard}
-                onArchived={removePublishedEvent}
-              />
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-yellow-700">
-              Arquivo
+          {debugMessage && (
+            <p className="mt-5 rounded-2xl border border-red-950 bg-red-950/20 p-4 text-xs leading-relaxed text-red-300">
+              {debugMessage}
             </p>
-
-            <h2 className="mt-2 text-3xl font-black">Eventos arquivados</h2>
-          </div>
-
-          <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
-            {archivedEvents.length}
-          </span>
-        </div>
-
-        <div className="mt-5 space-y-4">
-          {archivedEvents.length === 0 && (
-            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-              <p className="text-zinc-500">Ainda não há eventos arquivados.</p>
-            </div>
           )}
+        </aside>
 
-          {archivedEvents.map((event) => (
-            <article
-              key={event.id}
-              className="rounded-[2rem] border border-yellow-950 bg-yellow-950/10 p-5"
-            >
-              {event.image && (
-                <div
-                  className="mb-4 h-48 rounded-[1.5rem] bg-cover bg-center opacity-60"
-                  style={{
-                    backgroundImage: `url(${event.image})`,
-                  }}
-                />
+        <section className="space-y-10">
+          <section>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Submissões
+                </p>
+
+                <h2 className="mt-2 text-3xl font-black lg:text-5xl">
+                  À espera de aprovação
+                </h2>
+              </div>
+
+              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+                {submissions.length}
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-4 xl:grid-cols-2">
+              {submissions.length === 0 && (
+                <EmptyCard text="Não há submissões pendentes." />
               )}
 
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-yellow-700">
-                    {event.category}
-                  </p>
+              {submissions.map((submission) => (
+                <SubmissionCard key={submission.id} submission={submission} />
+              ))}
+            </div>
+          </section>
 
-                  <h3 className="mt-2 text-2xl font-black leading-tight text-zinc-300">
-                    {event.title}
-                  </h3>
+          <section>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Publicados
+                </p>
 
-                  <p className="mt-2 text-xs text-zinc-600">/{event.slug}</p>
-                </div>
-
-                <span className="rounded-full border border-yellow-900 bg-yellow-950/30 px-3 py-1 text-xs font-black uppercase text-yellow-500">
-                  Arquivado
-                </span>
+                <h2 className="mt-2 text-3xl font-black lg:text-5xl">
+                  Eventos ativos
+                </h2>
               </div>
 
-              <div className="mt-4 space-y-1 text-sm text-zinc-500">
-                <p>
-                  <span className="font-bold text-zinc-400">Cidade:</span>{" "}
-                  {event.city}
+              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+                {publishedEvents.length}
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              {publishedEvents.length === 0 && (
+                <EmptyCard text="Não há eventos publicados." />
+              )}
+
+              {publishedEvents.map((event) => (
+                <EventCard key={event.id} event={event} mode="published" />
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Arquivo
                 </p>
 
-                <p>
-                  <span className="font-bold text-zinc-400">Espaço:</span>{" "}
-                  {event.venue}
-                </p>
-
-                <p>
-                  <span className="font-bold text-zinc-400">Data:</span>{" "}
-                  {event.date} {event.time ? `· ${event.time}` : ""}
-                </p>
+                <h2 className="mt-2 text-3xl font-black lg:text-5xl">
+                  Eventos arquivados
+                </h2>
               </div>
 
-              <AdminEventActions
-                event={event}
-                mode="archived"
-                onDone={loadDashboard}
-                onRestored={removeArchivedEvent}
-              />
-            </article>
-          ))}
-        </div>
-      </section>
+              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+                {archivedEvents.length}
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              {archivedEvents.length === 0 && (
+                <EmptyCard text="Não há eventos arquivados." />
+              )}
+
+              {archivedEvents.map((event) => (
+                <EventCard key={event.id} event={event} mode="archived" />
+              ))}
+            </div>
+          </section>
+        </section>
+      </div>
     </div>
   );
 }

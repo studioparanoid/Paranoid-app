@@ -2,254 +2,162 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/public";
-import { type AppEvent } from "@/lib/events";
 
 type AdminEventActionsProps = {
-  event: AppEvent;
+  event?: {
+    id: string;
+    slug: string;
+    featured?: boolean | null;
+    status?: string | null;
+  };
+  eventId?: string;
+  slug?: string;
+  featured?: boolean;
   mode?: "published" | "archived";
-  onDone?: () => void | Promise<void>;
-  onArchived?: (eventId: string) => void;
-  onRestored?: (eventId: string) => void;
-};
-
-type StatusEventRow = {
-  id: string;
-  status: string;
 };
 
 export function AdminEventActions({
   event,
-  mode = "published",
-  onDone,
-  onArchived,
-  onRestored,
+  eventId,
+  slug,
+  featured,
+  mode,
 }: AdminEventActionsProps) {
-  const router = useRouter();
+  const resolvedEventId = event?.id || eventId || "";
+  const resolvedSlug = event?.slug || slug || "";
+  const resolvedFeatured =
+    typeof featured === "boolean" ? featured : Boolean(event?.featured);
+  const resolvedMode =
+    mode || (event?.status === "archived" ? "archived" : "published");
 
-  const [featured, setFeatured] = useState(Boolean(event.featured));
   const [loading, setLoading] = useState(false);
-  const [archiving, setArchiving] = useState(false);
-  const [restoring, setRestoring] = useState(false);
   const [message, setMessage] = useState("");
 
-  async function toggleFeatured() {
-    setLoading(true);
+  async function updateEventStatus(nextStatus: "published" | "archived") {
     setMessage("");
+
+    if (!resolvedEventId) {
+      setMessage("Evento inválido.");
+      return;
+    }
+
+    setLoading(true);
 
     const { data, error } = await supabase
       .from("events")
       .update({
-        featured: !featured,
+        status: nextStatus,
       })
-      .eq("id", event.id)
-      .select("id,featured")
+      .eq("id", resolvedEventId)
+      .select("id,status")
       .single();
 
     setLoading(false);
 
-    if (error || !data) {
-      setMessage(
-        `Erro ao atualizar destaque: ${
-          error?.message || "evento não foi atualizado"
-        }`
-      );
+    if (error) {
+      setMessage(`Erro: ${error.message}`);
       return;
     }
 
-    setFeatured(!featured);
-    setMessage(!featured ? "Evento destacado." : "Destaque removido.");
-
-    if (onDone) {
-      await onDone();
+    if (data?.status !== nextStatus) {
+      setMessage("A operação não confirmou o novo estado.");
+      return;
     }
 
-    router.refresh();
+    window.location.reload();
   }
 
-  async function archiveEvent() {
-    const confirmed = window.confirm(
-      `Arquivar "${event.title}"?\n\nO evento sai da agenda pública, mas não é apagado da base de dados.`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setArchiving(true);
+  async function toggleFeatured() {
     setMessage("");
 
-    const { data, error } = await supabase
+    if (!resolvedEventId) {
+      setMessage("Evento inválido.");
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await supabase
       .from("events")
       .update({
-        status: "archived",
-        featured: false,
+        featured: !resolvedFeatured,
       })
-      .eq("id", event.id)
-      .select("id,status")
-      .single();
+      .eq("id", resolvedEventId);
 
-    setArchiving(false);
+    setLoading(false);
 
-    if (error || !data) {
-      setMessage(
-        `Erro ao arquivar evento: ${
-          error?.message || "o Supabase não devolveu confirmação"
-        }`
-      );
+    if (error) {
+      setMessage(`Erro: ${error.message}`);
       return;
     }
 
-    const archivedEvent = data as StatusEventRow;
-
-    if (archivedEvent.status !== "archived") {
-      setMessage(
-        `Erro: o evento continua com status "${archivedEvent.status}".`
-      );
-      return;
-    }
-
-    setFeatured(false);
-    setMessage("Evento arquivado.");
-
-    if (onArchived) {
-      onArchived(event.id);
-    }
-
-    if (onDone) {
-      await onDone();
-    }
-
-    router.refresh();
+    window.location.reload();
   }
 
-  async function restoreEvent() {
-    const confirmed = window.confirm(
-      `Republicar "${event.title}"?\n\nO evento volta a aparecer na agenda pública.`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setRestoring(true);
-    setMessage("");
-
-    const { data, error } = await supabase
-      .from("events")
-      .update({
-        status: "published",
-      })
-      .eq("id", event.id)
-      .select("id,status")
-      .single();
-
-    setRestoring(false);
-
-    if (error || !data) {
-      setMessage(
-        `Erro ao republicar evento: ${
-          error?.message || "o Supabase não devolveu confirmação"
-        }`
-      );
-      return;
-    }
-
-    const restoredEvent = data as StatusEventRow;
-
-    if (restoredEvent.status !== "published") {
-      setMessage(
-        `Erro: o evento continua com status "${restoredEvent.status}".`
-      );
-      return;
-    }
-
-    setMessage("Evento republicado.");
-
-    if (onRestored) {
-      onRestored(event.id);
-    }
-
-    if (onDone) {
-      await onDone();
-    }
-
-    router.refresh();
-  }
-
-  if (mode === "archived") {
+  if (!resolvedEventId) {
     return (
-      <div className="mt-4">
-        <div className="flex gap-2">
-          <Link
-            href={`/admin/eventos/${event.slug}`}
-            className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
-          >
-            Editar
-          </Link>
-
-          <button
-            type="button"
-            onClick={restoreEvent}
-            disabled={restoring}
-            className="flex-1 rounded-full border border-green-900 bg-green-950/30 px-4 py-3 text-sm font-black text-green-400 disabled:opacity-50"
-          >
-            {restoring ? "A republicar..." : "Republicar"}
-          </button>
-        </div>
-
-        {message && (
-          <p className="mt-3 text-center text-sm font-bold text-zinc-400">
-            {message}
-          </p>
-        )}
+      <div className="rounded-2xl border border-red-950 bg-red-950/20 p-4 text-sm font-bold text-red-300">
+        Evento inválido.
       </div>
     );
   }
 
   return (
-    <div className="mt-4">
-      <div className="flex gap-2">
+    <div className="space-y-3">
+      <div className="grid gap-2">
         <Link
-          href={`/admin/eventos/${event.slug}`}
-          className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+          href={`/admin/eventos/${resolvedSlug || resolvedEventId}`}
+          className="rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
         >
           Editar
         </Link>
 
-        <Link
-          href={`/eventos/${event.slug}`}
-          className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
-        >
-          Ver
-        </Link>
+        {resolvedMode === "published" && resolvedSlug && (
+          <Link
+            href={`/eventos/${resolvedSlug}`}
+            className="rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+          >
+            Ver público
+          </Link>
+        )}
+
+        {resolvedMode === "published" && (
+          <>
+            <button
+              type="button"
+              onClick={toggleFeatured}
+              disabled={loading}
+              className="rounded-full border border-red-900 px-4 py-3 text-sm font-bold text-red-400 disabled:opacity-50"
+            >
+              {resolvedFeatured ? "Remover destaque" : "Destacar"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => updateEventStatus("archived")}
+              disabled={loading}
+              className="rounded-full border border-zinc-800 px-4 py-3 text-sm font-bold text-zinc-500 disabled:opacity-50"
+            >
+              Arquivar / despublicar
+            </button>
+          </>
+        )}
+
+        {resolvedMode === "archived" && (
+          <button
+            type="button"
+            onClick={() => updateEventStatus("published")}
+            disabled={loading}
+            className="rounded-full bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black disabled:opacity-50"
+          >
+            Republicar
+          </button>
+        )}
       </div>
 
-      <button
-        type="button"
-        onClick={toggleFeatured}
-        disabled={loading || archiving}
-        className={`mt-3 w-full rounded-full px-4 py-3 text-sm font-black disabled:opacity-50 ${
-          featured
-            ? "border border-red-900 bg-red-950 text-red-300"
-            : "border border-zinc-700 text-zinc-300"
-        }`}
-      >
-        {loading ? "A atualizar..." : featured ? "Remover destaque" : "Destacar"}
-      </button>
-
-      <button
-        type="button"
-        onClick={archiveEvent}
-        disabled={loading || archiving}
-        className="mt-3 w-full rounded-full border border-yellow-900 bg-yellow-950/20 px-4 py-3 text-sm font-black text-yellow-500 disabled:opacity-50"
-      >
-        {archiving ? "A arquivar..." : "Arquivar / despublicar"}
-      </button>
-
       {message && (
-        <p className="mt-3 text-center text-sm font-bold text-zinc-400">
+        <p className="text-center text-xs font-bold text-zinc-500">
           {message}
         </p>
       )}
