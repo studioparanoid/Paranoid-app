@@ -321,12 +321,12 @@ export function OrganizerDashboardClient({
                     Ver
                   </Link>
 
-                  <button
-                    type="button"
-                    className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300"
-                  >
-                    Editar
-                  </button>
+                  <Link
+  href={`/organizador/eventos/${event.id}`}
+  className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+>
+  Editar
+</Link>
                 </div>
               </article>
             ))}
