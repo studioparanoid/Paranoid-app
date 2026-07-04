@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/public";
 
@@ -25,26 +25,6 @@ const cities = [
   "Marinha Grande",
 ];
 
-type EventRow = {
-  id: string;
-  slug: string;
-  title: string;
-  city: string;
-  venue_id: string | null;
-  venue_name: string | null;
-  organizer_id: string | null;
-  organizer_name: string | null;
-  start_at: string | null;
-  display_date: string | null;
-  display_time: string | null;
-  category: string;
-  price: string | null;
-  description: string | null;
-  image_url: string | null;
-  featured: boolean | null;
-  status: string;
-};
-
 type ArtistRow = {
   id: string;
   slug: string;
@@ -63,12 +43,9 @@ type OrganizerRow = {
   name: string;
 };
 
-type EventArtistRelationRow = {
-  artists: ArtistRow | ArtistRow[] | null;
-};
-
-type AdminEventEditClientProps = {
-  eventId: string;
+type CreatedEventRow = {
+  id: string;
+  slug: string;
 };
 
 function slugify(value: string) {
@@ -80,26 +57,17 @@ function slugify(value: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value
-  );
-}
-
 function getStartAt(displayDate: string, displayTime: string) {
   if (!displayDate) {
     return new Date().toISOString();
   }
 
   const cleanTime = displayTime || "00:00";
+
   const timeWithSeconds =
     cleanTime.split(":").length === 2 ? `${cleanTime}:00` : cleanTime;
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(displayDate)) {
-    return `${displayDate}T${timeWithSeconds}+00:00`;
-  }
-
-  return new Date().toISOString();
+  return `${displayDate}T${timeWithSeconds}+00:00`;
 }
 
 function getArtistNames(artistsText: string) {
@@ -109,32 +77,6 @@ function getArtistNames(artistsText: string) {
     .filter(Boolean);
 
   return Array.from(new Set(names));
-}
-
-function formatTimeForInput(value: string | null) {
-  if (!value) {
-    return "";
-  }
-
-  const parts = value.split(":");
-
-  if (parts.length >= 2) {
-    return `${parts[0]}:${parts[1]}`;
-  }
-
-  return value;
-}
-
-function formatDateForInput(value: string | null) {
-  if (!value) {
-    return "";
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return value;
-  }
-
-  return "";
 }
 
 function formatPriceValue(value: string) {
@@ -159,38 +101,9 @@ function formatPriceValue(value: string) {
   return cleanPrice;
 }
 
-function getArtistNamesFromRelationRows(rows: EventArtistRelationRow[]) {
-  const names: string[] = [];
-
-  for (const row of rows) {
-    if (!row.artists) {
-      continue;
-    }
-
-    if (Array.isArray(row.artists)) {
-      for (const artist of row.artists) {
-        if (artist.name) {
-          names.push(artist.name);
-        }
-      }
-
-      continue;
-    }
-
-    if (row.artists.name) {
-      names.push(row.artists.name);
-    }
-  }
-
-  return names;
-}
-
-export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
+export function AdminEventCreateClient() {
   const router = useRouter();
 
-  const [event, setEvent] = useState<EventRow | null>(null);
-
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -206,73 +119,19 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [featured, setFeatured] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadEvent() {
-      const eventQuery = supabase.from("events").select("*");
-
-      const { data: eventData, error: eventError } = isUuid(eventId)
-        ? await eventQuery.eq("id", eventId).maybeSingle()
-        : await eventQuery.eq("slug", eventId).maybeSingle();
-
-      if (eventError || !eventData) {
-        setMessage("Não encontrei este evento.");
-        setLoading(false);
-        return;
-      }
-
-      const loadedEvent = eventData as EventRow;
-
-      setEvent(loadedEvent);
-      setTitle(loadedEvent.title || "");
-      setSlug(loadedEvent.slug || "");
-      setCity(loadedEvent.city || "Pombal");
-      setVenueName(loadedEvent.venue_name || "");
-      setOrganizerName(loadedEvent.organizer_name || "");
-      setDisplayDate(formatDateForInput(loadedEvent.display_date));
-      setDisplayTime(formatTimeForInput(loadedEvent.display_time));
-      setCategory(loadedEvent.category || "Concertos");
-      setPrice(loadedEvent.price || "");
-      setDescription(loadedEvent.description || "");
-      setFeatured(Boolean(loadedEvent.featured));
-      setImageUrl(loadedEvent.image_url);
-
-      const { data: eventArtistsData } = await supabase
-        .from("event_artists")
-        .select(
-          `
-          artists (
-            id,
-            name,
-            slug
-          )
-        `
-        )
-        .eq("event_id", loadedEvent.id);
-
-      const relationRows = (eventArtistsData ||
-        []) as unknown as EventArtistRelationRow[];
-
-      const artistNames = getArtistNamesFromRelationRows(relationRows);
-
-      setArtistsText(artistNames.join(", "));
-
-      setLoading(false);
-    }
-
-    loadEvent();
-  }, [eventId]);
 
   function generateSlugFromTitle() {
     if (!title) {
       return;
     }
 
-    setSlug(slugify(title));
+    const baseSlug = slugify(title);
+    const suffix = crypto.randomUUID().slice(0, 6);
+
+    setSlug(`${baseSlug}-${suffix}`);
   }
 
   function handlePriceBlur() {
@@ -308,7 +167,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
   async function uploadSelectedImage() {
     if (!selectedImageFile) {
-      return imageUrl;
+      return null;
     }
 
     const extension =
@@ -460,21 +319,8 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
     return (createdArtist as ArtistRow).id;
   }
 
-  async function replaceEventArtists() {
-    if (!event) {
-      throw new Error("Evento inválido.");
-    }
-
+  async function attachArtistsToEvent(eventId: string) {
     const artistNames = getArtistNames(artistsText);
-
-    const { error: deleteError } = await supabase
-      .from("event_artists")
-      .delete()
-      .eq("event_id", event.id);
-
-    if (deleteError) {
-      throw new Error(deleteError.message);
-    }
 
     if (artistNames.length === 0) {
       return;
@@ -488,29 +334,24 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
     }
 
     const rows = artistIds.map((artistId) => ({
-      event_id: event.id,
+      event_id: eventId,
       artist_id: artistId,
     }));
 
-    const { error: insertError } = await supabase
-      .from("event_artists")
-      .insert(rows);
+    const { error } = await supabase.from("event_artists").insert(rows);
 
-    if (insertError) {
-      throw new Error(insertError.message);
+    if (error) {
+      throw new Error(error.message);
     }
   }
 
-  async function handleSave() {
+  async function handleCreate() {
     setMessage("");
 
-    if (!event) {
-      setMessage("Evento inválido.");
-      return;
-    }
-
-    if (!title || !slug || !city || !venueName || !organizerName) {
-      setMessage("Preenche título, slug, cidade, espaço e organizador.");
+    if (!title || !slug || !city || !venueName || !organizerName || !displayDate) {
+      setMessage(
+        "Preenche pelo menos título, slug, cidade, espaço, organizador e data."
+      );
       return;
     }
 
@@ -518,7 +359,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
     let venueId: string | null = null;
     let organizerId: string | null = null;
-    let finalImageUrl = imageUrl;
+    let imageUrl: string | null = null;
 
     try {
       venueId = await findOrCreateVenue();
@@ -534,7 +375,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
     }
 
     try {
-      finalImageUrl = await uploadSelectedImage();
+      imageUrl = await uploadSelectedImage();
     } catch (error) {
       setMessage(
         `Erro ao carregar imagem: ${
@@ -545,39 +386,46 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
       return;
     }
 
-    const { error: eventError } = await supabase
+    const { data: createdEvent, error: eventError } = await supabase
       .from("events")
-      .update({
-        title,
+      .insert({
         slug,
+        title,
         city,
         venue_id: venueId,
         venue_name: venueName,
         organizer_id: organizerId,
         organizer_name: organizerName,
         start_at: getStartAt(displayDate, displayTime),
-        display_date: displayDate || "Data por definir",
+        display_date: displayDate,
         display_time: displayTime || "Hora por definir",
         category,
         price: price || "Preço por definir",
         description: description || "",
-        image_url: finalImageUrl,
+        image_url: imageUrl,
         featured,
         status: "published",
       })
-      .eq("id", event.id);
+      .select("id,slug")
+      .single();
 
-    if (eventError) {
-      setMessage(`Erro ao guardar evento: ${eventError.message}`);
+    if (eventError || !createdEvent) {
+      setMessage(
+        `Erro ao criar evento: ${
+          eventError?.message || "sem detalhe do Supabase"
+        }`
+      );
       setSaving(false);
       return;
     }
 
+    const event = createdEvent as CreatedEventRow;
+
     try {
-      await replaceEventArtists();
+      await attachArtistsToEvent(event.id);
     } catch (error) {
       setMessage(
-        `Evento guardado, mas erro nos artistas: ${
+        `Evento criado, mas erro nos artistas: ${
           error instanceof Error ? error.message : "erro desconhecido"
         }`
       );
@@ -585,63 +433,10 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
       return;
     }
 
-    const updatedEvent = {
-      ...event,
-      title,
-      slug,
-      city,
-      venue_id: venueId,
-      venue_name: venueName,
-      organizer_id: organizerId,
-      organizer_name: organizerName,
-      display_date: displayDate || "Data por definir",
-      display_time: displayTime || "Hora por definir",
-      category,
-      price: price || "Preço por definir",
-      description: description || "",
-      image_url: finalImageUrl,
-      featured,
-      status: "published",
-    };
-
-    setEvent(updatedEvent);
-    setImageUrl(finalImageUrl);
-    setSelectedImageFile(null);
-    setImagePreviewUrl(null);
-    setMessage("Evento atualizado.");
+    setMessage("Evento criado.");
     setSaving(false);
-    router.refresh();
-  }
 
-  const visibleImageUrl = imagePreviewUrl || imageUrl;
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
-        <section className="mx-auto max-w-md">
-          <p className="text-zinc-500">A carregar evento...</p>
-        </section>
-      </main>
-    );
-  }
-
-  if (!event) {
-    return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
-        <section className="mx-auto max-w-md">
-          <Link
-            href="/admin"
-            className="mb-6 inline-block text-sm text-zinc-400"
-          >
-            ← Voltar ao admin
-          </Link>
-
-          <h1 className="text-4xl font-black">Evento não encontrado.</h1>
-
-          {message && <p className="mt-4 text-zinc-400">{message}</p>}
-        </section>
-      </main>
-    );
+    router.push(`/admin/eventos/${event.slug}`);
   }
 
   return (
@@ -652,22 +447,22 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
         </Link>
 
         <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-          Editar evento
+          Novo evento
         </p>
 
         <h1 className="text-5xl font-black leading-none tracking-tight">
-          Corrige o que já está vivo.
+          Publica direto.
         </h1>
 
         <p className="mt-5 text-base text-zinc-400">
-          Edita o evento publicado. Espaço, organizador, artistas e imagem são
-          associados automaticamente à rede.
+          Cria um evento manualmente. A Paranoid cria ou associa espaço,
+          organizador e artistas automaticamente.
         </p>
 
-        {visibleImageUrl && (
+        {imagePreviewUrl && (
           <div
             className="mt-6 h-64 rounded-[2rem] bg-cover bg-center"
-            style={{ backgroundImage: `url(${visibleImageUrl})` }}
+            style={{ backgroundImage: `url(${imagePreviewUrl})` }}
           />
         )}
 
@@ -722,7 +517,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             <input
               value={slug}
               onChange={(event) => setSlug(event.target.value)}
-              placeholder="ex: noise-night-pombal"
+              placeholder="ex: noise-night-pombal-a1b2c3"
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
@@ -876,11 +671,11 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
           <button
             type="button"
-            onClick={handleSave}
+            onClick={handleCreate}
             disabled={saving}
             className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
           >
-            {saving ? "A guardar..." : "Guardar evento"}
+            {saving ? "A publicar..." : "Publicar evento"}
           </button>
 
           {message && (
@@ -889,14 +684,12 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             </p>
           )}
 
-          {slug && (
-            <Link
-              href={`/eventos/${slug}`}
-              className="block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-            >
-              Ver evento público
-            </Link>
-          )}
+          <Link
+            href="/admin"
+            className="block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+          >
+            Voltar ao Admin
+          </Link>
         </div>
       </section>
     </main>
