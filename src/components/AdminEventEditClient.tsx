@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase/public";
 
 const categories = [
   "Concertos",
+  "Festivais",
   "DJ Sets",
   "Cinema",
   "Exposições",
@@ -35,6 +36,10 @@ type EventRow = {
   organizer_id: string | null;
   organizer_name: string | null;
   start_at: string | null;
+  end_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_multi_day: boolean | null;
   display_date: string | null;
   display_time: string | null;
   category: string;
@@ -86,43 +91,18 @@ function isUuid(value: string) {
   );
 }
 
-function getStartAt(displayDate: string, displayTime: string) {
-  if (!displayDate) {
-    return new Date().toISOString();
-  }
-
-  const cleanTime = displayTime || "00:00";
-  const timeWithSeconds =
-    cleanTime.split(":").length === 2 ? `${cleanTime}:00` : cleanTime;
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(displayDate)) {
-    return `${displayDate}T${timeWithSeconds}+00:00`;
-  }
-
-  return new Date().toISOString();
-}
-
-function getArtistNames(artistsText: string) {
-  const names = artistsText
-    .split(",")
-    .map((name) => name.trim())
-    .filter(Boolean);
-
-  return Array.from(new Set(names));
-}
-
-function formatTimeForInput(value: string | null) {
+function getDateFromIso(value: string | null) {
   if (!value) {
     return "";
   }
 
-  const parts = value.split(":");
+  const datePart = value.split("T")[0];
 
-  if (parts.length >= 2) {
-    return `${parts[0]}:${parts[1]}`;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    return datePart;
   }
 
-  return value;
+  return "";
 }
 
 function formatDateForInput(value: string | null) {
@@ -135,6 +115,79 @@ function formatDateForInput(value: string | null) {
   }
 
   return "";
+}
+
+function formatTimeForInput(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const parts = value.split(":");
+
+  if (parts.length >= 2 && /^\d{2}$/.test(parts[0])) {
+    return `${parts[0]}:${parts[1]}`;
+  }
+
+  return "";
+}
+
+function getStartAt(startDate: string, displayTime: string) {
+  if (!startDate) {
+    return new Date().toISOString();
+  }
+
+  const cleanTime = displayTime || "00:00";
+  const timeWithSeconds =
+    cleanTime.split(":").length === 2 ? `${cleanTime}:00` : cleanTime;
+
+  return `${startDate}T${timeWithSeconds}+00:00`;
+}
+
+function getEndAt(startDate: string, endDate: string, isMultiDay: boolean) {
+  if (!startDate) {
+    return new Date().toISOString();
+  }
+
+  const finalEndDate = isMultiDay && endDate ? endDate : startDate;
+
+  return `${finalEndDate}T23:59:00+00:00`;
+}
+
+function formatDateForDisplay(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  const parts = value.split("-");
+
+  if (parts.length !== 3) {
+    return value;
+  }
+
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+function buildDisplayDate(startDate: string, endDate: string, isMultiDay: boolean) {
+  if (!startDate) {
+    return "Data por definir";
+  }
+
+  if (isMultiDay && endDate && endDate !== startDate) {
+    return `${formatDateForDisplay(startDate)} — ${formatDateForDisplay(
+      endDate
+    )}`;
+  }
+
+  return formatDateForDisplay(startDate);
+}
+
+function getArtistNames(artistsText: string) {
+  const names = artistsText
+    .split(",")
+    .map((name) => name.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(names));
 }
 
 function formatPriceValue(value: string) {
@@ -200,12 +253,14 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
   const [venueName, setVenueName] = useState("");
   const [organizerName, setOrganizerName] = useState("");
   const [artistsText, setArtistsText] = useState("");
-  const [displayDate, setDisplayDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [displayTime, setDisplayTime] = useState("");
   const [category, setCategory] = useState("Concertos");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [featured, setFeatured] = useState(false);
+  const [isMultiDay, setIsMultiDay] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -227,18 +282,29 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
       const loadedEvent = eventData as EventRow;
 
+      const loadedStartDate =
+        formatDateForInput(loadedEvent.start_date) ||
+        getDateFromIso(loadedEvent.start_at);
+
+      const loadedEndDate =
+        formatDateForInput(loadedEvent.end_date) ||
+        getDateFromIso(loadedEvent.end_at) ||
+        loadedStartDate;
+
       setEvent(loadedEvent);
       setTitle(loadedEvent.title || "");
       setSlug(loadedEvent.slug || "");
       setCity(loadedEvent.city || "Pombal");
       setVenueName(loadedEvent.venue_name || "");
       setOrganizerName(loadedEvent.organizer_name || "");
-      setDisplayDate(formatDateForInput(loadedEvent.display_date));
+      setStartDate(loadedStartDate);
+      setEndDate(loadedEndDate);
       setDisplayTime(formatTimeForInput(loadedEvent.display_time));
       setCategory(loadedEvent.category || "Concertos");
       setPrice(loadedEvent.price || "");
       setDescription(loadedEvent.description || "");
       setFeatured(Boolean(loadedEvent.featured));
+      setIsMultiDay(Boolean(loadedEvent.is_multi_day));
       setImageUrl(loadedEvent.image_url);
 
       const { data: eventArtistsData } = await supabase
@@ -267,12 +333,41 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
     loadEvent();
   }, [eventId]);
 
-  function generateSlugFromTitle() {
-    if (!title) {
-      return;
+  function handleTitleChange(value: string) {
+    setTitle(value);
+    setSlug(slugify(value));
+  }
+
+  function handleCategoryChange(value: string) {
+    setCategory(value);
+
+    if (value === "Festivais") {
+      setIsMultiDay(true);
+
+      if (startDate && !endDate) {
+        setEndDate(startDate);
+      }
+    }
+  }
+
+  function handleMultiDayChange(value: boolean) {
+    setIsMultiDay(value);
+
+    if (!value) {
+      setEndDate("");
     }
 
-    setSlug(slugify(title));
+    if (value && startDate && !endDate) {
+      setEndDate(startDate);
+    }
+  }
+
+  function handleStartDateChange(value: string) {
+    setStartDate(value);
+
+    if (isMultiDay && !endDate) {
+      setEndDate(value);
+    }
   }
 
   function handlePriceBlur() {
@@ -304,6 +399,26 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
     setSelectedImageFile(file);
     setImagePreviewUrl(URL.createObjectURL(file));
+  }
+
+  async function getUniqueEventSlug(baseSlug: string, currentEventId: string) {
+    const cleanBaseSlug = baseSlug || `evento-${crypto.randomUUID().slice(0, 6)}`;
+
+    const { data, error } = await supabase
+      .from("events")
+      .select("id")
+      .eq("slug", cleanBaseSlug)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data || data.id === currentEventId) {
+      return cleanBaseSlug;
+    }
+
+    return `${cleanBaseSlug}-${crypto.randomUUID().slice(0, 6)}`;
   }
 
   async function uploadSelectedImage() {
@@ -509,8 +624,20 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
       return;
     }
 
-    if (!title || !slug || !city || !venueName || !organizerName) {
-      setMessage("Preenche título, slug, cidade, espaço e organizador.");
+    if (!title || !city || !venueName || !organizerName || !startDate) {
+      setMessage(
+        "Preenche pelo menos título, cidade, espaço, organizador e data de início."
+      );
+      return;
+    }
+
+    if (isMultiDay && !endDate) {
+      setMessage("Mete a data de fim do festival.");
+      return;
+    }
+
+    if (isMultiDay && endDate < startDate) {
+      setMessage("A data de fim não pode ser antes da data de início.");
       return;
     }
 
@@ -519,6 +646,24 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
     let venueId: string | null = null;
     let organizerId: string | null = null;
     let finalImageUrl = imageUrl;
+    let finalSlug = slug;
+
+    const finalEndDate = isMultiDay ? endDate || startDate : startDate;
+    const displayDateText = buildDisplayDate(startDate, finalEndDate, isMultiDay);
+    const startAt = getStartAt(startDate, displayTime);
+    const endAt = getEndAt(startDate, finalEndDate, isMultiDay);
+
+    try {
+      finalSlug = await getUniqueEventSlug(slug || slugify(title), event.id);
+    } catch (error) {
+      setMessage(
+        `Erro ao gerar slug: ${
+          error instanceof Error ? error.message : "erro desconhecido"
+        }`
+      );
+      setSaving(false);
+      return;
+    }
 
     try {
       venueId = await findOrCreateVenue();
@@ -549,14 +694,18 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
       .from("events")
       .update({
         title,
-        slug,
+        slug: finalSlug,
         city,
         venue_id: venueId,
         venue_name: venueName,
         organizer_id: organizerId,
         organizer_name: organizerName,
-        start_at: getStartAt(displayDate, displayTime),
-        display_date: displayDate || "Data por definir",
+        start_at: startAt,
+        end_at: endAt,
+        start_date: startDate,
+        end_date: finalEndDate,
+        is_multi_day: isMultiDay,
+        display_date: displayDateText,
         display_time: displayTime || "Hora por definir",
         category,
         price: price || "Preço por definir",
@@ -588,13 +737,18 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
     const updatedEvent = {
       ...event,
       title,
-      slug,
+      slug: finalSlug,
       city,
       venue_id: venueId,
       venue_name: venueName,
       organizer_id: organizerId,
       organizer_name: organizerName,
-      display_date: displayDate || "Data por definir",
+      start_at: startAt,
+      end_at: endAt,
+      start_date: startDate,
+      end_date: finalEndDate,
+      is_multi_day: isMultiDay,
+      display_date: displayDateText,
       display_time: displayTime || "Hora por definir",
       category,
       price: price || "Preço por definir",
@@ -605,6 +759,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
     };
 
     setEvent(updatedEvent);
+    setSlug(finalSlug);
     setImageUrl(finalImageUrl);
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
@@ -660,8 +815,8 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
         </h1>
 
         <p className="mt-5 text-base text-zinc-400">
-          Edita o evento publicado. Espaço, organizador, artistas e imagem são
-          associados automaticamente à rede.
+          O slug acompanha o título. Também podes transformar este evento num
+          festival de vários dias.
         </p>
 
         {visibleImageUrl && (
@@ -698,36 +853,27 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
             <input
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              onChange={(event) => handleTitleChange(event.target.value)}
               placeholder="Nome do evento"
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
           </div>
 
           <div>
-            <div className="mb-2 flex items-center justify-between gap-4">
-              <label className="block text-sm font-bold text-zinc-300">
-                Slug
-              </label>
-
-              <button
-                type="button"
-                onClick={generateSlugFromTitle}
-                className="text-xs font-bold uppercase tracking-wide text-red-500"
-              >
-                Gerar pelo título
-              </button>
-            </div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Slug automático
+            </label>
 
             <input
               value={slug}
-              onChange={(event) => setSlug(event.target.value)}
-              placeholder="ex: noise-night-pombal"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              readOnly
+              placeholder="gerado-automaticamente"
+              className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-zinc-400 outline-none placeholder:text-zinc-700"
             />
 
             <p className="mt-2 text-xs text-zinc-600">
-              Link público: /eventos/{slug || "slug"}
+              É gerado pelo título. Se já existir, a app acrescenta um código no
+              fim ao guardar.
             </p>
           </div>
 
@@ -768,7 +914,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={(event) => handleCategoryChange(event.target.value)}
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
             >
               {categories.map((item) => (
@@ -776,6 +922,18 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
               ))}
             </select>
           </div>
+
+          <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+            <input
+              type="checkbox"
+              checked={isMultiDay}
+              onChange={(event) => handleMultiDayChange(event.target.checked)}
+            />
+
+            <span className="text-sm font-bold text-zinc-300">
+              Festival / evento de vários dias
+            </span>
+          </label>
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
@@ -806,32 +964,47 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className={isMultiDay ? "grid grid-cols-2 gap-3" : ""}>
             <div>
               <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Data
+                Data início
               </label>
 
               <input
                 type="date"
-                value={displayDate}
-                onChange={(event) => setDisplayDate(event.target.value)}
+                value={startDate}
+                onChange={(event) => handleStartDateChange(event.target.value)}
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Hora
-              </label>
+            {isMultiDay && (
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Data fim
+                </label>
 
-              <input
-                type="time"
-                value={displayTime}
-                onChange={(event) => setDisplayTime(event.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-              />
-            </div>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Hora
+            </label>
+
+            <input
+              type="time"
+              value={displayTime}
+              onChange={(event) => setDisplayTime(event.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+            />
           </div>
 
           <div>
