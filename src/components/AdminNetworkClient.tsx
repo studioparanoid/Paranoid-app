@@ -652,12 +652,21 @@ export function AdminNetworkClient() {
                       )}
                     </div>
 
-                    <Link
-                      href={`/organizadores/${organizer.slug}`}
-                      className="mt-4 block rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
-                    >
-                      Ver perfil
-                    </Link>
+                    <div className="mt-4 flex gap-2">
+                      <Link
+                        href={`/admin/rede/organizadores/${organizer.id}`}
+                        className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+                      >
+                        Editar
+                      </Link>
+
+                      <Link
+                        href={`/organizadores/${organizer.slug}`}
+                        className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+                      >
+                        Ver perfil
+                      </Link>
+                    </div>
                   </article>
                 ))}
 
