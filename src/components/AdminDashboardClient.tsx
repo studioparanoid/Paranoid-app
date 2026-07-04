@@ -29,9 +29,7 @@ type EventRow = {
   title: string;
   city: string;
   venue_name: string | null;
-  venue: string | null;
   organizer_name: string | null;
-  organizer: string | null;
   display_date: string | null;
   display_time: string | null;
   category: string;
@@ -56,9 +54,8 @@ function mapEvent(event: EventRow): AppEvent {
     slug: event.slug,
     title: event.title,
     city: event.city,
-    venue: event.venue_name || event.venue || "Espaço por definir",
-    organizer:
-      event.organizer_name || event.organizer || "Organizador por definir",
+    venue: event.venue_name || "Espaço por definir",
+    organizer: event.organizer_name || "Organizador por definir",
     date: event.display_date || "Data por definir",
     time: event.display_time || "Hora por definir",
     category: event.category,
@@ -97,9 +94,11 @@ export function AdminDashboardClient({
   });
 
   const [loading, setLoading] = useState(false);
+  const [debugMessage, setDebugMessage] = useState("");
 
   async function loadDashboard() {
     setLoading(true);
+    setDebugMessage("");
 
     const [
       submissionsResult,
@@ -116,7 +115,7 @@ export function AdminDashboardClient({
       supabase
         .from("events")
         .select(
-          "id,slug,title,city,venue_name,venue,organizer_name,organizer,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+          "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
         )
         .in("status", ["published", "archived"])
         .order("start_at", { ascending: true }),
@@ -124,6 +123,14 @@ export function AdminDashboardClient({
       supabase.from("venues").select("id", { count: "exact", head: true }),
       supabase.from("organizers").select("id", { count: "exact", head: true }),
     ]);
+
+    if (submissionsResult.error) {
+      setDebugMessage(`Erro submissões: ${submissionsResult.error.message}`);
+    }
+
+    if (eventsResult.error) {
+      setDebugMessage(`Erro eventos: ${eventsResult.error.message}`);
+    }
 
     const loadedSubmissions = !submissionsResult.error
       ? ((submissionsResult.data || []) as EventSubmission[])
@@ -297,6 +304,12 @@ export function AdminDashboardClient({
       >
         {loading ? "A atualizar..." : "Atualizar painel"}
       </button>
+
+      {debugMessage && (
+        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-4">
+          <p className="text-sm font-bold text-red-400">{debugMessage}</p>
+        </div>
+      )}
 
       <section>
         <div className="flex items-end justify-between gap-4">
