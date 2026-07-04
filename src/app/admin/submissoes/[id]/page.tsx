@@ -1,7 +1,7 @@
 import { AdminGuard } from "@/components/AdminGuard";
 import { AdminSubmissionEditClient } from "@/components/AdminSubmissionEditClient";
 
-export default async function EditSubmissionPage({
+export default async function AdminSubmissionEditPage({
   params,
 }: {
   params: Promise<{ id: string }>;

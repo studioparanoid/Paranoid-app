@@ -30,6 +30,42 @@ type AdminSubmissionEditClientProps = {
   submissionId: string;
 };
 
+function formatTimeForInput(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const parts = value.split(":");
+
+  if (parts.length >= 2) {
+    return `${parts[0]}:${parts[1]}`;
+  }
+
+  return value;
+}
+
+function formatPriceValue(value: string) {
+  const cleanPrice = value.trim();
+
+  if (!cleanPrice) {
+    return "";
+  }
+
+  if (
+    cleanPrice.toLowerCase() === "gratis" ||
+    cleanPrice.toLowerCase() === "grátis" ||
+    cleanPrice === "0"
+  ) {
+    return "Entrada livre";
+  }
+
+  if (!cleanPrice.includes("€") && /^\d+([,.]\d{1,2})?$/.test(cleanPrice)) {
+    return `${cleanPrice.replace(".", ",")}€`;
+  }
+
+  return cleanPrice;
+}
+
 export function AdminSubmissionEditClient({
   submissionId,
 }: AdminSubmissionEditClientProps) {
@@ -39,10 +75,13 @@ export function AdminSubmissionEditClient({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [submission, setSubmission] = useState<EventSubmission | null>(null);
+
   const [title, setTitle] = useState("");
   const [city, setCity] = useState("Pombal");
   const [venue, setVenue] = useState("");
   const [organizer, setOrganizer] = useState("");
+  const [artistsText, setArtistsText] = useState("");
   const [category, setCategory] = useState("Concertos");
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
@@ -58,23 +97,24 @@ export function AdminSubmissionEditClient({
         .single();
 
       if (error) {
-        console.error(error);
-        setMessage("Não consegui carregar esta submissão.");
+        setMessage("Não encontrei esta submissão.");
         setLoading(false);
         return;
       }
 
-      const submission = data as EventSubmission;
+      const loadedSubmission = data as EventSubmission;
 
-      setTitle(submission.title || "");
-      setCity(submission.city || "Pombal");
-      setVenue(submission.venue || "");
-      setOrganizer(submission.organizer || "");
-      setCategory(submission.category || "Concertos");
-      setEventDate(submission.event_date || "");
-      setEventTime(submission.event_time || "");
-      setPrice(submission.price || "");
-      setDescription(submission.description || "");
+      setSubmission(loadedSubmission);
+      setTitle(loadedSubmission.title || "");
+      setCity(loadedSubmission.city || "Pombal");
+      setVenue(loadedSubmission.venue || "");
+      setOrganizer(loadedSubmission.organizer || "");
+      setArtistsText(loadedSubmission.artists_text || "");
+      setCategory(loadedSubmission.category || "Concertos");
+      setEventDate(loadedSubmission.event_date || "");
+      setEventTime(formatTimeForInput(loadedSubmission.event_time));
+      setPrice(loadedSubmission.price || "");
+      setDescription(loadedSubmission.description || "");
 
       setLoading(false);
     }
@@ -82,9 +122,24 @@ export function AdminSubmissionEditClient({
     loadSubmission();
   }, [submissionId]);
 
+  function handlePriceBlur() {
+    setPrice(formatPriceValue(price));
+  }
+
   async function handleSave() {
-    setSaving(true);
     setMessage("");
+
+    if (!submission) {
+      setMessage("Submissão inválida.");
+      return;
+    }
+
+    if (!title || !organizer || !city || !venue || !eventDate) {
+      setMessage("Preenche pelo menos nome, organizador, espaço, cidade e data.");
+      return;
+    }
+
+    setSaving(true);
 
     const { error } = await supabase
       .from("event_submissions")
@@ -93,19 +148,19 @@ export function AdminSubmissionEditClient({
         city,
         venue,
         organizer,
+        artists_text: artistsText || null,
         category,
         event_date: eventDate || null,
         event_time: eventTime || null,
-        price,
-        description,
+        price: price || null,
+        description: description || null,
       })
       .eq("id", submissionId);
 
     setSaving(false);
 
     if (error) {
-      console.error(error);
-      setMessage("Erro ao guardar alterações.");
+      setMessage(`Erro ao guardar submissão: ${error.message}`);
       return;
     }
 
@@ -115,16 +170,38 @@ export function AdminSubmissionEditClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
+      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
         <section className="mx-auto max-w-md">
-          <p className="text-zinc-400">A carregar submissão...</p>
+          <p className="text-zinc-500">A carregar submissão...</p>
         </section>
       </main>
     );
   }
 
+  if (!submission) {
+    return (
+      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
+        <section className="mx-auto max-w-md">
+          <Link
+            href="/admin"
+            className="mb-6 inline-block text-sm text-zinc-400"
+          >
+            ← Voltar ao admin
+          </Link>
+
+          <h1 className="text-4xl font-black">Submissão não encontrada.</h1>
+
+          {message && <p className="mt-4 text-zinc-400">{message}</p>}
+        </section>
+      </main>
+    );
+  }
+
+  const isApproved = submission.status === "approved";
+  const isRejected = submission.status === "rejected";
+
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
       <section className="mx-auto max-w-md">
         <Link href="/admin" className="mb-6 inline-block text-sm text-zinc-400">
           ← Voltar ao admin
@@ -139,18 +216,42 @@ export function AdminSubmissionEditClient({
         </h1>
 
         <p className="mt-5 text-base text-zinc-400">
-          Ajusta dados, texto, preço e categoria antes de aprovar o evento.
+          Ajusta os dados da submissão antes de aprovar. Ao aprovar, a Paranoid
+          cria/associa espaço, organizador e artistas automaticamente.
         </p>
+
+        <div className="mt-6 rounded-full border border-yellow-900 bg-yellow-950/30 px-4 py-3 text-center text-xs font-black uppercase tracking-wide text-yellow-500">
+          Estado: {submission.status}
+        </div>
+
+        {submission.image_url && (
+          <div
+            className="mt-6 h-64 rounded-[2rem] bg-cover bg-center"
+            style={{ backgroundImage: `url(${submission.image_url})` }}
+          />
+        )}
+
+        {(isApproved || isRejected) && (
+          <div className="mt-6 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+            <p className="text-sm leading-relaxed text-zinc-400">
+              Esta submissão já foi tratada. Podes consultar os dados, mas o
+              ideal é editar o evento publicado diretamente se já foi aprovado.
+            </p>
+          </div>
+        )}
 
         <div className="mt-8 space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
               Nome do evento
             </label>
+
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              disabled={isApproved || isRejected}
+              placeholder="Nome do evento"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
@@ -158,36 +259,44 @@ export function AdminSubmissionEditClient({
             <label className="mb-2 block text-sm font-bold text-zinc-300">
               Organizador
             </label>
+
             <input
               value={organizer}
               onChange={(event) => setOrganizer(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              disabled={isApproved || isRejected}
+              placeholder="Nome do organizador"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Cidade
+              Artistas / bandas / DJs
             </label>
-            <select
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-            >
-              {cities.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
+
+            <input
+              value={artistsText}
+              onChange={(event) => setArtistsText(event.target.value)}
+              disabled={isApproved || isRejected}
+              placeholder="Ex: Dead Static, Cave Ritual"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
+            />
+
+            <p className="mt-2 text-xs text-zinc-600">
+              Separa vários nomes por vírgula.
+            </p>
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
               Categoria
             </label>
+
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              disabled={isApproved || isRejected}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
             >
               {categories.map((item) => (
                 <option key={item}>{item}</option>
@@ -197,12 +306,32 @@ export function AdminSubmissionEditClient({
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Cidade
+            </label>
+
+            <select
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              disabled={isApproved || isRejected}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
+            >
+              {cities.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
               Espaço / local
             </label>
+
             <input
               value={venue}
               onChange={(event) => setVenue(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              disabled={isApproved || isRejected}
+              placeholder="Nome do espaço"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
@@ -211,11 +340,13 @@ export function AdminSubmissionEditClient({
               <label className="mb-2 block text-sm font-bold text-zinc-300">
                 Data
               </label>
+
               <input
                 type="date"
                 value={eventDate}
                 onChange={(event) => setEventDate(event.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                disabled={isApproved || isRejected}
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
               />
             </div>
 
@@ -223,11 +354,13 @@ export function AdminSubmissionEditClient({
               <label className="mb-2 block text-sm font-bold text-zinc-300">
                 Hora
               </label>
+
               <input
                 type="time"
                 value={eventTime}
                 onChange={(event) => setEventTime(event.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                disabled={isApproved || isRejected}
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
               />
             </div>
           </div>
@@ -236,10 +369,14 @@ export function AdminSubmissionEditClient({
             <label className="mb-2 block text-sm font-bold text-zinc-300">
               Preço
             </label>
+
             <input
               value={price}
               onChange={(event) => setPrice(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              onBlur={handlePriceBlur}
+              disabled={isApproved || isRejected}
+              placeholder="Ex: 5€, 10€ ou Entrada livre"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
@@ -247,28 +384,40 @@ export function AdminSubmissionEditClient({
             <label className="mb-2 block text-sm font-bold text-zinc-300">
               Descrição
             </label>
+
             <textarea
               rows={7}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              disabled={isApproved || isRejected}
+              placeholder="Descrição do evento"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-          >
-            {saving ? "A guardar..." : "Guardar alterações"}
-          </button>
+          {!isApproved && !isRejected && (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+            >
+              {saving ? "A guardar..." : "Guardar submissão"}
+            </button>
+          )}
 
           {message && (
             <p className="text-center text-sm font-bold text-zinc-400">
               {message}
             </p>
           )}
+
+          <Link
+            href="/admin"
+            className="block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+          >
+            Voltar ao Admin
+          </Link>
         </div>
       </section>
     </main>
