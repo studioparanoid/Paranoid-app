@@ -21,6 +21,11 @@ type FollowEntity = {
   name: string;
 };
 
+type ProfilePreferences = {
+  preferred_cities: string[] | null;
+  preferred_categories: string[] | null;
+};
+
 export function PersonalizedFeedClient({
   events,
 }: PersonalizedFeedClientProps) {
@@ -37,15 +42,18 @@ export function PersonalizedFeedClient({
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    setPreferredCities(
-      JSON.parse(localStorage.getItem("preferredCities") || "[]")
-    );
-
-    setPreferredCategories(
-      JSON.parse(localStorage.getItem("preferredCategories") || "[]")
-    );
-
     async function loadPersonalData() {
+      const localCities = JSON.parse(
+        localStorage.getItem("preferredCities") || "[]"
+      ) as string[];
+
+      const localCategories = JSON.parse(
+        localStorage.getItem("preferredCategories") || "[]"
+      ) as string[];
+
+      setPreferredCities(localCities);
+      setPreferredCategories(localCategories);
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -58,13 +66,25 @@ export function PersonalizedFeedClient({
 
       setLoggedIn(true);
 
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("preferred_cities,preferred_categories")
+        .eq("id", user.id)
+        .single();
+
+      if (profileData) {
+        const profile = profileData as ProfilePreferences;
+
+        setPreferredCities(profile.preferred_cities || []);
+        setPreferredCategories(profile.preferred_categories || []);
+      }
+
       const { data: followsData, error: followsError } = await supabase
         .from("follows")
         .select("target_type,target_id")
         .eq("user_id", user.id);
 
       if (followsError) {
-        console.error(followsError);
         setLoading(false);
         return;
       }

@@ -28,6 +28,8 @@ type ProfileRow = {
   username: string | null;
   city: string | null;
   role: string | null;
+  preferred_cities: string[] | null;
+  preferred_categories: string[] | null;
 };
 
 type FollowRow = {
@@ -77,17 +79,23 @@ export function ProfileClient() {
   >([]);
 
   useEffect(() => {
-    setSelectedCities(
-      JSON.parse(localStorage.getItem("preferredCities") || "[]")
-    );
-
-    setSelectedCategories(
-      JSON.parse(localStorage.getItem("preferredCategories") || "[]")
-    );
-
-    setSavedCount(JSON.parse(localStorage.getItem("savedEvents") || "[]").length);
-
     async function loadAccount() {
+      const localCities = JSON.parse(
+        localStorage.getItem("preferredCities") || "[]"
+      ) as string[];
+
+      const localCategories = JSON.parse(
+        localStorage.getItem("preferredCategories") || "[]"
+      ) as string[];
+
+      const localSavedEvents = JSON.parse(
+        localStorage.getItem("savedEvents") || "[]"
+      ) as string[];
+
+      setSelectedCities(localCities);
+      setSelectedCategories(localCategories);
+      setSavedCount(localSavedEvents.length);
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -116,6 +124,41 @@ export function ProfileClient() {
       setDisplayName(profile.display_name || "");
       setAccountCity(profile.city || "");
       setRole(profile.role || "public_user");
+
+      const cloudCities = profile.preferred_cities || [];
+      const cloudCategories = profile.preferred_categories || [];
+
+      if (cloudCities.length > 0) {
+        setSelectedCities(cloudCities);
+      } else if (localCities.length > 0) {
+        setSelectedCities(localCities);
+
+        await supabase
+          .from("profiles")
+          .update({
+            preferred_cities: localCities,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+
+        localStorage.removeItem("preferredCities");
+      }
+
+      if (cloudCategories.length > 0) {
+        setSelectedCategories(cloudCategories);
+      } else if (localCategories.length > 0) {
+        setSelectedCategories(localCategories);
+
+        await supabase
+          .from("profiles")
+          .update({
+            preferred_categories: localCategories,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+
+        localStorage.removeItem("preferredCategories");
+      }
 
       const { data: savedData } = await supabase
         .from("saved_events")
@@ -183,22 +226,42 @@ export function ProfileClient() {
     loadAccount();
   }, []);
 
-  function toggleCity(city: string) {
+  async function savePreferences(nextCities: string[], nextCategories: string[]) {
+    if (!userId) {
+      localStorage.setItem("preferredCities", JSON.stringify(nextCities));
+      localStorage.setItem(
+        "preferredCategories",
+        JSON.stringify(nextCategories)
+      );
+      return;
+    }
+
+    await supabase
+      .from("profiles")
+      .update({
+        preferred_cities: nextCities,
+        preferred_categories: nextCategories,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+  }
+
+  async function toggleCity(city: string) {
     const next = selectedCities.includes(city)
       ? selectedCities.filter((item) => item !== city)
       : [...selectedCities, city];
 
     setSelectedCities(next);
-    localStorage.setItem("preferredCities", JSON.stringify(next));
+    await savePreferences(next, selectedCategories);
   }
 
-  function toggleCategory(category: string) {
+  async function toggleCategory(category: string) {
     const next = selectedCategories.includes(category)
       ? selectedCategories.filter((item) => item !== category)
       : [...selectedCategories, category];
 
     setSelectedCategories(next);
-    localStorage.setItem("preferredCategories", JSON.stringify(next));
+    await savePreferences(selectedCities, next);
   }
 
   async function saveProfile() {
@@ -214,6 +277,8 @@ export function ProfileClient() {
       .update({
         display_name: displayName,
         city: accountCity || null,
+        preferred_cities: selectedCities,
+        preferred_categories: selectedCategories,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
