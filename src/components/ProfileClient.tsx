@@ -362,6 +362,12 @@ export function ProfileClient() {
           <p className="mt-1 text-sm text-zinc-500">
             Artistas, espaços e organizadores que estás a seguir.
           </p>
+<Link
+  href="/descobrir"
+  className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+>
+  Descobrir rede
+</Link>
 
           <div className="mt-4 space-y-4">
             {followedArtists.length > 0 && (
