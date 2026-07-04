@@ -8,6 +8,7 @@ import { type EventSubmission } from "@/lib/submissions";
 
 const categories = [
   "Concertos",
+  "Festivais",
   "DJ Sets",
   "Cinema",
   "Exposições",
@@ -30,6 +31,46 @@ type OrganizerSubmissionEditClientProps = {
   submissionId: string;
 };
 
+type MembershipRow = {
+  organizer_id: string;
+};
+
+function formatTimeForInput(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const parts = value.split(":");
+
+  if (parts.length >= 2) {
+    return `${parts[0]}:${parts[1]}`;
+  }
+
+  return value;
+}
+
+function formatPriceValue(value: string) {
+  const cleanPrice = value.trim();
+
+  if (!cleanPrice) {
+    return "";
+  }
+
+  if (
+    cleanPrice.toLowerCase() === "gratis" ||
+    cleanPrice.toLowerCase() === "grátis" ||
+    cleanPrice === "0"
+  ) {
+    return "Entrada livre";
+  }
+
+  if (!cleanPrice.includes("€") && /^\d+([,.]\d{1,2})?$/.test(cleanPrice)) {
+    return `${cleanPrice.replace(".", ",")}€`;
+  }
+
+  return cleanPrice;
+}
+
 export function OrganizerSubmissionEditClient({
   submissionId,
 }: OrganizerSubmissionEditClientProps) {
@@ -40,25 +81,33 @@ export function OrganizerSubmissionEditClient({
   const [message, setMessage] = useState("");
 
   const [submission, setSubmission] = useState<EventSubmission | null>(null);
+  const [canEdit, setCanEdit] = useState(false);
 
   const [title, setTitle] = useState("");
   const [city, setCity] = useState("Pombal");
   const [venue, setVenue] = useState("");
   const [organizer, setOrganizer] = useState("");
+  const [artistsText, setArtistsText] = useState("");
   const [category, setCategory] = useState("Concertos");
   const [eventDate, setEventDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isMultiDay, setIsMultiDay] = useState(false);
   const [eventTime, setEventTime] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
 
   useEffect(() => {
     async function loadSubmission() {
+      setLoading(true);
+      setMessage("");
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.href = "/login";
+        setMessage("Tens de iniciar sessão como organizador.");
+        setLoading(false);
         return;
       }
 
@@ -66,25 +115,48 @@ export function OrganizerSubmissionEditClient({
         .from("event_submissions")
         .select("*")
         .eq("id", submissionId)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error(error);
-        setMessage("Não encontrei esta submissão ou não tens acesso.");
+      if (error || !data) {
+        setMessage("Não encontrei esta submissão.");
         setLoading(false);
         return;
       }
 
       const loadedSubmission = data as EventSubmission;
 
+      let allowed = loadedSubmission.submitted_by === user.id;
+
+      if (loadedSubmission.organizer_id) {
+        const { data: membershipData } = await supabase
+          .from("organizer_members")
+          .select("organizer_id")
+          .eq("user_id", user.id)
+          .eq("organizer_id", loadedSubmission.organizer_id)
+          .maybeSingle();
+
+        allowed = allowed || Boolean(membershipData as MembershipRow | null);
+      }
+
+      if (!allowed) {
+        setMessage("Não tens permissão para editar esta submissão.");
+        setLoading(false);
+        return;
+      }
+
       setSubmission(loadedSubmission);
+      setCanEdit(loadedSubmission.status === "pending");
+
       setTitle(loadedSubmission.title || "");
       setCity(loadedSubmission.city || "Pombal");
       setVenue(loadedSubmission.venue || "");
       setOrganizer(loadedSubmission.organizer || "");
+      setArtistsText(loadedSubmission.artists_text || "");
       setCategory(loadedSubmission.category || "Concertos");
       setEventDate(loadedSubmission.event_date || "");
-      setEventTime(loadedSubmission.event_time || "");
+      setEndDate(loadedSubmission.end_date || "");
+      setIsMultiDay(Boolean(loadedSubmission.is_multi_day));
+      setEventTime(formatTimeForInput(loadedSubmission.event_time));
       setPrice(loadedSubmission.price || "");
       setDescription(loadedSubmission.description || "");
 
@@ -94,42 +166,75 @@ export function OrganizerSubmissionEditClient({
     loadSubmission();
   }, [submissionId]);
 
-  function formatPrice() {
-    const cleanPrice = price.trim();
+  function handleCategoryChange(value: string) {
+    setCategory(value);
 
-    if (!cleanPrice) {
-      return;
-    }
+    if (value === "Festivais") {
+      setIsMultiDay(true);
 
-    if (
-      cleanPrice.toLowerCase() === "gratis" ||
-      cleanPrice.toLowerCase() === "grátis" ||
-      cleanPrice === "0"
-    ) {
-      setPrice("Entrada livre");
-      return;
-    }
-
-    if (!cleanPrice.includes("€") && /^\d+([,.]\d{1,2})?$/.test(cleanPrice)) {
-      setPrice(`${cleanPrice.replace(".", ",")}€`);
+      if (eventDate && !endDate) {
+        setEndDate(eventDate);
+      }
     }
   }
 
+  function handleMultiDayChange(value: boolean) {
+    setIsMultiDay(value);
+
+    if (!value) {
+      setEndDate("");
+    }
+
+    if (value && eventDate && !endDate) {
+      setEndDate(eventDate);
+    }
+  }
+
+  function handleEventDateChange(value: string) {
+    setEventDate(value);
+
+    if (isMultiDay && !endDate) {
+      setEndDate(value);
+    }
+  }
+
+  function handlePriceBlur() {
+    setPrice(formatPriceValue(price));
+  }
+
   async function handleSave() {
-    setSaving(true);
     setMessage("");
 
     if (!submission) {
-      setSaving(false);
       setMessage("Submissão inválida.");
       return;
     }
 
-    if (submission.status !== "pending") {
-      setSaving(false);
-      setMessage("Esta submissão já não está pendente.");
+    if (!canEdit) {
+      setMessage("Esta submissão já não pode ser editada.");
       return;
     }
+
+    if (!title || !organizer || !city || !venue || !eventDate) {
+      setMessage(
+        "Preenche pelo menos nome, organizador, espaço, cidade e data de início."
+      );
+      return;
+    }
+
+    if (isMultiDay && !endDate) {
+      setMessage("Mete a data de fim do festival.");
+      return;
+    }
+
+    if (isMultiDay && endDate < eventDate) {
+      setMessage("A data de fim não pode ser antes da data de início.");
+      return;
+    }
+
+    setSaving(true);
+
+    const finalEndDate = isMultiDay ? endDate || eventDate : null;
 
     const { error } = await supabase
       .from("event_submissions")
@@ -138,19 +243,22 @@ export function OrganizerSubmissionEditClient({
         city,
         venue,
         organizer,
+        artists_text: artistsText || null,
         category,
         event_date: eventDate || null,
+        end_date: finalEndDate,
+        is_multi_day: isMultiDay,
         event_time: eventTime || null,
-        price,
-        description,
+        price: price || null,
+        description: description || null,
       })
-      .eq("id", submissionId);
+      .eq("id", submissionId)
+      .eq("status", "pending");
 
     setSaving(false);
 
     if (error) {
-      console.error(error);
-      setMessage("Erro ao guardar alterações.");
+      setMessage(`Erro ao guardar submissão: ${error.message}`);
       return;
     }
 
@@ -160,7 +268,7 @@ export function OrganizerSubmissionEditClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
+      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
         <section className="mx-auto max-w-md">
           <p className="text-zinc-500">A carregar submissão...</p>
         </section>
@@ -170,53 +278,57 @@ export function OrganizerSubmissionEditClient({
 
   if (!submission) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
+      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
         <section className="mx-auto max-w-md">
           <Link
             href="/organizador"
             className="mb-6 inline-block text-sm text-zinc-400"
           >
-            ← Voltar ao organizador
+            ← Voltar ao painel
           </Link>
 
-          <h1 className="text-4xl font-black">Sem acesso.</h1>
+          <h1 className="text-4xl font-black">Submissão não disponível.</h1>
 
-          <p className="mt-4 text-zinc-400">
-            Esta submissão não existe ou não pertence ao teu organizador.
-          </p>
+          {message && <p className="mt-4 text-zinc-400">{message}</p>}
         </section>
       </main>
     );
   }
 
-  const isEditable = submission.status === "pending";
-
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
       <section className="mx-auto max-w-md">
         <Link
           href="/organizador"
           className="mb-6 inline-block text-sm text-zinc-400"
         >
-          ← Voltar ao organizador
+          ← Voltar ao painel
         </Link>
 
         <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-          Editar submissão
+          Submissão
         </p>
 
         <h1 className="text-5xl font-black leading-none tracking-tight">
-          Corrige antes da aprovação.
+          Corrige antes da Paranoid rever.
         </h1>
 
         <p className="mt-5 text-base text-zinc-400">
-          Enquanto estiver pendente, podes ajustar a submissão antes da Paranoid
-          aprovar.
+          Enquanto a submissão estiver pendente, podes editar os dados enviados.
         </p>
 
         <div className="mt-6 rounded-full border border-yellow-900 bg-yellow-950/30 px-4 py-3 text-center text-xs font-black uppercase tracking-wide text-yellow-500">
           Estado: {submission.status}
         </div>
+
+        {!canEdit && (
+          <div className="mt-6 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+            <p className="text-sm leading-relaxed text-zinc-400">
+              Esta submissão já foi tratada. Se precisares de corrigir um evento
+              aprovado, edita o evento publicado no painel do organizador.
+            </p>
+          </div>
+        )}
 
         {submission.image_url && (
           <div
@@ -234,8 +346,9 @@ export function OrganizerSubmissionEditClient({
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              disabled={!isEditable}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+              disabled={!canEdit}
+              placeholder="Nome do evento"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
@@ -247,26 +360,28 @@ export function OrganizerSubmissionEditClient({
             <input
               value={organizer}
               onChange={(event) => setOrganizer(event.target.value)}
-              disabled={!isEditable}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+              disabled={!canEdit}
+              placeholder="Nome do organizador"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Cidade
+              Artistas / bandas / DJs
             </label>
 
-            <select
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              disabled={!isEditable}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
-            >
-              {cities.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
+            <input
+              value={artistsText}
+              onChange={(event) => setArtistsText(event.target.value)}
+              disabled={!canEdit}
+              placeholder="Ex: Dead Static, Cave Ritual"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
+            />
+
+            <p className="mt-2 text-xs text-zinc-600">
+              Separa vários nomes por vírgula.
+            </p>
           </div>
 
           <div>
@@ -276,11 +391,41 @@ export function OrganizerSubmissionEditClient({
 
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              disabled={!isEditable}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+              onChange={(event) => handleCategoryChange(event.target.value)}
+              disabled={!canEdit}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
             >
               {categories.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </div>
+
+          <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+            <input
+              type="checkbox"
+              checked={isMultiDay}
+              onChange={(event) => handleMultiDayChange(event.target.checked)}
+              disabled={!canEdit}
+            />
+
+            <span className="text-sm font-bold text-zinc-300">
+              Festival / evento de vários dias
+            </span>
+          </label>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Cidade
+            </label>
+
+            <select
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              disabled={!canEdit}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
+            >
+              {cities.map((item) => (
                 <option key={item}>{item}</option>
               ))}
             </select>
@@ -294,39 +439,56 @@ export function OrganizerSubmissionEditClient({
             <input
               value={venue}
               onChange={(event) => setVenue(event.target.value)}
-              disabled={!isEditable}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+              disabled={!canEdit}
+              placeholder="Nome do espaço"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className={isMultiDay ? "grid grid-cols-2 gap-3" : ""}>
             <div>
               <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Data
+                Data início
               </label>
 
               <input
                 type="date"
                 value={eventDate}
-                onChange={(event) => setEventDate(event.target.value)}
-                disabled={!isEditable}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+                onChange={(event) => handleEventDateChange(event.target.value)}
+                disabled={!canEdit}
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Hora
-              </label>
+            {isMultiDay && (
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Data fim
+                </label>
 
-              <input
-                type="time"
-                value={eventTime}
-                onChange={(event) => setEventTime(event.target.value)}
-                disabled={!isEditable}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
-              />
-            </div>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                  disabled={!canEdit}
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Hora
+            </label>
+
+            <input
+              type="time"
+              value={eventTime}
+              onChange={(event) => setEventTime(event.target.value)}
+              disabled={!canEdit}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
+            />
           </div>
 
           <div>
@@ -337,9 +499,10 @@ export function OrganizerSubmissionEditClient({
             <input
               value={price}
               onChange={(event) => setPrice(event.target.value)}
-              onBlur={formatPrice}
-              disabled={!isEditable}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+              onBlur={handlePriceBlur}
+              disabled={!canEdit}
+              placeholder="Ex: 5€, 10€ ou Entrada livre"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
@@ -352,24 +515,21 @@ export function OrganizerSubmissionEditClient({
               rows={7}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              disabled={!isEditable}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+              disabled={!canEdit}
+              placeholder="Descrição do evento"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900 disabled:opacity-50"
             />
           </div>
 
-          {isEditable ? (
+          {canEdit && (
             <button
               type="button"
               onClick={handleSave}
               disabled={saving}
               className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
-              {saving ? "A guardar..." : "Guardar alterações"}
+              {saving ? "A guardar..." : "Guardar submissão"}
             </button>
-          ) : (
-            <p className="text-center text-sm font-bold text-zinc-500">
-              Esta submissão já foi tratada e não pode ser editada.
-            </p>
           )}
 
           {message && (
@@ -377,6 +537,13 @@ export function OrganizerSubmissionEditClient({
               {message}
             </p>
           )}
+
+          <Link
+            href="/organizador"
+            className="block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+          >
+            Voltar ao painel
+          </Link>
         </div>
       </section>
     </main>
