@@ -23,6 +23,12 @@ type VenueRow = {
   name: string;
 };
 
+type OrganizerRow = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
 type CreatedEventRow = {
   id: string;
 };
@@ -124,6 +130,64 @@ export function AdminSubmissionActions({
     return (createdVenue as VenueRow).id;
   }
 
+  async function findOrCreateOrganizer() {
+    if (submission.organizer_id) {
+      return submission.organizer_id;
+    }
+
+    const organizerName = submission.organizer?.trim();
+
+    if (!organizerName) {
+      return null;
+    }
+
+    const slug = slugify(organizerName);
+
+    const { data: existingOrganizer, error: existingError } = await supabase
+      .from("organizers")
+      .select("id,slug,name")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (existingError) {
+      throw new Error(existingError.message);
+    }
+
+    if (existingOrganizer) {
+      return (existingOrganizer as OrganizerRow).id;
+    }
+
+    const { data: createdOrganizer, error: createError } = await supabase
+      .from("organizers")
+      .insert({
+        slug,
+        name: organizerName,
+        city: submission.city || "Cidade por definir",
+        description: null,
+        pack: null,
+        verified: false,
+        instagram: null,
+      })
+      .select("id,slug,name")
+      .single();
+
+    if (createError) {
+      const { data: fallbackOrganizer, error: fallbackError } = await supabase
+        .from("organizers")
+        .select("id,slug,name")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (fallbackError || !fallbackOrganizer) {
+        throw new Error(createError.message);
+      }
+
+      return (fallbackOrganizer as OrganizerRow).id;
+    }
+
+    return (createdOrganizer as OrganizerRow).id;
+  }
+
   async function findOrCreateArtist(name: string) {
     const slug = slugify(name);
 
@@ -207,12 +271,25 @@ export function AdminSubmissionActions({
     const startAt = getStartAt(submission.event_date, submission.event_time);
 
     let venueId: string | null = null;
+    let organizerId: string | null = null;
 
     try {
       venueId = await findOrCreateVenue();
     } catch (error) {
       setMessage(
         `Erro ao criar/associar espaço: ${
+          error instanceof Error ? error.message : "erro desconhecido"
+        }`
+      );
+      setLoading(false);
+      return;
+    }
+
+    try {
+      organizerId = await findOrCreateOrganizer();
+    } catch (error) {
+      setMessage(
+        `Erro ao criar/associar organizador: ${
           error instanceof Error ? error.message : "erro desconhecido"
         }`
       );
@@ -228,7 +305,7 @@ export function AdminSubmissionActions({
         city: submission.city,
         venue_id: venueId,
         venue_name: submission.venue || "Espaço por definir",
-        organizer_id: submission.organizer_id || null,
+        organizer_id: organizerId,
         organizer_name: submission.organizer || "Organizador por definir",
         start_at: startAt,
         display_date: submission.event_date || "Data por definir",
@@ -282,7 +359,7 @@ export function AdminSubmissionActions({
       return;
     }
 
-    setMessage("Evento aprovado com espaço e artistas associados.");
+    setMessage("Evento aprovado com organizador, espaço e artistas associados.");
     setLoading(false);
 
     if (onDone) {
