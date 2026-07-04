@@ -5,46 +5,48 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   {
-    label: "Para ti",
     href: "/para-ti",
+    label: "Para ti",
   },
   {
-    label: "Agenda",
     href: "/agenda",
+    label: "Agenda",
   },
   {
-    label: "Descobrir",
     href: "/descobrir",
+    label: "Descobrir",
   },
   {
-    label: "Guardados",
     href: "/guardados",
+    label: "Guardados",
   },
   {
-    label: "Perfil",
     href: "/perfil",
+    label: "Perfil",
   },
 ];
+
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-900 bg-black/95 px-3 py-3 backdrop-blur">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-900 bg-[#0b0b0b]/95 px-2 py-2 backdrop-blur-xl lg:hidden">
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {navItems.map((item) => {
-          const active =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+          const active = isActive(pathname, item.href);
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`rounded-2xl px-2 py-3 text-center text-[11px] font-black uppercase tracking-tight transition ${
+              className={`rounded-2xl px-2 py-3 text-center text-[11px] font-black transition ${
                 active
                   ? "bg-[#f2f1ec] text-black"
-                  : "text-zinc-500 hover:text-[#f2f1ec]"
+                  : "text-zinc-500 hover:bg-zinc-950 hover:text-zinc-300"
               }`}
             >
               {item.label}
