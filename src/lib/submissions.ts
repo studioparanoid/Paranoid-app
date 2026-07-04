@@ -12,6 +12,8 @@ export type EventSubmission = {
   price: string | null;
   description: string | null;
   image_url: string | null;
+  ticket_url: string | null;
+  instagram_url: string | null;
   submitted_by: string | null;
   organizer_id: string | null;
   artists_text: string | null;

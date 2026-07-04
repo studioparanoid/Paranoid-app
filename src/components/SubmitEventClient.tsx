@@ -57,6 +57,20 @@ function formatPriceValue(value: string) {
   return cleanPrice;
 }
 
+function normalizeExternalUrl(value: string) {
+  const cleanValue = value.trim();
+
+  if (!cleanValue) {
+    return null;
+  }
+
+  if (cleanValue.startsWith("http://") || cleanValue.startsWith("https://")) {
+    return cleanValue;
+  }
+
+  return `https://${cleanValue}`;
+}
+
 function getDateLabel(startDate: string, endDate: string, isMultiDay: boolean) {
   if (!startDate) {
     return "Data por definir";
@@ -89,6 +103,8 @@ export function SubmitEventClient() {
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [eventTime, setEventTime] = useState("");
   const [price, setPrice] = useState("");
+  const [ticketUrl, setTicketUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
   const [description, setDescription] = useState("");
 
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -268,6 +284,8 @@ export function SubmitEventClient() {
     setIsMultiDay(false);
     setEventTime("");
     setPrice("");
+    setTicketUrl("");
+    setInstagramUrl("");
     setDescription("");
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
@@ -326,6 +344,8 @@ export function SubmitEventClient() {
       is_multi_day: isMultiDay,
       event_time: eventTime || null,
       price: price || null,
+      ticket_url: normalizeExternalUrl(ticketUrl),
+      instagram_url: normalizeExternalUrl(instagramUrl),
       description: description || null,
       image_url: imageUrl,
       submitted_by: userId,
@@ -379,6 +399,7 @@ export function SubmitEventClient() {
               <p>{eventTime || "Hora por definir"}</p>
               <p>{[venue, city].filter(Boolean).join(" · ") || "Local"}</p>
               <p>{price || "Preço por definir"}</p>
+              {ticketUrl && <p>Bilhetes disponíveis</p>}
             </div>
           </div>
         </div>
@@ -604,6 +625,34 @@ export function SubmitEventClient() {
               onChange={(event) => setPrice(event.target.value)}
               onBlur={handlePriceBlur}
               placeholder="Ex: 5€, 10€ ou Entrada livre"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Bilhetes / inscrição
+            </label>
+
+            <input
+              type="url"
+              value={ticketUrl}
+              onChange={(event) => setTicketUrl(event.target.value)}
+              placeholder="https://..."
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Instagram / página do evento
+            </label>
+
+            <input
+              type="url"
+              value={instagramUrl}
+              onChange={(event) => setInstagramUrl(event.target.value)}
+              placeholder="https://instagram.com/..."
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
           </div>

@@ -18,6 +18,8 @@ type EventRow = {
   price: string | null;
   description: string | null;
   image_url: string | null;
+  ticket_url: string | null;
+  instagram_url: string | null;
   featured: boolean | null;
   status: string | null;
   start_at: string | null;
@@ -50,7 +52,7 @@ async function getEvent(slug: string) {
   const { data, error } = await supabase
     .from("events")
     .select(
-      "id,slug,title,city,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at,end_at"
+      "id,slug,title,city,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,category,price,description,image_url,ticket_url,instagram_url,featured,status,start_at,end_at"
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -232,7 +234,7 @@ export default async function EventPage({
             )}
           </div>
 
-          <div className="lg:sticky lg:top-8">
+          <div className="lg:sticky lg:top-28">
             <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -312,6 +314,38 @@ export default async function EventPage({
                       {artist.name}
                     </Link>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {(event.ticket_url || event.instagram_url) && (
+              <section className="mt-6 rounded-[2rem] border border-red-950 bg-red-950/20 p-5">
+                <p className="text-xs uppercase tracking-[0.25em] text-red-500">
+                  Links
+                </p>
+
+                <div className="mt-4 grid gap-3">
+                  {event.ticket_url && (
+                    <a
+                      href={event.ticket_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+                    >
+                      Bilhetes / inscrição
+                    </a>
+                  )}
+
+                  {event.instagram_url && (
+                    <a
+                      href={event.instagram_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-300"
+                    >
+                      Instagram / mais info
+                    </a>
+                  )}
                 </div>
               </section>
             )}
