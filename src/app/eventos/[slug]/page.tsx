@@ -164,6 +164,24 @@ async function getEventArtists(eventId: string) {
   return getArtistRowsFromRelationRows(relationRows);
 }
 
+function InfoBlock({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+        {label}
+      </p>
+
+      <div className="mt-2 text-lg font-black text-[#f2f1ec]">{children}</div>
+    </div>
+  );
+}
+
 export default async function EventPage({
   params,
 }: {
@@ -184,154 +202,154 @@ export default async function EventPage({
   ]);
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
-      <section className="mx-auto max-w-md">
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+      <section className="mx-auto max-w-md lg:max-w-7xl">
         <Link href="/agenda" className="mb-6 inline-block text-sm text-zinc-400">
           ← Voltar à agenda
         </Link>
 
-        {event.image_url && (
-          <div
-            className="mb-6 h-80 rounded-[2rem] bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${event.image_url})`,
-            }}
-          />
-        )}
-
-        <div className="flex items-start justify-between gap-4">
+        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
           <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-              {event.category || "Evento"}
-            </p>
+            {event.image_url ? (
+              <div
+                className="h-80 rounded-[2rem] bg-cover bg-center lg:h-[720px] lg:rounded-[3rem]"
+                style={{
+                  backgroundImage: `url(${event.image_url})`,
+                }}
+              />
+            ) : (
+              <div className="flex h-80 items-center justify-center rounded-[2rem] border border-zinc-800 bg-zinc-950 lg:h-[720px] lg:rounded-[3rem]">
+                <div className="px-8 text-center">
+                  <p className="text-xs uppercase tracking-[0.35em] text-red-700">
+                    Paranoid
+                  </p>
 
-            <h1 className="text-5xl font-black leading-none tracking-tight">
-              {event.title}
-            </h1>
+                  <p className="mt-4 text-4xl font-black leading-none text-zinc-700 lg:text-7xl">
+                    Poster por chegar.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {event.featured && (
-            <span className="mt-1 rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-black uppercase text-red-400">
-              Destaque
-            </span>
-          )}
-        </div>
+          <div className="lg:sticky lg:top-8">
+            <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
+                    {event.category || "Evento"}
+                  </p>
 
-        <div className="mt-8 space-y-4 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-              Data
-            </p>
+                  <h1 className="text-5xl font-black leading-none tracking-tight lg:text-7xl">
+                    {event.title}
+                  </h1>
+                </div>
 
-            <p className="mt-2 text-lg font-black text-[#f2f1ec]">
-              {event.display_date || "Data por definir"}
-              {event.display_time ? ` · ${event.display_time}` : ""}
-            </p>
+                {event.featured && (
+                  <span className="mt-1 shrink-0 rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-black uppercase text-red-400">
+                    Destaque
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-8 grid gap-5">
+                <InfoBlock label="Data">
+                  <>
+                    {event.display_date || "Data por definir"}
+                    {event.display_time ? ` · ${event.display_time}` : ""}
+                  </>
+                </InfoBlock>
+
+                <InfoBlock label="Cidade">
+                  {event.city || "Cidade por definir"}
+                </InfoBlock>
+
+                <InfoBlock label="Espaço">
+                  {venue ? (
+                    <Link
+                      href={`/espacos/${venue.slug}`}
+                      className="underline decoration-zinc-700 underline-offset-4"
+                    >
+                      {venue.name}
+                    </Link>
+                  ) : (
+                    event.venue_name || "Espaço por definir"
+                  )}
+                </InfoBlock>
+
+                <InfoBlock label="Organizador">
+                  {organizer ? (
+                    <Link
+                      href={`/organizadores/${organizer.slug}`}
+                      className="underline decoration-zinc-700 underline-offset-4"
+                    >
+                      {organizer.name}
+                    </Link>
+                  ) : (
+                    event.organizer_name || "Organizador por definir"
+                  )}
+                </InfoBlock>
+
+                <InfoBlock label="Preço">
+                  {event.price || "Preço por definir"}
+                </InfoBlock>
+              </div>
+            </div>
+
+            {artists.length > 0 && (
+              <section className="mt-6 rounded-[2rem] border border-zinc-800 bg-black p-5">
+                <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+                  Artistas
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {artists.map((artist) => (
+                    <Link
+                      key={artist.id}
+                      href={`/artistas/${artist.slug}`}
+                      className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold text-zinc-300"
+                    >
+                      {artist.name}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <EventPublicActions
+              eventId={event.id}
+              title={event.title}
+              slug={event.slug}
+              description={event.description}
+              startAt={event.start_at}
+              endAt={event.end_at || event.start_at}
+              city={event.city}
+              venueName={event.venue_name}
+            />
           </div>
+        </section>
 
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-              Cidade
-            </p>
+        {event.description && (
+          <section className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:mt-12 lg:p-10">
+            <div className="grid gap-6 lg:grid-cols-[0.35fr_1fr]">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Descrição
+                </p>
 
-            <p className="mt-2 text-lg font-black text-[#f2f1ec]">
-              {event.city || "Cidade por definir"}
-            </p>
-          </div>
+                <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+                  O que vai acontecer.
+                </h2>
+              </div>
 
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-              Espaço
-            </p>
-
-            <p className="mt-2 text-lg font-black text-[#f2f1ec]">
-              {venue ? (
-                <Link
-                  href={`/espacos/${venue.slug}`}
-                  className="underline decoration-zinc-700 underline-offset-4"
-                >
-                  {venue.name}
-                </Link>
-              ) : (
-                event.venue_name || "Espaço por definir"
-              )}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-              Organizador
-            </p>
-
-            <p className="mt-2 text-lg font-black text-[#f2f1ec]">
-              {organizer ? (
-                <Link
-                  href={`/organizadores/${organizer.slug}`}
-                  className="underline decoration-zinc-700 underline-offset-4"
-                >
-                  {organizer.name}
-                </Link>
-              ) : (
-                event.organizer_name || "Organizador por definir"
-              )}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-              Preço
-            </p>
-
-            <p className="mt-2 text-lg font-black text-[#f2f1ec]">
-              {event.price || "Preço por definir"}
-            </p>
-          </div>
-        </div>
-
-        {artists.length > 0 && (
-          <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-black p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-              Artistas
-            </p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {artists.map((artist) => (
-                <Link
-                  key={artist.id}
-                  href={`/artistas/${artist.slug}`}
-                  className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold text-zinc-300"
-                >
-                  {artist.name}
-                </Link>
-              ))}
+              <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-400 lg:text-base">
+                {event.description}
+              </p>
             </div>
           </section>
         )}
 
-        <EventPublicActions
-          eventId={event.id}
-          title={event.title}
-          slug={event.slug}
-          description={event.description}
-          startAt={event.start_at}
-          endAt={event.end_at || event.start_at}
-          city={event.city}
-          venueName={event.venue_name}
-        />
-
-        {event.description && (
-          <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-              Descrição
-            </p>
-
-            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-zinc-400">
-              {event.description}
-            </p>
-          </section>
-        )}
-
-        <div className="mt-8 grid grid-cols-2 gap-3">
+        <section className="mt-8 grid grid-cols-2 gap-3 lg:mt-12 lg:max-w-xl">
           <Link
             href="/agenda"
             className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
@@ -345,7 +363,7 @@ export default async function EventPage({
           >
             Submeter evento
           </Link>
-        </div>
+        </section>
       </section>
     </main>
   );
