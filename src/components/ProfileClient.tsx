@@ -107,7 +107,6 @@ export function ProfileClient() {
         .single();
 
       if (profileError) {
-        console.error(profileError);
         setAccountLoading(false);
         return;
       }
@@ -133,7 +132,6 @@ export function ProfileClient() {
         .eq("user_id", user.id);
 
       if (followsError) {
-        console.error(followsError);
         setAccountLoading(false);
         return;
       }
@@ -221,7 +219,6 @@ export function ProfileClient() {
       .eq("id", userId);
 
     if (error) {
-      console.error(error);
       setProfileMessage("Erro ao guardar perfil.");
       return;
     }
@@ -356,18 +353,40 @@ export function ProfileClient() {
       </section>
 
       {!accountLoading && userId && (
+        <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+          <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
+            Feed pessoal
+          </p>
+
+          <h2 className="text-2xl font-black">Para ti</h2>
+
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            Eventos puxados da tua rede, cidades e categorias preferidas.
+          </p>
+
+          <Link
+            href="/para-ti"
+            className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+          >
+            Abrir Para ti
+          </Link>
+        </section>
+      )}
+
+      {!accountLoading && userId && (
         <section>
           <h2 className="text-2xl font-black">A tua rede</h2>
 
           <p className="mt-1 text-sm text-zinc-500">
             Artistas, espaços e organizadores que estás a seguir.
           </p>
-<Link
-  href="/descobrir"
-  className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
->
-  Descobrir rede
-</Link>
+
+          <Link
+            href="/descobrir"
+            className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+          >
+            Descobrir rede
+          </Link>
 
           <div className="mt-4 space-y-4">
             {followedArtists.length > 0 && (
@@ -456,10 +475,10 @@ export function ProfileClient() {
                 </p>
 
                 <Link
-                  href="/agenda"
+                  href="/descobrir"
                   className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
                 >
-                  Explorar agenda
+                  Descobrir rede
                 </Link>
               </div>
             )}
