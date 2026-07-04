@@ -8,6 +8,7 @@ import { type EventSubmission } from "@/lib/submissions";
 
 const categories = [
   "Concertos",
+  "Festivais",
   "DJ Sets",
   "Cinema",
   "Exposições",
@@ -84,6 +85,8 @@ export function AdminSubmissionEditClient({
   const [artistsText, setArtistsText] = useState("");
   const [category, setCategory] = useState("Concertos");
   const [eventDate, setEventDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isMultiDay, setIsMultiDay] = useState(false);
   const [eventTime, setEventTime] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
@@ -112,6 +115,8 @@ export function AdminSubmissionEditClient({
       setArtistsText(loadedSubmission.artists_text || "");
       setCategory(loadedSubmission.category || "Concertos");
       setEventDate(loadedSubmission.event_date || "");
+      setEndDate(loadedSubmission.end_date || "");
+      setIsMultiDay(Boolean(loadedSubmission.is_multi_day));
       setEventTime(formatTimeForInput(loadedSubmission.event_time));
       setPrice(loadedSubmission.price || "");
       setDescription(loadedSubmission.description || "");
@@ -121,6 +126,38 @@ export function AdminSubmissionEditClient({
 
     loadSubmission();
   }, [submissionId]);
+
+  function handleCategoryChange(value: string) {
+    setCategory(value);
+
+    if (value === "Festivais") {
+      setIsMultiDay(true);
+
+      if (eventDate && !endDate) {
+        setEndDate(eventDate);
+      }
+    }
+  }
+
+  function handleMultiDayChange(value: boolean) {
+    setIsMultiDay(value);
+
+    if (!value) {
+      setEndDate("");
+    }
+
+    if (value && eventDate && !endDate) {
+      setEndDate(eventDate);
+    }
+  }
+
+  function handleEventDateChange(value: string) {
+    setEventDate(value);
+
+    if (isMultiDay && !endDate) {
+      setEndDate(value);
+    }
+  }
 
   function handlePriceBlur() {
     setPrice(formatPriceValue(price));
@@ -135,11 +172,25 @@ export function AdminSubmissionEditClient({
     }
 
     if (!title || !organizer || !city || !venue || !eventDate) {
-      setMessage("Preenche pelo menos nome, organizador, espaço, cidade e data.");
+      setMessage(
+        "Preenche pelo menos nome, organizador, espaço, cidade e data de início."
+      );
+      return;
+    }
+
+    if (isMultiDay && !endDate) {
+      setMessage("Mete a data de fim do festival.");
+      return;
+    }
+
+    if (isMultiDay && endDate < eventDate) {
+      setMessage("A data de fim não pode ser antes da data de início.");
       return;
     }
 
     setSaving(true);
+
+    const finalEndDate = isMultiDay ? endDate || eventDate : null;
 
     const { error } = await supabase
       .from("event_submissions")
@@ -151,6 +202,8 @@ export function AdminSubmissionEditClient({
         artists_text: artistsText || null,
         category,
         event_date: eventDate || null,
+        end_date: finalEndDate,
+        is_multi_day: isMultiDay,
         event_time: eventTime || null,
         price: price || null,
         description: description || null,
@@ -216,8 +269,8 @@ export function AdminSubmissionEditClient({
         </h1>
 
         <p className="mt-5 text-base text-zinc-400">
-          Ajusta os dados da submissão antes de aprovar. Ao aprovar, a Paranoid
-          cria/associa espaço, organizador e artistas automaticamente.
+          Ajusta os dados da submissão antes de aprovar. Também podes corrigir
+          festivais e eventos de vários dias.
         </p>
 
         <div className="mt-6 rounded-full border border-yellow-900 bg-yellow-950/30 px-4 py-3 text-center text-xs font-black uppercase tracking-wide text-yellow-500">
@@ -294,7 +347,7 @@ export function AdminSubmissionEditClient({
 
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={(event) => handleCategoryChange(event.target.value)}
               disabled={isApproved || isRejected}
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
             >
@@ -303,6 +356,19 @@ export function AdminSubmissionEditClient({
               ))}
             </select>
           </div>
+
+          <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+            <input
+              type="checkbox"
+              checked={isMultiDay}
+              onChange={(event) => handleMultiDayChange(event.target.checked)}
+              disabled={isApproved || isRejected}
+            />
+
+            <span className="text-sm font-bold text-zinc-300">
+              Festival / evento de vários dias
+            </span>
+          </label>
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
@@ -335,34 +401,50 @@ export function AdminSubmissionEditClient({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className={isMultiDay ? "grid grid-cols-2 gap-3" : ""}>
             <div>
               <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Data
+                Data início
               </label>
 
               <input
                 type="date"
                 value={eventDate}
-                onChange={(event) => setEventDate(event.target.value)}
+                onChange={(event) => handleEventDateChange(event.target.value)}
                 disabled={isApproved || isRejected}
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Hora
-              </label>
+            {isMultiDay && (
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Data fim
+                </label>
 
-              <input
-                type="time"
-                value={eventTime}
-                onChange={(event) => setEventTime(event.target.value)}
-                disabled={isApproved || isRejected}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
-              />
-            </div>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                  disabled={isApproved || isRejected}
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Hora
+            </label>
+
+            <input
+              type="time"
+              value={eventTime}
+              onChange={(event) => setEventTime(event.target.value)}
+              disabled={isApproved || isRejected}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
+            />
           </div>
 
           <div>
