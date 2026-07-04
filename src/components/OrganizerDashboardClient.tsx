@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 import { type AppEvent } from "@/lib/events";
+import { type EventSubmission } from "@/lib/submissions";
 import {
   getMyOrganizerMemberships,
   type OrganizerMembership,
@@ -19,6 +20,7 @@ export function OrganizerDashboardClient({
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
   const [memberships, setMemberships] = useState<OrganizerMembership[]>([]);
+  const [submissions, setSubmissions] = useState<EventSubmission[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -35,6 +37,25 @@ export function OrganizerDashboardClient({
 
       const userMemberships = await getMyOrganizerMemberships();
       setMemberships(userMemberships);
+
+      const organizerIds = userMemberships.map(
+        (membership) => membership.organizer_id
+      );
+
+      if (organizerIds.length > 0) {
+        const { data, error } = await supabase
+          .from("event_submissions")
+          .select("*")
+          .in("organizer_id", organizerIds)
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Erro ao carregar submissões:", error);
+        } else {
+          setSubmissions((data || []) as EventSubmission[]);
+        }
+      }
+
       setLoading(false);
     }
 
@@ -53,6 +74,26 @@ export function OrganizerDashboardClient({
         event.organizer === organizer.name
     );
   }, [events, organizer]);
+
+  const organizerSubmissions = useMemo(() => {
+    if (!organizer) return [];
+
+    return submissions.filter(
+      (submission) => submission.organizer_id === organizer.id
+    );
+  }, [submissions, organizer]);
+
+  const pendingSubmissions = organizerSubmissions.filter(
+    (submission) => submission.status === "pending"
+  );
+
+  const approvedSubmissions = organizerSubmissions.filter(
+    (submission) => submission.status === "approved"
+  );
+
+  const rejectedSubmissions = organizerSubmissions.filter(
+    (submission) => submission.status === "rejected"
+  );
 
   const totalViews = organizerEvents.length * 327;
   const totalSaves = organizerEvents.length * 21;
@@ -169,9 +210,65 @@ export function OrganizerDashboardClient({
         </div>
 
         <section className="mt-10">
-          <h2 className="text-2xl font-black">Os teus eventos</h2>
+          <h2 className="text-2xl font-black">Submissões pendentes</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Eventos publicados por este organizador.
+            Eventos enviados para aprovação Paranoid.
+          </p>
+
+          <div className="mt-4 space-y-4">
+            {pendingSubmissions.map((submission) => (
+              <article
+                key={submission.id}
+                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
+              >
+                <div
+                  className={`mb-4 h-36 rounded-2xl bg-cover bg-center ${
+                    submission.image_url
+                      ? ""
+                      : "bg-gradient-to-br from-zinc-800 to-red-950"
+                  }`}
+                  style={
+                    submission.image_url
+                      ? { backgroundImage: `url(${submission.image_url})` }
+                      : {}
+                  }
+                />
+
+                <p className="mb-2 text-xs uppercase tracking-[0.25em] text-red-700">
+                  {submission.category}
+                </p>
+
+                <h3 className="text-xl font-black">{submission.title}</h3>
+
+                <p className="mt-2 text-sm text-zinc-400">
+                  {submission.event_date || "Data por definir"} ·{" "}
+                  {submission.event_time || "Hora por definir"}
+                </p>
+
+                <p className="text-sm text-zinc-500">
+                  {submission.venue}, {submission.city}
+                </p>
+
+                <div className="mt-4 rounded-full border border-yellow-900 bg-yellow-950/30 px-4 py-3 text-center text-xs font-black uppercase tracking-wide text-yellow-500">
+                  A aguardar aprovação
+                </div>
+              </article>
+            ))}
+
+            {pendingSubmissions.length === 0 && (
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
+                <p className="text-zinc-400">
+                  Não tens submissões pendentes.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-2xl font-black">Eventos publicados</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Eventos já aprovados e visíveis na Agenda.
           </p>
 
           <div className="mt-4 space-y-4">
@@ -234,6 +331,34 @@ export function OrganizerDashboardClient({
             )}
           </div>
         </section>
+
+        {(approvedSubmissions.length > 0 || rejectedSubmissions.length > 0) && (
+          <section className="mt-10 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+            <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
+              Histórico
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-black p-4 text-center">
+                <p className="text-3xl font-black">
+                  {approvedSubmissions.length}
+                </p>
+                <p className="mt-1 text-xs uppercase text-zinc-600">
+                  Aprovadas
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-black p-4 text-center">
+                <p className="text-3xl font-black">
+                  {rejectedSubmissions.length}
+                </p>
+                <p className="mt-1 text-xs uppercase text-zinc-600">
+                  Rejeitadas
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="mt-10 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
           <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
