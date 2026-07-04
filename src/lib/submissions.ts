@@ -6,6 +6,8 @@ export type EventSubmission = {
   organizer: string;
   category: string;
   event_date: string | null;
+  end_date: string | null;
+  is_multi_day: boolean | null;
   event_time: string | null;
   price: string | null;
   description: string | null;

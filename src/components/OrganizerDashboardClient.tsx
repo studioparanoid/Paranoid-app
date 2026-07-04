@@ -1,392 +1,594 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
-import { type AppEvent } from "@/lib/events";
 import { type EventSubmission } from "@/lib/submissions";
-import {
-  getMyOrganizerMemberships,
-  type OrganizerMembership,
-} from "@/lib/organizer-members";
 
 type OrganizerDashboardClientProps = {
-  events: AppEvent[];
+  events?: unknown[];
+  initialEvents?: unknown[];
 };
 
+type OrganizerRow = {
+  id: string;
+  slug: string;
+  name: string;
+  city: string | null;
+  description: string | null;
+  pack: string | null;
+  verified: boolean | null;
+  instagram: string | null;
+};
+
+type OrganizerMembershipRaw = {
+  organizer_id: string;
+  role: string;
+  organizers: OrganizerRow | OrganizerRow[] | null;
+};
+
+type OrganizerMembership = {
+  organizer_id: string;
+  role: string;
+  organizer: OrganizerRow | null;
+};
+
+type EventRow = {
+  id: string;
+  slug: string;
+  title: string;
+  city: string;
+  venue_name: string | null;
+  organizer_id: string | null;
+  organizer_name: string | null;
+  display_date: string | null;
+  display_time: string | null;
+  category: string;
+  price: string | null;
+  description: string | null;
+  image_url: string | null;
+  featured: boolean | null;
+  status: string | null;
+  start_at: string | null;
+};
+
+function getOrganizerFromRelation(
+  value: OrganizerRow | OrganizerRow[] | null
+) {
+  if (!value) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    return value[0] || null;
+  }
+
+  return value;
+}
+
+function normalizeMemberships(rows: OrganizerMembershipRaw[]) {
+  return rows.map((row) => ({
+    organizer_id: row.organizer_id,
+    role: row.role,
+    organizer: getOrganizerFromRelation(row.organizers),
+  }));
+}
+
+function formatDate(value: string | null) {
+  if (!value) {
+    return "Sem data";
+  }
+
+  return value;
+}
+
 export function OrganizerDashboardClient({
-  events,
+  events: _events,
+  initialEvents: _initialEvents,
 }: OrganizerDashboardClientProps) {
   const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState("");
+  const [message, setMessage] = useState("");
+
   const [memberships, setMemberships] = useState<OrganizerMembership[]>([]);
-  const [submissions, setSubmissions] = useState<EventSubmission[]>([]);
+  const [selectedOrganizerId, setSelectedOrganizerId] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  const [publishedEvents, setPublishedEvents] = useState<EventRow[]>([]);
+  const [pendingSubmissions, setPendingSubmissions] = useState<
+    EventSubmission[]
+  >([]);
 
-      if (!user) {
-        window.location.href = "/login";
-        return;
-      }
+  const selectedMembership = memberships.find(
+    (membership) => membership.organizer_id === selectedOrganizerId
+  );
 
-      setUserEmail(user.email || "");
+  const selectedOrganizer = selectedMembership?.organizer || null;
 
-      const userMemberships = await getMyOrganizerMemberships();
-      setMemberships(userMemberships);
+  async function loadDashboard() {
+    setLoading(true);
+    setMessage("");
 
-      const organizerIds = userMemberships.map(
-        (membership) => membership.organizer_id
-      );
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (organizerIds.length > 0) {
-        const { data, error } = await supabase
-          .from("event_submissions")
-          .select("*")
-          .in("organizer_id", organizerIds)
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.error("Erro ao carregar submissões:", error);
-        } else {
-          setSubmissions((data || []) as EventSubmission[]);
-        }
-      }
-
+    if (!user) {
+      setMessage("Tens de iniciar sessão como organizador.");
       setLoading(false);
+      return;
     }
 
-    load();
+    const { data: membershipsData, error: membershipsError } = await supabase
+      .from("organizer_members")
+      .select(
+        `
+        organizer_id,
+        role,
+        organizers (
+          id,
+          slug,
+          name,
+          city,
+          description,
+          pack,
+          verified,
+          instagram
+        )
+      `
+      )
+      .eq("user_id", user.id);
+
+    if (membershipsError) {
+      setMessage(`Erro ao carregar organizadores: ${membershipsError.message}`);
+      setLoading(false);
+      return;
+    }
+
+    const loadedMemberships = normalizeMemberships(
+      (membershipsData || []) as unknown as OrganizerMembershipRaw[]
+    );
+
+    setMemberships(loadedMemberships);
+
+    const organizerIds = loadedMemberships
+      .map((membership) => membership.organizer_id)
+      .filter(Boolean);
+
+    if (organizerIds.length === 0) {
+      setPublishedEvents([]);
+      setPendingSubmissions([]);
+      setMessage("Esta conta ainda não está ligada a nenhum organizador.");
+      setLoading(false);
+      return;
+    }
+
+    const activeOrganizerId = selectedOrganizerId || organizerIds[0];
+
+    setSelectedOrganizerId(activeOrganizerId);
+
+    const [eventsResult, submissionsResult] = await Promise.all([
+      supabase
+        .from("events")
+        .select(
+          "id,slug,title,city,venue_name,organizer_id,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+        )
+        .eq("organizer_id", activeOrganizerId)
+        .eq("status", "published")
+        .order("start_at", { ascending: true }),
+      supabase
+        .from("event_submissions")
+        .select("*")
+        .eq("organizer_id", activeOrganizerId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    if (eventsResult.error) {
+      setMessage(`Erro ao carregar eventos: ${eventsResult.error.message}`);
+      setPublishedEvents([]);
+    } else {
+      setPublishedEvents((eventsResult.data || []) as EventRow[]);
+    }
+
+    if (submissionsResult.error) {
+      setMessage(
+        `Erro ao carregar submissões: ${submissionsResult.error.message}`
+      );
+      setPendingSubmissions([]);
+    } else {
+      setPendingSubmissions(
+        (submissionsResult.data || []) as EventSubmission[]
+      );
+    }
+
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadDashboard();
   }, []);
 
-  const activeMembership = memberships[0];
-  const organizer = activeMembership?.organizers;
+  async function handleOrganizerChange(organizerId: string) {
+    setSelectedOrganizerId(organizerId);
+    setLoading(true);
+    setMessage("");
 
-  const organizerEvents = useMemo(() => {
-    if (!organizer) return [];
+    const [eventsResult, submissionsResult] = await Promise.all([
+      supabase
+        .from("events")
+        .select(
+          "id,slug,title,city,venue_name,organizer_id,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+        )
+        .eq("organizer_id", organizerId)
+        .eq("status", "published")
+        .order("start_at", { ascending: true }),
+      supabase
+        .from("event_submissions")
+        .select("*")
+        .eq("organizer_id", organizerId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false }),
+    ]);
 
-    return events.filter(
-      (event) =>
-        event.organizerSlug === organizer.slug ||
-        event.organizer === organizer.name
-    );
-  }, [events, organizer]);
+    if (eventsResult.error) {
+      setMessage(`Erro ao carregar eventos: ${eventsResult.error.message}`);
+      setPublishedEvents([]);
+    } else {
+      setPublishedEvents((eventsResult.data || []) as EventRow[]);
+    }
 
-  const organizerSubmissions = useMemo(() => {
-    if (!organizer) return [];
+    if (submissionsResult.error) {
+      setMessage(
+        `Erro ao carregar submissões: ${submissionsResult.error.message}`
+      );
+      setPendingSubmissions([]);
+    } else {
+      setPendingSubmissions(
+        (submissionsResult.data || []) as EventSubmission[]
+      );
+    }
 
-    return submissions.filter(
-      (submission) => submission.organizer_id === organizer.id
-    );
-  }, [submissions, organizer]);
-
-  const pendingSubmissions = organizerSubmissions.filter(
-    (submission) => submission.status === "pending"
-  );
-
-  const approvedSubmissions = organizerSubmissions.filter(
-    (submission) => submission.status === "approved"
-  );
-
-  const rejectedSubmissions = organizerSubmissions.filter(
-    (submission) => submission.status === "rejected"
-  );
-
-  const totalViews = organizerEvents.length * 327;
-  const totalSaves = organizerEvents.length * 21;
-  const ticketClicks = organizerEvents.length * 11;
+    setLoading(false);
+  }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
-        <section className="mx-auto max-w-md">
-          <p className="text-zinc-500">A carregar área do organizador...</p>
-        </section>
-      </main>
+      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+        <p className="text-zinc-500">A carregar painel do organizador...</p>
+      </div>
     );
   }
 
-  if (!organizer) {
+  if (memberships.length === 0) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
-        <section className="mx-auto max-w-md">
-          <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-            Área do Organizador
+      <div className="mt-8 space-y-5">
+        <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+          <p className="text-zinc-400">
+            Esta conta ainda não está ligada a nenhum organizador.
           </p>
 
-          <h1 className="text-5xl font-black leading-none tracking-tight">
-            Ainda não tens uma entidade ligada.
-          </h1>
+          {message && (
+            <p className="mt-4 text-sm font-bold text-red-400">{message}</p>
+          )}
+        </div>
 
-          <p className="mt-5 text-base text-zinc-400">
-            Estás logado como {userEmail}, mas este user ainda não está ligado a
-            nenhum organizador.
-          </p>
-
-          <Link
-            href="/submeter"
-            className="mt-8 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-          >
-            Submeter evento como público
-          </Link>
-        </section>
-      </main>
+        <Link
+          href="/submeter"
+          className="block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+        >
+          Submeter evento
+        </Link>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 text-[#f2f1ec]">
-      <section className="mx-auto max-w-md">
-        <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-          Área do Organizador
+    <div className="mt-8 space-y-8">
+      <section className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5">
+        <p className="text-xs uppercase tracking-[0.25em] text-red-500">
+          Organizador
         </p>
 
-        <h1 className="text-5xl font-black leading-none tracking-tight">
-          Publica. Mede. Volta a atacar.
-        </h1>
-
-        <p className="mt-5 text-base text-zinc-400">
-          Dashboard real ligado ao teu organizador.
-        </p>
-
-        <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-                Organizador
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black">{organizer.name}</h2>
-
-              <p className="mt-2 text-sm text-zinc-500">
-                {organizer.city || "Cidade por definir"} ·{" "}
-                {organizer.pack || "Sem pack"}
-              </p>
-
-              <p className="mt-1 text-xs text-zinc-600">
-                {userEmail} · {activeMembership.role}
-              </p>
-            </div>
-
-            {organizer.verified && (
-              <span className="rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-bold text-red-400">
-                Verificado
-              </span>
-            )}
-          </div>
-
-          <Link
-            href="/submeter"
-            className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+        {memberships.length > 1 ? (
+          <select
+            value={selectedOrganizerId}
+            onChange={(event) => handleOrganizerChange(event.target.value)}
+            className="mt-4 w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
           >
-            Criar novo evento
-          </Link>
-        </div>
-
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4">
-            <p className="text-3xl font-black">{totalViews}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
-              Views
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4">
-            <p className="text-3xl font-black">{totalSaves}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
-              Guardados
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4">
-            <p className="text-3xl font-black">{ticketClicks}</p>
-            <p className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
-              Cliques
-            </p>
-          </div>
-        </div>
-
-        <section className="mt-10">
-          <h2 className="text-2xl font-black">Submissões pendentes</h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Eventos enviados para aprovação Paranoid.
-          </p>
-
-          <div className="mt-4 space-y-4">
-            {pendingSubmissions.map((submission) => (
-              <article
-                key={submission.id}
-                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
+            {memberships.map((membership) => (
+              <option
+                key={membership.organizer_id}
+                value={membership.organizer_id}
               >
-                <div
-                  className={`mb-4 h-36 rounded-2xl bg-cover bg-center ${
-                    submission.image_url
-                      ? ""
-                      : "bg-gradient-to-br from-zinc-800 to-red-950"
-                  }`}
-                  style={
-                    submission.image_url
-                      ? { backgroundImage: `url(${submission.image_url})` }
-                      : {}
-                  }
-                />
-
-                <p className="mb-2 text-xs uppercase tracking-[0.25em] text-red-700">
-                  {submission.category}
-                </p>
-
-                <h3 className="text-xl font-black">{submission.title}</h3>
-
-                <p className="mt-2 text-sm text-zinc-400">
-                  {submission.event_date || "Data por definir"} ·{" "}
-                  {submission.event_time || "Hora por definir"}
-                </p>
-
-                <p className="text-sm text-zinc-500">
-                  {submission.venue}, {submission.city}
-                </p>
-
-                <div className="mt-4 flex gap-2">
-  <Link
-    href={`/organizador/submissoes/${submission.id}`}
-    className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
-  >
-    Editar
-  </Link>
-
-  <div className="flex-1 rounded-full border border-yellow-900 bg-yellow-950/30 px-4 py-3 text-center text-xs font-black uppercase tracking-wide text-yellow-500">
-    A aguardar
-  </div>
-</div>
-              </article>
+                {membership.organizer?.name || "Organizador"}
+              </option>
             ))}
-
-            {pendingSubmissions.length === 0 && (
-              <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-                <p className="text-zinc-400">
-                  Não tens submissões pendentes.
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="mt-10">
-          <h2 className="text-2xl font-black">Eventos publicados</h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Eventos já aprovados e visíveis na Agenda.
-          </p>
-
-          <div className="mt-4 space-y-4">
-            {organizerEvents.map((event) => (
-              <article
-                key={event.id}
-                className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
-              >
-                <div
-                  className={`mb-4 h-36 rounded-2xl bg-cover bg-center ${
-                    event.image
-                      ? ""
-                      : "bg-gradient-to-br from-zinc-800 to-red-950"
-                  }`}
-                  style={
-                    event.image
-                      ? { backgroundImage: `url(${event.image})` }
-                      : {}
-                  }
-                />
-
-                <p className="mb-2 text-xs uppercase tracking-[0.25em] text-red-700">
-                  {event.category}
-                </p>
-
-                <h3 className="text-xl font-black">{event.title}</h3>
-
-                <p className="mt-2 text-sm text-zinc-400">
-                  {event.date} · {event.time}
-                </p>
-
-                <p className="text-sm text-zinc-500">
-                  {event.venue}, {event.city}
-                </p>
-
-                <div className="mt-4 flex gap-2">
-                  <Link
-                    href={`/eventos/${event.slug}`}
-                    className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
-                  >
-                    Ver
-                  </Link>
-
-                  <Link
-  href={`/organizador/eventos/${event.id}`}
-  className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
->
-  Editar
-</Link>
-                </div>
-              </article>
-            ))}
-
-            {organizerEvents.length === 0 && (
-              <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-                <p className="text-zinc-400">
-                  Este organizador ainda não tem eventos publicados.
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {(approvedSubmissions.length > 0 || rejectedSubmissions.length > 0) && (
-          <section className="mt-10 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-            <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
-              Histórico
-            </p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-black p-4 text-center">
-                <p className="text-3xl font-black">
-                  {approvedSubmissions.length}
-                </p>
-                <p className="mt-1 text-xs uppercase text-zinc-600">
-                  Aprovadas
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-black p-4 text-center">
-                <p className="text-3xl font-black">
-                  {rejectedSubmissions.length}
-                </p>
-                <p className="mt-1 text-xs uppercase text-zinc-600">
-                  Rejeitadas
-                </p>
-              </div>
-            </div>
-          </section>
+          </select>
+        ) : (
+          <h2 className="mt-3 text-3xl font-black">
+            {selectedOrganizer?.name || "Organizador"}
+          </h2>
         )}
 
-        <section className="mt-10 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <p className="mb-3 text-xs uppercase tracking-[0.25em] text-red-700">
-            Pack ativo
-          </p>
+        <div className="mt-4 space-y-1 text-sm text-zinc-400">
+          {selectedOrganizer?.city && <p>{selectedOrganizer.city}</p>}
 
-          <h2 className="text-2xl font-black">
-            {organizer.pack || "Sem pack ativo"}
-          </h2>
+          {selectedMembership?.role && (
+            <p>
+              <span className="font-bold text-zinc-300">Cargo:</span>{" "}
+              {selectedMembership.role}
+            </p>
+          )}
 
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            Depois ligamos isto a pagamentos, faturas e permissões da equipa.
-          </p>
+          {selectedOrganizer?.pack && (
+            <p>
+              <span className="font-bold text-zinc-300">Pack:</span>{" "}
+              {selectedOrganizer.pack}
+            </p>
+          )}
+        </div>
 
-          <button className="mt-5 w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300">
-            Gerir pack
-          </button>
-        </section>
+        {selectedOrganizer?.slug && (
+          <Link
+            href={`/organizadores/${selectedOrganizer.slug}`}
+            className="mt-5 block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+          >
+            Ver perfil público
+          </Link>
+        )}
       </section>
-    </main>
+
+      <section className="grid grid-cols-2 gap-3">
+        <div className="rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-4">
+          <p className="text-3xl font-black text-[#f2f1ec]">
+            {pendingSubmissions.length}
+          </p>
+
+          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+            Submissões
+          </p>
+        </div>
+
+        <div className="rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-4">
+          <p className="text-3xl font-black text-[#f2f1ec]">
+            {publishedEvents.length}
+          </p>
+
+          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+            Publicados
+          </p>
+        </div>
+      </section>
+
+      <Link
+        href="/submeter"
+        className="block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+      >
+        Submeter novo evento
+      </Link>
+
+      <button
+        type="button"
+        onClick={loadDashboard}
+        className="w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+      >
+        Atualizar painel
+      </button>
+
+      {message && (
+        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-4">
+          <p className="text-sm font-bold text-red-400">{message}</p>
+        </div>
+      )}
+
+      <section>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+              Submissões
+            </p>
+
+            <h2 className="mt-2 text-3xl font-black">Por aprovar</h2>
+          </div>
+
+          <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+            {pendingSubmissions.length}
+          </span>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {pendingSubmissions.length === 0 && (
+            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+              <p className="text-zinc-500">
+                Não tens submissões pendentes neste organizador.
+              </p>
+            </div>
+          )}
+
+          {pendingSubmissions.map((submission) => (
+            <article
+              key={submission.id}
+              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
+            >
+              {submission.image_url && (
+                <div
+                  className="mb-4 h-48 rounded-[1.5rem] bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${submission.image_url})`,
+                  }}
+                />
+              )}
+
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+                    {submission.category}
+                  </p>
+
+                  <h3 className="mt-2 text-2xl font-black leading-tight">
+                    {submission.title}
+                  </h3>
+                </div>
+
+                <span className="rounded-full border border-yellow-900 bg-yellow-950/30 px-3 py-1 text-xs font-black uppercase text-yellow-500">
+                  {submission.status}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-1 text-sm text-zinc-400">
+                <p>
+                  <span className="font-bold text-zinc-300">Cidade:</span>{" "}
+                  {submission.city}
+                </p>
+
+                <p>
+                  <span className="font-bold text-zinc-300">Espaço:</span>{" "}
+                  {submission.venue || "Por definir"}
+                </p>
+
+                <p>
+                  <span className="font-bold text-zinc-300">Data:</span>{" "}
+                  {formatDate(submission.event_date)}{" "}
+                  {submission.event_time ? `· ${submission.event_time}` : ""}
+                </p>
+
+                {submission.is_multi_day && submission.end_date && (
+                  <p>
+                    <span className="font-bold text-zinc-300">Fim:</span>{" "}
+                    {submission.end_date}
+                  </p>
+                )}
+
+                {submission.price && (
+                  <p>
+                    <span className="font-bold text-zinc-300">Preço:</span>{" "}
+                    {submission.price}
+                  </p>
+                )}
+              </div>
+
+              {submission.description && (
+                <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-zinc-500">
+                  {submission.description}
+                </p>
+              )}
+
+              <Link
+                href={`/organizador/submissoes/${submission.id}`}
+                className="mt-4 block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+              >
+                Ver submissão
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+              Publicados
+            </p>
+
+            <h2 className="mt-2 text-3xl font-black">Eventos ativos</h2>
+          </div>
+
+          <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+            {publishedEvents.length}
+          </span>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {publishedEvents.length === 0 && (
+            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+              <p className="text-zinc-500">
+                Ainda não tens eventos publicados neste organizador.
+              </p>
+            </div>
+          )}
+
+          {publishedEvents.map((event) => (
+            <article
+              key={event.id}
+              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
+            >
+              {event.image_url && (
+                <div
+                  className="mb-4 h-48 rounded-[1.5rem] bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${event.image_url})`,
+                  }}
+                />
+              )}
+
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+                    {event.category}
+                  </p>
+
+                  <h3 className="mt-2 text-2xl font-black leading-tight">
+                    {event.title}
+                  </h3>
+                </div>
+
+                {event.featured && (
+                  <span className="rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-black uppercase text-red-400">
+                    Destaque
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-1 text-sm text-zinc-400">
+                <p>
+                  <span className="font-bold text-zinc-300">Cidade:</span>{" "}
+                  {event.city}
+                </p>
+
+                <p>
+                  <span className="font-bold text-zinc-300">Espaço:</span>{" "}
+                  {event.venue_name || "Por definir"}
+                </p>
+
+                <p>
+                  <span className="font-bold text-zinc-300">Data:</span>{" "}
+                  {formatDate(event.display_date)}{" "}
+                  {event.display_time ? `· ${event.display_time}` : ""}
+                </p>
+
+                {event.price && (
+                  <p>
+                    <span className="font-bold text-zinc-300">Preço:</span>{" "}
+                    {event.price}
+                  </p>
+                )}
+              </div>
+
+              {event.description && (
+                <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-zinc-500">
+                  {event.description}
+                </p>
+              )}
+
+              <div className="mt-4 flex gap-2">
+                <Link
+                  href={`/organizador/eventos/${event.id}`}
+                  className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+                >
+                  Editar
+                </Link>
+
+                <Link
+                  href={`/eventos/${event.slug}`}
+                  className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+                >
+                  Ver
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

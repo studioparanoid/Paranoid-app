@@ -42,8 +42,8 @@ function slugify(value: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
-function getStartAt(eventDate: string | null, eventTime: string | null) {
-  if (!eventDate) {
+function getStartAt(startDate: string | null, eventTime: string | null) {
+  if (!startDate) {
     return new Date().toISOString();
   }
 
@@ -52,7 +52,49 @@ function getStartAt(eventDate: string | null, eventTime: string | null) {
   const timeWithSeconds =
     cleanTime.split(":").length === 2 ? `${cleanTime}:00` : cleanTime;
 
-  return `${eventDate}T${timeWithSeconds}+00:00`;
+  return `${startDate}T${timeWithSeconds}+00:00`;
+}
+
+function getEndAt(startDate: string | null, endDate: string | null) {
+  if (!startDate) {
+    return new Date().toISOString();
+  }
+
+  const finalEndDate = endDate || startDate;
+
+  return `${finalEndDate}T23:59:00+00:00`;
+}
+
+function formatDateForDisplay(value: string) {
+  if (!value) {
+    return "";
+  }
+
+  const parts = value.split("-");
+
+  if (parts.length !== 3) {
+    return value;
+  }
+
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+function buildDisplayDate(
+  startDate: string | null,
+  endDate: string | null,
+  isMultiDay: boolean | null
+) {
+  if (!startDate) {
+    return "Data por definir";
+  }
+
+  if (isMultiDay && endDate && endDate !== startDate) {
+    return `${formatDateForDisplay(startDate)} — ${formatDateForDisplay(
+      endDate
+    )}`;
+  }
+
+  return formatDateForDisplay(startDate);
 }
 
 function getArtistNames(artistsText: string | null) {
@@ -262,13 +304,57 @@ export function AdminSubmissionActions({
     }
   }
 
+  async function getUniqueEventSlug(baseSlug: string) {
+    const cleanBaseSlug = baseSlug || `evento-${crypto.randomUUID().slice(0, 6)}`;
+
+    const { data, error } = await supabase
+      .from("events")
+      .select("id")
+      .eq("slug", cleanBaseSlug)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return cleanBaseSlug;
+    }
+
+    return `${cleanBaseSlug}-${crypto.randomUUID().slice(0, 6)}`;
+  }
+
   async function approveSubmission() {
     setLoading(true);
     setMessage("");
 
-    const slugBase = slugify(submission.title);
-    const slug = `${slugBase}-${Date.now().toString().slice(-5)}`;
-    const startAt = getStartAt(submission.event_date, submission.event_time);
+    const startDate = submission.event_date;
+    const finalEndDate =
+      submission.is_multi_day && submission.end_date
+        ? submission.end_date
+        : submission.event_date;
+
+    const startAt = getStartAt(startDate, submission.event_time);
+    const endAt = getEndAt(startDate, finalEndDate);
+    const displayDate = buildDisplayDate(
+      startDate,
+      finalEndDate,
+      submission.is_multi_day
+    );
+
+    let slug = "";
+
+    try {
+      slug = await getUniqueEventSlug(slugify(submission.title));
+    } catch (error) {
+      setMessage(
+        `Erro ao gerar slug: ${
+          error instanceof Error ? error.message : "erro desconhecido"
+        }`
+      );
+      setLoading(false);
+      return;
+    }
 
     let venueId: string | null = null;
     let organizerId: string | null = null;
@@ -308,7 +394,11 @@ export function AdminSubmissionActions({
         organizer_id: organizerId,
         organizer_name: submission.organizer || "Organizador por definir",
         start_at: startAt,
-        display_date: submission.event_date || "Data por definir",
+        end_at: endAt,
+        start_date: startDate,
+        end_date: finalEndDate,
+        is_multi_day: Boolean(submission.is_multi_day),
+        display_date: displayDate,
         display_time: submission.event_time || "Hora por definir",
         category: submission.category,
         price: submission.price || "Preço por definir",
@@ -406,6 +496,22 @@ export function AdminSubmissionActions({
 
           <p className="text-sm font-bold text-zinc-300">
             {submission.artists_text}
+          </p>
+        </div>
+      )}
+
+      {submission.is_multi_day && (
+        <div className="mt-4 rounded-2xl border border-yellow-900 bg-yellow-950/20 p-4">
+          <p className="mb-2 text-xs uppercase tracking-[0.25em] text-yellow-600">
+            Festival / vários dias
+          </p>
+
+          <p className="text-sm font-bold text-yellow-400">
+            {buildDisplayDate(
+              submission.event_date,
+              submission.end_date,
+              submission.is_multi_day
+            )}
           </p>
         </div>
       )}
