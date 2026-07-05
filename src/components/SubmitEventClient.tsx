@@ -35,6 +35,8 @@ type OrganizerMemberRow = {
   organizer_id: string;
 };
 
+type TicketMode = "none" | "external" | "internal";
+
 function formatPriceValue(value: string) {
   const cleanPrice = value.trim();
 
@@ -103,9 +105,14 @@ export function SubmitEventClient() {
   const [isMultiDay, setIsMultiDay] = useState(false);
   const [eventTime, setEventTime] = useState("");
   const [price, setPrice] = useState("");
-  const [ticketUrl, setTicketUrl] = useState("");
-  const [instagramUrl, setInstagramUrl] = useState("");
   const [description, setDescription] = useState("");
+
+  const [ticketMode, setTicketMode] = useState<TicketMode>("none");
+  const [ticketUrl, setTicketUrl] = useState("");
+  const [ticketPrice, setTicketPrice] = useState("");
+  const [ticketCapacity, setTicketCapacity] = useState("");
+  const [ticketButtonLabel, setTicketButtonLabel] = useState("Comprar bilhete");
+  const [instagramUrl, setInstagramUrl] = useState("");
 
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -217,6 +224,30 @@ export function SubmitEventClient() {
     setPrice(formatPriceValue(price));
   }
 
+  function handleTicketPriceBlur() {
+    setTicketPrice(formatPriceValue(ticketPrice));
+  }
+
+  function handleTicketModeChange(value: TicketMode) {
+    setTicketMode(value);
+
+    if (value === "none") {
+      setTicketUrl("");
+      setTicketPrice("");
+      setTicketCapacity("");
+      setTicketButtonLabel("Comprar bilhete");
+    }
+
+    if (value === "external") {
+      setTicketButtonLabel("Bilhetes / inscrição");
+    }
+
+    if (value === "internal") {
+      setTicketUrl("");
+      setTicketButtonLabel("Comprar na Paranoid");
+    }
+  }
+
   function handleImageChange(file: File | null) {
     setMessage("");
 
@@ -284,9 +315,13 @@ export function SubmitEventClient() {
     setIsMultiDay(false);
     setEventTime("");
     setPrice("");
-    setTicketUrl("");
-    setInstagramUrl("");
     setDescription("");
+    setTicketMode("none");
+    setTicketUrl("");
+    setTicketPrice("");
+    setTicketCapacity("");
+    setTicketButtonLabel("Comprar bilhete");
+    setInstagramUrl("");
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
 
@@ -312,6 +347,16 @@ export function SubmitEventClient() {
 
     if (isMultiDay && endDate < eventDate) {
       setMessage("A data de fim não pode ser antes da data de início.");
+      return;
+    }
+
+    if (ticketMode === "external" && !ticketUrl.trim()) {
+      setMessage("Se escolheste bilheteira externa, mete o link.");
+      return;
+    }
+
+    if (ticketMode === "internal" && !ticketPrice.trim()) {
+      setMessage("Se escolheste bilheteira Paranoid, mete o preço do bilhete.");
       return;
     }
 
@@ -344,10 +389,20 @@ export function SubmitEventClient() {
       is_multi_day: isMultiDay,
       event_time: eventTime || null,
       price: price || null,
-      ticket_url: normalizeExternalUrl(ticketUrl),
-      instagram_url: normalizeExternalUrl(instagramUrl),
       description: description || null,
       image_url: imageUrl,
+
+      ticket_mode: ticketMode,
+      ticket_url: ticketMode === "external" ? normalizeExternalUrl(ticketUrl) : null,
+      ticket_price: ticketMode === "internal" ? ticketPrice || null : null,
+      ticket_capacity:
+        ticketMode === "internal" && ticketCapacity
+          ? Number(ticketCapacity)
+          : null,
+      ticket_button_label:
+        ticketMode !== "none" ? ticketButtonLabel || null : null,
+      instagram_url: normalizeExternalUrl(instagramUrl),
+
       submitted_by: userId,
       organizer_id: selectedOrganizerId || null,
       artists_text: artistsText || null,
@@ -399,7 +454,8 @@ export function SubmitEventClient() {
               <p>{eventTime || "Hora por definir"}</p>
               <p>{[venue, city].filter(Boolean).join(" · ") || "Local"}</p>
               <p>{price || "Preço por definir"}</p>
-              {ticketUrl && <p>Bilhetes disponíveis</p>}
+              {ticketMode === "external" && <p>Bilheteira externa</p>}
+              {ticketMode === "internal" && <p>Bilheteira Paranoid · {ticketPrice || "preço por definir"}</p>}
             </div>
           </div>
         </div>
@@ -414,14 +470,6 @@ export function SubmitEventClient() {
           <div className="mt-6 rounded-2xl border border-yellow-900 bg-yellow-950/20 px-4 py-3 text-sm leading-relaxed text-yellow-500">
             Podes submeter sem conta, mas se iniciares sessão consegues acompanhar
             e editar submissões pendentes.
-          </div>
-        )}
-
-        {!loadingAccount && userId && organizerOptions.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-red-950 bg-red-950/20 px-4 py-3 text-sm leading-relaxed text-red-300">
-            Estás ligado a {organizerOptions.length} organizador
-            {organizerOptions.length === 1 ? "" : "es"}. Se escolheres um, a
-            submissão fica ligada ao painel desse organizador.
           </div>
         )}
 
@@ -461,10 +509,6 @@ export function SubmitEventClient() {
               }
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-full file:border-0 file:bg-[#f2f1ec] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
             />
-
-            <p className="mt-2 text-xs text-zinc-600">
-              JPG, PNG ou WEBP. Máximo 5MB.
-            </p>
           </div>
 
           {imagePreviewUrl && (
@@ -508,13 +552,9 @@ export function SubmitEventClient() {
             <input
               value={artistsText}
               onChange={(event) => setArtistsText(event.target.value)}
-              placeholder="Ex: Dead Static, Cave Ritual, DJ Mau Ambiente"
+              placeholder="Ex: Dead Static, Cave Ritual"
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
-
-            <p className="mt-2 text-xs text-zinc-600">
-              Separa vários nomes por vírgula.
-            </p>
           </div>
 
           <div>
@@ -617,7 +657,7 @@ export function SubmitEventClient() {
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Preço
+              Preço público
             </label>
 
             <input
@@ -629,18 +669,97 @@ export function SubmitEventClient() {
             />
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Bilhetes / inscrição
+          <div className="lg:col-span-2 rounded-[2rem] border border-red-950 bg-red-950/20 p-5">
+            <p className="text-xs uppercase tracking-[0.3em] text-red-500">
+              Bilheteira
+            </p>
+
+            <label className="mt-4 mb-2 block text-sm font-bold text-zinc-300">
+              Tipo de bilheteira
             </label>
 
-            <input
-              type="url"
-              value={ticketUrl}
-              onChange={(event) => setTicketUrl(event.target.value)}
-              placeholder="https://..."
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-            />
+            <select
+              value={ticketMode}
+              onChange={(event) =>
+                handleTicketModeChange(event.target.value as TicketMode)
+              }
+              className="w-full rounded-2xl border border-red-950 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-800"
+            >
+              <option value="none">Sem bilhetes / só informação</option>
+              <option value="external">Bilheteira externa</option>
+              <option value="internal">Bilheteira Paranoid</option>
+            </select>
+
+            {ticketMode === "external" && (
+              <div className="mt-5">
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Link externo de bilhetes / inscrição
+                </label>
+
+                <input
+                  type="url"
+                  value={ticketUrl}
+                  onChange={(event) => setTicketUrl(event.target.value)}
+                  placeholder="https://shotgun.live/..."
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                />
+              </div>
+            )}
+
+            {ticketMode === "internal" && (
+              <div className="mt-5 grid gap-5 lg:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Preço do bilhete
+                  </label>
+
+                  <input
+                    value={ticketPrice}
+                    onChange={(event) => setTicketPrice(event.target.value)}
+                    onBlur={handleTicketPriceBlur}
+                    placeholder="Ex: 10€"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Lotação
+                  </label>
+
+                  <input
+                    type="number"
+                    min="1"
+                    value={ticketCapacity}
+                    onChange={(event) => setTicketCapacity(event.target.value)}
+                    placeholder="Ex: 100"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Texto do botão
+                  </label>
+
+                  <input
+                    value={ticketButtonLabel}
+                    onChange={(event) =>
+                      setTicketButtonLabel(event.target.value)
+                    }
+                    placeholder="Comprar na Paranoid"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  />
+                </div>
+              </div>
+            )}
+
+            {ticketMode === "internal" && (
+              <p className="mt-4 text-sm leading-relaxed text-red-300">
+                A bilheteira Paranoid fica registada no evento, mas a compra
+                ainda só será ativada na próxima fase.
+              </p>
+            )}
           </div>
 
           <div>
@@ -666,7 +785,7 @@ export function SubmitEventClient() {
               rows={8}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Descrição, horários, bilhetes, contexto, links úteis..."
+              placeholder="Descrição, horários, contexto, links úteis..."
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
           </div>

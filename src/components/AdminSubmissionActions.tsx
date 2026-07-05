@@ -211,6 +211,11 @@ async function findOrCreateOrganizer(name: string, city: string) {
 
 async function findOrCreateArtist(name: string, city: string) {
   const cleanName = name.trim();
+
+  if (!cleanName) {
+    return null;
+  }
+
   const slug = slugify(cleanName);
 
   const { data: existingArtist, error: existingError } = await supabase
@@ -267,7 +272,14 @@ async function attachArtistsToEvent({
 
   for (const artistName of artistNames) {
     const artistId = await findOrCreateArtist(artistName, city);
-    artistIds.push(artistId);
+
+    if (artistId) {
+      artistIds.push(artistId);
+    }
+  }
+
+  if (artistIds.length === 0) {
+    return;
   }
 
   const rows = artistIds.map((artistId) => ({
@@ -345,11 +357,9 @@ export function AdminSubmissionActions({
       );
 
       const startAt = getStartAt(submission.event_date, submission.event_time);
-      const endAt = getEndAt(
-        submission.event_date,
-        finalEndDate,
-        isMultiDay
-      );
+      const endAt = getEndAt(submission.event_date, finalEndDate, isMultiDay);
+
+      const ticketMode = submission.ticket_mode || "none";
 
       const { data: createdEvent, error: eventError } = await supabase
         .from("events")
@@ -372,8 +382,17 @@ export function AdminSubmissionActions({
           price: submission.price || "Preço por definir",
           description: submission.description || "",
           image_url: submission.image_url,
-          ticket_url: submission.ticket_url,
+
+          ticket_mode: ticketMode,
+          ticket_url: ticketMode === "external" ? submission.ticket_url : null,
+          ticket_price:
+            ticketMode === "internal" ? submission.ticket_price : null,
+          ticket_capacity:
+            ticketMode === "internal" ? submission.ticket_capacity : null,
+          ticket_button_label:
+            ticketMode !== "none" ? submission.ticket_button_label : null,
           instagram_url: submission.instagram_url,
+
           featured: false,
           status: "published",
         })
@@ -432,6 +451,15 @@ export function AdminSubmissionActions({
           Rejeitar
         </button>
       </div>
+
+      {submission.ticket_mode && submission.ticket_mode !== "none" && (
+        <p className="rounded-2xl border border-red-950 bg-red-950/20 px-4 py-3 text-center text-xs font-bold text-red-300">
+          Bilheteira:{" "}
+          {submission.ticket_mode === "internal"
+            ? "Paranoid"
+            : "externa"}
+        </p>
+      )}
 
       {message && (
         <p className="text-center text-xs font-bold text-zinc-500">

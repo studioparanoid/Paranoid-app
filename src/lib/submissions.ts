@@ -12,8 +12,14 @@ export type EventSubmission = {
   price: string | null;
   description: string | null;
   image_url: string | null;
+
+  ticket_mode: "none" | "external" | "internal" | null;
   ticket_url: string | null;
+  ticket_price: string | null;
+  ticket_capacity: number | null;
+  ticket_button_label: string | null;
   instagram_url: string | null;
+
   submitted_by: string | null;
   organizer_id: string | null;
   artists_text: string | null;

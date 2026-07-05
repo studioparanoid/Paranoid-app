@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { EventPublicActions } from "@/components/EventPublicActions";
 import { supabase } from "@/lib/supabase/public";
 
+type TicketMode = "none" | "external" | "internal";
+
 type EventRow = {
   id: string;
   slug: string;
@@ -18,8 +20,14 @@ type EventRow = {
   price: string | null;
   description: string | null;
   image_url: string | null;
+
+  ticket_mode: TicketMode | null;
   ticket_url: string | null;
+  ticket_price: string | null;
+  ticket_capacity: number | null;
+  ticket_button_label: string | null;
   instagram_url: string | null;
+
   featured: boolean | null;
   status: string | null;
   start_at: string | null;
@@ -52,7 +60,7 @@ async function getEvent(slug: string) {
   const { data, error } = await supabase
     .from("events")
     .select(
-      "id,slug,title,city,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,category,price,description,image_url,ticket_url,instagram_url,featured,status,start_at,end_at"
+      "id,slug,title,city,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,category,price,description,image_url,ticket_mode,ticket_url,ticket_price,ticket_capacity,ticket_button_label,instagram_url,featured,status,start_at,end_at"
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -181,6 +189,83 @@ function InfoBlock({
 
       <div className="mt-2 text-lg font-black text-[#f2f1ec]">{children}</div>
     </div>
+  );
+}
+
+function TicketBox({ event }: { event: EventRow }) {
+  const ticketMode = event.ticket_mode || "none";
+
+  if (ticketMode === "none" && !event.instagram_url) {
+    return null;
+  }
+
+  return (
+    <section className="mt-6 rounded-[2rem] border border-red-950 bg-red-950/20 p-5">
+      <p className="text-xs uppercase tracking-[0.25em] text-red-500">
+        Bilheteira
+      </p>
+
+      {ticketMode === "internal" && (
+        <div className="mt-4">
+          <h2 className="text-3xl font-black leading-none">
+            Bilheteira Paranoid.
+          </h2>
+
+          <div className="mt-4 space-y-1 text-sm text-zinc-400">
+            <p>
+              <span className="font-bold text-zinc-300">Preço:</span>{" "}
+              {event.ticket_price || event.price || "Preço por definir"}
+            </p>
+
+            {event.ticket_capacity && (
+              <p>
+                <span className="font-bold text-zinc-300">Lotação:</span>{" "}
+                {event.ticket_capacity}
+              </p>
+            )}
+
+            <p className="text-red-300">
+              Compra online ainda em preparação.
+            </p>
+          </div>
+
+          <Link
+            href={`/bilhetes/${event.slug}`}
+            className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+          >
+            {event.ticket_button_label || "Comprar na Paranoid"}
+          </Link>
+        </div>
+      )}
+
+      {ticketMode === "external" && event.ticket_url && (
+        <div className="mt-4">
+          <h2 className="text-3xl font-black leading-none">
+            Bilhetes externos.
+          </h2>
+
+          <a
+            href={event.ticket_url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+          >
+            {event.ticket_button_label || "Bilhetes / inscrição"}
+          </a>
+        </div>
+      )}
+
+      {event.instagram_url && (
+        <a
+          href={event.instagram_url}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 block rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-300"
+        >
+          Instagram / mais info
+        </a>
+      )}
+    </section>
   );
 }
 
@@ -318,37 +403,7 @@ export default async function EventPage({
               </section>
             )}
 
-            {(event.ticket_url || event.instagram_url) && (
-              <section className="mt-6 rounded-[2rem] border border-red-950 bg-red-950/20 p-5">
-                <p className="text-xs uppercase tracking-[0.25em] text-red-500">
-                  Links
-                </p>
-
-                <div className="mt-4 grid gap-3">
-                  {event.ticket_url && (
-                    <a
-                      href={event.ticket_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-                    >
-                      Bilhetes / inscrição
-                    </a>
-                  )}
-
-                  {event.instagram_url && (
-                    <a
-                      href={event.instagram_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-300"
-                    >
-                      Instagram / mais info
-                    </a>
-                  )}
-                </div>
-              </section>
-            )}
+            <TicketBox event={event} />
 
             <EventPublicActions
               eventId={event.id}
