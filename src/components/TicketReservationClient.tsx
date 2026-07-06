@@ -25,9 +25,10 @@ type ReservationRow = {
   created_at: string;
 };
 
-type ReservationTotalRow = {
-  quantity: number;
-  status: string;
+type AvailabilityRow = {
+  ticket_capacity: number | null;
+  reserved_quantity: number;
+  available_quantity: number | null;
 };
 
 export function TicketReservationClient({
@@ -38,73 +39,80 @@ export function TicketReservationClient({
   const [message, setMessage] = useState("");
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState("");
   const [quantity, setQuantity] = useState(1);
 
   const [reservedTotal, setReservedTotal] = useState(0);
+  const [availableTickets, setAvailableTickets] = useState<number | null>(
+    event.ticket_capacity
+  );
   const [myReservations, setMyReservations] = useState<ReservationRow[]>([]);
 
   const capacity = event.ticket_capacity || null;
 
-  const availableTickets = useMemo(() => {
-    if (!capacity) {
-      return null;
+  const hasActiveReservation = useMemo(() => {
+    return myReservations.some(
+      (reservation) => reservation.status === "reserved"
+    );
+  }, [myReservations]);
+
+  async function loadReservationData() {
+    setLoading(true);
+    setMessage("");
+
+    const { data: availabilityData, error: availabilityError } =
+      await supabase.rpc("get_event_ticket_availability", {
+        p_event_id: event.id,
+      });
+
+    if (availabilityError) {
+      setMessage(availabilityError.message);
+    } else {
+      const rows = (availabilityData || []) as AvailabilityRow[];
+      const availability = rows[0] || null;
+
+      setReservedTotal(availability?.reserved_quantity || 0);
+      setAvailableTickets(
+        typeof availability?.available_quantity === "number"
+          ? availability.available_quantity
+          : null
+      );
     }
 
-    return Math.max(capacity - reservedTotal, 0);
-  }, [capacity, reservedTotal]);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const hasActiveReservation = myReservations.some(
-    (reservation) => reservation.status === "reserved"
-  );
+    if (!user) {
+      setUserId(null);
+      setMyReservations([]);
+      setLoading(false);
+      return;
+    }
+
+    setUserId(user.id);
+
+    const { data: myRows, error: myRowsError } = await supabase
+      .from("ticket_reservations")
+      .select(
+        "id,event_id,user_id,user_email,quantity,status,check_in_code,created_at"
+      )
+      .eq("event_id", event.id)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (myRowsError) {
+      setMessage(myRowsError.message);
+      setMyReservations([]);
+      setLoading(false);
+      return;
+    }
+
+    setMyReservations((myRows || []) as ReservationRow[]);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function loadReservations() {
-      setLoading(true);
-      setMessage("");
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setUserId(null);
-        setUserEmail("");
-        setLoading(false);
-        return;
-      }
-
-      setUserId(user.id);
-      setUserEmail(user.email || "");
-
-      const { data: totalRows } = await supabase
-        .from("ticket_reservations")
-        .select("quantity,status")
-        .eq("event_id", event.id)
-        .eq("status", "reserved");
-
-      const totals = ((totalRows || []) as ReservationTotalRow[]).reduce(
-        (sum, row) => sum + Number(row.quantity || 0),
-        0
-      );
-
-      setReservedTotal(totals);
-
-      const { data: myRows } = await supabase
-        .from("ticket_reservations")
-        .select(
-          "id,event_id,user_id,user_email,quantity,status,check_in_code,created_at"
-        )
-        .eq("event_id", event.id)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      setMyReservations((myRows || []) as ReservationRow[]);
-
-      setLoading(false);
-    }
-
-    loadReservations();
+    loadReservationData();
   }, [event.id]);
 
   async function createReservation() {
@@ -127,22 +135,20 @@ export function TicketReservationClient({
 
     setReserving(true);
 
-    const { error } = await supabase.from("ticket_reservations").insert({
-      event_id: event.id,
-      user_id: userId,
-      user_email: userEmail,
-      quantity,
-      status: "reserved",
+    const { error } = await supabase.rpc("create_ticket_reservation", {
+      p_event_id: event.id,
+      p_quantity: quantity,
     });
 
     setReserving(false);
 
     if (error) {
-      setMessage(`Erro ao reservar: ${error.message}`);
+      setMessage(error.message);
+      await loadReservationData();
       return;
     }
 
-    window.location.reload();
+    await loadReservationData();
   }
 
   async function cancelReservation(reservationId: string) {
@@ -165,7 +171,7 @@ export function TicketReservationClient({
       return;
     }
 
-    window.location.reload();
+    await loadReservationData();
   }
 
   if (loading) {
@@ -227,6 +233,12 @@ export function TicketReservationClient({
             </p>
           </div>
         </div>
+
+        {capacity && (
+          <p className="mt-4 text-sm text-zinc-500">
+            Lotação total: {capacity}
+          </p>
+        )}
       </section>
 
       <section className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5">
@@ -248,7 +260,9 @@ export function TicketReservationClient({
             min="1"
             max="10"
             value={quantity}
-            onChange={(inputEvent) => setQuantity(Number(inputEvent.target.value))}
+            onChange={(inputEvent) =>
+              setQuantity(Number(inputEvent.target.value))
+            }
             disabled={hasActiveReservation}
             className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
           />
