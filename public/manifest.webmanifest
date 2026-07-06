@@ -1,0 +1,20 @@
+{
+  "name": "Paranoid — Agenda Cultural Alternativa",
+  "short_name": "Paranoid",
+  "description": "Eventos, espaços, artistas e cultura alternativa na zona centro.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b0b",
+  "theme_color": "#0b0b0b",
+  "categories": ["music", "entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "/paranoid-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
