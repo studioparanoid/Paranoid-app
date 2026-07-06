@@ -8,6 +8,7 @@ const mainLinks = [
   { href: "/descobrir", label: "Descobrir" },
   { href: "/para-ti", label: "Para ti" },
   { href: "/guardados", label: "Guardados" },
+  { href: "/bilhetes", label: "Bilhetes" },
 ];
 
 function isActive(pathname: string, href: string) {
