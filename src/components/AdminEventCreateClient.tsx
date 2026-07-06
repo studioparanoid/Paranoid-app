@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/public";
 
 const categories = [
@@ -26,11 +25,7 @@ const cities = [
   "Marinha Grande",
 ];
 
-type ArtistRow = {
-  id: string;
-  slug: string;
-  name: string;
-};
+type TicketMode = "none" | "external" | "internal";
 
 type VenueRow = {
   id: string;
@@ -44,9 +39,10 @@ type OrganizerRow = {
   name: string;
 };
 
-type CreatedEventRow = {
+type ArtistRow = {
   id: string;
   slug: string;
+  name: string;
 };
 
 function slugify(value: string) {
@@ -58,30 +54,40 @@ function slugify(value: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
-function getStartAt(startDate: string, displayTime: string) {
-  if (!startDate) {
-    return new Date().toISOString();
+function normalizeExternalUrl(value: string) {
+  const cleanValue = value.trim();
+
+  if (!cleanValue) {
+    return null;
   }
 
-  const cleanTime = displayTime || "00:00";
-  const timeWithSeconds =
-    cleanTime.split(":").length === 2 ? `${cleanTime}:00` : cleanTime;
+  if (cleanValue.startsWith("http://") || cleanValue.startsWith("https://")) {
+    return cleanValue;
+  }
 
-  return `${startDate}T${timeWithSeconds}+00:00`;
+  return `https://${cleanValue}`;
 }
 
-function getEndAt(startDate: string, endDate: string, isMultiDay: boolean) {
-  if (!startDate) {
-    return new Date().toISOString();
+function formatPriceValue(value: string) {
+  const cleanPrice = value.trim();
+
+  if (!cleanPrice) {
+    return "";
   }
 
-  const finalEndDate = isMultiDay && endDate ? endDate : startDate;
-
-  if (isMultiDay) {
-    return `${finalEndDate}T23:59:00+00:00`;
+  if (
+    cleanPrice.toLowerCase() === "gratis" ||
+    cleanPrice.toLowerCase() === "grátis" ||
+    cleanPrice === "0"
+  ) {
+    return "Entrada livre";
   }
 
-  return `${finalEndDate}T23:59:00+00:00`;
+  if (!cleanPrice.includes("€") && /^\d+([,.]\d{1,2})?$/.test(cleanPrice)) {
+    return `${cleanPrice.replace(".", ",")}€`;
+  }
+
+  return cleanPrice;
 }
 
 function formatDateForDisplay(value: string) {
@@ -112,6 +118,28 @@ function buildDisplayDate(startDate: string, endDate: string, isMultiDay: boolea
   return formatDateForDisplay(startDate);
 }
 
+function getStartAt(startDate: string, displayTime: string | null) {
+  if (!startDate) {
+    return new Date().toISOString();
+  }
+
+  const cleanTime = displayTime || "00:00";
+  const timeWithSeconds =
+    cleanTime.split(":").length === 2 ? `${cleanTime}:00` : cleanTime;
+
+  return `${startDate}T${timeWithSeconds}+00:00`;
+}
+
+function getEndAt(startDate: string, endDate: string, isMultiDay: boolean) {
+  if (!startDate) {
+    return new Date().toISOString();
+  }
+
+  const finalEndDate = isMultiDay && endDate ? endDate : startDate;
+
+  return `${finalEndDate}T23:59:00+00:00`;
+}
+
 function getArtistNames(artistsText: string) {
   const names = artistsText
     .split(",")
@@ -121,62 +149,239 @@ function getArtistNames(artistsText: string) {
   return Array.from(new Set(names));
 }
 
-function formatPriceValue(value: string) {
-  const cleanPrice = value.trim();
+async function createUniqueEventSlug(title: string) {
+  const baseSlug = slugify(title) || crypto.randomUUID();
+  let candidate = baseSlug;
+  let count = 1;
 
-  if (!cleanPrice) {
-    return "";
+  while (true) {
+    const { data, error } = await supabase
+      .from("events")
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return candidate;
+    }
+
+    count += 1;
+    candidate = `${baseSlug}-${count}`;
+  }
+}
+
+async function findOrCreateVenue(name: string, city: string) {
+  const cleanName = name.trim();
+
+  if (!cleanName) {
+    return null;
   }
 
-  if (
-    cleanPrice.toLowerCase() === "gratis" ||
-    cleanPrice.toLowerCase() === "grátis" ||
-    cleanPrice === "0"
-  ) {
-    return "Entrada livre";
+  const slug = slugify(cleanName);
+
+  const { data: existingVenue, error: existingError } = await supabase
+    .from("venues")
+    .select("id,slug,name")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new Error(existingError.message);
   }
 
-  if (!cleanPrice.includes("€") && /^\d+([,.]\d{1,2})?$/.test(cleanPrice)) {
-    return `${cleanPrice.replace(".", ",")}€`;
+  if (existingVenue) {
+    return (existingVenue as VenueRow).id;
   }
 
-  return cleanPrice;
+  const { data: createdVenue, error: createError } = await supabase
+    .from("venues")
+    .insert({
+      slug,
+      name: cleanName,
+      city,
+      address: null,
+      description: null,
+      instagram: null,
+    })
+    .select("id,slug,name")
+    .single();
+
+  if (createError) {
+    throw new Error(createError.message);
+  }
+
+  return (createdVenue as VenueRow).id;
+}
+
+async function findOrCreateOrganizer(name: string, city: string) {
+  const cleanName = name.trim();
+
+  if (!cleanName) {
+    return null;
+  }
+
+  const slug = slugify(cleanName);
+
+  const { data: existingOrganizer, error: existingError } = await supabase
+    .from("organizers")
+    .select("id,slug,name")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  if (existingOrganizer) {
+    return (existingOrganizer as OrganizerRow).id;
+  }
+
+  const { data: createdOrganizer, error: createError } = await supabase
+    .from("organizers")
+    .insert({
+      slug,
+      name: cleanName,
+      city,
+      description: null,
+      pack: null,
+      verified: false,
+    })
+    .select("id,slug,name")
+    .single();
+
+  if (createError) {
+    throw new Error(createError.message);
+  }
+
+  return (createdOrganizer as OrganizerRow).id;
+}
+
+async function findOrCreateArtist(name: string, city: string) {
+  const cleanName = name.trim();
+
+  if (!cleanName) {
+    return null;
+  }
+
+  const slug = slugify(cleanName);
+
+  const { data: existingArtist, error: existingError } = await supabase
+    .from("artists")
+    .select("id,slug,name")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  if (existingArtist) {
+    return (existingArtist as ArtistRow).id;
+  }
+
+  const { data: createdArtist, error: createError } = await supabase
+    .from("artists")
+    .insert({
+      slug,
+      name: cleanName,
+      city,
+      genres: null,
+      description: null,
+      instagram: null,
+      bandcamp: null,
+    })
+    .select("id,slug,name")
+    .single();
+
+  if (createError) {
+    throw new Error(createError.message);
+  }
+
+  return (createdArtist as ArtistRow).id;
+}
+
+async function attachArtistsToEvent({
+  eventId,
+  artistsText,
+  city,
+}: {
+  eventId: string;
+  artistsText: string;
+  city: string;
+}) {
+  const artistNames = getArtistNames(artistsText);
+
+  if (artistNames.length === 0) {
+    return;
+  }
+
+  const artistIds: string[] = [];
+
+  for (const artistName of artistNames) {
+    const artistId = await findOrCreateArtist(artistName, city);
+
+    if (artistId) {
+      artistIds.push(artistId);
+    }
+  }
+
+  if (artistIds.length === 0) {
+    return;
+  }
+
+  const rows = artistIds.map((artistId) => ({
+    event_id: eventId,
+    artist_id: artistId,
+  }));
+
+  const { error } = await supabase.from("event_artists").insert(rows);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export function AdminEventCreateClient() {
-  const router = useRouter();
-
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [city, setCity] = useState("Pombal");
-  const [venueName, setVenueName] = useState("");
-  const [organizerName, setOrganizerName] = useState("");
+  const [organizer, setOrganizer] = useState("");
   const [artistsText, setArtistsText] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [displayTime, setDisplayTime] = useState("");
   const [category, setCategory] = useState("Concertos");
+  const [city, setCity] = useState("Pombal");
+  const [venue, setVenue] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isMultiDay, setIsMultiDay] = useState(false);
+  const [eventTime, setEventTime] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [featured, setFeatured] = useState(false);
-  const [isMultiDay, setIsMultiDay] = useState(false);
+
+  const [ticketMode, setTicketMode] = useState<TicketMode>("none");
+  const [ticketUrl, setTicketUrl] = useState("");
+  const [ticketPrice, setTicketPrice] = useState("");
+  const [ticketCapacity, setTicketCapacity] = useState("");
+  const [ticketButtonLabel, setTicketButtonLabel] = useState("Comprar bilhete");
+  const [instagramUrl, setInstagramUrl] = useState("");
 
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-
-  function handleTitleChange(value: string) {
-    setTitle(value);
-    setSlug(slugify(value));
-  }
 
   function handleCategoryChange(value: string) {
     setCategory(value);
 
     if (value === "Festivais") {
       setIsMultiDay(true);
+
+      if (eventDate && !endDate) {
+        setEndDate(eventDate);
+      }
     }
   }
 
@@ -187,21 +392,37 @@ export function AdminEventCreateClient() {
       setEndDate("");
     }
 
-    if (value && startDate && !endDate) {
-      setEndDate(startDate);
+    if (value && eventDate && !endDate) {
+      setEndDate(eventDate);
     }
   }
 
-  function handleStartDateChange(value: string) {
-    setStartDate(value);
+  function handleEventDateChange(value: string) {
+    setEventDate(value);
 
     if (isMultiDay && !endDate) {
       setEndDate(value);
     }
   }
 
-  function handlePriceBlur() {
-    setPrice(formatPriceValue(price));
+  function handleTicketModeChange(value: TicketMode) {
+    setTicketMode(value);
+
+    if (value === "none") {
+      setTicketUrl("");
+      setTicketPrice("");
+      setTicketCapacity("");
+      setTicketButtonLabel("Comprar bilhete");
+    }
+
+    if (value === "external") {
+      setTicketButtonLabel("Bilhetes / inscrição");
+    }
+
+    if (value === "internal") {
+      setTicketUrl("");
+      setTicketButtonLabel("Comprar na Paranoid");
+    }
   }
 
   function handleImageChange(file: File | null) {
@@ -229,26 +450,6 @@ export function AdminEventCreateClient() {
 
     setSelectedImageFile(file);
     setImagePreviewUrl(URL.createObjectURL(file));
-  }
-
-  async function getUniqueEventSlug(baseSlug: string) {
-    const cleanBaseSlug = baseSlug || `evento-${crypto.randomUUID().slice(0, 6)}`;
-
-    const { data, error } = await supabase
-      .from("events")
-      .select("id")
-      .eq("slug", cleanBaseSlug)
-      .maybeSingle();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    if (!data) {
-      return cleanBaseSlug;
-    }
-
-    return `${cleanBaseSlug}-${crypto.randomUUID().slice(0, 6)}`;
   }
 
   async function uploadSelectedImage() {
@@ -280,554 +481,497 @@ export function AdminEventCreateClient() {
     return data.publicUrl;
   }
 
-  async function findOrCreateVenue() {
-    const cleanVenueName = venueName.trim();
-
-    if (!cleanVenueName) {
-      return null;
-    }
-
-    const venueSlug = slugify(cleanVenueName);
-
-    const { data: existingVenue, error: existingError } = await supabase
-      .from("venues")
-      .select("id,slug,name")
-      .eq("slug", venueSlug)
-      .maybeSingle();
-
-    if (existingError) {
-      throw new Error(existingError.message);
-    }
-
-    if (existingVenue) {
-      return (existingVenue as VenueRow).id;
-    }
-
-    const { data: createdVenue, error: createError } = await supabase
-      .from("venues")
-      .insert({
-        slug: venueSlug,
-        name: cleanVenueName,
-        city,
-        address: null,
-        description: null,
-        instagram: null,
-      })
-      .select("id,slug,name")
-      .single();
-
-    if (createError) {
-      throw new Error(createError.message);
-    }
-
-    return (createdVenue as VenueRow).id;
+  function resetForm() {
+    setTitle("");
+    setOrganizer("");
+    setArtistsText("");
+    setCategory("Concertos");
+    setCity("Pombal");
+    setVenue("");
+    setEventDate("");
+    setEndDate("");
+    setIsMultiDay(false);
+    setEventTime("");
+    setPrice("");
+    setDescription("");
+    setFeatured(false);
+    setTicketMode("none");
+    setTicketUrl("");
+    setTicketPrice("");
+    setTicketCapacity("");
+    setTicketButtonLabel("Comprar bilhete");
+    setInstagramUrl("");
+    setSelectedImageFile(null);
+    setImagePreviewUrl(null);
   }
 
-  async function findOrCreateOrganizer() {
-    const cleanOrganizerName = organizerName.trim();
-
-    if (!cleanOrganizerName) {
-      return null;
-    }
-
-    const organizerSlug = slugify(cleanOrganizerName);
-
-    const { data: existingOrganizer, error: existingError } = await supabase
-      .from("organizers")
-      .select("id,slug,name")
-      .eq("slug", organizerSlug)
-      .maybeSingle();
-
-    if (existingError) {
-      throw new Error(existingError.message);
-    }
-
-    if (existingOrganizer) {
-      return (existingOrganizer as OrganizerRow).id;
-    }
-
-    const { data: createdOrganizer, error: createError } = await supabase
-      .from("organizers")
-      .insert({
-        slug: organizerSlug,
-        name: cleanOrganizerName,
-        city,
-        description: null,
-        pack: null,
-        verified: false,
-        instagram: null,
-      })
-      .select("id,slug,name")
-      .single();
-
-    if (createError) {
-      throw new Error(createError.message);
-    }
-
-    return (createdOrganizer as OrganizerRow).id;
-  }
-
-  async function findOrCreateArtist(name: string) {
-    const artistSlug = slugify(name);
-
-    const { data: existingArtist, error: existingError } = await supabase
-      .from("artists")
-      .select("id,slug,name")
-      .eq("slug", artistSlug)
-      .maybeSingle();
-
-    if (existingError) {
-      throw new Error(existingError.message);
-    }
-
-    if (existingArtist) {
-      return (existingArtist as ArtistRow).id;
-    }
-
-    const { data: createdArtist, error: createError } = await supabase
-      .from("artists")
-      .insert({
-        slug: artistSlug,
-        name,
-        city,
-        genres: null,
-        description: null,
-        instagram: null,
-        bandcamp: null,
-      })
-      .select("id,slug,name")
-      .single();
-
-    if (createError) {
-      throw new Error(createError.message);
-    }
-
-    return (createdArtist as ArtistRow).id;
-  }
-
-  async function attachArtistsToEvent(eventId: string) {
-    const artistNames = getArtistNames(artistsText);
-
-    if (artistNames.length === 0) {
-      return;
-    }
-
-    const artistIds: string[] = [];
-
-    for (const artistName of artistNames) {
-      const artistId = await findOrCreateArtist(artistName);
-      artistIds.push(artistId);
-    }
-
-    const rows = artistIds.map((artistId) => ({
-      event_id: eventId,
-      artist_id: artistId,
-    }));
-
-    const { error } = await supabase.from("event_artists").insert(rows);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-  }
-
-  async function handleCreate() {
+  async function handleCreateEvent() {
     setMessage("");
 
-    if (!title || !city || !venueName || !organizerName || !startDate) {
+    if (!title || !organizer || !city || !venue || !eventDate) {
       setMessage(
-        "Preenche pelo menos título, cidade, espaço, organizador e data de início."
+        "Preenche pelo menos nome do evento, organizador, cidade, espaço e data."
       );
       return;
     }
 
     if (isMultiDay && !endDate) {
-      setMessage("Mete a data de fim do festival.");
+      setMessage("Mete a data de fim do festival/evento.");
       return;
     }
 
-    if (isMultiDay && endDate < startDate) {
+    if (isMultiDay && endDate < eventDate) {
       setMessage("A data de fim não pode ser antes da data de início.");
+      return;
+    }
+
+    if (ticketMode === "external" && !ticketUrl.trim()) {
+      setMessage("Se escolheste bilheteira externa, mete o link.");
+      return;
+    }
+
+    if (ticketMode === "internal" && !ticketPrice.trim()) {
+      setMessage("Se escolheste bilheteira Paranoid, mete o preço do bilhete.");
       return;
     }
 
     setSaving(true);
 
-    let venueId: string | null = null;
-    let organizerId: string | null = null;
-    let imageUrl: string | null = null;
-    let finalSlug = slug;
-
-    const finalEndDate = isMultiDay ? endDate || startDate : startDate;
-    const displayDateText = buildDisplayDate(startDate, finalEndDate, isMultiDay);
-    const startAt = getStartAt(startDate, displayTime);
-    const endAt = getEndAt(startDate, finalEndDate, isMultiDay);
-
     try {
-      finalSlug = await getUniqueEventSlug(slug || slugify(title));
-    } catch (error) {
-      setMessage(
-        `Erro ao gerar slug: ${
-          error instanceof Error ? error.message : "erro desconhecido"
-        }`
-      );
-      setSaving(false);
-      return;
-    }
+      const eventSlug = await createUniqueEventSlug(title);
+      const imageUrl = await uploadSelectedImage();
 
-    try {
-      venueId = await findOrCreateVenue();
-      organizerId = await findOrCreateOrganizer();
-    } catch (error) {
-      setMessage(
-        `Erro ao preparar espaço/organizador: ${
-          error instanceof Error ? error.message : "erro desconhecido"
-        }`
-      );
-      setSaving(false);
-      return;
-    }
+      const venueId = await findOrCreateVenue(venue, city);
+      const organizerId = await findOrCreateOrganizer(organizer, city);
 
-    try {
-      imageUrl = await uploadSelectedImage();
-    } catch (error) {
-      setMessage(
-        `Erro ao carregar imagem: ${
-          error instanceof Error ? error.message : "erro desconhecido"
-        }`
-      );
-      setSaving(false);
-      return;
-    }
+      const finalEndDate = isMultiDay ? endDate || eventDate : eventDate;
+      const displayDate = buildDisplayDate(eventDate, finalEndDate, isMultiDay);
+      const startAt = getStartAt(eventDate, eventTime || null);
+      const endAt = getEndAt(eventDate, finalEndDate, isMultiDay);
 
-    const { data: createdEvent, error: eventError } = await supabase
-      .from("events")
-      .insert({
-        slug: finalSlug,
-        title,
+      const { data: createdEvent, error } = await supabase
+        .from("events")
+        .insert({
+          slug: eventSlug,
+          title,
+          city,
+          venue_id: venueId,
+          venue_name: venue,
+          organizer_id: organizerId,
+          organizer_name: organizer,
+          start_at: startAt,
+          end_at: endAt,
+          start_date: eventDate,
+          end_date: finalEndDate,
+          is_multi_day: isMultiDay,
+          display_date: displayDate,
+          display_time: eventTime || "Hora por definir",
+          category,
+          price: price || "Preço por definir",
+          description: description || "",
+          image_url: imageUrl,
+
+          ticket_mode: ticketMode,
+          ticket_url: ticketMode === "external" ? normalizeExternalUrl(ticketUrl) : null,
+          ticket_price: ticketMode === "internal" ? ticketPrice || null : null,
+          ticket_capacity:
+            ticketMode === "internal" && ticketCapacity
+              ? Number(ticketCapacity)
+              : null,
+          ticket_button_label:
+            ticketMode !== "none" ? ticketButtonLabel || null : null,
+          instagram_url: normalizeExternalUrl(instagramUrl),
+
+          featured,
+          status: "published",
+        })
+        .select("id,slug")
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      await attachArtistsToEvent({
+        eventId: createdEvent.id,
+        artistsText,
         city,
-        venue_id: venueId,
-        venue_name: venueName,
-        organizer_id: organizerId,
-        organizer_name: organizerName,
-        start_at: startAt,
-        end_at: endAt,
-        start_date: startDate,
-        end_date: finalEndDate,
-        is_multi_day: isMultiDay,
-        display_date: displayDateText,
-        display_time: displayTime || "Hora por definir",
-        category,
-        price: price || "Preço por definir",
-        description: description || "",
-        image_url: imageUrl,
-        featured,
-        status: "published",
-      })
-      .select("id,slug")
-      .single();
+      });
 
-    if (eventError || !createdEvent) {
+      setSaving(false);
+      setMessage(`Evento criado: /eventos/${createdEvent.slug}`);
+      resetForm();
+    } catch (error) {
+      setSaving(false);
       setMessage(
         `Erro ao criar evento: ${
-          eventError?.message || "sem detalhe do Supabase"
-        }`
-      );
-      setSaving(false);
-      return;
-    }
-
-    const event = createdEvent as CreatedEventRow;
-
-    try {
-      await attachArtistsToEvent(event.id);
-    } catch (error) {
-      setMessage(
-        `Evento criado, mas erro nos artistas: ${
           error instanceof Error ? error.message : "erro desconhecido"
         }`
       );
-      setSaving(false);
-      return;
     }
-
-    setMessage("Evento criado.");
-    setSaving(false);
-
-    router.push(`/admin/eventos/${event.slug}`);
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
-      <section className="mx-auto max-w-md">
-        <Link href="/admin" className="mb-6 inline-block text-sm text-zinc-400">
-          ← Voltar ao admin
-        </Link>
+    <section className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:mt-12 lg:p-8">
+      <div className="grid gap-6 lg:grid-cols-[1fr_0.7fr]">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            Admin
+          </p>
 
-        <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-          Novo evento
-        </p>
+          <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+            Criar evento.
+          </h2>
 
-        <h1 className="text-5xl font-black leading-none tracking-tight">
-          Publica direto.
-        </h1>
+          <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+            Cria eventos diretamente como Paranoid, já com bilheteira interna,
+            externa ou sem bilhetes.
+          </p>
+        </div>
 
-        <p className="mt-5 text-base text-zinc-400">
-          O slug é gerado automaticamente pelo título. Para festivais, ativa a
-          opção de vários dias.
-        </p>
+        <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
+          <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+            Pré-visualização
+          </p>
+
+          <h3 className="mt-3 text-2xl font-black leading-tight">
+            {title || "Nome do evento"}
+          </h3>
+
+          <div className="mt-4 space-y-1 text-sm text-zinc-500">
+            <p>{category}</p>
+            <p>{eventDate || "Data por definir"}</p>
+            <p>{eventTime || "Hora por definir"}</p>
+            <p>{[venue, city].filter(Boolean).join(" · ") || "Local"}</p>
+            <p>{price || "Preço por definir"}</p>
+            {ticketMode === "external" && <p>Bilheteira externa</p>}
+            {ticketMode === "internal" && (
+              <p>Bilheteira Paranoid · {ticketPrice || "preço por definir"}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 grid gap-5 lg:grid-cols-2">
+        <div className="lg:col-span-2">
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Poster / imagem
+          </label>
+
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(event) =>
+              handleImageChange(event.target.files?.[0] || null)
+            }
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-full file:border-0 file:bg-[#f2f1ec] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
+          />
+        </div>
 
         {imagePreviewUrl && (
           <div
-            className="mt-6 h-64 rounded-[2rem] bg-cover bg-center"
+            className="h-72 rounded-[2rem] bg-cover bg-center lg:col-span-2 lg:h-96"
             style={{ backgroundImage: `url(${imagePreviewUrl})` }}
           />
         )}
 
-        <div className="mt-8 space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Imagem / poster
-            </label>
-
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={(event) =>
-                handleImageChange(event.target.files?.[0] || null)
-              }
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-full file:border-0 file:bg-[#f2f1ec] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
-            />
-
-            <p className="mt-2 text-xs text-zinc-600">
-              JPG, PNG ou WEBP. Máximo 5MB.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Nome do evento
-            </label>
-
-            <input
-              value={title}
-              onChange={(event) => handleTitleChange(event.target.value)}
-              placeholder="Nome do evento"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Slug automático
-            </label>
-
-            <input
-              value={slug}
-              readOnly
-              placeholder="gerado-automaticamente"
-              className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-zinc-400 outline-none placeholder:text-zinc-700"
-            />
-
-            <p className="mt-2 text-xs text-zinc-600">
-              É gerado pelo título. Se já existir, a app acrescenta um código no
-              fim.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Organizador
-            </label>
-
-            <input
-              value={organizerName}
-              onChange={(event) => setOrganizerName(event.target.value)}
-              placeholder="Nome do organizador"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Artistas / bandas / DJs
-            </label>
-
-            <input
-              value={artistsText}
-              onChange={(event) => setArtistsText(event.target.value)}
-              placeholder="Ex: Dead Static, Cave Ritual"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-            />
-
-            <p className="mt-2 text-xs text-zinc-600">
-              Separa vários nomes por vírgula.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Categoria
-            </label>
-
-            <select
-              value={category}
-              onChange={(event) => handleCategoryChange(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-            >
-              {categories.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </div>
-
-          <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
-            <input
-              type="checkbox"
-              checked={isMultiDay}
-              onChange={(event) => handleMultiDayChange(event.target.checked)}
-            />
-
-            <span className="text-sm font-bold text-zinc-300">
-              Festival / evento de vários dias
-            </span>
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Nome do evento
           </label>
 
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Ex: Noite Paranoid Vol. I"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Organizador
+          </label>
+
+          <input
+            value={organizer}
+            onChange={(event) => setOrganizer(event.target.value)}
+            placeholder="Nome do coletivo, sala ou promotor"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+        </div>
+
+        <div className="lg:col-span-2">
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Artistas / bandas / DJs
+          </label>
+
+          <input
+            value={artistsText}
+            onChange={(event) => setArtistsText(event.target.value)}
+            placeholder="Separar por vírgulas"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Categoria
+          </label>
+
+          <select
+            value={category}
+            onChange={(event) => handleCategoryChange(event.target.value)}
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+          >
+            {categories.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Cidade
+          </label>
+
+          <select
+            value={city}
+            onChange={(event) => setCity(event.target.value)}
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+          >
+            {cities.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="lg:col-span-2">
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Espaço / local
+          </label>
+
+          <input
+            value={venue}
+            onChange={(event) => setVenue(event.target.value)}
+            placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+        </div>
+
+        <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3 lg:col-span-2">
+          <input
+            type="checkbox"
+            checked={isMultiDay}
+            onChange={(event) => handleMultiDayChange(event.target.checked)}
+          />
+
+          <span className="text-sm font-bold text-zinc-300">
+            Festival / evento de vários dias
+          </span>
+        </label>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Data início
+          </label>
+
+          <input
+            type="date"
+            value={eventDate}
+            onChange={(event) => handleEventDateChange(event.target.value)}
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+          />
+        </div>
+
+        {isMultiDay && (
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Cidade
-            </label>
-
-            <select
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-            >
-              {cities.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Espaço / local
+              Data fim
             </label>
 
             <input
-              value={venueName}
-              onChange={(event) => setVenueName(event.target.value)}
-              placeholder="Nome do espaço"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              type="date"
+              value={endDate}
+              onChange={(event) => setEndDate(event.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
             />
           </div>
+        )}
 
-          <div className={isMultiDay ? "grid grid-cols-2 gap-3" : ""}>
-            <div>
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Hora
+          </label>
+
+          <input
+            type="time"
+            value={eventTime}
+            onChange={(event) => setEventTime(event.target.value)}
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Preço público
+          </label>
+
+          <input
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            onBlur={() => setPrice(formatPriceValue(price))}
+            placeholder="Ex: 5€, 10€ ou Entrada livre"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+        </div>
+
+        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5 lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-500">
+            Bilheteira
+          </p>
+
+          <label className="mt-4 mb-2 block text-sm font-bold text-zinc-300">
+            Tipo de bilheteira
+          </label>
+
+          <select
+            value={ticketMode}
+            onChange={(event) =>
+              handleTicketModeChange(event.target.value as TicketMode)
+            }
+            className="w-full rounded-2xl border border-red-950 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-800"
+          >
+            <option value="none">Sem bilhetes / só informação</option>
+            <option value="external">Bilheteira externa</option>
+            <option value="internal">Bilheteira Paranoid</option>
+          </select>
+
+          {ticketMode === "external" && (
+            <div className="mt-5">
               <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Data início
+                Link externo
               </label>
 
               <input
-                type="date"
-                value={startDate}
-                onChange={(event) => handleStartDateChange(event.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                value={ticketUrl}
+                onChange={(event) => setTicketUrl(event.target.value)}
+                placeholder="https://shotgun.live/..."
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
               />
             </div>
+          )}
 
-            {isMultiDay && (
+          {ticketMode === "internal" && (
+            <div className="mt-5 grid gap-5 lg:grid-cols-3">
               <div>
                 <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Data fim
+                  Preço do bilhete
                 </label>
 
                 <input
-                  type="date"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  value={ticketPrice}
+                  onChange={(event) => setTicketPrice(event.target.value)}
+                  onBlur={() => setTicketPrice(formatPriceValue(ticketPrice))}
+                  placeholder="Ex: 10€"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
                 />
               </div>
-            )}
-          </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Hora
-            </label>
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Lotação
+                </label>
 
-            <input
-              type="time"
-              value={displayTime}
-              onChange={(event) => setDisplayTime(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-            />
-          </div>
+                <input
+                  type="number"
+                  min="1"
+                  value={ticketCapacity}
+                  onChange={(event) => setTicketCapacity(event.target.value)}
+                  placeholder="Ex: 100"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                />
+              </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Preço
-            </label>
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Texto do botão
+                </label>
 
-            <input
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              onBlur={handlePriceBlur}
-              placeholder="Ex: 5€, 10€ ou Entrada livre"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-            />
-          </div>
+                <input
+                  value={ticketButtonLabel}
+                  onChange={(event) => setTicketButtonLabel(event.target.value)}
+                  placeholder="Comprar na Paranoid"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Descrição
-            </label>
-
-            <textarea
-              rows={7}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Descrição do evento"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-            />
-          </div>
-
-          <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
-            <input
-              type="checkbox"
-              checked={featured}
-              onChange={(event) => setFeatured(event.target.checked)}
-            />
-
-            <span className="text-sm font-bold text-zinc-300">
-              Destacar na Paranoid
-            </span>
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Instagram / página do evento
           </label>
 
-          <button
-            type="button"
-            onClick={handleCreate}
-            disabled={saving}
-            className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-          >
-            {saving ? "A publicar..." : "Publicar evento"}
-          </button>
-
-          {message && (
-            <p className="text-center text-sm font-bold text-zinc-400">
-              {message}
-            </p>
-          )}
-
-          <Link
-            href="/admin"
-            className="block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-          >
-            Voltar ao Admin
-          </Link>
+          <input
+            value={instagramUrl}
+            onChange={(event) => setInstagramUrl(event.target.value)}
+            placeholder="https://instagram.com/..."
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
         </div>
-      </section>
-    </main>
+
+        <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+          <input
+            type="checkbox"
+            checked={featured}
+            onChange={(event) => setFeatured(event.target.checked)}
+          />
+
+          <span className="text-sm font-bold text-zinc-300">
+            Destacar evento
+          </span>
+        </label>
+
+        <div className="lg:col-span-2">
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Descrição
+          </label>
+
+          <textarea
+            rows={8}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Descrição, horários, contexto, links úteis..."
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+        </div>
+      </div>
+
+      <div className="mt-8 grid gap-3 lg:grid-cols-[1fr_0.35fr]">
+        <button
+          type="button"
+          onClick={handleCreateEvent}
+          disabled={saving}
+          className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+        >
+          {saving ? "A criar..." : "Criar evento"}
+        </button>
+
+        <Link
+          href="/admin"
+          className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+        >
+          Voltar ao admin
+        </Link>
+      </div>
+
+      {message && (
+        <p className="mt-5 text-center text-sm font-bold text-zinc-400">
+          {message}
+        </p>
+      )}
+    </section>
   );
 }
