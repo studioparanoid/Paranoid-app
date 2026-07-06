@@ -1,37 +1,37 @@
 import Link from "next/link";
-import { OrganizerTicketsClient } from "@/components/OrganizerTicketsClient";
+import { TicketScannerClient } from "@/components/TicketScannerClient";
 
-export default function OrganizerTicketsPage() {
+export default function OrganizerTicketScannerPage() {
   return (
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
-      <section className="mx-auto max-w-md lg:max-w-7xl">
+      <section className="mx-auto max-w-md lg:max-w-6xl">
+        <Link
+          href="/organizador/bilhetes"
+          className="mb-6 inline-block text-sm text-zinc-400"
+        >
+          ← Voltar à bilheteira
+        </Link>
+
         <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
           <div>
             <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-              Bilheteira
+              Scanner
             </p>
 
             <h1 className="text-5xl font-black leading-none tracking-tight lg:text-8xl">
-              Porta aberta ou fechada.
+              Ler código. Abrir porta.
             </h1>
           </div>
 
           <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
             <p className="text-base leading-relaxed text-zinc-400 lg:text-lg">
-              Vê reservas da bilheteira Paranoid, procura por código/email e
-              marca entradas à porta.
+              Aponta a câmara ao QR code do bilhete. Se a reserva estiver ativa,
+              a entrada fica marcada automaticamente.
             </p>
-
-            <Link
-              href="/organizador/bilhetes/scan"
-              className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-            >
-              Abrir scanner QR
-            </Link>
           </div>
         </section>
 
-        <OrganizerTicketsClient />
+        <TicketScannerClient />
       </section>
     </main>
   );
