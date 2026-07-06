@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
+import { TicketQrCode } from "@/components/TicketQrCode";
 
 type ReservationRow = {
   id: string;
@@ -454,6 +455,12 @@ export function UserTicketsClient() {
                       {statusLabel(ticket.status)}
                     </span>
                   </div>
+
+                  {ticket.status === "reserved" && (
+                    <div className="mt-5">
+                      <TicketQrCode value={ticket.check_in_code} />
+                    </div>
+                  )}
 
                   <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-zinc-800 bg-black p-4 text-sm text-zinc-400">
                     <p>

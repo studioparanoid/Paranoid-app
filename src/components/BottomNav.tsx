@@ -14,11 +14,15 @@ const navItems = [
   },
   {
     href: "/descobrir",
-    label: "Descobrir",
+    label: "Rede",
   },
   {
     href: "/guardados",
-    label: "Guardados",
+    label: "Guard.",
+  },
+  {
+    href: "/bilhetes",
+    label: "Bilhetes",
   },
   {
     href: "/perfil",
@@ -35,7 +39,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-900 bg-[#0b0b0b]/95 px-2 py-2 backdrop-blur-xl lg:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+      <div className="mx-auto grid max-w-lg grid-cols-6 gap-1">
         {navItems.map((item) => {
           const active = isActive(pathname, item.href);
 
@@ -43,7 +47,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`rounded-2xl px-2 py-3 text-center text-[11px] font-black transition ${
+              className={`rounded-2xl px-1 py-3 text-center text-[10px] font-black transition ${
                 active
                   ? "bg-[#f2f1ec] text-black"
                   : "text-zinc-500 hover:bg-zinc-950 hover:text-zinc-300"
