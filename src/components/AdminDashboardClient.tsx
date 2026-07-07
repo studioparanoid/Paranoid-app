@@ -2,36 +2,51 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AdminEventActions } from "@/components/AdminEventActions";
+import { AdminSubmissionActions } from "@/components/AdminSubmissionActions";
 import { supabase } from "@/lib/supabase/public";
 import { type EventSubmission } from "@/lib/submissions";
-import { AdminSubmissionActions } from "@/components/AdminSubmissionActions";
-import { AdminEventActions } from "@/components/AdminEventActions";
 
-type EventRow = {
+type AdminEventRow = {
   id: string;
   slug: string;
   title: string;
-  city: string;
+  city: string | null;
   venue_name: string | null;
   organizer_name: string | null;
   display_date: string | null;
   display_time: string | null;
-  category: string;
+  category: string | null;
   price: string | null;
-  description: string | null;
   image_url: string | null;
   featured: boolean | null;
   status: string | null;
-  start_at: string | null;
+  ticket_mode: string | null;
+  ticket_price: string | null;
+  ticket_capacity: number | null;
+  created_at: string | null;
 };
 
-type NetworkCounts = {
+type ProfileClaimRow = {
+  id: string;
+  account_type: "artist" | "organizer" | "venue";
+  entity_name: string;
+  city: string | null;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+};
+
+type Counts = {
+  pendingSubmissions: number;
+  publishedEvents: number;
+  archivedEvents: number;
   artists: number;
   venues: number;
   organizers: number;
+  pendingProfiles: number;
 };
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null | undefined) {
   if (!value) {
     return "Sem data";
   }
@@ -49,305 +64,200 @@ function formatDate(value: string | null) {
   }).format(date);
 }
 
-function SubmissionCard({ submission }: { submission: EventSubmission }) {
-  return (
-    <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-      {submission.image_url && (
-        <div
-          className="mb-4 h-52 rounded-[1.5rem] bg-cover bg-center"
-          style={{ backgroundImage: `url(${submission.image_url})` }}
-        />
-      )}
+function statusLabel(value: string | null | undefined) {
+  if (value === "archived") {
+    return "Arquivado";
+  }
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-red-700">
-            {submission.category || "Submissão"}
-          </p>
+  if (value === "draft") {
+    return "Rascunho";
+  }
 
-          <h3 className="mt-2 text-2xl font-black leading-tight">
-            {submission.title}
-          </h3>
-        </div>
+  if (value === "rejected") {
+    return "Rejeitado";
+  }
 
-        <span className="shrink-0 rounded-full border border-yellow-900 bg-yellow-950/30 px-3 py-1 text-xs font-black uppercase text-yellow-500">
-          {submission.status}
-        </span>
-      </div>
+  if (value === "approved") {
+    return "Aprovado";
+  }
 
-      <div className="mt-4 space-y-1 text-sm text-zinc-400">
-        <p>
-          <span className="font-bold text-zinc-300">Data:</span>{" "}
-          {submission.event_date || "Sem data"}
-          {submission.is_multi_day && submission.end_date
-            ? ` → ${submission.end_date}`
-            : ""}
-          {submission.event_time ? ` · ${submission.event_time}` : ""}
-        </p>
+  if (value === "pending") {
+    return "Pendente";
+  }
 
-        <p>
-          <span className="font-bold text-zinc-300">Cidade:</span>{" "}
-          {submission.city || "Cidade por definir"}
-        </p>
-
-        <p>
-          <span className="font-bold text-zinc-300">Espaço:</span>{" "}
-          {submission.venue || "Espaço por definir"}
-        </p>
-
-        <p>
-          <span className="font-bold text-zinc-300">Organizador:</span>{" "}
-          {submission.organizer || "Organizador por definir"}
-        </p>
-
-        {submission.artists_text && (
-          <p>
-            <span className="font-bold text-zinc-300">Artistas:</span>{" "}
-            {submission.artists_text}
-          </p>
-        )}
-      </div>
-
-      {submission.description && (
-        <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-zinc-500">
-          {submission.description}
-        </p>
-      )}
-
-      <div className="mt-5 grid gap-2">
-        <Link
-          href={`/admin/submissoes/${submission.id}`}
-          className="rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
-        >
-          Editar submissão
-        </Link>
-
-        <AdminSubmissionActions submission={submission} />
-      </div>
-    </article>
-  );
+  return "Publicado";
 }
 
-function EventCard({
-  event,
-  mode,
-}: {
-  event: EventRow;
-  mode: "published" | "archived";
-}) {
-  return (
-    <article className="h-full rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-      {event.image_url && (
-        <Link
-          href={`/eventos/${event.slug}`}
-          className="mb-4 block h-52 rounded-[1.5rem] bg-cover bg-center"
-          style={{ backgroundImage: `url(${event.image_url})` }}
-        />
-      )}
+function ticketLabel(value: string | null | undefined) {
+  if (value === "internal") {
+    return "Bilheteira Paranoid";
+  }
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-red-700">
-            {event.category || "Evento"}
-          </p>
+  if (value === "external") {
+    return "Bilheteira externa";
+  }
 
-          <h3 className="mt-2 text-2xl font-black leading-tight">
-            {event.title}
-          </h3>
-        </div>
+  return "Sem bilhetes";
+}
 
-        {event.featured && (
-          <span className="shrink-0 rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-black uppercase text-red-400">
-            Destaque
-          </span>
-        )}
-      </div>
+function claimTypeLabel(value: string) {
+  if (value === "artist") {
+    return "Artista";
+  }
 
-      <div className="mt-4 space-y-1 text-sm text-zinc-400">
-        <p>
-          <span className="font-bold text-zinc-300">Data:</span>{" "}
-          {event.display_date || formatDate(event.start_at)}
-          {event.display_time ? ` · ${event.display_time}` : ""}
-        </p>
+  if (value === "organizer") {
+    return "Organizador";
+  }
 
-        <p>
-          <span className="font-bold text-zinc-300">Cidade:</span>{" "}
-          {event.city || "Cidade por definir"}
-        </p>
+  if (value === "venue") {
+    return "Espaço";
+  }
 
-        <p>
-          <span className="font-bold text-zinc-300">Espaço:</span>{" "}
-          {event.venue_name || "Espaço por definir"}
-        </p>
-
-        <p>
-          <span className="font-bold text-zinc-300">Organizador:</span>{" "}
-          {event.organizer_name || "Organizador por definir"}
-        </p>
-      </div>
-
-      {event.description && (
-        <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-zinc-500">
-          {event.description}
-        </p>
-      )}
-
-      <div className="mt-5">
-        <AdminEventActions
-          eventId={event.id}
-          slug={event.slug}
-          featured={Boolean(event.featured)}
-          mode={mode}
-        />
-      </div>
-    </article>
-  );
+  return value;
 }
 
 function EmptyCard({ text }: { text: string }) {
   return (
     <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-      <p className="text-zinc-500">{text}</p>
+      <p className="text-sm text-zinc-500">{text}</p>
     </div>
   );
 }
 
 export function AdminDashboardClient() {
   const [loading, setLoading] = useState(true);
-  const [debugMessage, setDebugMessage] = useState("");
+  const [message, setMessage] = useState("");
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [email, setEmail] = useState("");
+  const [pendingSubmissions, setPendingSubmissions] = useState<EventSubmission[]>(
+    []
+  );
+  const [publishedEvents, setPublishedEvents] = useState<AdminEventRow[]>([]);
+  const [archivedEvents, setArchivedEvents] = useState<AdminEventRow[]>([]);
+  const [pendingProfileClaims, setPendingProfileClaims] = useState<
+    ProfileClaimRow[]
+  >([]);
 
-  const [submissions, setSubmissions] = useState<EventSubmission[]>([]);
-  const [publishedEvents, setPublishedEvents] = useState<EventRow[]>([]);
-  const [archivedEvents, setArchivedEvents] = useState<EventRow[]>([]);
-  const [networkCounts, setNetworkCounts] = useState<NetworkCounts>({
+  const [counts, setCounts] = useState<Counts>({
+    pendingSubmissions: 0,
+    publishedEvents: 0,
+    archivedEvents: 0,
     artists: 0,
     venues: 0,
     organizers: 0,
+    pendingProfiles: 0,
   });
 
-  const featuredCount = useMemo(() => {
-    return publishedEvents.filter((event) => event.featured).length;
+  const featuredEvents = useMemo(() => {
+    return publishedEvents.filter((event) => event.featured);
   }, [publishedEvents]);
 
-  async function checkAdmin(userId: string) {
-    const { data: adminData } = await supabase
-      .from("app_admins")
-      .select("user_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+  async function countRows(table: string, filters?: Record<string, string>) {
+    let query = supabase.from(table).select("id", {
+      count: "exact",
+      head: true,
+    });
 
-    if (adminData) {
-      return true;
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        query = query.eq(key, value);
+      });
     }
 
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
-
-    return profileData?.role === "admin";
+    const { count } = await query;
+    return count || 0;
   }
 
   async function loadDashboard() {
     setLoading(true);
-    setDebugMessage("");
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setEmail("");
-      setIsAdmin(false);
-      setLoading(false);
-      return;
-    }
-
-    setEmail(user.email || "");
-
-    const adminStatus = await checkAdmin(user.id);
-
-    setIsAdmin(adminStatus);
-
-    if (!adminStatus) {
-      setLoading(false);
-      return;
-    }
+    setMessage("");
 
     const [
-      submissionsResult,
-      publishedEventsResult,
-      archivedEventsResult,
-      artistsResult,
-      venuesResult,
-      organizersResult,
+      pendingSubmissionsResponse,
+      publishedEventsResponse,
+      archivedEventsResponse,
+      pendingProfilesResponse,
+      pendingSubmissionsCount,
+      publishedEventsCount,
+      archivedEventsCount,
+      artistsCount,
+      venuesCount,
+      organizersCount,
+      pendingProfilesCount,
     ] = await Promise.all([
       supabase
         .from("event_submissions")
         .select("*")
         .eq("status", "pending")
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(8),
 
       supabase
         .from("events")
         .select(
-          "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+          "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,image_url,featured,status,ticket_mode,ticket_price,ticket_capacity,created_at"
         )
         .eq("status", "published")
-        .order("start_at", { ascending: true }),
+        .order("start_at", { ascending: true })
+        .limit(12),
 
       supabase
         .from("events")
         .select(
-          "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,description,image_url,featured,status,start_at"
+          "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,image_url,featured,status,ticket_mode,ticket_price,ticket_capacity,created_at"
         )
         .eq("status", "archived")
-        .order("start_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(6),
 
-      supabase.from("artists").select("id", { count: "exact", head: true }),
-      supabase.from("venues").select("id", { count: "exact", head: true }),
-      supabase.from("organizers").select("id", { count: "exact", head: true }),
+      supabase
+        .from("profile_claims")
+        .select("id,account_type,entity_name,city,status,created_at")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(6),
+
+      countRows("event_submissions", { status: "pending" }),
+      countRows("events", { status: "published" }),
+      countRows("events", { status: "archived" }),
+      countRows("artists"),
+      countRows("venues"),
+      countRows("organizers"),
+      countRows("profile_claims", { status: "pending" }),
     ]);
 
-    const errors = [
-      submissionsResult.error?.message,
-      publishedEventsResult.error?.message,
-      archivedEventsResult.error?.message,
-      artistsResult.error?.message,
-      venuesResult.error?.message,
-      organizersResult.error?.message,
-    ].filter(Boolean);
-
-    if (errors.length > 0) {
-      setDebugMessage(errors.join(" | "));
+    if (pendingSubmissionsResponse.error) {
+      setMessage(pendingSubmissionsResponse.error.message);
     }
 
-    setSubmissions(
-      !submissionsResult.error
-        ? ((submissionsResult.data || []) as EventSubmission[])
-        : []
+    if (publishedEventsResponse.error) {
+      setMessage(publishedEventsResponse.error.message);
+    }
+
+    if (archivedEventsResponse.error) {
+      setMessage(archivedEventsResponse.error.message);
+    }
+
+    if (pendingProfilesResponse.error) {
+      setMessage(pendingProfilesResponse.error.message);
+    }
+
+    setPendingSubmissions(
+      (pendingSubmissionsResponse.data || []) as EventSubmission[]
+    );
+    setPublishedEvents((publishedEventsResponse.data || []) as AdminEventRow[]);
+    setArchivedEvents((archivedEventsResponse.data || []) as AdminEventRow[]);
+    setPendingProfileClaims(
+      (pendingProfilesResponse.data || []) as ProfileClaimRow[]
     );
 
-    setPublishedEvents(
-      !publishedEventsResult.error
-        ? ((publishedEventsResult.data || []) as EventRow[])
-        : []
-    );
-
-    setArchivedEvents(
-      !archivedEventsResult.error
-        ? ((archivedEventsResult.data || []) as EventRow[])
-        : []
-    );
-
-    setNetworkCounts({
-      artists: artistsResult.count || 0,
-      venues: venuesResult.count || 0,
-      organizers: organizersResult.count || 0,
+    setCounts({
+      pendingSubmissions: pendingSubmissionsCount,
+      publishedEvents: publishedEventsCount,
+      archivedEvents: archivedEventsCount,
+      artists: artistsCount,
+      venues: venuesCount,
+      organizers: organizersCount,
+      pendingProfiles: pendingProfilesCount,
     });
 
     setLoading(false);
@@ -359,163 +269,95 @@ export function AdminDashboardClient() {
 
   if (loading) {
     return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar painel admin...</p>
-      </div>
-    );
-  }
-
-  if (!email) {
-    return (
-      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-          Sem sessão
-        </p>
-
-        <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-          Tens de entrar.
-        </h2>
-
-        <p className="mt-5 text-sm leading-relaxed text-zinc-400 lg:text-base">
-          O painel admin só está disponível para contas autorizadas.
-        </p>
-
-        <Link
-          href="/login"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
-        >
-          Entrar
-        </Link>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-          Bloqueado
-        </p>
-
-        <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-          Não tens acesso admin.
-        </h2>
-
-        <p className="mt-5 text-sm leading-relaxed text-zinc-400 lg:text-base">
-          Conta atual: {email}
-        </p>
-
-        <Link
-          href="/perfil"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
-        >
-          Voltar ao perfil
-        </Link>
-      </div>
+      <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+        <p className="text-zinc-500">A carregar admin...</p>
+      </section>
     );
   }
 
   return (
-    <div className="mt-8 lg:mt-12">
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:items-start">
-        <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
+    <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[340px_1fr] lg:items-start">
+      <aside className="space-y-6 lg:sticky lg:top-28">
+        <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
           <p className="text-xs uppercase tracking-[0.3em] text-red-700">
             Painel
           </p>
 
-          <h2 className="mt-3 break-words text-2xl font-black leading-tight">
-            {email}
+          <h2 className="mt-3 text-4xl font-black leading-none">
+            Controlo geral.
           </h2>
 
-          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-zinc-600">
-            Admin Paranoid
-          </p>
-
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{submissions.length}</p>
+            <div className="rounded-[1.5rem] border border-yellow-900 bg-yellow-950/20 p-4">
+              <p className="text-3xl font-black">{counts.pendingSubmissions}</p>
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-yellow-500">
+                Submissões
+              </p>
+            </div>
 
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Pend.
+            <div className="rounded-[1.5rem] border border-red-900 bg-red-950/20 p-4">
+              <p className="text-3xl font-black">{counts.pendingProfiles}</p>
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-red-400">
+                Perfis
               </p>
             </div>
 
             <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{publishedEvents.length}</p>
-
+              <p className="text-3xl font-black">{counts.publishedEvents}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Pub.
+                Eventos
               </p>
             </div>
 
             <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{archivedEvents.length}</p>
-
+              <p className="text-3xl font-black">{counts.artists}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Arq.
+                Artistas
               </p>
             </div>
 
             <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{featuredCount}</p>
-
+              <p className="text-3xl font-black">{counts.venues}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Dest.
+                Espaços
               </p>
             </div>
-          </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-              Rede
-            </p>
-
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <div>
-                <p className="text-2xl font-black">{networkCounts.artists}</p>
-                <p className="text-[10px] font-bold uppercase text-zinc-600">
-                  Art.
-                </p>
-              </div>
-
-              <div>
-                <p className="text-2xl font-black">{networkCounts.venues}</p>
-                <p className="text-[10px] font-bold uppercase text-zinc-600">
-                  Esp.
-                </p>
-              </div>
-
-              <div>
-                <p className="text-2xl font-black">
-                  {networkCounts.organizers}
-                </p>
-                <p className="text-[10px] font-bold uppercase text-zinc-600">
-                  Orgs.
-                </p>
-              </div>
+            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+              <p className="text-3xl font-black">{counts.organizers}</p>
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                Organizadores
+              </p>
             </div>
           </div>
 
           <div className="mt-6 grid gap-3">
             <Link
-              href="/admin/eventos/novo"
+              href="/admin/perfis"
               className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+            >
+              Aprovar perfis
+            </Link>
+
+            <Link
+              href="/admin/eventos/novo"
+              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
             >
               Criar evento
             </Link>
 
             <Link
-              href="/admin/rede"
+              href="/admin/bilhetes"
               className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
             >
-              Gerir rede
+              Admin bilhetes
             </Link>
 
             <Link
-              href="/agenda"
+              href="/admin/rede"
               className="rounded-full border border-zinc-800 px-5 py-4 text-center text-sm font-bold text-zinc-500"
             >
-              Ver agenda
+              Rede cultural
             </Link>
 
             <button
@@ -523,103 +365,326 @@ export function AdminDashboardClient() {
               onClick={loadDashboard}
               className="rounded-full border border-zinc-800 px-5 py-4 text-sm font-bold text-zinc-500"
             >
-              Atualizar painel
+              Atualizar
             </button>
           </div>
 
-          {debugMessage && (
-            <p className="mt-5 rounded-2xl border border-red-950 bg-red-950/20 p-4 text-xs leading-relaxed text-red-300">
-              {debugMessage}
+          {message && (
+            <p className="mt-5 rounded-2xl border border-red-900 bg-red-950/20 p-4 text-sm text-red-300">
+              {message}
             </p>
           )}
-        </aside>
-
-        <section className="space-y-10">
-          <section>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Submissões
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black lg:text-5xl">
-                  À espera de aprovação
-                </h2>
-              </div>
-
-              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
-                {submissions.length}
-              </span>
-            </div>
-
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">
-              {submissions.length === 0 && (
-                <EmptyCard text="Não há submissões pendentes." />
-              )}
-
-              {submissions.map((submission) => (
-                <SubmissionCard key={submission.id} submission={submission} />
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Publicados
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black lg:text-5xl">
-                  Eventos ativos
-                </h2>
-              </div>
-
-              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
-                {publishedEvents.length}
-              </span>
-            </div>
-
-            <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-              {publishedEvents.length === 0 && (
-                <EmptyCard text="Não há eventos publicados." />
-              )}
-
-              {publishedEvents.map((event) => (
-                <EventCard key={event.id} event={event} mode="published" />
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Arquivo
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black lg:text-5xl">
-                  Eventos arquivados
-                </h2>
-              </div>
-
-              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
-                {archivedEvents.length}
-              </span>
-            </div>
-
-            <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-              {archivedEvents.length === 0 && (
-                <EmptyCard text="Não há eventos arquivados." />
-              )}
-
-              {archivedEvents.map((event) => (
-                <EventCard key={event.id} event={event} mode="archived" />
-              ))}
-            </div>
-          </section>
         </section>
-      </div>
-    </div>
+
+        <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            Destaques
+          </p>
+
+          <p className="mt-4 text-5xl font-black">{featuredEvents.length}</p>
+
+          <p className="mt-2 text-sm text-zinc-500">
+            Eventos marcados como destaque.
+          </p>
+        </section>
+      </aside>
+
+      <section className="space-y-8">
+        <section className="rounded-[2.5rem] border border-red-950 bg-red-950/10 p-5 lg:p-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-red-500">
+                Aprovações de perfis
+              </p>
+
+              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+                Artistas, organizadores e espaços.
+              </h2>
+            </div>
+
+            <Link
+              href="/admin/perfis"
+              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+            >
+              Ver pedidos
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-3">
+            {pendingProfileClaims.length === 0 && (
+              <EmptyCard text="Não há perfis pendentes para aprovar." />
+            )}
+
+            {pendingProfileClaims.map((claim) => (
+              <article
+                key={claim.id}
+                className="rounded-[1.5rem] border border-red-950 bg-black p-4"
+              >
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
+                      {claimTypeLabel(claim.account_type)}
+                    </p>
+
+                    <h3 className="mt-2 text-2xl font-black">
+                      {claim.entity_name}
+                    </h3>
+
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {claim.city || "Sem cidade"} ·{" "}
+                      {formatDate(claim.created_at)}
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/admin/perfis"
+                    className="rounded-full border border-zinc-700 px-5 py-3 text-center text-sm font-bold text-zinc-300"
+                  >
+                    Rever
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                Submissões pendentes
+              </p>
+
+              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+                Para aprovar.
+              </h2>
+            </div>
+
+            <Link
+              href="/submeter"
+              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+            >
+              Submeter evento
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-4">
+            {pendingSubmissions.length === 0 && (
+              <EmptyCard text="Não há submissões pendentes." />
+            )}
+
+            {pendingSubmissions.map((submission) => (
+              <article
+                key={submission.id}
+                className="rounded-[2rem] border border-zinc-800 bg-black p-5"
+              >
+                <div className="grid gap-5 lg:grid-cols-[1fr_260px] lg:items-start">
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-yellow-900 bg-yellow-950/20 px-3 py-1 text-xs font-black uppercase text-yellow-500">
+                        Pendente
+                      </span>
+
+                      <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold uppercase text-zinc-500">
+                        {submission.category}
+                      </span>
+
+                      {submission.ticket_mode && submission.ticket_mode !== "none" && (
+                        <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-bold uppercase text-red-300">
+                          {ticketLabel(submission.ticket_mode)}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="mt-4 text-3xl font-black leading-none lg:text-4xl">
+                      {submission.title}
+                    </h3>
+
+                    <div className="mt-4 grid gap-1 text-sm text-zinc-500">
+                      <p>
+                        {submission.city} · {submission.venue}
+                      </p>
+
+                      <p>
+                        {formatDate(submission.event_date)} ·{" "}
+                        {submission.event_time || "Hora por definir"}
+                      </p>
+
+                      <p>Organizador: {submission.organizer}</p>
+
+                      {submission.artists_text && (
+                        <p>Artistas: {submission.artists_text}</p>
+                      )}
+
+                      {submission.ticket_mode === "internal" && (
+                        <p>
+                          Bilheteira Paranoid ·{" "}
+                          {submission.ticket_price || "Preço por definir"} ·{" "}
+                          {submission.ticket_capacity || "lotação indefinida"}
+                        </p>
+                      )}
+                    </div>
+
+                    {submission.description && (
+                      <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-zinc-400">
+                        {submission.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <AdminSubmissionActions submission={submission} />
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                Eventos publicados
+              </p>
+
+              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+                No ar.
+              </h2>
+            </div>
+
+            <Link
+              href="/admin/eventos/novo"
+              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+            >
+              Criar evento
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-4">
+            {publishedEvents.length === 0 && (
+              <EmptyCard text="Ainda não há eventos publicados." />
+            )}
+
+            {publishedEvents.map((event) => (
+              <article
+                key={event.id}
+                className="rounded-[2rem] border border-zinc-800 bg-black p-5"
+              >
+                <div className="grid gap-5 lg:grid-cols-[110px_1fr_260px] lg:items-start">
+                  <div
+                    className="h-28 rounded-[1.5rem] bg-zinc-900 bg-cover bg-center"
+                    style={{
+                      backgroundImage: event.image_url
+                        ? `url(${event.image_url})`
+                        : undefined,
+                    }}
+                  />
+
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
+                        {statusLabel(event.status)}
+                      </span>
+
+                      {event.featured && (
+                        <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-black uppercase text-red-300">
+                          Destaque
+                        </span>
+                      )}
+
+                      {event.ticket_mode && event.ticket_mode !== "none" && (
+                        <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-bold uppercase text-zinc-400">
+                          {ticketLabel(event.ticket_mode)}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="mt-4 text-3xl font-black leading-none">
+                      {event.title}
+                    </h3>
+
+                    <div className="mt-3 space-y-1 text-sm text-zinc-500">
+                      <p>
+                        {event.city || "Sem cidade"} ·{" "}
+                        {event.venue_name || "Sem espaço"}
+                      </p>
+
+                      <p>
+                        {event.display_date || "Sem data"} ·{" "}
+                        {event.display_time || "Hora por definir"}
+                      </p>
+
+                      <p>
+                        {event.category || "Sem categoria"} ·{" "}
+                        {event.price || "Preço por definir"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <AdminEventActions
+                    event={{
+                      id: event.id,
+                      slug: event.slug,
+                      featured: event.featured,
+                      status: event.status,
+                    }}
+                    mode="published"
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            Arquivo
+          </p>
+
+          <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+            Fora da montra.
+          </h2>
+
+          <div className="mt-6 grid gap-4">
+            {archivedEvents.length === 0 && (
+              <EmptyCard text="Não há eventos arquivados." />
+            )}
+
+            {archivedEvents.map((event) => (
+              <article
+                key={event.id}
+                className="rounded-[2rem] border border-zinc-800 bg-black p-5 opacity-80"
+              >
+                <div className="grid gap-5 lg:grid-cols-[1fr_260px] lg:items-start">
+                  <div>
+                    <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-500">
+                      Arquivado
+                    </span>
+
+                    <h3 className="mt-4 text-3xl font-black leading-none">
+                      {event.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm text-zinc-500">
+                      {event.display_date || "Sem data"} ·{" "}
+                      {event.city || "Sem cidade"}
+                    </p>
+                  </div>
+
+                  <AdminEventActions
+                    event={{
+                      id: event.id,
+                      slug: event.slug,
+                      featured: event.featured,
+                      status: event.status,
+                    }}
+                    mode="archived"
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </section>
+    </section>
   );
 }
