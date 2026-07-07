@@ -39,7 +39,14 @@ type LocationPayload = {
   district: string | null;
   latitude: number | null;
   longitude: number | null;
-  location_source: "manual" | null;
+  location_source: "geocoded" | null;
+};
+
+type GeocodeResult = {
+  latitude: number;
+  longitude: number;
+  display_name: string;
+  provider: string;
 };
 
 type VenueRow = {
@@ -164,65 +171,6 @@ function getArtistNames(artistsText: string) {
   return Array.from(new Set(names));
 }
 
-function parseCoordinate(
-  value: string,
-  label: string,
-  minimum: number,
-  maximum: number
-) {
-  const cleanValue = value.trim().replace(",", ".");
-
-  if (!cleanValue) {
-    return null;
-  }
-
-  const parsed = Number(cleanValue);
-
-  if (Number.isNaN(parsed)) {
-    throw new Error(`${label} inválida.`);
-  }
-
-  if (parsed < minimum || parsed > maximum) {
-    throw new Error(`${label} fora do intervalo permitido.`);
-  }
-
-  return parsed;
-}
-
-function buildLocationPayload({
-  address,
-  postalCode,
-  district,
-  latitude,
-  longitude,
-}: {
-  address: string;
-  postalCode: string;
-  district: string;
-  latitude: string;
-  longitude: string;
-}): LocationPayload {
-  const parsedLatitude = parseCoordinate(latitude, "Latitude", -90, 90);
-  const parsedLongitude = parseCoordinate(longitude, "Longitude", -180, 180);
-
-  if (
-    (parsedLatitude === null && parsedLongitude !== null) ||
-    (parsedLatitude !== null && parsedLongitude === null)
-  ) {
-    throw new Error("Tens de preencher latitude e longitude, ou limpar as duas.");
-  }
-
-  return {
-    address: address.trim() || null,
-    postal_code: postalCode.trim() || null,
-    district: district.trim() || null,
-    latitude: parsedLatitude,
-    longitude: parsedLongitude,
-    location_source:
-      parsedLatitude !== null && parsedLongitude !== null ? "manual" : null,
-  };
-}
-
 function buildMapsSearchUrl({
   venue,
   address,
@@ -245,17 +193,50 @@ function buildMapsSearchUrl({
   )}`;
 }
 
-function buildMapsCoordinateUrl(latitude: string, longitude: string) {
-  const cleanLatitude = latitude.trim().replace(",", ".");
-  const cleanLongitude = longitude.trim().replace(",", ".");
-
-  if (!cleanLatitude || !cleanLongitude) {
+function buildMapsCoordinateUrl(latitude: number | null, longitude: number | null) {
+  if (latitude === null || longitude === null) {
     return null;
   }
 
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${cleanLatitude},${cleanLongitude}`
+    `${latitude},${longitude}`
   )}`;
+}
+
+async function geocodeAddress({
+  venue,
+  address,
+  postalCode,
+  city,
+  district,
+}: {
+  venue: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  district: string;
+}) {
+  const response = await fetch("/api/geocode", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      venue,
+      address,
+      postal_code: postalCode,
+      city,
+      district,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Não consegui localizar a morada.");
+  }
+
+  return data as GeocodeResult;
 }
 
 async function createUniqueEventSlug(title: string) {
@@ -482,6 +463,7 @@ async function attachArtistsToEvent({
 
 export function AdminEventCreateClient() {
   const [saving, setSaving] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const [message, setMessage] = useState("");
 
   const [title, setTitle] = useState("");
@@ -493,8 +475,9 @@ export function AdminEventCreateClient() {
   const [venue, setVenue] = useState("");
   const [address, setAddress] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [geocodeLabel, setGeocodeLabel] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isMultiDay, setIsMultiDay] = useState(false);
@@ -522,6 +505,12 @@ export function AdminEventCreateClient() {
   });
 
   const mapsCoordinateUrl = buildMapsCoordinateUrl(latitude, longitude);
+
+  function clearGeocode() {
+    setLatitude(null);
+    setLongitude(null);
+    setGeocodeLabel("");
+  }
 
   function handleCategoryChange(value: string) {
     setCategory(value);
@@ -631,6 +620,47 @@ export function AdminEventCreateClient() {
     return data.publicUrl;
   }
 
+  async function handleFindLocation() {
+    setMessage("");
+
+    if (!address.trim() || !city.trim()) {
+      setMessage("Mete pelo menos morada e cidade para localizar.");
+      return null;
+    }
+
+    setGeocoding(true);
+
+    try {
+      const result = await geocodeAddress({
+        venue,
+        address,
+        postalCode,
+        city,
+        district,
+      });
+
+      setLatitude(result.latitude);
+      setLongitude(result.longitude);
+      setGeocodeLabel(result.display_name);
+      setMessage("Localização encontrada automaticamente.");
+      setGeocoding(false);
+
+      return result;
+    } catch (error) {
+      setGeocoding(false);
+      setLatitude(null);
+      setLongitude(null);
+      setGeocodeLabel("");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Não consegui encontrar a localização."
+      );
+
+      return null;
+    }
+  }
+
   function resetForm() {
     setTitle("");
     setOrganizer("");
@@ -641,8 +671,9 @@ export function AdminEventCreateClient() {
     setVenue("");
     setAddress("");
     setPostalCode("");
-    setLatitude("");
-    setLongitude("");
+    setLatitude(null);
+    setLongitude(null);
+    setGeocodeLabel("");
     setEventDate("");
     setEndDate("");
     setIsMultiDay(false);
@@ -670,6 +701,11 @@ export function AdminEventCreateClient() {
       return;
     }
 
+    if (!address.trim()) {
+      setMessage("Mete a morada do espaço/evento para o mapa funcionar.");
+      return;
+    }
+
     if (isMultiDay && !endDate) {
       setMessage("Mete a data de fim do festival/evento.");
       return;
@@ -690,26 +726,43 @@ export function AdminEventCreateClient() {
       return;
     }
 
-    let location: LocationPayload;
-
-    try {
-      location = buildLocationPayload({
-        address,
-        postalCode,
-        district,
-        latitude,
-        longitude,
-      });
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "Localização inválida."
-      );
-      return;
-    }
-
     setSaving(true);
 
     try {
+      let finalLatitude = latitude;
+      let finalLongitude = longitude;
+      let finalGeocodeLabel = geocodeLabel;
+
+      if (finalLatitude === null || finalLongitude === null) {
+        const result = await geocodeAddress({
+          venue,
+          address,
+          postalCode,
+          city,
+          district,
+        });
+
+        finalLatitude = result.latitude;
+        finalLongitude = result.longitude;
+        finalGeocodeLabel = result.display_name;
+
+        setLatitude(result.latitude);
+        setLongitude(result.longitude);
+        setGeocodeLabel(result.display_name);
+      }
+
+      const location: LocationPayload = {
+        address: address.trim() || null,
+        postal_code: postalCode.trim() || null,
+        district: district.trim() || null,
+        latitude: finalLatitude,
+        longitude: finalLongitude,
+        location_source:
+          finalLatitude !== null && finalLongitude !== null
+            ? "geocoded"
+            : null,
+      };
+
       const eventSlug = await createUniqueEventSlug(title);
       const imageUrl = await uploadSelectedImage();
 
@@ -779,7 +832,11 @@ export function AdminEventCreateClient() {
       });
 
       setSaving(false);
-      setMessage(`Evento criado: /eventos/${createdEvent.slug}`);
+      setMessage(
+        `Evento criado: /eventos/${createdEvent.slug}${
+          finalGeocodeLabel ? ` · localização: ${finalGeocodeLabel}` : ""
+        }`
+      );
       resetForm();
     } catch (error) {
       setSaving(false);
@@ -804,8 +861,8 @@ export function AdminEventCreateClient() {
           </h2>
 
           <p className="mt-4 text-sm leading-relaxed text-zinc-500">
-            Cria eventos diretamente como Paranoid, já com bilheteira interna,
-            externa, localização exata ou sem bilhetes.
+            Cria eventos diretamente como Paranoid. A localização é calculada
+            automaticamente pela morada.
           </p>
         </div>
 
@@ -825,9 +882,9 @@ export function AdminEventCreateClient() {
             <p>{[venue, city].filter(Boolean).join(" · ") || "Local"}</p>
             <p>{address || "Morada por definir"}</p>
             <p>
-              {latitude && longitude
-                ? `Geo: ${latitude}, ${longitude}`
-                : "Sem coordenadas"}
+              {latitude !== null && longitude !== null
+                ? "Localização automática encontrada"
+                : "Localização ainda por calcular"}
             </p>
             <p>{price || "Preço por definir"}</p>
             {ticketMode === "external" && <p>Bilheteira externa</p>}
@@ -924,7 +981,10 @@ export function AdminEventCreateClient() {
           <input
             list="admin-event-city-suggestions"
             value={city}
-            onChange={(event) => setCity(event.target.value)}
+            onChange={(event) => {
+              setCity(event.target.value);
+              clearGeocode();
+            }}
             placeholder="Ex: Ansião, Pombal, Leiria..."
             className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
           />
@@ -943,7 +1003,10 @@ export function AdminEventCreateClient() {
 
           <input
             value={venue}
-            onChange={(event) => setVenue(event.target.value)}
+            onChange={(event) => {
+              setVenue(event.target.value);
+              clearGeocode();
+            }}
             placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
             className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
           />
@@ -951,13 +1014,12 @@ export function AdminEventCreateClient() {
 
         <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">
           <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-            Localização exata
+            Morada
           </p>
 
           <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-            Usa coordenadas reais da porta/entrada. Se não tiveres coordenadas,
-            deixa latitude e longitude vazias. A distância no mapa só aparece
-            quando houver coordenadas reais.
+            O cliente/admin só mete a morada. A Paranoid calcula as coordenadas
+            automaticamente e guarda-as para o mapa.
           </p>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -968,7 +1030,10 @@ export function AdminEventCreateClient() {
 
               <input
                 value={address}
-                onChange={(event) => setAddress(event.target.value)}
+                onChange={(event) => {
+                  setAddress(event.target.value);
+                  clearGeocode();
+                }}
                 placeholder="Rua, número, espaço..."
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
               />
@@ -981,7 +1046,10 @@ export function AdminEventCreateClient() {
 
               <input
                 value={postalCode}
-                onChange={(event) => setPostalCode(event.target.value)}
+                onChange={(event) => {
+                  setPostalCode(event.target.value);
+                  clearGeocode();
+                }}
                 placeholder="0000-000"
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
               />
@@ -994,47 +1062,33 @@ export function AdminEventCreateClient() {
 
               <input
                 value={district}
-                onChange={(event) => setDistrict(event.target.value)}
+                onChange={(event) => {
+                  setDistrict(event.target.value);
+                  clearGeocode();
+                }}
                 placeholder="Leiria, Coimbra, Lisboa..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Latitude
-              </label>
-
-              <input
-                value={latitude}
-                onChange={(event) => setLatitude(event.target.value)}
-                placeholder="39.912345"
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Longitude
-              </label>
-
-              <input
-                value={longitude}
-                onChange={(event) => setLongitude(event.target.value)}
-                placeholder="-8.435678"
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
               />
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleFindLocation}
+              disabled={geocoding}
+              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+            >
+              {geocoding ? "A localizar..." : "Encontrar localização automática"}
+            </button>
+
             <a
               href={mapsSearchUrl}
               target="_blank"
               rel="noreferrer"
               className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
             >
-              Procurar no Maps
+              Ver morada no Maps
             </a>
 
             {mapsCoordinateUrl && (
@@ -1044,21 +1098,31 @@ export function AdminEventCreateClient() {
                 rel="noreferrer"
                 className="rounded-full border border-green-900 px-5 py-4 text-sm font-bold text-green-400"
               >
-                Testar coordenadas
+                Testar localização encontrada
               </a>
             )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setLatitude("");
-                setLongitude("");
-              }}
-              className="rounded-full border border-red-900 px-5 py-4 text-sm font-bold text-red-300"
-            >
-              Limpar coordenadas
-            </button>
           </div>
+
+          {geocodeLabel && (
+            <div className="mt-5 rounded-2xl border border-green-900 bg-green-950/20 p-4">
+              <p className="text-sm font-bold text-green-400">
+                Localização encontrada
+              </p>
+
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                {geocodeLabel}
+              </p>
+
+              <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+                Coordenadas guardadas automaticamente pela app.
+              </p>
+            </div>
+          )}
+
+          <p className="mt-4 text-xs leading-relaxed text-zinc-600">
+            Geocoding por OpenStreetMap/Nominatim. Sem autocomplete. Sem
+            coordenadas manuais para o cliente.
+          </p>
         </div>
 
         <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3 lg:col-span-2">
@@ -1255,7 +1319,7 @@ export function AdminEventCreateClient() {
         <button
           type="button"
           onClick={handleCreateEvent}
-          disabled={saving}
+          disabled={saving || geocoding}
           className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
         >
           {saving ? "A criar..." : "Criar evento"}

@@ -4,14 +4,51 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 import { type EventSubmission } from "@/lib/submissions";
 
+type LocationSource = "manual" | "geocoded" | "venue" | null;
+
+type SubmissionLocationFields = {
+  address?: string | null;
+  postal_code?: string | null;
+  district?: string | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  location_source?: LocationSource;
+};
+
 type AdminSubmissionActionsProps = {
-  submission: EventSubmission;
+  submission: EventSubmission & SubmissionLocationFields;
 };
 
 type VenueRow = {
   id: string;
   slug: string;
   name: string;
+  city: string | null;
+  address: string | null;
+  postal_code: string | null;
+  district: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_source: LocationSource;
+};
+
+type VenueLocation = {
+  id: string;
+  address: string | null;
+  postal_code: string | null;
+  district: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_source: LocationSource;
+};
+
+type LocationPayload = {
+  address: string | null;
+  postal_code: string | null;
+  district: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_source: LocationSource;
 };
 
 type OrganizerRow = {
@@ -98,6 +135,82 @@ function getArtistNames(artistsText: string | null) {
   return Array.from(new Set(names));
 }
 
+function normalizeNumber(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value === "number") {
+    return Number.isNaN(value) ? null : value;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function getSubmissionLocation(
+  submission: EventSubmission & SubmissionLocationFields
+): LocationPayload {
+  const latitude = normalizeNumber(submission.latitude);
+  const longitude = normalizeNumber(submission.longitude);
+
+  return {
+    address: submission.address?.trim() || null,
+    postal_code: submission.postal_code?.trim() || null,
+    district: submission.district?.trim() || null,
+    latitude,
+    longitude,
+    location_source:
+      latitude !== null && longitude !== null
+        ? submission.location_source || "geocoded"
+        : null,
+  };
+}
+
+function hasLocationDetails(location: LocationPayload) {
+  return Boolean(
+    location.address ||
+      location.postal_code ||
+      location.district ||
+      (location.latitude !== null && location.longitude !== null)
+  );
+}
+
+function mergeEventLocation(
+  submissionLocation: LocationPayload,
+  venueLocation: VenueLocation | null
+): LocationPayload {
+  const latitude =
+    submissionLocation.latitude !== null
+      ? submissionLocation.latitude
+      : venueLocation?.latitude ?? null;
+
+  const longitude =
+    submissionLocation.longitude !== null
+      ? submissionLocation.longitude
+      : venueLocation?.longitude ?? null;
+
+  const fromSubmission =
+    submissionLocation.latitude !== null && submissionLocation.longitude !== null;
+
+  const fromVenue = !fromSubmission && latitude !== null && longitude !== null;
+
+  return {
+    address: submissionLocation.address || venueLocation?.address || null,
+    postal_code:
+      submissionLocation.postal_code || venueLocation?.postal_code || null,
+    district: submissionLocation.district || venueLocation?.district || null,
+    latitude,
+    longitude,
+    location_source: fromSubmission
+      ? submissionLocation.location_source || "geocoded"
+      : fromVenue
+        ? "venue"
+        : null,
+  };
+}
+
 async function createUniqueEventSlug(title: string) {
   const baseSlug = slugify(title) || crypto.randomUUID();
   let candidate = baseSlug;
@@ -123,7 +236,11 @@ async function createUniqueEventSlug(title: string) {
   }
 }
 
-async function findOrCreateVenue(name: string, city: string) {
+async function findOrCreateVenue(
+  name: string,
+  city: string,
+  location: LocationPayload
+): Promise<VenueLocation | null> {
   const cleanName = name.trim();
 
   if (!cleanName) {
@@ -134,7 +251,9 @@ async function findOrCreateVenue(name: string, city: string) {
 
   const { data: existingVenue, error: existingError } = await supabase
     .from("venues")
-    .select("id,slug,name")
+    .select(
+      "id,slug,name,city,address,postal_code,district,latitude,longitude,location_source"
+    )
     .eq("slug", slug)
     .maybeSingle();
 
@@ -143,7 +262,53 @@ async function findOrCreateVenue(name: string, city: string) {
   }
 
   if (existingVenue) {
-    return (existingVenue as VenueRow).id;
+    const venue = existingVenue as VenueRow;
+
+    if (hasLocationDetails(location)) {
+      const updatePayload = {
+        city,
+        address: location.address || venue.address,
+        postal_code: location.postal_code || venue.postal_code,
+        district: location.district || venue.district,
+        latitude:
+          location.latitude !== null ? location.latitude : venue.latitude,
+        longitude:
+          location.longitude !== null ? location.longitude : venue.longitude,
+        location_source:
+          location.latitude !== null && location.longitude !== null
+            ? location.location_source || "geocoded"
+            : venue.location_source,
+      };
+
+      const { error: updateError } = await supabase
+        .from("venues")
+        .update(updatePayload)
+        .eq("id", venue.id);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      return {
+        id: venue.id,
+        address: updatePayload.address,
+        postal_code: updatePayload.postal_code,
+        district: updatePayload.district,
+        latitude: updatePayload.latitude,
+        longitude: updatePayload.longitude,
+        location_source: updatePayload.location_source,
+      };
+    }
+
+    return {
+      id: venue.id,
+      address: venue.address,
+      postal_code: venue.postal_code,
+      district: venue.district,
+      latitude: venue.latitude,
+      longitude: venue.longitude,
+      location_source: venue.location_source,
+    };
   }
 
   const { data: createdVenue, error: createError } = await supabase
@@ -152,18 +317,35 @@ async function findOrCreateVenue(name: string, city: string) {
       slug,
       name: cleanName,
       city,
-      address: null,
+      address: location.address,
+      postal_code: location.postal_code,
+      district: location.district,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      location_source: location.location_source,
       description: null,
       instagram: null,
     })
-    .select("id,slug,name")
+    .select(
+      "id,slug,name,city,address,postal_code,district,latitude,longitude,location_source"
+    )
     .single();
 
   if (createError) {
     throw new Error(createError.message);
   }
 
-  return (createdVenue as VenueRow).id;
+  const venue = createdVenue as VenueRow;
+
+  return {
+    id: venue.id,
+    address: venue.address,
+    postal_code: venue.postal_code,
+    district: venue.district,
+    latitude: venue.latitude,
+    longitude: venue.longitude,
+    location_source: venue.location_source,
+  };
 }
 
 async function findOrCreateOrganizer(name: string, city: string) {
@@ -340,7 +522,19 @@ export function AdminSubmissionActions({
 
     try {
       const eventSlug = await createUniqueEventSlug(submission.title);
-      const venueId = await findOrCreateVenue(submission.venue, submission.city);
+      const submissionLocation = getSubmissionLocation(submission);
+
+      const venueLocation = await findOrCreateVenue(
+        submission.venue,
+        submission.city,
+        submissionLocation
+      );
+
+      const eventLocation = mergeEventLocation(
+        submissionLocation,
+        venueLocation
+      );
+
       const organizerId =
         submission.organizer_id ||
         (await findOrCreateOrganizer(submission.organizer, submission.city));
@@ -367,7 +561,14 @@ export function AdminSubmissionActions({
           slug: eventSlug,
           title: submission.title,
           city: submission.city,
-          venue_id: venueId,
+          district: eventLocation.district,
+          address: eventLocation.address,
+          postal_code: eventLocation.postal_code,
+          latitude: eventLocation.latitude,
+          longitude: eventLocation.longitude,
+          location_source: eventLocation.location_source,
+
+          venue_id: venueLocation?.id || null,
           venue_name: submission.venue,
           organizer_id: organizerId,
           organizer_name: submission.organizer,
@@ -386,7 +587,7 @@ export function AdminSubmissionActions({
           ticket_mode: ticketMode,
           ticket_url: ticketMode === "external" ? submission.ticket_url : null,
           ticket_price:
-            ticketMode === "internal" ? submission.ticket_price : null,
+            ticketMode !== "none" ? submission.ticket_price : null,
           ticket_capacity:
             ticketMode === "internal" ? submission.ticket_capacity : null,
           ticket_button_label:
@@ -455,9 +656,19 @@ export function AdminSubmissionActions({
       {submission.ticket_mode && submission.ticket_mode !== "none" && (
         <p className="rounded-2xl border border-red-950 bg-red-950/20 px-4 py-3 text-center text-xs font-bold text-red-300">
           Bilheteira:{" "}
-          {submission.ticket_mode === "internal"
-            ? "Paranoid"
-            : "externa"}
+          {submission.ticket_mode === "internal" ? "Paranoid" : "externa"}
+        </p>
+      )}
+
+      {submission.address && (
+        <p className="rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-center text-xs font-bold text-zinc-400">
+          Morada: {submission.address}
+        </p>
+      )}
+
+      {submission.latitude && submission.longitude && (
+        <p className="rounded-2xl border border-green-900 bg-green-950/20 px-4 py-3 text-center text-xs font-bold text-green-400">
+          Localização automática pronta
         </p>
       )}
 

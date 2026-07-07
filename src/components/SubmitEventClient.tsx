@@ -24,13 +24,25 @@ type OrganizerRow = {
   city: string | null;
 };
 
-const cities = [
+type GeocodeResult = {
+  latitude: number;
+  longitude: number;
+  display_name: string;
+};
+
+const citySuggestions = [
   "Pombal",
+  "Ansião",
   "Leiria",
   "Coimbra",
   "Figueira da Foz",
   "Caldas da Rainha",
   "Marinha Grande",
+  "Lisboa",
+  "Porto",
+  "Aveiro",
+  "Braga",
+  "Faro",
   "Outra",
 ];
 
@@ -81,9 +93,78 @@ function ticketModeLabel(mode: TicketMode) {
   return "Sem bilhetes";
 }
 
+function buildMapsSearchUrl({
+  venue,
+  address,
+  postalCode,
+  city,
+  district,
+}: {
+  venue: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  district: string;
+}) {
+  const query = [venue, address, postalCode, city, district, "Portugal"]
+    .filter(Boolean)
+    .join(", ");
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    query
+  )}`;
+}
+
+function buildMapsCoordinateUrl(latitude: number | null, longitude: number | null) {
+  if (latitude === null || longitude === null) {
+    return null;
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${latitude},${longitude}`
+  )}`;
+}
+
+async function geocodeAddress({
+  venue,
+  address,
+  postalCode,
+  city,
+  district,
+}: {
+  venue: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  district: string;
+}) {
+  const response = await fetch("/api/geocode", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      venue,
+      address,
+      postal_code: postalCode,
+      city,
+      district,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Não consegui localizar a morada.");
+  }
+
+  return data as GeocodeResult;
+}
+
 export function SubmitEventClient() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const [message, setMessage] = useState("");
 
   const [userId, setUserId] = useState("");
@@ -96,7 +177,14 @@ export function SubmitEventClient() {
 
   const [title, setTitle] = useState("");
   const [city, setCity] = useState("Pombal");
+  const [district, setDistrict] = useState("");
   const [venue, setVenue] = useState("");
+  const [address, setAddress] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [geocodeLabel, setGeocodeLabel] = useState("");
+
   const [organizer, setOrganizer] = useState("");
   const [category, setCategory] = useState("Concertos");
 
@@ -126,6 +214,16 @@ export function SubmitEventClient() {
       Boolean(profile?.entity_id)
     );
   }, [profile]);
+
+  const mapsSearchUrl = buildMapsSearchUrl({
+    venue,
+    address,
+    postalCode,
+    city,
+    district,
+  });
+
+  const mapsCoordinateUrl = buildMapsCoordinateUrl(latitude, longitude);
 
   useEffect(() => {
     async function loadUserContext() {
@@ -185,6 +283,12 @@ export function SubmitEventClient() {
     loadUserContext();
   }, []);
 
+  function clearGeocode() {
+    setLatitude(null);
+    setLongitude(null);
+    setGeocodeLabel("");
+  }
+
   function onImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] || null;
 
@@ -237,6 +341,75 @@ export function SubmitEventClient() {
     return data.publicUrl;
   }
 
+  async function handleFindLocation() {
+    setMessage("");
+
+    if (!address.trim() || !city.trim()) {
+      setMessage("Mete pelo menos morada e cidade para localizar.");
+      return null;
+    }
+
+    setGeocoding(true);
+
+    try {
+      const result = await geocodeAddress({
+        venue,
+        address,
+        postalCode,
+        city,
+        district,
+      });
+
+      setLatitude(result.latitude);
+      setLongitude(result.longitude);
+      setGeocodeLabel(result.display_name);
+      setMessage("Localização encontrada automaticamente.");
+      setGeocoding(false);
+
+      return result;
+    } catch (error) {
+      setLatitude(null);
+      setLongitude(null);
+      setGeocodeLabel("");
+      setGeocoding(false);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Não consegui encontrar a localização."
+      );
+
+      return null;
+    }
+  }
+
+  function resetAfterSubmit() {
+    setTitle("");
+    setVenue("");
+    setAddress("");
+    setPostalCode("");
+    setDistrict("");
+    setLatitude(null);
+    setLongitude(null);
+    setGeocodeLabel("");
+    setArtistsText("");
+    setDescription("");
+    setPrice("");
+    setEventDate("");
+    setEndDate("");
+    setEventTime("");
+    setInstagramUrl("");
+    setTicketMode("none");
+    setTicketUrl("");
+    setTicketPrice("");
+    setTicketCapacity("");
+    setTicketButtonLabel("");
+    setImageFile(null);
+
+    if (!isApprovedOrganizer) {
+      setOrganizer("");
+    }
+  }
+
   async function submitEvent() {
     setMessage("");
 
@@ -246,12 +419,17 @@ export function SubmitEventClient() {
     }
 
     if (!city.trim()) {
-      setMessage("Mete a cidade.");
+      setMessage("Mete a cidade/localidade.");
       return;
     }
 
     if (!venue.trim()) {
       setMessage("Mete o espaço.");
+      return;
+    }
+
+    if (!address.trim()) {
+      setMessage("Mete a morada do espaço/evento.");
       return;
     }
 
@@ -267,6 +445,11 @@ export function SubmitEventClient() {
 
     if (isMultiDay && !endDate) {
       setMessage("Mete a data de fim.");
+      return;
+    }
+
+    if (isMultiDay && endDate < eventDate) {
+      setMessage("A data de fim não pode ser antes da data de início.");
       return;
     }
 
@@ -287,12 +470,44 @@ export function SubmitEventClient() {
     setSubmitting(true);
 
     try {
+      let finalLatitude = latitude;
+      let finalLongitude = longitude;
+      let finalGeocodeLabel = geocodeLabel;
+
+      if (finalLatitude === null || finalLongitude === null) {
+        const result = await geocodeAddress({
+          venue,
+          address,
+          postalCode,
+          city,
+          district,
+        });
+
+        finalLatitude = result.latitude;
+        finalLongitude = result.longitude;
+        finalGeocodeLabel = result.display_name;
+
+        setLatitude(result.latitude);
+        setLongitude(result.longitude);
+        setGeocodeLabel(result.display_name);
+      }
+
       const imageUrl = await uploadImage();
 
       const { error } = await supabase.from("event_submissions").insert({
         title: title.trim(),
         city: city.trim(),
+        district: district.trim() || null,
         venue: venue.trim(),
+        address: address.trim(),
+        postal_code: postalCode.trim() || null,
+        latitude: finalLatitude,
+        longitude: finalLongitude,
+        location_source:
+          finalLatitude !== null && finalLongitude !== null
+            ? "geocoded"
+            : null,
+
         organizer: organizer.trim(),
         category,
         event_date: eventDate,
@@ -334,30 +549,12 @@ export function SubmitEventClient() {
         throw new Error(error.message);
       }
 
-      setTitle("");
-      setVenue("");
-      setArtistsText("");
-      setDescription("");
-      setPrice("");
-      setEventDate("");
-      setEndDate("");
-      setEventTime("");
-      setInstagramUrl("");
-      setTicketMode("none");
-      setTicketUrl("");
-      setTicketPrice("");
-      setTicketCapacity("");
-      setTicketButtonLabel("");
-      setImageFile(null);
-
-      if (!isApprovedOrganizer) {
-        setOrganizer("");
-      }
+      resetAfterSubmit();
 
       setMessage(
         isApprovedOrganizer
-          ? "Evento enviado. Como organizador aprovado, fica ligado ao teu painel."
-          : "Evento enviado. A Paranoid vai rever antes de publicar."
+          ? `Evento enviado com localização automática. ${finalGeocodeLabel}`
+          : `Evento enviado. A Paranoid vai rever antes de publicar. ${finalGeocodeLabel}`
       );
     } catch (error) {
       setMessage(
@@ -459,18 +656,25 @@ export function SubmitEventClient() {
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Cidade
+              Cidade / localidade
             </label>
 
-            <select
+            <input
+              list="submit-event-city-suggestions"
               value={city}
-              onChange={(event) => setCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-            >
-              {cities.map((item) => (
-                <option key={item}>{item}</option>
+              onChange={(event) => {
+                setCity(event.target.value);
+                clearGeocode();
+              }}
+              placeholder="Ex: Ansião, Pombal, Leiria..."
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+
+            <datalist id="submit-event-city-suggestions">
+              {citySuggestions.map((item) => (
+                <option key={item} value={item} />
               ))}
-            </select>
+            </datalist>
           </div>
 
           <div>
@@ -496,7 +700,10 @@ export function SubmitEventClient() {
 
             <input
               value={venue}
-              onChange={(event) => setVenue(event.target.value)}
+              onChange={(event) => {
+                setVenue(event.target.value);
+                clearGeocode();
+              }}
               placeholder="Ex: Stereogun"
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
@@ -514,6 +721,113 @@ export function SubmitEventClient() {
               placeholder="Ex: Paranoid Crew"
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 disabled:opacity-60 focus:border-red-900"
             />
+          </div>
+
+          <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">
+            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+              Morada
+            </p>
+
+            <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+              Mete a morada do espaço. A app calcula as coordenadas
+              automaticamente para o mapa. O cliente não precisa de mexer em
+              latitude/longitude.
+            </p>
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-2">
+              <div className="lg:col-span-2">
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Morada completa
+                </label>
+
+                <input
+                  value={address}
+                  onChange={(event) => {
+                    setAddress(event.target.value);
+                    clearGeocode();
+                  }}
+                  placeholder="Rua, número, nome do espaço..."
+                  className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Código postal
+                </label>
+
+                <input
+                  value={postalCode}
+                  onChange={(event) => {
+                    setPostalCode(event.target.value);
+                    clearGeocode();
+                  }}
+                  placeholder="0000-000"
+                  className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Distrito
+                </label>
+
+                <input
+                  value={district}
+                  onChange={(event) => {
+                    setDistrict(event.target.value);
+                    clearGeocode();
+                  }}
+                  placeholder="Leiria, Coimbra, Lisboa..."
+                  className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleFindLocation}
+                disabled={geocoding}
+                className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              >
+                {geocoding
+                  ? "A localizar..."
+                  : "Encontrar localização automática"}
+              </button>
+
+              <a
+                href={mapsSearchUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+              >
+                Ver morada no Maps
+              </a>
+
+              {mapsCoordinateUrl && (
+                <a
+                  href={mapsCoordinateUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-green-900 px-5 py-4 text-sm font-bold text-green-400"
+                >
+                  Testar localização encontrada
+                </a>
+              )}
+            </div>
+
+            {geocodeLabel && (
+              <div className="mt-5 rounded-2xl border border-green-900 bg-green-950/20 p-4">
+                <p className="text-sm font-black text-green-400">
+                  Localização encontrada
+                </p>
+
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                  {geocodeLabel}
+                </p>
+              </div>
+            )}
           </div>
 
           <div>
@@ -758,7 +1072,7 @@ export function SubmitEventClient() {
         <button
           type="button"
           onClick={submitEvent}
-          disabled={submitting}
+          disabled={submitting || geocoding}
           className="mt-8 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
         >
           {submitting ? "A enviar..." : "Submeter evento"}
