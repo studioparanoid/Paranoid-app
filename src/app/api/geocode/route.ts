@@ -7,7 +7,24 @@ type GeocodeRequestBody = {
   address?: string;
   postal_code?: string;
   city?: string;
+  municipality?: string;
   district?: string;
+};
+
+type NominatimAddress = {
+  house_number?: string;
+  road?: string;
+  neighbourhood?: string;
+  suburb?: string;
+  village?: string;
+  town?: string;
+  city?: string;
+  municipality?: string;
+  county?: string;
+  state?: string;
+  region?: string;
+  postcode?: string;
+  country?: string;
 };
 
 type NominatimResult = {
@@ -17,6 +34,7 @@ type NominatimResult = {
   type?: string;
   class?: string;
   importance?: number;
+  address?: NominatimAddress;
 };
 
 function cleanText(value: unknown) {
@@ -27,32 +45,53 @@ function cleanText(value: unknown) {
   return value.trim();
 }
 
+function firstCleanValue(values: Array<string | undefined>) {
+  for (const value of values) {
+    const cleanValue = cleanText(value);
+
+    if (cleanValue) {
+      return cleanValue;
+    }
+  }
+
+  return "";
+}
+
 export async function POST(request: Request) {
   let body: GeocodeRequestBody;
 
   try {
     body = (await request.json()) as GeocodeRequestBody;
   } catch {
-    return NextResponse.json(
-      { error: "Pedido inválido." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
   }
 
   const venue = cleanText(body.venue);
   const address = cleanText(body.address);
   const postalCode = cleanText(body.postal_code);
   const city = cleanText(body.city);
+  const municipality = cleanText(body.municipality);
   const district = cleanText(body.district);
 
-  if (!address || !city) {
+  if (!address || (!city && !municipality)) {
     return NextResponse.json(
-      { error: "Mete pelo menos morada e cidade para localizar." },
+      {
+        error:
+          "Mete pelo menos morada e cidade/localidade ou concelho para localizar.",
+      },
       { status: 400 }
     );
   }
 
-  const query = [venue, address, postalCode, city, district, "Portugal"]
+  const query = [
+    venue,
+    address,
+    postalCode,
+    city,
+    municipality,
+    district,
+    "Portugal",
+  ]
     .filter(Boolean)
     .join(", ");
 
@@ -87,7 +126,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Não consegui encontrar coordenadas para essa morada. Confirma rua, número, código postal e cidade.",
+            "Não consegui encontrar coordenadas para essa morada. Confirma rua, número, código postal, localidade e concelho.",
         },
         { status: 404 }
       );
@@ -103,11 +142,40 @@ export async function POST(request: Request) {
       );
     }
 
+    const resolvedCity = firstCleanValue([
+      city,
+      bestResult.address?.city,
+      bestResult.address?.town,
+      bestResult.address?.village,
+      bestResult.address?.suburb,
+    ]);
+
+    const resolvedMunicipality = firstCleanValue([
+      municipality,
+      bestResult.address?.municipality,
+      bestResult.address?.county,
+    ]);
+
+    const resolvedDistrict = firstCleanValue([
+      district,
+      bestResult.address?.state,
+      bestResult.address?.region,
+    ]);
+
+    const resolvedPostalCode = firstCleanValue([
+      postalCode,
+      bestResult.address?.postcode,
+    ]);
+
     return NextResponse.json({
       latitude,
       longitude,
       display_name: bestResult.display_name || query,
       provider: "nominatim",
+      city: resolvedCity,
+      municipality: resolvedMunicipality,
+      district: resolvedDistrict,
+      postal_code: resolvedPostalCode,
     });
   } catch {
     return NextResponse.json(

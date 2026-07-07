@@ -28,6 +28,10 @@ type GeocodeResult = {
   latitude: number;
   longitude: number;
   display_name: string;
+  city?: string;
+  municipality?: string;
+  district?: string;
+  postal_code?: string;
 };
 
 const citySuggestions = [
@@ -44,6 +48,21 @@ const citySuggestions = [
   "Braga",
   "Faro",
   "Outra",
+];
+
+const municipalitySuggestions = [
+  "Pombal",
+  "Ansião",
+  "Leiria",
+  "Coimbra",
+  "Figueira da Foz",
+  "Caldas da Rainha",
+  "Marinha Grande",
+  "Lisboa",
+  "Porto",
+  "Aveiro",
+  "Braga",
+  "Faro",
 ];
 
 const categories = [
@@ -98,15 +117,25 @@ function buildMapsSearchUrl({
   address,
   postalCode,
   city,
+  municipality,
   district,
 }: {
   venue: string;
   address: string;
   postalCode: string;
   city: string;
+  municipality: string;
   district: string;
 }) {
-  const query = [venue, address, postalCode, city, district, "Portugal"]
+  const query = [
+    venue,
+    address,
+    postalCode,
+    city,
+    municipality,
+    district,
+    "Portugal",
+  ]
     .filter(Boolean)
     .join(", ");
 
@@ -130,12 +159,14 @@ async function geocodeAddress({
   address,
   postalCode,
   city,
+  municipality,
   district,
 }: {
   venue: string;
   address: string;
   postalCode: string;
   city: string;
+  municipality: string;
   district: string;
 }) {
   const response = await fetch("/api/geocode", {
@@ -148,6 +179,7 @@ async function geocodeAddress({
       address,
       postal_code: postalCode,
       city,
+      municipality,
       district,
     }),
   });
@@ -177,6 +209,7 @@ export function SubmitEventClient() {
 
   const [title, setTitle] = useState("");
   const [city, setCity] = useState("Pombal");
+  const [municipality, setMunicipality] = useState("Pombal");
   const [district, setDistrict] = useState("");
   const [venue, setVenue] = useState("");
   const [address, setAddress] = useState("");
@@ -220,6 +253,7 @@ export function SubmitEventClient() {
     address,
     postalCode,
     city,
+    municipality,
     district,
   });
 
@@ -271,6 +305,7 @@ export function SubmitEventClient() {
 
           if (loadedOrganizer.city) {
             setCity(loadedOrganizer.city);
+            setMunicipality(loadedOrganizer.city);
           }
         } else if (loadedProfile.organizer_name) {
           setOrganizer(loadedProfile.organizer_name);
@@ -344,8 +379,8 @@ export function SubmitEventClient() {
   async function handleFindLocation() {
     setMessage("");
 
-    if (!address.trim() || !city.trim()) {
-      setMessage("Mete pelo menos morada e cidade para localizar.");
+    if (!address.trim() || (!city.trim() && !municipality.trim())) {
+      setMessage("Mete pelo menos morada e localidade/concelho para localizar.");
       return null;
     }
 
@@ -357,12 +392,30 @@ export function SubmitEventClient() {
         address,
         postalCode,
         city,
+        municipality,
         district,
       });
 
       setLatitude(result.latitude);
       setLongitude(result.longitude);
       setGeocodeLabel(result.display_name);
+
+      if (result.city && !city.trim()) {
+        setCity(result.city);
+      }
+
+      if (result.municipality && !municipality.trim()) {
+        setMunicipality(result.municipality);
+      }
+
+      if (result.district && !district.trim()) {
+        setDistrict(result.district);
+      }
+
+      if (result.postal_code && !postalCode.trim()) {
+        setPostalCode(result.postal_code);
+      }
+
       setMessage("Localização encontrada automaticamente.");
       setGeocoding(false);
 
@@ -419,7 +472,12 @@ export function SubmitEventClient() {
     }
 
     if (!city.trim()) {
-      setMessage("Mete a cidade/localidade.");
+      setMessage("Mete a localidade.");
+      return;
+    }
+
+    if (!municipality.trim()) {
+      setMessage("Mete o concelho.");
       return;
     }
 
@@ -473,6 +531,10 @@ export function SubmitEventClient() {
       let finalLatitude = latitude;
       let finalLongitude = longitude;
       let finalGeocodeLabel = geocodeLabel;
+      let finalPostalCode = postalCode;
+      let finalDistrict = district;
+      let finalCity = city;
+      let finalMunicipality = municipality;
 
       if (finalLatitude === null || finalLongitude === null) {
         const result = await geocodeAddress({
@@ -480,12 +542,18 @@ export function SubmitEventClient() {
           address,
           postalCode,
           city,
+          municipality,
           district,
         });
 
         finalLatitude = result.latitude;
         finalLongitude = result.longitude;
         finalGeocodeLabel = result.display_name;
+        finalPostalCode = postalCode.trim() || result.postal_code || "";
+        finalDistrict = district.trim() || result.district || "";
+        finalCity = city.trim() || result.city || "";
+        finalMunicipality =
+          municipality.trim() || result.municipality || municipality;
 
         setLatitude(result.latitude);
         setLongitude(result.longitude);
@@ -496,11 +564,12 @@ export function SubmitEventClient() {
 
       const { error } = await supabase.from("event_submissions").insert({
         title: title.trim(),
-        city: city.trim(),
-        district: district.trim() || null,
+        city: finalCity.trim(),
+        municipality: finalMunicipality.trim(),
+        district: finalDistrict.trim() || null,
         venue: venue.trim(),
         address: address.trim(),
-        postal_code: postalCode.trim() || null,
+        postal_code: finalPostalCode.trim() || null,
         latitude: finalLatitude,
         longitude: finalLongitude,
         location_source:
@@ -656,7 +725,7 @@ export function SubmitEventClient() {
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Cidade / localidade
+              Localidade
             </label>
 
             <input
@@ -666,7 +735,7 @@ export function SubmitEventClient() {
                 setCity(event.target.value);
                 clearGeocode();
               }}
-              placeholder="Ex: Ansião, Pombal, Leiria..."
+              placeholder="Ex: Alvorge, Pombal, Leiria..."
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
@@ -675,6 +744,45 @@ export function SubmitEventClient() {
                 <option key={item} value={item} />
               ))}
             </datalist>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Concelho
+            </label>
+
+            <input
+              list="submit-event-municipality-suggestions"
+              value={municipality}
+              onChange={(event) => {
+                setMunicipality(event.target.value);
+                clearGeocode();
+              }}
+              placeholder="Ex: Ansião, Pombal, Leiria..."
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
+
+            <datalist id="submit-event-municipality-suggestions">
+              {municipalitySuggestions.map((item) => (
+                <option key={item} value={item} />
+              ))}
+            </datalist>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-zinc-300">
+              Distrito
+            </label>
+
+            <input
+              value={district}
+              onChange={(event) => {
+                setDistrict(event.target.value);
+                clearGeocode();
+              }}
+              placeholder="Ex: Leiria, Coimbra, Lisboa..."
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            />
           </div>
 
           <div>
@@ -730,8 +838,7 @@ export function SubmitEventClient() {
 
             <p className="mt-3 text-sm leading-relaxed text-zinc-500">
               Mete a morada do espaço. A app calcula as coordenadas
-              automaticamente para o mapa. O cliente não precisa de mexer em
-              latitude/longitude.
+              automaticamente para o mapa.
             </p>
 
             <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -767,35 +874,21 @@ export function SubmitEventClient() {
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Distrito
-                </label>
-
-                <input
-                  value={district}
-                  onChange={(event) => {
-                    setDistrict(event.target.value);
-                    clearGeocode();
-                  }}
-                  placeholder="Leiria, Coimbra, Lisboa..."
-                  className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                />
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={handleFindLocation}
+                  disabled={geocoding}
+                  className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+                >
+                  {geocoding
+                    ? "A localizar..."
+                    : "Encontrar localização automática"}
+                </button>
               </div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleFindLocation}
-                disabled={geocoding}
-                className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-              >
-                {geocoding
-                  ? "A localizar..."
-                  : "Encontrar localização automática"}
-              </button>
-
               <a
                 href={mapsSearchUrl}
                 target="_blank"

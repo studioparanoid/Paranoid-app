@@ -9,6 +9,7 @@ type LocationSource = "manual" | "geocoded" | "venue" | null;
 type SubmissionLocationFields = {
   address?: string | null;
   postal_code?: string | null;
+  municipality?: string | null;
   district?: string | null;
   latitude?: number | string | null;
   longitude?: number | string | null;
@@ -24,6 +25,7 @@ type VenueRow = {
   slug: string;
   name: string;
   city: string | null;
+  municipality: string | null;
   address: string | null;
   postal_code: string | null;
   district: string | null;
@@ -36,6 +38,7 @@ type VenueLocation = {
   id: string;
   address: string | null;
   postal_code: string | null;
+  municipality: string | null;
   district: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -45,6 +48,7 @@ type VenueLocation = {
 type LocationPayload = {
   address: string | null;
   postal_code: string | null;
+  municipality: string | null;
   district: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -158,6 +162,7 @@ function getSubmissionLocation(
   return {
     address: submission.address?.trim() || null,
     postal_code: submission.postal_code?.trim() || null,
+    municipality: submission.municipality?.trim() || null,
     district: submission.district?.trim() || null,
     latitude,
     longitude,
@@ -172,6 +177,7 @@ function hasLocationDetails(location: LocationPayload) {
   return Boolean(
     location.address ||
       location.postal_code ||
+      location.municipality ||
       location.district ||
       (location.latitude !== null && location.longitude !== null)
   );
@@ -200,6 +206,8 @@ function mergeEventLocation(
     address: submissionLocation.address || venueLocation?.address || null,
     postal_code:
       submissionLocation.postal_code || venueLocation?.postal_code || null,
+    municipality:
+      submissionLocation.municipality || venueLocation?.municipality || null,
     district: submissionLocation.district || venueLocation?.district || null,
     latitude,
     longitude,
@@ -239,6 +247,7 @@ async function createUniqueEventSlug(title: string) {
 async function findOrCreateVenue(
   name: string,
   city: string,
+  municipality: string | null,
   location: LocationPayload
 ): Promise<VenueLocation | null> {
   const cleanName = name.trim();
@@ -252,7 +261,7 @@ async function findOrCreateVenue(
   const { data: existingVenue, error: existingError } = await supabase
     .from("venues")
     .select(
-      "id,slug,name,city,address,postal_code,district,latitude,longitude,location_source"
+      "id,slug,name,city,municipality,address,postal_code,district,latitude,longitude,location_source"
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -267,6 +276,7 @@ async function findOrCreateVenue(
     if (hasLocationDetails(location)) {
       const updatePayload = {
         city,
+        municipality: location.municipality || municipality || venue.municipality,
         address: location.address || venue.address,
         postal_code: location.postal_code || venue.postal_code,
         district: location.district || venue.district,
@@ -293,6 +303,7 @@ async function findOrCreateVenue(
         id: venue.id,
         address: updatePayload.address,
         postal_code: updatePayload.postal_code,
+        municipality: updatePayload.municipality,
         district: updatePayload.district,
         latitude: updatePayload.latitude,
         longitude: updatePayload.longitude,
@@ -304,6 +315,7 @@ async function findOrCreateVenue(
       id: venue.id,
       address: venue.address,
       postal_code: venue.postal_code,
+      municipality: venue.municipality,
       district: venue.district,
       latitude: venue.latitude,
       longitude: venue.longitude,
@@ -317,6 +329,7 @@ async function findOrCreateVenue(
       slug,
       name: cleanName,
       city,
+      municipality: location.municipality || municipality,
       address: location.address,
       postal_code: location.postal_code,
       district: location.district,
@@ -327,7 +340,7 @@ async function findOrCreateVenue(
       instagram: null,
     })
     .select(
-      "id,slug,name,city,address,postal_code,district,latitude,longitude,location_source"
+      "id,slug,name,city,municipality,address,postal_code,district,latitude,longitude,location_source"
     )
     .single();
 
@@ -341,6 +354,7 @@ async function findOrCreateVenue(
     id: venue.id,
     address: venue.address,
     postal_code: venue.postal_code,
+    municipality: venue.municipality,
     district: venue.district,
     latitude: venue.latitude,
     longitude: venue.longitude,
@@ -527,6 +541,7 @@ export function AdminSubmissionActions({
       const venueLocation = await findOrCreateVenue(
         submission.venue,
         submission.city,
+        submission.municipality || null,
         submissionLocation
       );
 
@@ -561,6 +576,7 @@ export function AdminSubmissionActions({
           slug: eventSlug,
           title: submission.title,
           city: submission.city,
+          municipality: eventLocation.municipality || submission.municipality,
           district: eventLocation.district,
           address: eventLocation.address,
           postal_code: eventLocation.postal_code,
@@ -657,6 +673,12 @@ export function AdminSubmissionActions({
         <p className="rounded-2xl border border-red-950 bg-red-950/20 px-4 py-3 text-center text-xs font-bold text-red-300">
           Bilheteira:{" "}
           {submission.ticket_mode === "internal" ? "Paranoid" : "externa"}
+        </p>
+      )}
+
+      {submission.municipality && (
+        <p className="rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-center text-xs font-bold text-zinc-400">
+          Concelho: {submission.municipality}
         </p>
       )}
 
