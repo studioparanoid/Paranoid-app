@@ -129,6 +129,26 @@ function statusLabel(status: string | null | undefined) {
     return "Rejeitado";
   }
 
+  if (status === "archived") {
+    return "Arquivado";
+  }
+
+  if (status === "published") {
+    return "Publicado";
+  }
+
+  if (status === "cancelled") {
+    return "Cancelado";
+  }
+
+  if (status === "checked_in") {
+    return "Check-in feito";
+  }
+
+  if (status === "reserved") {
+    return "Reservado";
+  }
+
   return "Aprovado";
 }
 
@@ -137,8 +157,12 @@ function statusClasses(status: string | null | undefined) {
     return "border-yellow-900 bg-yellow-950/30 text-yellow-500";
   }
 
-  if (status === "rejected") {
+  if (status === "rejected" || status === "cancelled") {
     return "border-red-900 bg-red-950/30 text-red-400";
+  }
+
+  if (status === "archived") {
+    return "border-zinc-700 bg-zinc-900 text-zinc-400";
   }
 
   return "border-green-900 bg-green-950/30 text-green-400";
@@ -245,7 +269,8 @@ export function ProfileClient() {
   );
 
   const approvedSubmissions = submissions.filter(
-    (submission) => submission.status === "approved"
+    (submission) =>
+      submission.status === "approved" || submission.status === "published"
   );
 
   const activeTickets = tickets.filter((ticket) => ticket.status === "reserved");
@@ -439,9 +464,9 @@ export function ProfileClient() {
             <button
               type="button"
               onClick={signOut}
-              className="mt-5 rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300"
+              className="mt-5 w-full rounded-full border border-red-900 bg-red-950/20 px-5 py-4 text-sm font-black uppercase tracking-wide text-red-300"
             >
-              Sair
+              Terminar sessão
             </button>
           </div>
         </section>
@@ -539,6 +564,14 @@ export function ProfileClient() {
                     Painel admin
                   </Link>
                 )}
+
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="rounded-full border border-red-900 bg-red-950/20 px-5 py-4 text-center text-sm font-black uppercase tracking-wide text-red-300"
+                >
+                  Terminar sessão
+                </button>
               </div>
             </section>
           </aside>
