@@ -4,6 +4,69 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 
+type AccountType = "community" | "artist" | "organizer" | "venue";
+type AccountStatus = "approved" | "pending" | "rejected";
+
+type ProfileRow = {
+  id: string;
+  email?: string | null;
+  role?: string | null;
+
+  display_name?: string | null;
+  account_type?: AccountType | string | null;
+  account_status?: AccountStatus | string | null;
+
+  artist_name?: string | null;
+  organizer_name?: string | null;
+  venue_name?: string | null;
+
+  city?: string | null;
+  instagram_url?: string | null;
+
+  entity_id?: string | null;
+  entity_slug?: string | null;
+
+  preferred_cities?: string[] | null;
+  preferred_categories?: string[] | null;
+
+  approved_at?: string | null;
+  created_at?: string | null;
+};
+
+type ProfileClaimRow = {
+  id: string;
+  user_id: string;
+  account_type: "artist" | "organizer" | "venue";
+  display_name: string | null;
+  entity_name: string;
+  city: string | null;
+  instagram_url: string | null;
+  status: "pending" | "approved" | "rejected";
+  entity_id: string | null;
+  entity_slug: string | null;
+  review_note: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+};
+
+type SubmissionRow = {
+  id: string;
+  title: string;
+  status: string;
+  event_date: string | null;
+  city: string | null;
+  created_at: string;
+};
+
+type TicketRow = {
+  id: string;
+  event_id: string;
+  quantity: number;
+  status: string;
+  check_in_code: string;
+  created_at: string;
+};
+
 const cities = [
   "Pombal",
   "Leiria",
@@ -25,34 +88,115 @@ const categories = [
   "Outros",
 ];
 
-type ProfileRow = {
-  id: string;
-  role: string | null;
-  preferred_cities: string[] | null;
-  preferred_categories: string[] | null;
-};
+function accountTypeLabel(type: string | null | undefined) {
+  if (type === "artist") {
+    return "Artista";
+  }
 
-type OrganizerMemberRow = {
-  organizer_id: string;
-};
+  if (type === "organizer") {
+    return "Organizador";
+  }
 
-type OrganizerRow = {
-  id: string;
-  slug: string;
-  name: string;
-};
+  if (type === "venue") {
+    return "Espaço";
+  }
 
-type SavedEventRow = {
-  event_id: string;
-};
+  return "Comunidade";
+}
 
-type FollowRow = {
-  id: string;
-  target_type: string;
-  target_id: string;
-};
+function accountTypeDescription(type: string | null | undefined) {
+  if (type === "artist") {
+    return "Perfil artístico ligado à rede cultural Paranoid.";
+  }
 
-function toggleValue(values: string[], value: string) {
+  if (type === "organizer") {
+    return "Perfil de organizador, promotor, coletivo ou associação.";
+  }
+
+  if (type === "venue") {
+    return "Perfil de espaço cultural, sala, bar, galeria ou auditório.";
+  }
+
+  return "Perfil de comunidade para guardar eventos, seguir a rede e reservar bilhetes.";
+}
+
+function statusLabel(status: string | null | undefined) {
+  if (status === "pending") {
+    return "Pendente";
+  }
+
+  if (status === "rejected") {
+    return "Rejeitado";
+  }
+
+  return "Aprovado";
+}
+
+function statusClasses(status: string | null | undefined) {
+  if (status === "pending") {
+    return "border-yellow-900 bg-yellow-950/30 text-yellow-500";
+  }
+
+  if (status === "rejected") {
+    return "border-red-900 bg-red-950/30 text-red-400";
+  }
+
+  return "border-green-900 bg-green-950/30 text-green-400";
+}
+
+function claimTypePath(type: string | null | undefined, slug: string | null) {
+  if (!slug) {
+    return null;
+  }
+
+  if (type === "artist") {
+    return `/artistas/${slug}`;
+  }
+
+  if (type === "organizer") {
+    return `/organizadores/${slug}`;
+  }
+
+  if (type === "venue") {
+    return `/espacos/${slug}`;
+  }
+
+  return null;
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) {
+    return "Sem data";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pt-PT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function normalizeExternalUrl(value: string) {
+  const cleanValue = value.trim();
+
+  if (!cleanValue) {
+    return null;
+  }
+
+  if (cleanValue.startsWith("http://") || cleanValue.startsWith("https://")) {
+    return cleanValue;
+  }
+
+  return `https://${cleanValue}`;
+}
+
+function toggleArrayValue(values: string[], value: string) {
   if (values.includes(value)) {
     return values.filter((item) => item !== value);
   }
@@ -60,203 +204,197 @@ function toggleValue(values: string[], value: string) {
   return [...values, value];
 }
 
-function PillButton({
-  active,
-  children,
-  onClick,
-}: {
-  active: boolean;
-  children: React.ReactNode;
-  onClick: () => void;
-}) {
+function EmptyCard({ text }: { text: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full border px-4 py-2 text-sm font-black transition ${
-        active
-          ? "border-[#f2f1ec] bg-[#f2f1ec] text-black"
-          : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-600"
-      }`}
-    >
-      {children}
-    </button>
+    <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
+      <p className="text-sm text-zinc-500">{text}</p>
+    </div>
   );
 }
 
 export function ProfileClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [message, setMessage] = useState("");
 
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<string | null>(null);
 
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [claims, setClaims] = useState<ProfileClaimRow[]>([]);
+  const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
+  const [tickets, setTickets] = useState<TicketRow[]>([]);
+
+  const [displayName, setDisplayName] = useState("");
+  const [city, setCity] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
   const [preferredCities, setPreferredCities] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
 
-  const [savedCount, setSavedCount] = useState(0);
-  const [followsCount, setFollowsCount] = useState(0);
-  const [organizers, setOrganizers] = useState<OrganizerRow[]>([]);
+  const latestClaim = useMemo(() => {
+    return claims[0] || null;
+  }, [claims]);
 
-  const isLoggedIn = Boolean(userId);
+  const accountType = profile?.account_type || "community";
+  const accountStatus = profile?.account_status || "approved";
 
-  const profileStrength = useMemo(() => {
-    let score = 0;
+  const publicPath = claimTypePath(accountType, profile?.entity_slug || null);
 
-    if (preferredCities.length > 0) {
-      score += 35;
+  const pendingSubmissions = submissions.filter(
+    (submission) => submission.status === "pending"
+  );
+
+  const approvedSubmissions = submissions.filter(
+    (submission) => submission.status === "approved"
+  );
+
+  const activeTickets = tickets.filter((ticket) => ticket.status === "reserved");
+
+  async function loadProfile() {
+    setLoading(true);
+    setMessage("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setUserId("");
+      setEmail("");
+      setProfile(null);
+      setClaims([]);
+      setSubmissions([]);
+      setTickets([]);
+      setLoading(false);
+      return;
     }
 
-    if (preferredCategories.length > 0) {
-      score += 35;
+    setUserId(user.id);
+    setEmail(user.email || "");
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      setMessage(profileError.message);
+      setProfile(null);
+      setLoading(false);
+      return;
     }
 
-    if (savedCount > 0) {
-      score += 15;
-    }
+    const loadedProfile = (profileData || null) as ProfileRow | null;
 
-    if (followsCount > 0) {
-      score += 15;
-    }
+    setProfile(loadedProfile);
+    setDisplayName(loadedProfile?.display_name || "");
+    setCity(loadedProfile?.city || "");
+    setInstagramUrl(loadedProfile?.instagram_url || "");
+    setPreferredCities(loadedProfile?.preferred_cities || []);
+    setPreferredCategories(loadedProfile?.preferred_categories || []);
 
-    return Math.min(score, 100);
-  }, [preferredCities.length, preferredCategories.length, savedCount, followsCount]);
+    const { data: claimData } = await supabase
+      .from("profile_claims")
+      .select(
+        "id,user_id,account_type,display_name,entity_name,city,instagram_url,status,entity_id,entity_slug,review_note,reviewed_at,created_at"
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    setClaims((claimData || []) as ProfileClaimRow[]);
+
+    const { data: submissionData } = await supabase
+      .from("event_submissions")
+      .select("id,title,status,event_date,city,created_at")
+      .eq("submitted_by", user.email || "")
+      .order("created_at", { ascending: false })
+      .limit(6);
+
+    setSubmissions((submissionData || []) as SubmissionRow[]);
+
+    const { data: ticketData } = await supabase
+      .from("ticket_reservations")
+      .select("id,event_id,quantity,status,check_in_code,created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(6);
+
+    setTickets((ticketData || []) as TicketRow[]);
+
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function loadProfile() {
-      setLoading(true);
-      setMessage("");
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setUserId(null);
-        setEmail("");
-        setLoading(false);
-        return;
-      }
-
-      setUserId(user.id);
-      setEmail(user.email || "");
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("id,role,preferred_cities,preferred_categories")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profileData) {
-        const profile = profileData as ProfileRow;
-
-        setRole(profile.role);
-        setPreferredCities(profile.preferred_cities || []);
-        setPreferredCategories(profile.preferred_categories || []);
-      }
-
-      const { data: savedRows } = await supabase
-        .from("saved_events")
-        .select("event_id")
-        .eq("user_id", user.id);
-
-      setSavedCount(((savedRows || []) as SavedEventRow[]).length);
-
-      const { data: followRows } = await supabase
-        .from("follows")
-        .select("id,target_type,target_id")
-        .eq("user_id", user.id);
-
-      setFollowsCount(((followRows || []) as FollowRow[]).length);
-
-      const { data: membershipRows } = await supabase
-        .from("organizer_members")
-        .select("organizer_id")
-        .eq("user_id", user.id);
-
-      const organizerIds = ((membershipRows || []) as OrganizerMemberRow[])
-        .map((row) => row.organizer_id)
-        .filter(Boolean);
-
-      if (organizerIds.length > 0) {
-        const { data: organizerRows } = await supabase
-          .from("organizers")
-          .select("id,slug,name")
-          .in("id", organizerIds)
-          .order("name", { ascending: true });
-
-        setOrganizers((organizerRows || []) as OrganizerRow[]);
-      } else {
-        setOrganizers([]);
-      }
-
-      setLoading(false);
-    }
-
     loadProfile();
   }, []);
 
-  async function savePreferences() {
+  async function saveProfile() {
     setMessage("");
 
     if (!userId) {
-      setMessage("Tens de iniciar sessão para guardar preferências.");
+      setMessage("Tens de entrar para guardar o perfil.");
       return;
     }
 
     setSaving(true);
 
-    const { error } = await supabase.from("profiles").upsert({
-      id: userId,
-      preferred_cities: preferredCities,
-      preferred_categories: preferredCategories,
-    });
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        display_name: displayName.trim() || null,
+        city: city.trim() || null,
+        instagram_url: normalizeExternalUrl(instagramUrl),
+        preferred_cities: preferredCities,
+        preferred_categories: preferredCategories,
+      })
+      .eq("id", userId);
 
     setSaving(false);
 
     if (error) {
-      setMessage(`Erro ao guardar perfil: ${error.message}`);
+      setMessage(`Erro ao guardar: ${error.message}`);
       return;
     }
 
-    setMessage("Preferências guardadas.");
+    setMessage("Perfil atualizado.");
+    await loadProfile();
   }
 
-  async function logout() {
+  async function signOut() {
     await supabase.auth.signOut();
     window.location.href = "/";
   }
 
   if (loading) {
     return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar perfil...</p>
-      </div>
+      <section className="mx-auto max-w-md px-5 py-8 text-[#f2f1ec] lg:max-w-7xl lg:px-10 lg:py-12">
+        <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
+          <p className="text-zinc-500">A carregar perfil...</p>
+        </div>
+      </section>
     );
   }
 
-  if (!isLoggedIn) {
+  if (!userId) {
     return (
-      <div className="mt-8 lg:mt-12">
-        <section className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <aside className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-              Conta
+      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+        <section className="mx-auto max-w-md lg:max-w-5xl">
+          <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
+            <p className="text-xs uppercase tracking-[0.35em] text-red-700">
+              Perfil
             </p>
 
-            <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-              Entra para guardar a tua cena.
-            </h2>
+            <h1 className="mt-4 text-5xl font-black leading-none lg:text-7xl">
+              Entra na tua conta.
+            </h1>
 
-            <p className="mt-5 text-sm leading-relaxed text-zinc-400 lg:text-base">
-              Sem conta consegues explorar. Com conta consegues sincronizar
-              guardados, preferências e acompanhar submissões.
+            <p className="mt-5 text-base leading-relaxed text-zinc-400">
+              Guarda eventos, reserva bilhetes, acompanha submissões e gere a
+              tua presença na rede Paranoid.
             </p>
 
-            <div className="mt-7 grid gap-3">
+            <div className="mt-8 grid gap-3 lg:grid-cols-2">
               <Link
                 href="/login"
                 className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
@@ -271,300 +409,421 @@ export function ProfileClient() {
                 Criar conta
               </Link>
             </div>
-          </aside>
-
-          <section className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-                Guardados
-              </p>
-
-              <h3 className="mt-3 text-3xl font-black">Não percas eventos.</h3>
-
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-                Guarda eventos para ver depois e sincroniza entre dispositivos.
-              </p>
-            </div>
-
-            <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-                Para ti
-              </p>
-
-              <h3 className="mt-3 text-3xl font-black">Feed mais certeiro.</h3>
-
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-                Define cidades e categorias para receber eventos mais próximos
-                do teu gosto.
-              </p>
-            </div>
-          </section>
+          </div>
         </section>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="mt-8 lg:mt-12">
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:items-start">
-        <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-            Conta
-          </p>
-
-          <h2 className="mt-3 break-words text-2xl font-black leading-tight">
-            {email}
-          </h2>
-
-          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-zinc-600">
-            {role ? `Role: ${role}` : "Utilizador"}
-          </p>
-
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{savedCount}</p>
-
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Guard.
-              </p>
-            </div>
-
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{followsCount}</p>
-
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Seg.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+      <section className="mx-auto max-w-md lg:max-w-7xl">
+        <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
+          <div>
+            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
               Perfil
             </p>
 
-            <p className="mt-3 text-3xl font-black">{profileStrength}%</p>
-
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-900">
-              <div
-                className="h-full rounded-full bg-[#f2f1ec]"
-                style={{ width: `${profileStrength}%` }}
-              />
-            </div>
-
-            <p className="mt-3 text-xs leading-relaxed text-zinc-600">
-              Quanto mais completo, melhor fica o “Para ti”.
-            </p>
+            <h1 className="text-5xl font-black leading-none tracking-tight lg:text-8xl">
+              {displayName || email}
+            </h1>
           </div>
 
-          <div className="mt-6 grid gap-3">
-            <Link
-              href="/guardados"
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-            >
-              Ver guardados
-            </Link>
+          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
+            <p className="text-sm font-bold uppercase tracking-wide text-zinc-600">
+              Conta
+            </p>
 
-            <Link
-              href="/para-ti"
-              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-            >
-              Abrir Para ti
-            </Link>
-
-            {role === "admin" && (
-              <Link
-                href="/admin"
-                className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-400"
-              >
-                Painel Admin
-              </Link>
-            )}
-
-            {organizers.length > 0 && (
-              <Link
-                href="/organizador"
-                className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-400"
-              >
-                Painel Organizador
-              </Link>
-            )}
+            <p className="mt-2 break-words text-lg font-black">{email}</p>
 
             <button
               type="button"
-              onClick={logout}
-              className="rounded-full border border-zinc-800 px-5 py-4 text-sm font-bold text-zinc-500"
+              onClick={signOut}
+              className="mt-5 rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300"
             >
               Sair
             </button>
           </div>
-        </aside>
+        </section>
 
-        <section className="space-y-6">
-          <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
-            <div className="grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Preferências
-                </p>
-
-                <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                  O que queres ver?
-                </h2>
-
-                <p className="mt-5 text-sm leading-relaxed text-zinc-400">
-                  Escolhe cidades e categorias. Isto alimenta a página “Para ti”
-                  e ajuda a limpar ruído.
-                </p>
-              </div>
-
-              <div className="space-y-8">
-                <div>
-                  <p className="mb-3 text-sm font-black text-zinc-300">
-                    Cidades
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    {cities.map((city) => (
-                      <PillButton
-                        key={city}
-                        active={preferredCities.includes(city)}
-                        onClick={() =>
-                          setPreferredCities((current) =>
-                            toggleValue(current, city)
-                          )
-                        }
-                      >
-                        {city}
-                      </PillButton>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-3 text-sm font-black text-zinc-300">
-                    Categorias
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map((category) => (
-                      <PillButton
-                        key={category}
-                        active={preferredCategories.includes(category)}
-                        onClick={() =>
-                          setPreferredCategories((current) =>
-                            toggleValue(current, category)
-                          )
-                        }
-                      >
-                        {category}
-                      </PillButton>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={savePreferences}
-                  disabled={saving}
-                  className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-                >
-                  {saving ? "A guardar..." : "Guardar preferências"}
-                </button>
-
-                {message && (
-                  <p className="text-center text-sm font-bold text-zinc-400">
-                    {message}
-                  </p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className="grid gap-4 lg:grid-cols-3">
-            <Link
-              href="/agenda"
-              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 transition hover:border-red-950"
-            >
-              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-                Agenda
-              </p>
-
-              <h3 className="mt-3 text-3xl font-black leading-none">
-                Explorar tudo
-              </h3>
-
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-                Vai direto à lista completa de eventos.
-              </p>
-            </Link>
-
-            <Link
-              href="/descobrir"
-              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 transition hover:border-red-950"
-            >
-              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-                Rede
-              </p>
-
-              <h3 className="mt-3 text-3xl font-black leading-none">
-                Descobrir
-              </h3>
-
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-                Artistas, espaços e organizadores.
-              </p>
-            </Link>
-
-            <Link
-              href="/submeter"
-              className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5 transition hover:border-red-800"
-            >
-              <p className="text-xs uppercase tracking-[0.25em] text-red-500">
-                Submissão
-              </p>
-
-              <h3 className="mt-3 text-3xl font-black leading-none">
-                Meter evento
-              </h3>
-
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-                Envia uma nova cena para revisão.
-              </p>
-            </Link>
-          </section>
-
-          {organizers.length > 0 && (
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
+        <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[340px_1fr] lg:items-start">
+          <aside className="space-y-6 lg:sticky lg:top-28">
+            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Organizador
+                Tipo de conta
               </p>
 
               <h2 className="mt-3 text-4xl font-black leading-none">
-                Contas ligadas.
+                {accountTypeLabel(accountType)}
               </h2>
 
-              <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                {organizers.map((organizer) => (
-                  <Link
-                    key={organizer.id}
-                    href={`/organizadores/${organizer.slug}`}
-                    className="rounded-[2rem] border border-zinc-800 bg-black p-5 transition hover:border-red-950"
-                  >
-                    <p className="text-xs uppercase tracking-[0.25em] text-red-700">
-                      Organizador
-                    </p>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+                {accountTypeDescription(accountType)}
+              </p>
 
-                    <h3 className="mt-3 text-2xl font-black">
-                      {organizer.name}
-                    </h3>
+              <div
+                className={`mt-5 inline-flex rounded-full border px-4 py-2 text-xs font-black uppercase ${statusClasses(
+                  accountStatus
+                )}`}
+              >
+                {statusLabel(accountStatus)}
+              </div>
+
+              {accountStatus === "pending" && (
+                <p className="mt-4 rounded-2xl border border-yellow-900 bg-yellow-950/20 p-4 text-sm leading-relaxed text-yellow-500">
+                  O teu perfil está pendente. A Paranoid tem de aprovar antes de
+                  apareceres como artista, organizador ou espaço na rede.
+                </p>
+              )}
+
+              {accountStatus === "rejected" && (
+                <p className="mt-4 rounded-2xl border border-red-900 bg-red-950/20 p-4 text-sm leading-relaxed text-red-300">
+                  O teu pedido foi rejeitado.
+                  {latestClaim?.review_note
+                    ? ` Motivo: ${latestClaim.review_note}`
+                    : " Podes falar com a Paranoid para corrigir dados."}
+                </p>
+              )}
+
+              {accountStatus === "approved" && publicPath && (
+                <Link
+                  href={publicPath}
+                  className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+                >
+                  Ver perfil público
+                </Link>
+              )}
+
+              {accountStatus === "approved" && accountType === "organizer" && (
+                <Link
+                  href="/organizador"
+                  className="mt-3 block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                >
+                  Painel organizador
+                </Link>
+              )}
+            </section>
+
+            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                Atalhos
+              </p>
+
+              <div className="mt-5 grid gap-3">
+                <Link
+                  href="/submeter"
+                  className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+                >
+                  Submeter evento
+                </Link>
+
+                <Link
+                  href="/guardados"
+                  className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                >
+                  Eventos guardados
+                </Link>
+
+                <Link
+                  href="/bilhetes"
+                  className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                >
+                  Os meus bilhetes
+                </Link>
+
+                {profile?.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-300"
+                  >
+                    Painel admin
                   </Link>
+                )}
+              </div>
+            </section>
+          </aside>
+
+          <section className="space-y-6">
+            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                Dados
+              </p>
+
+              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+                Perfil base.
+              </h2>
+
+              <div className="mt-8 grid gap-5 lg:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Nome público
+                  </label>
+
+                  <input
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    placeholder="Nome público"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Cidade
+                  </label>
+
+                  <input
+                    value={city}
+                    onChange={(event) => setCity(event.target.value)}
+                    placeholder="Cidade"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Instagram
+                  </label>
+
+                  <input
+                    value={instagramUrl}
+                    onChange={(event) => setInstagramUrl(event.target.value)}
+                    placeholder="instagram.com/..."
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={saveProfile}
+                disabled={saving}
+                className="mt-8 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              >
+                {saving ? "A guardar..." : "Guardar perfil"}
+              </button>
+
+              {message && (
+                <p className="mt-5 text-center text-sm font-bold text-zinc-400">
+                  {message}
+                </p>
+              )}
+            </section>
+
+            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                Preferências
+              </p>
+
+              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+                O que queres ver.
+              </h2>
+
+              <div className="mt-8">
+                <p className="mb-3 text-sm font-bold text-zinc-300">Cidades</p>
+
+                <div className="flex flex-wrap gap-2">
+                  {cities.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() =>
+                        setPreferredCities((current) =>
+                          toggleArrayValue(current, item)
+                        )
+                      }
+                      className={`rounded-full border px-4 py-2 text-sm font-bold ${
+                        preferredCities.includes(item)
+                          ? "border-[#f2f1ec] bg-[#f2f1ec] text-black"
+                          : "border-zinc-800 text-zinc-400"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <p className="mb-3 text-sm font-bold text-zinc-300">
+                  Categorias
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() =>
+                        setPreferredCategories((current) =>
+                          toggleArrayValue(current, item)
+                        )
+                      }
+                      className={`rounded-full border px-4 py-2 text-sm font-bold ${
+                        preferredCategories.includes(item)
+                          ? "border-[#f2f1ec] bg-[#f2f1ec] text-black"
+                          : "border-zinc-800 text-zinc-400"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="grid gap-6 lg:grid-cols-3">
+              <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Submissões
+                </p>
+
+                <p className="mt-4 text-5xl font-black">
+                  {submissions.length}
+                </p>
+
+                <p className="mt-2 text-sm text-zinc-500">
+                  {pendingSubmissions.length} pendente
+                  {pendingSubmissions.length === 1 ? "" : "s"} ·{" "}
+                  {approvedSubmissions.length} aprovada
+                  {approvedSubmissions.length === 1 ? "" : "s"}
+                </p>
+              </article>
+
+              <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Bilhetes
+                </p>
+
+                <p className="mt-4 text-5xl font-black">
+                  {activeTickets.length}
+                </p>
+
+                <p className="mt-2 text-sm text-zinc-500">
+                  Reservas ativas na tua carteira.
+                </p>
+              </article>
+
+              <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Estado
+                </p>
+
+                <p className="mt-4 text-5xl font-black">
+                  {statusLabel(accountStatus)}
+                </p>
+
+                <p className="mt-2 text-sm text-zinc-500">
+                  {accountTypeLabel(accountType)}
+                </p>
+              </article>
+            </section>
+
+            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                    Últimas submissões
+                  </p>
+
+                  <h2 className="mt-3 text-4xl font-black leading-none">
+                    O que enviaste.
+                  </h2>
+                </div>
+
+                <Link
+                  href="/submeter"
+                  className="hidden rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300 lg:inline-block"
+                >
+                  Submeter
+                </Link>
+              </div>
+
+              <div className="mt-6 grid gap-3">
+                {submissions.length === 0 && (
+                  <EmptyCard text="Ainda não submeteste eventos com esta conta." />
+                )}
+
+                {submissions.map((submission) => (
+                  <article
+                    key={submission.id}
+                    className="rounded-[1.5rem] border border-zinc-800 bg-black p-4"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-lg font-black">
+                          {submission.title}
+                        </h3>
+
+                        <p className="mt-1 text-sm text-zinc-500">
+                          {formatDate(submission.event_date)} ·{" "}
+                          {submission.city || "Sem cidade"}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClasses(
+                          submission.status
+                        )}`}
+                      >
+                        {statusLabel(submission.status)}
+                      </span>
+                    </div>
+                  </article>
                 ))}
               </div>
             </section>
-          )}
+
+            {claims.length > 0 && (
+              <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Pedidos de perfil
+                </p>
+
+                <h2 className="mt-3 text-4xl font-black leading-none">
+                  Aprovação.
+                </h2>
+
+                <div className="mt-6 grid gap-3">
+                  {claims.map((claim) => (
+                    <article
+                      key={claim.id}
+                      className="rounded-[1.5rem] border border-zinc-800 bg-black p-4"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-black">
+                            {claim.entity_name}
+                          </h3>
+
+                          <p className="mt-1 text-sm text-zinc-500">
+                            {accountTypeLabel(claim.account_type)} ·{" "}
+                            {formatDate(claim.created_at)}
+                          </p>
+
+                          {claim.review_note && (
+                            <p className="mt-2 text-sm text-red-300">
+                              {claim.review_note}
+                            </p>
+                          )}
+                        </div>
+
+                        <span
+                          className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClasses(
+                            claim.status
+                          )}`}
+                        >
+                          {statusLabel(claim.status)}
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+          </section>
         </section>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
