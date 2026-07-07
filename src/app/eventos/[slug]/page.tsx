@@ -57,6 +57,10 @@ type EventArtistRow = {
   artist_id: string | null;
 };
 
+type SavedEventRow = {
+  event_id: string;
+};
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -195,12 +199,15 @@ export default function EventPage() {
   }, [params]);
 
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [userId, setUserId] = useState("");
   const [event, setEvent] = useState<EventRow | null>(null);
   const [organizer, setOrganizer] = useState<OrganizerRow | null>(null);
   const [venue, setVenue] = useState<VenueRow | null>(null);
   const [artists, setArtists] = useState<ArtistRow[]>([]);
+  const [isSaved, setIsSaved] = useState(false);
 
   async function loadEvent() {
     if (!slug) {
@@ -233,6 +240,26 @@ export default function EventPage() {
     if (!loadedEvent) {
       setLoading(false);
       return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    setUserId(user?.id || "");
+
+    if (user) {
+      const { data: savedData } = await supabase
+        .from("saved_events")
+        .select("event_id")
+        .eq("user_id", user.id)
+        .eq("event_id", loadedEvent.id)
+        .maybeSingle();
+
+      const loadedSaved = (savedData || null) as SavedEventRow | null;
+      setIsSaved(Boolean(loadedSaved));
+    } else {
+      setIsSaved(false);
     }
 
     if (loadedEvent.organizer_id) {
@@ -295,6 +322,53 @@ export default function EventPage() {
     loadEvent();
   }, [slug]);
 
+  async function toggleSavedEvent() {
+    setMessage("");
+
+    if (!event) {
+      return;
+    }
+
+    if (!userId) {
+      setMessage("Tens de iniciar sessão para guardar eventos.");
+      return;
+    }
+
+    setActionLoading(true);
+
+    if (isSaved) {
+      const { error } = await supabase
+        .from("saved_events")
+        .delete()
+        .eq("user_id", userId)
+        .eq("event_id", event.id);
+
+      if (error) {
+        setMessage(error.message);
+        setActionLoading(false);
+        return;
+      }
+
+      setIsSaved(false);
+      setActionLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.from("saved_events").insert({
+      user_id: userId,
+      event_id: event.id,
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setActionLoading(false);
+      return;
+    }
+
+    setIsSaved(true);
+    setActionLoading(false);
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
@@ -354,6 +428,12 @@ export default function EventPage() {
                 {ticketBadgeText && (
                   <span className="rounded-full border border-green-900 bg-green-950/30 px-3 py-1 text-xs font-black uppercase text-green-400">
                     {ticketBadgeText}
+                  </span>
+                )}
+
+                {isSaved && (
+                  <span className="rounded-full border border-yellow-900 bg-yellow-950/30 px-3 py-1 text-xs font-black uppercase text-yellow-500">
+                    Guardado
                   </span>
                 )}
               </div>
@@ -515,6 +595,23 @@ export default function EventPage() {
               </h2>
 
               <div className="mt-6 grid gap-3">
+                <button
+                  type="button"
+                  onClick={toggleSavedEvent}
+                  disabled={actionLoading}
+                  className={`rounded-full px-5 py-4 text-center text-sm font-black disabled:opacity-50 ${
+                    isSaved
+                      ? "border border-yellow-900 text-yellow-500"
+                      : "border border-zinc-700 text-zinc-300"
+                  }`}
+                >
+                  {actionLoading
+                    ? "A guardar..."
+                    : isSaved
+                      ? "Guardado"
+                      : "Guardar evento"}
+                </button>
+
                 {event.ticket_mode === "internal" && (
                   <Link
                     href={`/bilhetes/${event.slug}`}
@@ -545,6 +642,13 @@ export default function EventPage() {
                     Ver Instagram
                   </a>
                 )}
+
+                <Link
+                  href="/guardados"
+                  className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                >
+                  Ver guardados
+                </Link>
 
                 <Link
                   href="/agenda"
