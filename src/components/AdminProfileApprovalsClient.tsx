@@ -573,9 +573,7 @@ export function AdminProfileApprovalsClient() {
                     </p>
                   )}
 
-                  {claim.entity_slug && (
-                    <p>Slug criado: {claim.entity_slug}</p>
-                  )}
+                  {claim.entity_slug && <p>Slug criado: {claim.entity_slug}</p>}
 
                   {claim.review_note && <p>Nota: {claim.review_note}</p>}
                 </div>
@@ -604,17 +602,20 @@ export function AdminProfileApprovalsClient() {
                   </>
                 )}
 
-                {claim.status === "approved" && claim.account_type === "artist" && (
-                  <Link
-                    href={`/artistas/${claim.entity_slug}`}
-                    className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                  >
-                    Ver artista
-                  </Link>
-                )}
+                {claim.status === "approved" &&
+                  claim.account_type === "artist" &&
+                  claim.entity_slug && (
+                    <Link
+                      href={`/artistas/${claim.entity_slug}`}
+                      className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                    >
+                      Ver artista
+                    </Link>
+                  )}
 
                 {claim.status === "approved" &&
-                  claim.account_type === "organizer" && (
+                  claim.account_type === "organizer" &&
+                  claim.entity_slug && (
                     <Link
                       href={`/organizadores/${claim.entity_slug}`}
                       className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
@@ -623,14 +624,16 @@ export function AdminProfileApprovalsClient() {
                     </Link>
                   )}
 
-                {claim.status === "approved" && claim.account_type === "venue" && (
-                  <Link
-                    href={`/espacos/${claim.entity_slug}`}
-                    className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                  >
-                    Ver espaço
-                  </Link>
-                )}
+                {claim.status === "approved" &&
+                  claim.account_type === "venue" &&
+                  claim.entity_slug && (
+                    <Link
+                      href={`/espacos/${claim.entity_slug}`}
+                      className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                    >
+                      Ver espaço
+                    </Link>
+                  )}
               </div>
             </div>
           </article>
