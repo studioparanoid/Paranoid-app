@@ -332,7 +332,7 @@ export function ProfileClient() {
     const { data: submissionData } = await supabase
       .from("event_submissions")
       .select("id,title,status,event_date,city,created_at")
-      .eq("submitted_by", user.email || "")
+      .eq("submitted_by", user.id)
       .order("created_at", { ascending: false })
       .limit(6);
 

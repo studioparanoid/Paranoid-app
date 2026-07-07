@@ -86,7 +86,9 @@ export function SubmitEventClient() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [userId, setUserId] = useState("");
   const [userEmail, setUserEmail] = useState("");
+
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [linkedOrganizer, setLinkedOrganizer] = useState<OrganizerRow | null>(
     null
@@ -138,6 +140,7 @@ export function SubmitEventClient() {
         return;
       }
 
+      setUserId(user.id);
       setUserEmail(user.email || "");
 
       const { data: profileData } = await supabase
@@ -299,7 +302,8 @@ export function SubmitEventClient() {
         price: price.trim() || null,
         description: description.trim() || null,
         image_url: imageUrl,
-        submitted_by: userEmail || null,
+
+        submitted_by: userId || null,
 
         organizer_id: isApprovedOrganizer
           ? linkedOrganizer?.id || profile?.entity_id || null
@@ -538,7 +542,7 @@ export function SubmitEventClient() {
             />
           </div>
 
-          <div className="lg:col-span-2 rounded-[2rem] border border-zinc-800 bg-black p-4">
+          <div className="rounded-[2rem] border border-zinc-800 bg-black p-4 lg:col-span-2">
             <label className="flex items-center gap-3 text-sm font-bold text-zinc-300">
               <input
                 type="checkbox"
@@ -618,7 +622,7 @@ export function SubmitEventClient() {
             />
           </div>
 
-          <div className="lg:col-span-2 rounded-[2rem] border border-zinc-800 bg-black p-5">
+          <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">
             <p className="text-xs uppercase tracking-[0.3em] text-red-700">
               Bilhetes
             </p>
