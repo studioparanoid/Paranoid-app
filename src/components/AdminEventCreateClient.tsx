@@ -16,16 +16,31 @@ const categories = [
   "Outros",
 ];
 
-const cities = [
+const citySuggestions = [
   "Pombal",
+  "Ansião",
   "Leiria",
   "Coimbra",
   "Figueira da Foz",
   "Caldas da Rainha",
   "Marinha Grande",
+  "Lisboa",
+  "Porto",
+  "Aveiro",
+  "Braga",
+  "Faro",
 ];
 
 type TicketMode = "none" | "external" | "internal";
+
+type LocationPayload = {
+  address: string | null;
+  postal_code: string | null;
+  district: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_source: "manual" | null;
+};
 
 type VenueRow = {
   id: string;
@@ -149,6 +164,100 @@ function getArtistNames(artistsText: string) {
   return Array.from(new Set(names));
 }
 
+function parseCoordinate(
+  value: string,
+  label: string,
+  minimum: number,
+  maximum: number
+) {
+  const cleanValue = value.trim().replace(",", ".");
+
+  if (!cleanValue) {
+    return null;
+  }
+
+  const parsed = Number(cleanValue);
+
+  if (Number.isNaN(parsed)) {
+    throw new Error(`${label} inválida.`);
+  }
+
+  if (parsed < minimum || parsed > maximum) {
+    throw new Error(`${label} fora do intervalo permitido.`);
+  }
+
+  return parsed;
+}
+
+function buildLocationPayload({
+  address,
+  postalCode,
+  district,
+  latitude,
+  longitude,
+}: {
+  address: string;
+  postalCode: string;
+  district: string;
+  latitude: string;
+  longitude: string;
+}): LocationPayload {
+  const parsedLatitude = parseCoordinate(latitude, "Latitude", -90, 90);
+  const parsedLongitude = parseCoordinate(longitude, "Longitude", -180, 180);
+
+  if (
+    (parsedLatitude === null && parsedLongitude !== null) ||
+    (parsedLatitude !== null && parsedLongitude === null)
+  ) {
+    throw new Error("Tens de preencher latitude e longitude, ou limpar as duas.");
+  }
+
+  return {
+    address: address.trim() || null,
+    postal_code: postalCode.trim() || null,
+    district: district.trim() || null,
+    latitude: parsedLatitude,
+    longitude: parsedLongitude,
+    location_source:
+      parsedLatitude !== null && parsedLongitude !== null ? "manual" : null,
+  };
+}
+
+function buildMapsSearchUrl({
+  venue,
+  address,
+  postalCode,
+  city,
+  district,
+}: {
+  venue: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  district: string;
+}) {
+  const query = [venue, address, postalCode, city, district, "Portugal"]
+    .filter(Boolean)
+    .join(", ");
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    query
+  )}`;
+}
+
+function buildMapsCoordinateUrl(latitude: string, longitude: string) {
+  const cleanLatitude = latitude.trim().replace(",", ".");
+  const cleanLongitude = longitude.trim().replace(",", ".");
+
+  if (!cleanLatitude || !cleanLongitude) {
+    return null;
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${cleanLatitude},${cleanLongitude}`
+  )}`;
+}
+
 async function createUniqueEventSlug(title: string) {
   const baseSlug = slugify(title) || crypto.randomUUID();
   let candidate = baseSlug;
@@ -174,7 +283,11 @@ async function createUniqueEventSlug(title: string) {
   }
 }
 
-async function findOrCreateVenue(name: string, city: string) {
+async function findOrCreateVenue(
+  name: string,
+  city: string,
+  location: LocationPayload
+) {
   const cleanName = name.trim();
 
   if (!cleanName) {
@@ -194,6 +307,23 @@ async function findOrCreateVenue(name: string, city: string) {
   }
 
   if (existingVenue) {
+    const { error: updateError } = await supabase
+      .from("venues")
+      .update({
+        city,
+        address: location.address,
+        postal_code: location.postal_code,
+        district: location.district,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        location_source: location.location_source,
+      })
+      .eq("id", (existingVenue as VenueRow).id);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
     return (existingVenue as VenueRow).id;
   }
 
@@ -203,7 +333,12 @@ async function findOrCreateVenue(name: string, city: string) {
       slug,
       name: cleanName,
       city,
-      address: null,
+      address: location.address,
+      postal_code: location.postal_code,
+      district: location.district,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      location_source: location.location_source,
       description: null,
       instagram: null,
     })
@@ -354,7 +489,12 @@ export function AdminEventCreateClient() {
   const [artistsText, setArtistsText] = useState("");
   const [category, setCategory] = useState("Concertos");
   const [city, setCity] = useState("Pombal");
+  const [district, setDistrict] = useState("");
   const [venue, setVenue] = useState("");
+  const [address, setAddress] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isMultiDay, setIsMultiDay] = useState(false);
@@ -372,6 +512,16 @@ export function AdminEventCreateClient() {
 
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
+  const mapsSearchUrl = buildMapsSearchUrl({
+    venue,
+    address,
+    postalCode,
+    city,
+    district,
+  });
+
+  const mapsCoordinateUrl = buildMapsCoordinateUrl(latitude, longitude);
 
   function handleCategoryChange(value: string) {
     setCategory(value);
@@ -487,7 +637,12 @@ export function AdminEventCreateClient() {
     setArtistsText("");
     setCategory("Concertos");
     setCity("Pombal");
+    setDistrict("");
     setVenue("");
+    setAddress("");
+    setPostalCode("");
+    setLatitude("");
+    setLongitude("");
     setEventDate("");
     setEndDate("");
     setIsMultiDay(false);
@@ -535,13 +690,30 @@ export function AdminEventCreateClient() {
       return;
     }
 
+    let location: LocationPayload;
+
+    try {
+      location = buildLocationPayload({
+        address,
+        postalCode,
+        district,
+        latitude,
+        longitude,
+      });
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Localização inválida."
+      );
+      return;
+    }
+
     setSaving(true);
 
     try {
       const eventSlug = await createUniqueEventSlug(title);
       const imageUrl = await uploadSelectedImage();
 
-      const venueId = await findOrCreateVenue(venue, city);
+      const venueId = await findOrCreateVenue(venue, city, location);
       const organizerId = await findOrCreateOrganizer(organizer, city);
 
       const finalEndDate = isMultiDay ? endDate || eventDate : eventDate;
@@ -555,6 +727,13 @@ export function AdminEventCreateClient() {
           slug: eventSlug,
           title,
           city,
+          district: location.district,
+          address: location.address,
+          postal_code: location.postal_code,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          location_source: location.location_source,
+
           venue_id: venueId,
           venue_name: venue,
           organizer_id: organizerId,
@@ -572,7 +751,8 @@ export function AdminEventCreateClient() {
           image_url: imageUrl,
 
           ticket_mode: ticketMode,
-          ticket_url: ticketMode === "external" ? normalizeExternalUrl(ticketUrl) : null,
+          ticket_url:
+            ticketMode === "external" ? normalizeExternalUrl(ticketUrl) : null,
           ticket_price: ticketMode === "internal" ? ticketPrice || null : null,
           ticket_capacity:
             ticketMode === "internal" && ticketCapacity
@@ -625,7 +805,7 @@ export function AdminEventCreateClient() {
 
           <p className="mt-4 text-sm leading-relaxed text-zinc-500">
             Cria eventos diretamente como Paranoid, já com bilheteira interna,
-            externa ou sem bilhetes.
+            externa, localização exata ou sem bilhetes.
           </p>
         </div>
 
@@ -643,6 +823,12 @@ export function AdminEventCreateClient() {
             <p>{eventDate || "Data por definir"}</p>
             <p>{eventTime || "Hora por definir"}</p>
             <p>{[venue, city].filter(Boolean).join(" · ") || "Local"}</p>
+            <p>{address || "Morada por definir"}</p>
+            <p>
+              {latitude && longitude
+                ? `Geo: ${latitude}, ${longitude}`
+                : "Sem coordenadas"}
+            </p>
             <p>{price || "Preço por definir"}</p>
             {ticketMode === "external" && <p>Bilheteira externa</p>}
             {ticketMode === "internal" && (
@@ -732,18 +918,22 @@ export function AdminEventCreateClient() {
 
         <div>
           <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Cidade
+            Cidade / localidade
           </label>
 
-          <select
+          <input
+            list="admin-event-city-suggestions"
             value={city}
             onChange={(event) => setCity(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-          >
-            {cities.map((item) => (
-              <option key={item}>{item}</option>
+            placeholder="Ex: Ansião, Pombal, Leiria..."
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+
+          <datalist id="admin-event-city-suggestions">
+            {citySuggestions.map((item) => (
+              <option key={item} value={item} />
             ))}
-          </select>
+          </datalist>
         </div>
 
         <div className="lg:col-span-2">
@@ -757,6 +947,118 @@ export function AdminEventCreateClient() {
             placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
             className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
           />
+        </div>
+
+        <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            Localização exata
+          </p>
+
+          <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+            Usa coordenadas reais da porta/entrada. Se não tiveres coordenadas,
+            deixa latitude e longitude vazias. A distância no mapa só aparece
+            quando houver coordenadas reais.
+          </p>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <div className="lg:col-span-2">
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Morada completa
+              </label>
+
+              <input
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="Rua, número, espaço..."
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Código postal
+              </label>
+
+              <input
+                value={postalCode}
+                onChange={(event) => setPostalCode(event.target.value)}
+                placeholder="0000-000"
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Distrito
+              </label>
+
+              <input
+                value={district}
+                onChange={(event) => setDistrict(event.target.value)}
+                placeholder="Leiria, Coimbra, Lisboa..."
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Latitude
+              </label>
+
+              <input
+                value={latitude}
+                onChange={(event) => setLatitude(event.target.value)}
+                placeholder="39.912345"
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Longitude
+              </label>
+
+              <input
+                value={longitude}
+                onChange={(event) => setLongitude(event.target.value)}
+                placeholder="-8.435678"
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <a
+              href={mapsSearchUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+            >
+              Procurar no Maps
+            </a>
+
+            {mapsCoordinateUrl && (
+              <a
+                href={mapsCoordinateUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-green-900 px-5 py-4 text-sm font-bold text-green-400"
+              >
+                Testar coordenadas
+              </a>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setLatitude("");
+                setLongitude("");
+              }}
+              className="rounded-full border border-red-900 px-5 py-4 text-sm font-bold text-red-300"
+            >
+              Limpar coordenadas
+            </button>
+          </div>
         </div>
 
         <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3 lg:col-span-2">
