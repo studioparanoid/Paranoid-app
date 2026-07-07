@@ -16,8 +16,10 @@ type VenueRow = {
   slug: string;
   name: string;
   city: string | null;
+  municipality: string | null;
   district: string | null;
   address: string | null;
+  postal_code: string | null;
   description: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -29,7 +31,10 @@ type EventRow = {
   title: string;
   status: string | null;
   city: string | null;
+  municipality: string | null;
   district: string | null;
+  address: string | null;
+  postal_code: string | null;
   venue_id: string | null;
   venue_name: string | null;
   organizer_name: string | null;
@@ -205,6 +210,12 @@ function sortEvents(first: EventWithLocation, second: EventWithLocation) {
   return new Date(firstDate).getTime() - new Date(secondDate).getTime();
 }
 
+function uniqueSorted(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b, "pt-PT")
+  );
+}
+
 function EmptyState() {
   return (
     <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
@@ -213,11 +224,11 @@ function EmptyState() {
       </p>
 
       <h2 className="mt-4 text-5xl font-black leading-none">
-        Nada neste raio.
+        Nada neste radar.
       </h2>
 
       <p className="mt-5 text-base leading-relaxed text-zinc-400">
-        Aumenta o raio, muda a cidade ou vê Portugal inteiro.
+        Aumenta o raio, muda o concelho/localidade ou vê Portugal inteiro.
       </p>
 
       <Link
@@ -239,8 +250,11 @@ export default function MapPage() {
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
 
-  const [radiusFilter, setRadiusFilter] = useState<RadiusFilter>("50");
+  const [radiusFilter, setRadiusFilter] = useState<RadiusFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("Todas");
+  const [municipalityFilter, setMunicipalityFilter] = useState("Todos");
+  const [districtFilter, setDistrictFilter] = useState("Todos");
   const [categoryFilter, setCategoryFilter] = useState("Todas");
   const [onlyWithLocation, setOnlyWithLocation] = useState(false);
 
@@ -293,7 +307,10 @@ export default function MapPage() {
 
       const locationLabel = [
         event.venue_name || venue?.name || "",
+        event.address || venue?.address || "",
+        event.postal_code || venue?.postal_code || "",
         event.city || venue?.city || "",
+        event.municipality || venue?.municipality || "",
         event.district || venue?.district || "",
         "Portugal",
       ]
@@ -313,27 +330,49 @@ export default function MapPage() {
 
   const cityOptions = useMemo(() => {
     const cities = eventsWithLocation
-      .map((event) => event.city || event.venue?.city)
-      .filter(Boolean) as string[];
+      .map((event) => event.city || event.venue?.city || "")
+      .filter(Boolean);
 
-    return ["Todas", ...Array.from(new Set(cities)).sort((a, b) => a.localeCompare(b, "pt-PT"))];
+    return ["Todas", ...uniqueSorted(cities)];
+  }, [eventsWithLocation]);
+
+  const municipalityOptions = useMemo(() => {
+    const municipalities = eventsWithLocation
+      .map((event) => event.municipality || event.venue?.municipality || "")
+      .filter(Boolean);
+
+    return ["Todos", ...uniqueSorted(municipalities)];
+  }, [eventsWithLocation]);
+
+  const districtOptions = useMemo(() => {
+    const districts = eventsWithLocation
+      .map((event) => event.district || event.venue?.district || "")
+      .filter(Boolean);
+
+    return ["Todos", ...uniqueSorted(districts)];
   }, [eventsWithLocation]);
 
   const categoryOptions = useMemo(() => {
     const categories = eventsWithLocation
-      .map((event) => event.category)
-      .filter(Boolean) as string[];
+      .map((event) => event.category || "")
+      .filter(Boolean);
 
-    return ["Todas", ...Array.from(new Set(categories)).sort((a, b) => a.localeCompare(b, "pt-PT"))];
+    return ["Todas", ...uniqueSorted(categories)];
   }, [eventsWithLocation]);
 
   const filteredEvents = useMemo(() => {
+    const cleanSearch = normalizeName(searchQuery);
+
     return eventsWithLocation
       .filter((event) => {
         const hasCoordinates =
           event.finalLatitude !== null && event.finalLongitude !== null;
 
         if (onlyWithLocation && !hasCoordinates) {
+          return false;
+        }
+
+        if (radiusFilter !== "all" && !hasCoordinates) {
           return false;
         }
 
@@ -345,8 +384,53 @@ export default function MapPage() {
           }
         }
 
+        if (municipalityFilter !== "Todos") {
+          const municipality =
+            event.municipality || event.venue?.municipality || "";
+
+          if (municipality !== municipalityFilter) {
+            return false;
+          }
+        }
+
+        if (districtFilter !== "Todos") {
+          const district = event.district || event.venue?.district || "";
+
+          if (district !== districtFilter) {
+            return false;
+          }
+        }
+
         if (categoryFilter !== "Todas" && event.category !== categoryFilter) {
           return false;
+        }
+
+        if (cleanSearch) {
+          const searchableText = normalizeName(
+            [
+              event.title,
+              event.venue_name,
+              event.organizer_name,
+              event.description,
+              event.address,
+              event.postal_code,
+              event.city,
+              event.municipality,
+              event.district,
+              event.venue?.name,
+              event.venue?.address,
+              event.venue?.postal_code,
+              event.venue?.city,
+              event.venue?.municipality,
+              event.venue?.district,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          );
+
+          if (!searchableText.includes(cleanSearch)) {
+            return false;
+          }
         }
 
         if (userLocation && radiusFilter !== "all") {
@@ -363,15 +447,20 @@ export default function MapPage() {
   }, [
     eventsWithLocation,
     onlyWithLocation,
-    cityFilter,
-    categoryFilter,
-    userLocation,
     radiusFilter,
+    cityFilter,
+    municipalityFilter,
+    districtFilter,
+    categoryFilter,
+    searchQuery,
+    userLocation,
   ]);
 
   const eventsWithCoordinatesCount = eventsWithLocation.filter(
     (event) => event.finalLatitude !== null && event.finalLongitude !== null
   ).length;
+
+  const municipalityCount = municipalityOptions.length - 1;
 
   const closestEvent = filteredEvents.find(
     (event) => event.distanceKm !== null
@@ -385,7 +474,7 @@ export default function MapPage() {
       supabase
         .from("events")
         .select(
-          "id,slug,title,status,city,district,venue_id,venue_name,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price,latitude,longitude"
+          "id,slug,title,status,city,municipality,district,address,postal_code,venue_id,venue_name,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price,latitude,longitude"
         )
         .eq("status", "published")
         .order("start_at", { ascending: true, nullsFirst: false })
@@ -394,7 +483,7 @@ export default function MapPage() {
       supabase
         .from("venues")
         .select(
-          "id,slug,name,city,district,address,description,latitude,longitude"
+          "id,slug,name,city,municipality,district,address,postal_code,description,latitude,longitude"
         )
         .order("name", { ascending: true })
         .limit(500),
@@ -434,11 +523,15 @@ export default function MapPage() {
           longitude: position.coords.longitude,
         });
 
+        if (radiusFilter === "all") {
+          setRadiusFilter("50");
+        }
+
         setLocationLoading(false);
       },
       () => {
         setMessage(
-          "Não deu para obter a tua localização. Podes usar os filtros por cidade."
+          "Não deu para obter a tua localização. Podes usar os filtros por concelho, localidade ou distrito."
         );
 
         setLocationLoading(false);
@@ -477,8 +570,8 @@ export default function MapPage() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-400 lg:text-lg">
-              Eventos e espaços culturais por proximidade. Usa a tua localização
-              ou filtra por cidade para navegar pelo país inteiro.
+              Eventos e espaços culturais por proximidade, concelho,
+              localidade, distrito ou pesquisa livre.
             </p>
           </div>
 
@@ -513,7 +606,10 @@ export default function MapPage() {
               {userLocation && (
                 <button
                   type="button"
-                  onClick={() => setUserLocation(null)}
+                  onClick={() => {
+                    setUserLocation(null);
+                    setRadiusFilter("all");
+                  }}
                   className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
                 >
                   Desligar localização
@@ -523,7 +619,7 @@ export default function MapPage() {
 
             {userLocation && (
               <p className="mt-5 rounded-2xl border border-green-900 bg-green-950/20 p-4 text-sm text-green-400">
-                Localização ativa. A mostrar eventos por distância.
+                Localização ativa. A mostrar eventos por distância real.
               </p>
             )}
           </div>
@@ -549,6 +645,19 @@ export default function MapPage() {
               <div className="mt-6 space-y-5">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Pesquisa
+                  </label>
+
+                  <input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Evento, espaço, morada..."
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
                     Raio
                   </label>
 
@@ -559,23 +668,47 @@ export default function MapPage() {
                     }
                     className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
                   >
+                    <option value="all">Portugal inteiro</option>
                     <option value="5">Até 5 km</option>
                     <option value="15">Até 15 km</option>
                     <option value="50">Até 50 km</option>
                     <option value="150">Até 150 km</option>
-                    <option value="all">Portugal inteiro</option>
                   </select>
 
-                  {!userLocation && (
+                  {!userLocation && radiusFilter !== "all" && (
                     <p className="mt-2 text-xs text-zinc-600">
-                      O raio só funciona depois de ativares a localização.
+                      Para calcular raio real, ativa a tua localização.
+                    </p>
+                  )}
+
+                  {radiusFilter !== "all" && (
+                    <p className="mt-2 text-xs text-zinc-600">
+                      Eventos sem coordenadas só aparecem em Portugal inteiro.
                     </p>
                   )}
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Cidade
+                    Concelho
+                  </label>
+
+                  <select
+                    value={municipalityFilter}
+                    onChange={(event) =>
+                      setMunicipalityFilter(event.target.value)
+                    }
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  >
+                    {municipalityOptions.map((municipality) => (
+                      <option key={municipality}>{municipality}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Localidade
                   </label>
 
                   <select
@@ -585,6 +718,22 @@ export default function MapPage() {
                   >
                     {cityOptions.map((city) => (
                       <option key={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Distrito
+                  </label>
+
+                  <select
+                    value={districtFilter}
+                    onChange={(event) => setDistrictFilter(event.target.value)}
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  >
+                    {districtOptions.map((district) => (
+                      <option key={district}>{district}</option>
                     ))}
                   </select>
                 </div>
@@ -624,8 +773,11 @@ export default function MapPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setRadiusFilter("50");
+                    setRadiusFilter("all");
+                    setSearchQuery("");
                     setCityFilter("Todas");
+                    setMunicipalityFilter("Todos");
+                    setDistrictFilter("Todos");
                     setCategoryFilter("Todas");
                     setOnlyWithLocation(false);
                   }}
@@ -665,6 +817,22 @@ export default function MapPage() {
                     Geo
                   </p>
                 </div>
+
+                <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+                  <p className="text-3xl font-black">{municipalityCount}</p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                    Concelhos
+                  </p>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+                  <p className="text-3xl font-black">
+                    {filteredEvents.length}
+                  </p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+                    Visíveis
+                  </p>
+                </div>
               </div>
 
               {closestEvent && (
@@ -690,7 +858,11 @@ export default function MapPage() {
               </p>
 
               <h2 className="mt-3 text-5xl font-black leading-none lg:text-7xl">
-                {userLocation ? "Perto de ti." : "Mapa nacional."}
+                {userLocation && radiusFilter !== "all"
+                  ? "Perto de ti."
+                  : municipalityFilter !== "Todos"
+                    ? municipalityFilter
+                    : "Mapa nacional."}
               </h2>
 
               <p className="mt-4 text-sm text-zinc-500">
@@ -709,6 +881,12 @@ export default function MapPage() {
                 event.finalLongitude,
                 event.locationLabel
               );
+
+              const eventCity = event.city || event.venue?.city || "";
+              const eventMunicipality =
+                event.municipality || event.venue?.municipality || "";
+              const eventDistrict =
+                event.district || event.venue?.district || "";
 
               return (
                 <article
@@ -744,6 +922,12 @@ export default function MapPage() {
                         <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
                           {event.category || "Evento"}
                         </span>
+
+                        {eventMunicipality && (
+                          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-black uppercase text-zinc-500">
+                            {eventMunicipality}
+                          </span>
+                        )}
 
                         {ticket && (
                           <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
@@ -799,9 +983,11 @@ export default function MapPage() {
 
                         <p>
                           <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Cidade
+                            Zona
                           </span>
-                          {event.city || event.venue?.city || "Sem cidade"}
+                          {[eventCity, eventMunicipality, eventDistrict]
+                            .filter(Boolean)
+                            .join(" · ") || "Sem zona"}
                         </p>
                       </div>
 
