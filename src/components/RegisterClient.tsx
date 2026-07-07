@@ -126,50 +126,37 @@ export function RegisterClient() {
       },
     });
 
+    setCreating(false);
+
     if (error) {
-      setCreating(false);
       setMessage(`Erro ao criar conta: ${error.message}`);
       return;
     }
 
-    if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").upsert(
-        {
-          id: data.user.id,
-          email: cleanEmail,
-          display_name: cleanDisplayName,
-          account_type: accountType,
-          artist_name: accountType === "artist" ? artistName.trim() : null,
-          organizer_name:
-            accountType === "organizer" ? organizerName.trim() : null,
-          venue_name: accountType === "venue" ? venueName.trim() : null,
-          city,
-          instagram_url: cleanInstagramUrl,
-        },
-        {
-          onConflict: "id",
-        }
-      );
-
-      if (profileError) {
-        setCreating(false);
-        setMessage(
-          `Conta criada, mas houve erro ao guardar perfil: ${profileError.message}`
-        );
-        return;
-      }
-    }
-
-    setCreating(false);
-
     if (data.session) {
-      setMessage("Conta criada. A entrar...");
+      if (accountType === "community") {
+        setMessage("Conta criada. A entrar...");
+      } else {
+        setMessage(
+          `Conta criada como ${accountTypeLabel(
+            accountType
+          )}. O perfil fica pendente até aprovação da Paranoid.`
+        );
+      }
+
       router.push("/perfil");
       return;
     }
 
+    if (accountType === "community") {
+      setMessage("Conta criada. Confirma o email para entrares.");
+      return;
+    }
+
     setMessage(
-      "Conta criada. Confirma o email para entrares, se a confirmação estiver ativa."
+      `Conta criada como ${accountTypeLabel(
+        accountType
+      )}. Confirma o email. O perfil fica pendente até aprovação da Paranoid.`
     );
   }
 
