@@ -241,6 +241,8 @@ export function ProfileClient() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [editingProfile, setEditingProfile] = useState(false);
+
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
 
@@ -263,6 +265,15 @@ export function ProfileClient() {
   const accountStatus = profile?.account_status || "approved";
 
   const publicPath = claimTypePath(accountType, profile?.entity_slug || null);
+
+  const profileTitle =
+    accountType === "artist"
+      ? profile?.artist_name || profile?.display_name || email
+      : accountType === "organizer"
+        ? profile?.organizer_name || profile?.display_name || email
+        : accountType === "venue"
+          ? profile?.venue_name || profile?.display_name || email
+          : profile?.display_name || email;
 
   const pendingSubmissions = submissions.filter(
     (submission) => submission.status === "pending"
@@ -384,6 +395,7 @@ export function ProfileClient() {
 
     setMessage("Perfil atualizado.");
     await loadProfile();
+    setEditingProfile(false);
   }
 
   async function signOut() {
@@ -449,22 +461,35 @@ export function ProfileClient() {
               Perfil
             </p>
 
-            <h1 className="text-5xl font-black leading-none tracking-tight lg:text-8xl">
-              {displayName || email}
+            <h1 className="break-words text-5xl font-black leading-none tracking-tight lg:text-8xl">
+              {profileTitle}
             </h1>
           </div>
 
           <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
             <p className="text-sm font-bold uppercase tracking-wide text-zinc-600">
-              Conta
+              Conta de login
             </p>
 
             <p className="mt-2 break-words text-lg font-black">{email}</p>
 
+            <p className="mt-4 text-sm text-zinc-500">
+              Nome público:{" "}
+              <span className="font-bold text-zinc-300">{profileTitle}</span>
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setEditingProfile((current) => !current)}
+              className="mt-5 w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-black uppercase tracking-wide text-zinc-300"
+            >
+              {editingProfile ? "Fechar edição" : "Editar perfil"}
+            </button>
+
             <button
               type="button"
               onClick={signOut}
-              className="mt-5 w-full rounded-full border border-red-900 bg-red-950/20 px-5 py-4 text-sm font-black uppercase tracking-wide text-red-300"
+              className="mt-3 w-full rounded-full border border-red-900 bg-red-950/20 px-5 py-4 text-sm font-black uppercase tracking-wide text-red-300"
             >
               Terminar sessão
             </button>
@@ -577,71 +602,78 @@ export function ProfileClient() {
           </aside>
 
           <section className="space-y-6">
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Dados
-              </p>
-
-              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                Perfil base.
-              </h2>
-
-              <div className="mt-8 grid gap-5 lg:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Nome público
-                  </label>
-
-                  <input
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                    placeholder="Nome público"
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Cidade
-                  </label>
-
-                  <input
-                    value={city}
-                    onChange={(event) => setCity(event.target.value)}
-                    placeholder="Cidade"
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                  />
-                </div>
-
-                <div className="lg:col-span-2">
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Instagram
-                  </label>
-
-                  <input
-                    value={instagramUrl}
-                    onChange={(event) => setInstagramUrl(event.target.value)}
-                    placeholder="instagram.com/..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={saveProfile}
-                disabled={saving}
-                className="mt-8 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-              >
-                {saving ? "A guardar..." : "Guardar perfil"}
-              </button>
-
-              {message && (
-                <p className="mt-5 text-center text-sm font-bold text-zinc-400">
-                  {message}
+            {editingProfile && (
+              <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  Editar perfil
                 </p>
-              )}
-            </section>
+
+                <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+                  Perfil base.
+                </h2>
+
+                <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+                  O email é só para login. O nome que aparece publicamente vem
+                  do perfil aprovado: artista, organizador ou espaço.
+                </p>
+
+                <div className="mt-8 grid gap-5 lg:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-zinc-300">
+                      Nome público
+                    </label>
+
+                    <input
+                      value={displayName}
+                      onChange={(event) => setDisplayName(event.target.value)}
+                      placeholder="Nome público"
+                      className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-zinc-300">
+                      Cidade
+                    </label>
+
+                    <input
+                      value={city}
+                      onChange={(event) => setCity(event.target.value)}
+                      placeholder="Cidade"
+                      className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    />
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="mb-2 block text-sm font-bold text-zinc-300">
+                      Instagram
+                    </label>
+
+                    <input
+                      value={instagramUrl}
+                      onChange={(event) => setInstagramUrl(event.target.value)}
+                      placeholder="instagram.com/..."
+                      className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={saveProfile}
+                  disabled={saving}
+                  className="mt-8 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+                >
+                  {saving ? "A guardar..." : "Guardar perfil"}
+                </button>
+
+                {message && (
+                  <p className="mt-5 text-center text-sm font-bold text-zinc-400">
+                    {message}
+                  </p>
+                )}
+              </section>
+            )}
 
             <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
@@ -703,6 +735,21 @@ export function ProfileClient() {
                   ))}
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={saveProfile}
+                disabled={saving}
+                className="mt-8 w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-black text-zinc-300 disabled:opacity-50"
+              >
+                {saving ? "A guardar..." : "Guardar preferências"}
+              </button>
+
+              {!editingProfile && message && (
+                <p className="mt-5 text-center text-sm font-bold text-zinc-400">
+                  {message}
+                </p>
+              )}
             </section>
 
             <section className="grid gap-6 lg:grid-cols-3">
