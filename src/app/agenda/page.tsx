@@ -31,27 +31,26 @@ type EventRow = {
   ticket_price: string | null;
 };
 
-const fallbackCities = [
-  "Pombal",
-  "Ansião",
-  "Leiria",
+const portugalDistricts = [
+  "Aveiro",
+  "Beja",
+  "Braga",
+  "Bragança",
+  "Castelo Branco",
   "Coimbra",
-  "Figueira da Foz",
-  "Caldas da Rainha",
-  "Marinha Grande",
-];
-
-const fallbackMunicipalities = [
-  "Pombal",
-  "Ansião",
+  "Évora",
+  "Faro",
+  "Guarda",
   "Leiria",
-  "Coimbra",
-  "Figueira da Foz",
-  "Caldas da Rainha",
-  "Marinha Grande",
+  "Lisboa",
+  "Portalegre",
+  "Porto",
+  "Santarém",
+  "Setúbal",
+  "Viana do Castelo",
+  "Vila Real",
+  "Viseu",
 ];
-
-const fallbackDistricts = ["Leiria", "Coimbra", "Lisboa", "Porto", "Aveiro"];
 
 const fallbackCategories = [
   "Concertos",
@@ -183,9 +182,9 @@ export default function AgendaPage() {
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [cityFilter, setCityFilter] = useState("Todas");
-  const [municipalityFilter, setMunicipalityFilter] = useState("Todos");
   const [districtFilter, setDistrictFilter] = useState("Todos");
+  const [municipalityFilter, setMunicipalityFilter] = useState("Todos");
+  const [cityFilter, setCityFilter] = useState("Todas");
   const [categoryFilter, setCategoryFilter] = useState("Todas");
   const [onlyFeatured, setOnlyFeatured] = useState(false);
 
@@ -217,32 +216,49 @@ export default function AgendaPage() {
     loadEvents();
   }, []);
 
-  const cityOptions = useMemo(() => {
-    const values = [
-      ...fallbackCities,
-      ...events.map((event) => event.city || ""),
-    ];
-
-    return ["Todas", ...uniqueSorted(values)];
-  }, [events]);
-
-  const municipalityOptions = useMemo(() => {
-    const values = [
-      ...fallbackMunicipalities,
-      ...events.map((event) => event.municipality || ""),
-    ];
-
-    return ["Todos", ...uniqueSorted(values)];
-  }, [events]);
-
   const districtOptions = useMemo(() => {
     const values = [
-      ...fallbackDistricts,
+      ...portugalDistricts,
       ...events.map((event) => event.district || ""),
     ];
 
     return ["Todos", ...uniqueSorted(values)];
   }, [events]);
+
+  const municipalityOptions = useMemo(() => {
+    const values = events
+      .filter((event) => {
+        if (districtFilter === "Todos") {
+          return true;
+        }
+
+        return event.district === districtFilter;
+      })
+      .map((event) => event.municipality || "");
+
+    return ["Todos", ...uniqueSorted(values)];
+  }, [events, districtFilter]);
+
+  const cityOptions = useMemo(() => {
+    const values = events
+      .filter((event) => {
+        if (districtFilter !== "Todos" && event.district !== districtFilter) {
+          return false;
+        }
+
+        if (
+          municipalityFilter !== "Todos" &&
+          event.municipality !== municipalityFilter
+        ) {
+          return false;
+        }
+
+        return true;
+      })
+      .map((event) => event.city || "");
+
+    return ["Todas", ...uniqueSorted(values)];
+  }, [events, districtFilter, municipalityFilter]);
 
   const categoryOptions = useMemo(() => {
     const values = [
@@ -258,16 +274,16 @@ export default function AgendaPage() {
 
     return events
       .filter((event) => {
-        const matchesCity =
-          cityFilter === "Todas" || String(event.city || "") === cityFilter;
+        const matchesDistrict =
+          districtFilter === "Todos" ||
+          String(event.district || "") === districtFilter;
 
         const matchesMunicipality =
           municipalityFilter === "Todos" ||
           String(event.municipality || "") === municipalityFilter;
 
-        const matchesDistrict =
-          districtFilter === "Todos" ||
-          String(event.district || "") === districtFilter;
+        const matchesCity =
+          cityFilter === "Todas" || String(event.city || "") === cityFilter;
 
         const matchesCategory =
           categoryFilter === "Todas" ||
@@ -296,9 +312,9 @@ export default function AgendaPage() {
           !cleanSearch || searchableText.includes(cleanSearch);
 
         return (
-          matchesCity &&
-          matchesMunicipality &&
           matchesDistrict &&
+          matchesMunicipality &&
+          matchesCity &&
           matchesCategory &&
           matchesFeatured &&
           matchesSearch
@@ -308,9 +324,9 @@ export default function AgendaPage() {
   }, [
     events,
     searchQuery,
-    cityFilter,
-    municipalityFilter,
     districtFilter,
+    municipalityFilter,
+    cityFilter,
     categoryFilter,
     onlyFeatured,
   ]);
@@ -322,6 +338,26 @@ export default function AgendaPage() {
   const municipalityCount = useMemo(() => {
     return uniqueSorted(events.map((event) => event.municipality || "")).length;
   }, [events]);
+
+  function handleDistrictChange(value: string) {
+    setDistrictFilter(value);
+    setMunicipalityFilter("Todos");
+    setCityFilter("Todas");
+  }
+
+  function handleMunicipalityChange(value: string) {
+    setMunicipalityFilter(value);
+    setCityFilter("Todas");
+  }
+
+  function clearFilters() {
+    setSearchQuery("");
+    setDistrictFilter("Todos");
+    setMunicipalityFilter("Todos");
+    setCityFilter("Todas");
+    setCategoryFilter("Todas");
+    setOnlyFeatured(false);
+  }
 
   return (
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
@@ -339,8 +375,8 @@ export default function AgendaPage() {
 
           <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
             <p className="text-base leading-relaxed text-zinc-400 lg:text-lg">
-              Eventos publicados pela Paranoid. Concertos, DJ sets, cinema,
-              exposições, mercados e tudo o que não cabe no cartaz limpo.
+              Eventos publicados pela Paranoid. Filtra por distrito, concelho,
+              localidade, categoria ou pesquisa direta.
             </p>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
@@ -407,20 +443,43 @@ export default function AgendaPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Distrito
+                </label>
+
+                <select
+                  value={districtFilter}
+                  onChange={(event) => handleDistrictChange(event.target.value)}
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                >
+                  {districtOptions.map((district) => (
+                    <option key={district}>{district}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
                   Concelho
                 </label>
 
                 <select
                   value={municipalityFilter}
                   onChange={(event) =>
-                    setMunicipalityFilter(event.target.value)
+                    handleMunicipalityChange(event.target.value)
                   }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  disabled={municipalityOptions.length <= 1}
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
                 >
                   {municipalityOptions.map((municipality) => (
                     <option key={municipality}>{municipality}</option>
                   ))}
                 </select>
+
+                {districtFilter !== "Todos" && municipalityOptions.length <= 1 && (
+                  <p className="mt-2 text-xs text-zinc-600">
+                    Ainda não há concelhos publicados neste distrito.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -431,26 +490,11 @@ export default function AgendaPage() {
                 <select
                   value={cityFilter}
                   onChange={(event) => setCityFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  disabled={cityOptions.length <= 1}
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
                 >
                   {cityOptions.map((city) => (
                     <option key={city}>{city}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Distrito
-                </label>
-
-                <select
-                  value={districtFilter}
-                  onChange={(event) => setDistrictFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                >
-                  {districtOptions.map((district) => (
-                    <option key={district}>{district}</option>
                   ))}
                 </select>
               </div>
@@ -485,14 +529,7 @@ export default function AgendaPage() {
 
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setCityFilter("Todas");
-                  setMunicipalityFilter("Todos");
-                  setDistrictFilter("Todos");
-                  setCategoryFilter("Todas");
-                  setOnlyFeatured(false);
-                }}
+                onClick={clearFilters}
                 className="w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
               >
                 Limpar filtros
