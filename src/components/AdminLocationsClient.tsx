@@ -11,6 +11,7 @@ type VenueRow = {
   slug: string;
   name: string;
   city: string | null;
+  municipality: string | null;
   district: string | null;
   address: string | null;
   postal_code: string | null;
@@ -24,6 +25,7 @@ type EventRow = {
   slug: string;
   title: string;
   city: string | null;
+  municipality: string | null;
   district: string | null;
   venue_id: string | null;
   venue_name: string | null;
@@ -44,6 +46,7 @@ type EditableItem = {
   title: string;
   subtitle: string;
   city: string | null;
+  municipality: string | null;
   district: string | null;
   address: string | null;
   postal_code: string | null;
@@ -57,6 +60,7 @@ type LocationForm = {
   address: string;
   postal_code: string;
   city: string;
+  municipality: string;
   district: string;
   latitude: string;
   longitude: string;
@@ -66,6 +70,7 @@ const emptyForm: LocationForm = {
   address: "",
   postal_code: "",
   city: "",
+  municipality: "",
   district: "",
   latitude: "",
   longitude: "",
@@ -141,6 +146,7 @@ function buildMapsSearchUrl(form: LocationForm, title: string) {
     form.address,
     form.postal_code,
     form.city,
+    form.municipality,
     form.district,
     title,
     "Portugal",
@@ -233,6 +239,7 @@ export function AdminLocationsClient() {
         item.title,
         item.subtitle,
         item.city || "",
+        item.municipality || "",
         item.district || "",
         item.address || "",
         item.postal_code || "",
@@ -267,6 +274,7 @@ export function AdminLocationsClient() {
       title: venue.name,
       subtitle: "Espaço",
       city: venue.city,
+      municipality: venue.municipality,
       district: venue.district,
       address: venue.address,
       postal_code: venue.postal_code,
@@ -288,6 +296,7 @@ export function AdminLocationsClient() {
         .filter(Boolean)
         .join(" · "),
       city: event.city,
+      municipality: event.municipality,
       district: event.district,
       address: event.address,
       postal_code: event.postal_code,
@@ -342,7 +351,7 @@ export function AdminLocationsClient() {
       supabase
         .from("venues")
         .select(
-          "id,slug,name,city,district,address,postal_code,latitude,longitude,location_source"
+          "id,slug,name,city,municipality,district,address,postal_code,latitude,longitude,location_source"
         )
         .order("name", { ascending: true })
         .limit(1000),
@@ -350,7 +359,7 @@ export function AdminLocationsClient() {
       supabase
         .from("events")
         .select(
-          "id,slug,title,city,district,venue_id,venue_name,address,postal_code,latitude,longitude,location_source,status,start_at,start_date,created_at"
+          "id,slug,title,city,municipality,district,venue_id,venue_name,address,postal_code,latitude,longitude,location_source,status,start_at,start_date,created_at"
         )
         .order("created_at", { ascending: false })
         .limit(1000),
@@ -380,6 +389,7 @@ export function AdminLocationsClient() {
       address: item.address || "",
       postal_code: item.postal_code || "",
       city: item.city || "",
+      municipality: item.municipality || "",
       district: item.district || "",
       latitude: formatCoordinate(item.latitude),
       longitude: formatCoordinate(item.longitude),
@@ -406,7 +416,10 @@ export function AdminLocationsClient() {
       return;
     }
 
-    if ((latitude === null && longitude !== null) || (latitude !== null && longitude === null)) {
+    if (
+      (latitude === null && longitude !== null) ||
+      (latitude !== null && longitude === null)
+    ) {
       setMessage("Tens de preencher latitude e longitude, ou limpar as duas.");
       return;
     }
@@ -417,6 +430,7 @@ export function AdminLocationsClient() {
       address: form.address.trim() || null,
       postal_code: form.postal_code.trim() || null,
       city: form.city.trim() || null,
+      municipality: form.municipality.trim() || null,
       district: form.district.trim() || null,
       latitude,
       longitude,
@@ -544,7 +558,7 @@ export function AdminLocationsClient() {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Nome, cidade, morada..."
+                placeholder="Nome, concelho, cidade, morada..."
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
               />
 
@@ -634,7 +648,13 @@ export function AdminLocationsClient() {
                 </p>
 
                 <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-                  {[item.address, item.postal_code, item.city, item.district]
+                  {[
+                    item.address,
+                    item.postal_code,
+                    item.city,
+                    item.municipality,
+                    item.district,
+                  ]
                     .filter(Boolean)
                     .join(" · ") || "Sem morada"}
                 </p>
@@ -655,8 +675,8 @@ export function AdminLocationsClient() {
               </h2>
 
               <p className="mt-5 text-base leading-relaxed text-zinc-400">
-                Seleciona um espaço ou evento na lista para meter coordenadas
-                exatas da porta.
+                Seleciona um espaço ou evento na lista para meter morada,
+                concelho e coordenadas exatas.
               </p>
             </div>
           ) : (
@@ -726,7 +746,7 @@ export function AdminLocationsClient() {
 
                 <div>
                   <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Cidade / localidade
+                    Localidade
                   </label>
 
                   <input
@@ -735,6 +755,24 @@ export function AdminLocationsClient() {
                       setForm((current) => ({
                         ...current,
                         city: event.target.value,
+                      }))
+                    }
+                    placeholder="Alvorge, Pombal, Leiria..."
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Concelho
+                  </label>
+
+                  <input
+                    value={form.municipality}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        municipality: event.target.value,
                       }))
                     }
                     placeholder="Ansião, Pombal, Leiria..."
@@ -799,15 +837,13 @@ export function AdminLocationsClient() {
 
               <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-black p-5">
                 <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Como obter coordenadas perfeitas
+                  Localização
                 </p>
 
-                <ol className="mt-4 space-y-2 text-sm leading-relaxed text-zinc-400">
-                  <li>1. Abre o local no Google Maps.</li>
-                  <li>2. Clica com o botão direito exatamente na porta.</li>
-                  <li>3. Copia o par de números: latitude, longitude.</li>
-                  <li>4. Cola cada valor no campo certo.</li>
-                </ol>
+                <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+                  Para distância real, usa coordenadas exatas da porta. Para
+                  filtros, usa localidade, concelho e distrito.
+                </p>
 
                 <div className="mt-5 flex flex-wrap gap-3">
                   {mapsSearchUrl && (
@@ -841,7 +877,7 @@ export function AdminLocationsClient() {
                   disabled={saving}
                   className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
                 >
-                  {saving ? "A guardar..." : "Guardar localização exata"}
+                  {saving ? "A guardar..." : "Guardar localização"}
                 </button>
 
                 <button
