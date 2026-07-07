@@ -18,6 +18,22 @@ const categories = [
 
 const citySuggestions = [
   "Pombal",
+  "Alvorge",
+  "Ansião",
+  "Leiria",
+  "Coimbra",
+  "Figueira da Foz",
+  "Caldas da Rainha",
+  "Marinha Grande",
+  "Lisboa",
+  "Porto",
+  "Aveiro",
+  "Braga",
+  "Faro",
+];
+
+const municipalitySuggestions = [
+  "Pombal",
   "Ansião",
   "Leiria",
   "Coimbra",
@@ -36,6 +52,7 @@ type TicketMode = "none" | "external" | "internal";
 type LocationPayload = {
   address: string | null;
   postal_code: string | null;
+  municipality: string | null;
   district: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -47,6 +64,10 @@ type GeocodeResult = {
   longitude: number;
   display_name: string;
   provider: string;
+  city?: string;
+  municipality?: string;
+  district?: string;
+  postal_code?: string;
 };
 
 type VenueRow = {
@@ -176,15 +197,25 @@ function buildMapsSearchUrl({
   address,
   postalCode,
   city,
+  municipality,
   district,
 }: {
   venue: string;
   address: string;
   postalCode: string;
   city: string;
+  municipality: string;
   district: string;
 }) {
-  const query = [venue, address, postalCode, city, district, "Portugal"]
+  const query = [
+    venue,
+    address,
+    postalCode,
+    city,
+    municipality,
+    district,
+    "Portugal",
+  ]
     .filter(Boolean)
     .join(", ");
 
@@ -208,12 +239,14 @@ async function geocodeAddress({
   address,
   postalCode,
   city,
+  municipality,
   district,
 }: {
   venue: string;
   address: string;
   postalCode: string;
   city: string;
+  municipality: string;
   district: string;
 }) {
   const response = await fetch("/api/geocode", {
@@ -226,6 +259,7 @@ async function geocodeAddress({
       address,
       postal_code: postalCode,
       city,
+      municipality,
       district,
     }),
   });
@@ -292,6 +326,7 @@ async function findOrCreateVenue(
       .from("venues")
       .update({
         city,
+        municipality: location.municipality,
         address: location.address,
         postal_code: location.postal_code,
         district: location.district,
@@ -314,6 +349,7 @@ async function findOrCreateVenue(
       slug,
       name: cleanName,
       city,
+      municipality: location.municipality,
       address: location.address,
       postal_code: location.postal_code,
       district: location.district,
@@ -471,6 +507,7 @@ export function AdminEventCreateClient() {
   const [artistsText, setArtistsText] = useState("");
   const [category, setCategory] = useState("Concertos");
   const [city, setCity] = useState("Pombal");
+  const [municipality, setMunicipality] = useState("Pombal");
   const [district, setDistrict] = useState("");
   const [venue, setVenue] = useState("");
   const [address, setAddress] = useState("");
@@ -501,6 +538,7 @@ export function AdminEventCreateClient() {
     address,
     postalCode,
     city,
+    municipality,
     district,
   });
 
@@ -623,8 +661,8 @@ export function AdminEventCreateClient() {
   async function handleFindLocation() {
     setMessage("");
 
-    if (!address.trim() || !city.trim()) {
-      setMessage("Mete pelo menos morada e cidade para localizar.");
+    if (!address.trim() || (!city.trim() && !municipality.trim())) {
+      setMessage("Mete pelo menos morada e localidade/concelho para localizar.");
       return null;
     }
 
@@ -636,12 +674,30 @@ export function AdminEventCreateClient() {
         address,
         postalCode,
         city,
+        municipality,
         district,
       });
 
       setLatitude(result.latitude);
       setLongitude(result.longitude);
       setGeocodeLabel(result.display_name);
+
+      if (result.city && !city.trim()) {
+        setCity(result.city);
+      }
+
+      if (result.municipality && !municipality.trim()) {
+        setMunicipality(result.municipality);
+      }
+
+      if (result.district && !district.trim()) {
+        setDistrict(result.district);
+      }
+
+      if (result.postal_code && !postalCode.trim()) {
+        setPostalCode(result.postal_code);
+      }
+
       setMessage("Localização encontrada automaticamente.");
       setGeocoding(false);
 
@@ -667,6 +723,7 @@ export function AdminEventCreateClient() {
     setArtistsText("");
     setCategory("Concertos");
     setCity("Pombal");
+    setMunicipality("Pombal");
     setDistrict("");
     setVenue("");
     setAddress("");
@@ -694,9 +751,9 @@ export function AdminEventCreateClient() {
   async function handleCreateEvent() {
     setMessage("");
 
-    if (!title || !organizer || !city || !venue || !eventDate) {
+    if (!title || !organizer || !city || !municipality || !venue || !eventDate) {
       setMessage(
-        "Preenche pelo menos nome do evento, organizador, cidade, espaço e data."
+        "Preenche pelo menos nome do evento, organizador, localidade, concelho, espaço e data."
       );
       return;
     }
@@ -732,6 +789,10 @@ export function AdminEventCreateClient() {
       let finalLatitude = latitude;
       let finalLongitude = longitude;
       let finalGeocodeLabel = geocodeLabel;
+      let finalCity = city;
+      let finalMunicipality = municipality;
+      let finalDistrict = district;
+      let finalPostalCode = postalCode;
 
       if (finalLatitude === null || finalLongitude === null) {
         const result = await geocodeAddress({
@@ -739,12 +800,18 @@ export function AdminEventCreateClient() {
           address,
           postalCode,
           city,
+          municipality,
           district,
         });
 
         finalLatitude = result.latitude;
         finalLongitude = result.longitude;
         finalGeocodeLabel = result.display_name;
+        finalCity = city.trim() || result.city || "";
+        finalMunicipality =
+          municipality.trim() || result.municipality || municipality;
+        finalDistrict = district.trim() || result.district || "";
+        finalPostalCode = postalCode.trim() || result.postal_code || "";
 
         setLatitude(result.latitude);
         setLongitude(result.longitude);
@@ -753,8 +820,9 @@ export function AdminEventCreateClient() {
 
       const location: LocationPayload = {
         address: address.trim() || null,
-        postal_code: postalCode.trim() || null,
-        district: district.trim() || null,
+        postal_code: finalPostalCode.trim() || null,
+        municipality: finalMunicipality.trim() || null,
+        district: finalDistrict.trim() || null,
         latitude: finalLatitude,
         longitude: finalLongitude,
         location_source:
@@ -766,8 +834,8 @@ export function AdminEventCreateClient() {
       const eventSlug = await createUniqueEventSlug(title);
       const imageUrl = await uploadSelectedImage();
 
-      const venueId = await findOrCreateVenue(venue, city, location);
-      const organizerId = await findOrCreateOrganizer(organizer, city);
+      const venueId = await findOrCreateVenue(venue, finalCity, location);
+      const organizerId = await findOrCreateOrganizer(organizer, finalCity);
 
       const finalEndDate = isMultiDay ? endDate || eventDate : eventDate;
       const displayDate = buildDisplayDate(eventDate, finalEndDate, isMultiDay);
@@ -779,7 +847,8 @@ export function AdminEventCreateClient() {
         .insert({
           slug: eventSlug,
           title,
-          city,
+          city: finalCity,
+          municipality: location.municipality,
           district: location.district,
           address: location.address,
           postal_code: location.postal_code,
@@ -828,7 +897,7 @@ export function AdminEventCreateClient() {
       await attachArtistsToEvent({
         eventId: createdEvent.id,
         artistsText,
-        city,
+        city: finalCity,
       });
 
       setSaving(false);
@@ -879,7 +948,10 @@ export function AdminEventCreateClient() {
             <p>{category}</p>
             <p>{eventDate || "Data por definir"}</p>
             <p>{eventTime || "Hora por definir"}</p>
-            <p>{[venue, city].filter(Boolean).join(" · ") || "Local"}</p>
+            <p>
+              {[venue, city, municipality].filter(Boolean).join(" · ") ||
+                "Local"}
+            </p>
             <p>{address || "Morada por definir"}</p>
             <p>
               {latitude !== null && longitude !== null
@@ -975,7 +1047,7 @@ export function AdminEventCreateClient() {
 
         <div>
           <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Cidade / localidade
+            Localidade
           </label>
 
           <input
@@ -985,7 +1057,7 @@ export function AdminEventCreateClient() {
               setCity(event.target.value);
               clearGeocode();
             }}
-            placeholder="Ex: Ansião, Pombal, Leiria..."
+            placeholder="Ex: Alvorge, Pombal, Leiria..."
             className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
           />
 
@@ -994,6 +1066,45 @@ export function AdminEventCreateClient() {
               <option key={item} value={item} />
             ))}
           </datalist>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Concelho
+          </label>
+
+          <input
+            list="admin-event-municipality-suggestions"
+            value={municipality}
+            onChange={(event) => {
+              setMunicipality(event.target.value);
+              clearGeocode();
+            }}
+            placeholder="Ex: Ansião, Pombal, Leiria..."
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+
+          <datalist id="admin-event-municipality-suggestions">
+            {municipalitySuggestions.map((item) => (
+              <option key={item} value={item} />
+            ))}
+          </datalist>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Distrito
+          </label>
+
+          <input
+            value={district}
+            onChange={(event) => {
+              setDistrict(event.target.value);
+              clearGeocode();
+            }}
+            placeholder="Ex: Leiria, Coimbra, Lisboa..."
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
         </div>
 
         <div className="lg:col-span-2">
@@ -1018,8 +1129,8 @@ export function AdminEventCreateClient() {
           </p>
 
           <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-            O cliente/admin só mete a morada. A Paranoid calcula as coordenadas
-            automaticamente e guarda-as para o mapa.
+            Mete a morada do espaço. A Paranoid calcula as coordenadas
+            automaticamente e guarda localidade, concelho e distrito para o mapa.
           </p>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -1055,33 +1166,21 @@ export function AdminEventCreateClient() {
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
-                Distrito
-              </label>
-
-              <input
-                value={district}
-                onChange={(event) => {
-                  setDistrict(event.target.value);
-                  clearGeocode();
-                }}
-                placeholder="Leiria, Coimbra, Lisboa..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-              />
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={handleFindLocation}
+                disabled={geocoding}
+                className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              >
+                {geocoding
+                  ? "A localizar..."
+                  : "Encontrar localização automática"}
+              </button>
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleFindLocation}
-              disabled={geocoding}
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-            >
-              {geocoding ? "A localizar..." : "Encontrar localização automática"}
-            </button>
-
             <a
               href={mapsSearchUrl}
               target="_blank"
