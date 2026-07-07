@@ -25,21 +25,6 @@ type ProfileClaimRow = {
   updated_at: string | null;
 };
 
-type EntityRow = {
-  id: string;
-  slug: string;
-  name: string;
-};
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
-}
-
 function normalizeExternalUrl(value: string | null | undefined) {
   const cleanValue = String(value || "").trim();
 
@@ -110,151 +95,20 @@ function formatDate(value: string | null | undefined) {
   }).format(date);
 }
 
-async function findOrCreateArtist(claim: ProfileClaimRow) {
-  const name = claim.entity_name.trim();
-  const slug = slugify(name);
-
-  const { data: existing, error: existingError } = await supabase
-    .from("artists")
-    .select("id,slug,name")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
+function publicPathForClaim(claim: ProfileClaimRow) {
+  if (!claim.entity_slug) {
+    return null;
   }
 
-  if (existing) {
-    return existing as EntityRow;
+  if (claim.account_type === "artist") {
+    return `/artistas/${claim.entity_slug}`;
   }
 
-  const { data, error } = await supabase
-    .from("artists")
-    .insert({
-      slug,
-      name,
-      city: claim.city || null,
-      genres: null,
-      description: null,
-      instagram: normalizeExternalUrl(claim.instagram_url),
-      bandcamp: null,
-    })
-    .select("id,slug,name")
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
+  if (claim.account_type === "organizer") {
+    return `/organizadores/${claim.entity_slug}`;
   }
 
-  return data as EntityRow;
-}
-
-async function findOrCreateOrganizer(claim: ProfileClaimRow) {
-  const name = claim.entity_name.trim();
-  const slug = slugify(name);
-
-  const { data: existing, error: existingError } = await supabase
-    .from("organizers")
-    .select("id,slug,name")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
-
-  if (existing) {
-    return existing as EntityRow;
-  }
-
-  const { data, error } = await supabase
-    .from("organizers")
-    .insert({
-      slug,
-      name,
-      city: claim.city || null,
-      description: null,
-      pack: null,
-      verified: false,
-    })
-    .select("id,slug,name")
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as EntityRow;
-}
-
-async function findOrCreateVenue(claim: ProfileClaimRow) {
-  const name = claim.entity_name.trim();
-  const slug = slugify(name);
-
-  const { data: existing, error: existingError } = await supabase
-    .from("venues")
-    .select("id,slug,name")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
-
-  if (existing) {
-    return existing as EntityRow;
-  }
-
-  const { data, error } = await supabase
-    .from("venues")
-    .insert({
-      slug,
-      name,
-      city: claim.city || null,
-      address: null,
-      description: null,
-      instagram: normalizeExternalUrl(claim.instagram_url),
-    })
-    .select("id,slug,name")
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as EntityRow;
-}
-
-async function linkOrganizerMember({
-  organizerId,
-  userId,
-}: {
-  organizerId: string;
-  userId: string;
-}) {
-  const { data: existing, error: existingError } = await supabase
-    .from("organizer_members")
-    .select("organizer_id,user_id")
-    .eq("organizer_id", organizerId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
-
-  if (existing) {
-    return;
-  }
-
-  const { error } = await supabase.from("organizer_members").insert({
-    organizer_id: organizerId,
-    user_id: userId,
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  return `/espacos/${claim.entity_slug}`;
 }
 
 function EmptyCard({ text }: { text: string }) {
@@ -315,70 +169,18 @@ export function AdminProfileApprovalsClient() {
     setMessage("");
     setActionId(claim.id);
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const { error } = await supabase.rpc("admin_approve_profile_claim", {
+      p_claim_id: claim.id,
+    });
 
-      if (!user) {
-        throw new Error("Tens de entrar como admin.");
-      }
-
-      let entity: EntityRow;
-
-      if (claim.account_type === "artist") {
-        entity = await findOrCreateArtist(claim);
-      } else if (claim.account_type === "organizer") {
-        entity = await findOrCreateOrganizer(claim);
-
-        await linkOrganizerMember({
-          organizerId: entity.id,
-          userId: claim.user_id,
-        });
-      } else {
-        entity = await findOrCreateVenue(claim);
-      }
-
-      const { error: claimError } = await supabase
-        .from("profile_claims")
-        .update({
-          status: "approved",
-          entity_id: entity.id,
-          entity_slug: entity.slug,
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          review_note: null,
-        })
-        .eq("id", claim.id);
-
-      if (claimError) {
-        throw new Error(claimError.message);
-      }
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          account_status: "approved",
-          entity_id: entity.id,
-          entity_slug: entity.slug,
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", claim.user_id);
-
-      if (profileError) {
-        throw new Error(profileError.message);
-      }
-
-      setMessage(`${typeLabel(claim.account_type)} aprovado.`);
-      await loadClaims();
-    } catch (error) {
-      setMessage(
-        `Erro: ${error instanceof Error ? error.message : "erro desconhecido"}`
-      );
+    if (error) {
+      setMessage(`Erro ao aprovar: ${error.message}`);
+      setActionId("");
+      return;
     }
 
+    setMessage(`${typeLabel(claim.account_type)} aprovado.`);
+    await loadClaims();
     setActionId("");
   }
 
@@ -393,51 +195,19 @@ export function AdminProfileApprovalsClient() {
 
     setActionId(claim.id);
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const { error } = await supabase.rpc("admin_reject_profile_claim", {
+      p_claim_id: claim.id,
+      p_review_note: note,
+    });
 
-      if (!user) {
-        throw new Error("Tens de entrar como admin.");
-      }
-
-      const { error: claimError } = await supabase
-        .from("profile_claims")
-        .update({
-          status: "rejected",
-          review_note: note,
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", claim.id);
-
-      if (claimError) {
-        throw new Error(claimError.message);
-      }
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          account_status: "rejected",
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", claim.user_id);
-
-      if (profileError) {
-        throw new Error(profileError.message);
-      }
-
-      setMessage("Pedido rejeitado.");
-      await loadClaims();
-    } catch (error) {
-      setMessage(
-        `Erro: ${error instanceof Error ? error.message : "erro desconhecido"}`
-      );
+    if (error) {
+      setMessage(`Erro ao rejeitar: ${error.message}`);
+      setActionId("");
+      return;
     }
 
+    setMessage("Pedido rejeitado.");
+    await loadClaims();
     setActionId("");
   }
 
@@ -529,115 +299,95 @@ export function AdminProfileApprovalsClient() {
           <EmptyCard text="Não há pedidos para mostrar." />
         )}
 
-        {visibleClaims.map((claim) => (
-          <article
-            key={claim.id}
-            className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6"
-          >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
-                    {typeLabel(claim.account_type)}
-                  </span>
+        {visibleClaims.map((claim) => {
+          const publicPath = publicPathForClaim(claim);
 
-                  <span
-                    className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClasses(
-                      claim.status
-                    )}`}
-                  >
-                    {statusLabel(claim.status)}
-                  </span>
+          return (
+            <article
+              key={claim.id}
+              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6"
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
+                      {typeLabel(claim.account_type)}
+                    </span>
+
+                    <span
+                      className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClasses(
+                        claim.status
+                      )}`}
+                    >
+                      {statusLabel(claim.status)}
+                    </span>
+                  </div>
+
+                  <h3 className="mt-4 text-4xl font-black leading-none lg:text-5xl">
+                    {claim.entity_name}
+                  </h3>
+
+                  <div className="mt-4 space-y-1 text-sm text-zinc-500">
+                    <p>Nome público: {claim.display_name || "Sem nome"}</p>
+                    <p>Cidade: {claim.city || "Sem cidade"}</p>
+                    <p>Criado: {formatDate(claim.created_at)}</p>
+
+                    {claim.instagram_url && (
+                      <p>
+                        Instagram:{" "}
+                        <a
+                          href={normalizeExternalUrl(claim.instagram_url) || "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-zinc-300 underline"
+                        >
+                          {claim.instagram_url}
+                        </a>
+                      </p>
+                    )}
+
+                    {claim.entity_slug && <p>Slug criado: {claim.entity_slug}</p>}
+
+                    {claim.review_note && <p>Nota: {claim.review_note}</p>}
+                  </div>
                 </div>
 
-                <h3 className="mt-4 text-4xl font-black leading-none lg:text-5xl">
-                  {claim.entity_name}
-                </h3>
-
-                <div className="mt-4 space-y-1 text-sm text-zinc-500">
-                  <p>Nome público: {claim.display_name || "Sem nome"}</p>
-                  <p>Cidade: {claim.city || "Sem cidade"}</p>
-                  <p>Criado: {formatDate(claim.created_at)}</p>
-
-                  {claim.instagram_url && (
-                    <p>
-                      Instagram:{" "}
-                      <a
-                        href={normalizeExternalUrl(claim.instagram_url) || "#"}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-zinc-300 underline"
+                <div className="grid gap-2 lg:min-w-56">
+                  {claim.status === "pending" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => approveClaim(claim)}
+                        disabled={actionId === claim.id}
+                        className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
                       >
-                        {claim.instagram_url}
-                      </a>
-                    </p>
+                        {actionId === claim.id ? "A aprovar..." : "Aprovar"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => rejectClaim(claim)}
+                        disabled={actionId === claim.id}
+                        className="rounded-full border border-red-900 px-5 py-4 text-sm font-bold text-red-400 disabled:opacity-50"
+                      >
+                        Rejeitar
+                      </button>
+                    </>
                   )}
 
-                  {claim.entity_slug && <p>Slug criado: {claim.entity_slug}</p>}
-
-                  {claim.review_note && <p>Nota: {claim.review_note}</p>}
+                  {claim.status === "approved" && publicPath && (
+                    <Link
+                      href={publicPath}
+                      className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                    >
+                      Ver perfil público
+                    </Link>
+                  )}
                 </div>
               </div>
-
-              <div className="grid gap-2 lg:min-w-56">
-                {claim.status === "pending" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => approveClaim(claim)}
-                      disabled={actionId === claim.id}
-                      className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-                    >
-                      {actionId === claim.id ? "A aprovar..." : "Aprovar"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => rejectClaim(claim)}
-                      disabled={actionId === claim.id}
-                      className="rounded-full border border-red-900 px-5 py-4 text-sm font-bold text-red-400 disabled:opacity-50"
-                    >
-                      Rejeitar
-                    </button>
-                  </>
-                )}
-
-                {claim.status === "approved" &&
-                  claim.account_type === "artist" &&
-                  claim.entity_slug && (
-                    <Link
-                      href={`/artistas/${claim.entity_slug}`}
-                      className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                    >
-                      Ver artista
-                    </Link>
-                  )}
-
-                {claim.status === "approved" &&
-                  claim.account_type === "organizer" &&
-                  claim.entity_slug && (
-                    <Link
-                      href={`/organizadores/${claim.entity_slug}`}
-                      className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                    >
-                      Ver organizador
-                    </Link>
-                  )}
-
-                {claim.status === "approved" &&
-                  claim.account_type === "venue" &&
-                  claim.entity_slug && (
-                    <Link
-                      href={`/espacos/${claim.entity_slug}`}
-                      className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                    >
-                      Ver espaço
-                    </Link>
-                  )}
-              </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </section>
     </div>
   );
