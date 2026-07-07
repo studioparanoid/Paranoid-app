@@ -2,6 +2,12 @@
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  getCanonicalDistrict,
+  getCanonicalMunicipality,
+  getMunicipalitiesForDistrict,
+  portugalDistricts,
+} from "@/lib/portugalLocations";
 import { supabase } from "@/lib/supabase/public";
 
 type TicketMode = "none" | "external" | "internal";
@@ -33,37 +39,6 @@ type GeocodeResult = {
   district?: string;
   postal_code?: string;
 };
-
-const citySuggestions = [
-  "Pombal",
-  "Ansião",
-  "Leiria",
-  "Coimbra",
-  "Figueira da Foz",
-  "Caldas da Rainha",
-  "Marinha Grande",
-  "Lisboa",
-  "Porto",
-  "Aveiro",
-  "Braga",
-  "Faro",
-  "Outra",
-];
-
-const municipalitySuggestions = [
-  "Pombal",
-  "Ansião",
-  "Leiria",
-  "Coimbra",
-  "Figueira da Foz",
-  "Caldas da Rainha",
-  "Marinha Grande",
-  "Lisboa",
-  "Porto",
-  "Aveiro",
-  "Braga",
-  "Faro",
-];
 
 const categories = [
   "Concertos",
@@ -110,6 +85,24 @@ function ticketModeLabel(mode: TicketMode) {
   }
 
   return "Sem bilhetes";
+}
+
+function findDistrictByMunicipality(value: string | null | undefined) {
+  const cleanValue = value?.trim();
+
+  if (!cleanValue) {
+    return "";
+  }
+
+  for (const district of portugalDistricts) {
+    const match = getCanonicalMunicipality(cleanValue, district);
+
+    if (match) {
+      return district;
+    }
+  }
+
+  return "";
 }
 
 function buildMapsSearchUrl({
@@ -208,9 +201,9 @@ export function SubmitEventClient() {
   );
 
   const [title, setTitle] = useState("");
-  const [city, setCity] = useState("Pombal");
+  const [district, setDistrict] = useState("Leiria");
   const [municipality, setMunicipality] = useState("Pombal");
-  const [district, setDistrict] = useState("");
+  const [city, setCity] = useState("Pombal");
   const [venue, setVenue] = useState("");
   const [address, setAddress] = useState("");
   const [postalCode, setPostalCode] = useState("");
@@ -240,6 +233,14 @@ export function SubmitEventClient() {
 
   const [imageFile, setImageFile] = useState<File | null>(null);
 
+  const municipalityOptions = useMemo(() => {
+    return getMunicipalitiesForDistrict(district);
+  }, [district]);
+
+  const canonicalDistrict = getCanonicalDistrict(district) || district;
+  const canonicalMunicipality =
+    getCanonicalMunicipality(municipality, canonicalDistrict) || municipality;
+
   const isApprovedOrganizer = useMemo(() => {
     return (
       profile?.account_type === "organizer" &&
@@ -253,8 +254,8 @@ export function SubmitEventClient() {
     address,
     postalCode,
     city,
-    municipality,
-    district,
+    municipality: canonicalMunicipality,
+    district: canonicalDistrict,
   });
 
   const mapsCoordinateUrl = buildMapsCoordinateUrl(latitude, longitude);
@@ -304,8 +305,21 @@ export function SubmitEventClient() {
           setOrganizer(loadedOrganizer.name);
 
           if (loadedOrganizer.city) {
+            const inferredDistrict = findDistrictByMunicipality(
+              loadedOrganizer.city
+            );
+
             setCity(loadedOrganizer.city);
-            setMunicipality(loadedOrganizer.city);
+
+            if (inferredDistrict) {
+              const inferredMunicipality = getCanonicalMunicipality(
+                loadedOrganizer.city,
+                inferredDistrict
+              );
+
+              setDistrict(inferredDistrict);
+              setMunicipality(inferredMunicipality || loadedOrganizer.city);
+            }
           }
         } else if (loadedProfile.organizer_name) {
           setOrganizer(loadedProfile.organizer_name);
@@ -322,6 +336,19 @@ export function SubmitEventClient() {
     setLatitude(null);
     setLongitude(null);
     setGeocodeLabel("");
+  }
+
+  function handleDistrictChange(value: string) {
+    setDistrict(value);
+    setMunicipality("");
+    setCity("");
+    clearGeocode();
+  }
+
+  function handleMunicipalityChange(value: string) {
+    setMunicipality(value);
+    setCity("");
+    clearGeocode();
   }
 
   function onImageChange(event: ChangeEvent<HTMLInputElement>) {
@@ -379,8 +406,23 @@ export function SubmitEventClient() {
   async function handleFindLocation() {
     setMessage("");
 
-    if (!address.trim() || (!city.trim() && !municipality.trim())) {
-      setMessage("Mete pelo menos morada e localidade/concelho para localizar.");
+    if (!district.trim()) {
+      setMessage("Escolhe o distrito.");
+      return null;
+    }
+
+    if (!municipality.trim()) {
+      setMessage("Escolhe o concelho.");
+      return null;
+    }
+
+    if (!city.trim()) {
+      setMessage("Mete a localidade.");
+      return null;
+    }
+
+    if (!address.trim()) {
+      setMessage("Mete a morada para localizar.");
       return null;
     }
 
@@ -392,8 +434,8 @@ export function SubmitEventClient() {
         address,
         postalCode,
         city,
-        municipality,
-        district,
+        municipality: canonicalMunicipality,
+        district: canonicalDistrict,
       });
 
       setLatitude(result.latitude);
@@ -402,14 +444,6 @@ export function SubmitEventClient() {
 
       if (result.city && !city.trim()) {
         setCity(result.city);
-      }
-
-      if (result.municipality && !municipality.trim()) {
-        setMunicipality(result.municipality);
-      }
-
-      if (result.district && !district.trim()) {
-        setDistrict(result.district);
       }
 
       if (result.postal_code && !postalCode.trim()) {
@@ -440,7 +474,6 @@ export function SubmitEventClient() {
     setVenue("");
     setAddress("");
     setPostalCode("");
-    setDistrict("");
     setLatitude(null);
     setLongitude(null);
     setGeocodeLabel("");
@@ -471,13 +504,18 @@ export function SubmitEventClient() {
       return;
     }
 
-    if (!city.trim()) {
-      setMessage("Mete a localidade.");
+    if (!district.trim()) {
+      setMessage("Escolhe o distrito.");
       return;
     }
 
     if (!municipality.trim()) {
-      setMessage("Mete o concelho.");
+      setMessage("Escolhe o concelho.");
+      return;
+    }
+
+    if (!city.trim()) {
+      setMessage("Mete a localidade.");
       return;
     }
 
@@ -532,28 +570,24 @@ export function SubmitEventClient() {
       let finalLongitude = longitude;
       let finalGeocodeLabel = geocodeLabel;
       let finalPostalCode = postalCode;
-      let finalDistrict = district;
-      let finalCity = city;
-      let finalMunicipality = municipality;
+      const finalDistrict = canonicalDistrict;
+      const finalMunicipality = canonicalMunicipality;
+      const finalCity = city.trim();
 
       if (finalLatitude === null || finalLongitude === null) {
         const result = await geocodeAddress({
           venue,
           address,
           postalCode,
-          city,
-          municipality,
-          district,
+          city: finalCity,
+          municipality: finalMunicipality,
+          district: finalDistrict,
         });
 
         finalLatitude = result.latitude;
         finalLongitude = result.longitude;
         finalGeocodeLabel = result.display_name;
         finalPostalCode = postalCode.trim() || result.postal_code || "";
-        finalDistrict = district.trim() || result.district || "";
-        finalCity = city.trim() || result.city || "";
-        finalMunicipality =
-          municipality.trim() || result.municipality || municipality;
 
         setLatitude(result.latitude);
         setLongitude(result.longitude);
@@ -564,9 +598,9 @@ export function SubmitEventClient() {
 
       const { error } = await supabase.from("event_submissions").insert({
         title: title.trim(),
-        city: finalCity.trim(),
-        municipality: finalMunicipality.trim(),
-        district: finalDistrict.trim() || null,
+        city: finalCity,
+        municipality: finalMunicipality,
+        district: finalDistrict,
         venue: venue.trim(),
         address: address.trim(),
         postal_code: finalPostalCode.trim() || null,
@@ -725,25 +759,21 @@ export function SubmitEventClient() {
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Localidade
+              Distrito
             </label>
 
-            <input
-              list="submit-event-city-suggestions"
-              value={city}
-              onChange={(event) => {
-                setCity(event.target.value);
-                clearGeocode();
-              }}
-              placeholder="Ex: Alvorge, Pombal, Leiria..."
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-            />
-
-            <datalist id="submit-event-city-suggestions">
-              {citySuggestions.map((item) => (
-                <option key={item} value={item} />
+            <select
+              value={district}
+              onChange={(event) => handleDistrictChange(event.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+            >
+              <option value="">Escolher distrito</option>
+              {portugalDistricts.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
               ))}
-            </datalist>
+            </select>
           </div>
 
           <div>
@@ -751,38 +781,39 @@ export function SubmitEventClient() {
               Concelho
             </label>
 
-            <input
-              list="submit-event-municipality-suggestions"
+            <select
               value={municipality}
-              onChange={(event) => {
-                setMunicipality(event.target.value);
-                clearGeocode();
-              }}
-              placeholder="Ex: Ansião, Pombal, Leiria..."
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-            />
-
-            <datalist id="submit-event-municipality-suggestions">
-              {municipalitySuggestions.map((item) => (
-                <option key={item} value={item} />
+              onChange={(event) => handleMunicipalityChange(event.target.value)}
+              disabled={!district}
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
+            >
+              <option value="">Escolher concelho</option>
+              {municipalityOptions.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
               ))}
-            </datalist>
+            </select>
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-bold text-zinc-300">
-              Distrito
+              Localidade
             </label>
 
             <input
-              value={district}
+              value={city}
               onChange={(event) => {
-                setDistrict(event.target.value);
+                setCity(event.target.value);
                 clearGeocode();
               }}
-              placeholder="Ex: Leiria, Coimbra, Lisboa..."
+              placeholder="Ex: Alvorge, Guia, Bajouca..."
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
+
+            <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+              Localidade, vila, aldeia ou zona dentro do concelho.
+            </p>
           </div>
 
           <div>
