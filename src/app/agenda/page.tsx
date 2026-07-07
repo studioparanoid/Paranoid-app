@@ -2,6 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  getCanonicalDistrict,
+  getCanonicalMunicipality,
+  getMunicipalitiesForDistrict,
+  normalizeLocationText,
+  portugalDistricts,
+  portugalMunicipalities,
+} from "@/lib/portugalLocations";
 import { supabase } from "@/lib/supabase/public";
 
 type EventRow = {
@@ -30,27 +38,6 @@ type EventRow = {
   ticket_mode: string | null;
   ticket_price: string | null;
 };
-
-const portugalDistricts = [
-  "Aveiro",
-  "Beja",
-  "Braga",
-  "Bragança",
-  "Castelo Branco",
-  "Coimbra",
-  "Évora",
-  "Faro",
-  "Guarda",
-  "Leiria",
-  "Lisboa",
-  "Portalegre",
-  "Porto",
-  "Santarém",
-  "Setúbal",
-  "Viana do Castelo",
-  "Vila Real",
-  "Viseu",
-];
 
 const fallbackCategories = [
   "Concertos",
@@ -151,6 +138,25 @@ function sortEvents(first: EventRow, second: EventRow) {
   return new Date(firstDate).getTime() - new Date(secondDate).getTime();
 }
 
+function getEventDistrict(event: EventRow) {
+  return getCanonicalDistrict(event.district) || event.district?.trim() || "";
+}
+
+function getEventMunicipality(event: EventRow) {
+  const district = getEventDistrict(event);
+
+  const explicitMunicipality =
+    getCanonicalMunicipality(event.municipality, district) ||
+    event.municipality?.trim() ||
+    "";
+
+  if (explicitMunicipality) {
+    return explicitMunicipality;
+  }
+
+  return getCanonicalMunicipality(event.city, district);
+}
+
 function EmptyState() {
   return (
     <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
@@ -217,45 +223,42 @@ export default function AgendaPage() {
   }, []);
 
   const districtOptions = useMemo(() => {
-    const values = [
-      ...portugalDistricts,
-      ...events.map((event) => event.district || ""),
-    ];
-
-    return ["Todos", ...uniqueSorted(values)];
-  }, [events]);
+    return ["Todos", ...portugalDistricts];
+  }, []);
 
   const municipalityOptions = useMemo(() => {
-    const values = events
-      .filter((event) => {
-        if (districtFilter === "Todos") {
-          return true;
-        }
+    if (districtFilter === "Todos") {
+      return ["Todos", ...portugalMunicipalities];
+    }
 
-        return event.district === districtFilter;
-      })
-      .map((event) => event.municipality || "");
-
-    return ["Todos", ...uniqueSorted(values)];
-  }, [events, districtFilter]);
+    return ["Todos", ...getMunicipalitiesForDistrict(districtFilter)];
+  }, [districtFilter]);
 
   const cityOptions = useMemo(() => {
     const values = events
       .filter((event) => {
-        if (districtFilter !== "Todos" && event.district !== districtFilter) {
+        const eventDistrict = getEventDistrict(event);
+        const eventMunicipality = getEventMunicipality(event);
+
+        if (
+          districtFilter !== "Todos" &&
+          normalizeLocationText(eventDistrict) !==
+            normalizeLocationText(districtFilter)
+        ) {
           return false;
         }
 
         if (
           municipalityFilter !== "Todos" &&
-          event.municipality !== municipalityFilter
+          normalizeLocationText(eventMunicipality) !==
+            normalizeLocationText(municipalityFilter)
         ) {
           return false;
         }
 
         return true;
       })
-      .map((event) => event.city || "");
+      .map((event) => event.city?.trim() || "");
 
     return ["Todas", ...uniqueSorted(values)];
   }, [events, districtFilter, municipalityFilter]);
@@ -274,16 +277,22 @@ export default function AgendaPage() {
 
     return events
       .filter((event) => {
+        const eventDistrict = getEventDistrict(event);
+        const eventMunicipality = getEventMunicipality(event);
+
         const matchesDistrict =
           districtFilter === "Todos" ||
-          String(event.district || "") === districtFilter;
+          normalizeLocationText(eventDistrict) ===
+            normalizeLocationText(districtFilter);
 
         const matchesMunicipality =
           municipalityFilter === "Todos" ||
-          String(event.municipality || "") === municipalityFilter;
+          normalizeLocationText(eventMunicipality) ===
+            normalizeLocationText(municipalityFilter);
 
         const matchesCity =
-          cityFilter === "Todas" || String(event.city || "") === cityFilter;
+          cityFilter === "Todas" ||
+          normalizeLocationText(event.city) === normalizeLocationText(cityFilter);
 
         const matchesCategory =
           categoryFilter === "Todas" ||
@@ -298,8 +307,8 @@ export default function AgendaPage() {
             event.organizer_name,
             event.description,
             event.city,
-            event.municipality,
-            event.district,
+            eventMunicipality,
+            eventDistrict,
             event.address,
             event.postal_code,
             event.category,
@@ -336,8 +345,8 @@ export default function AgendaPage() {
   }, [events]);
 
   const municipalityCount = useMemo(() => {
-    return uniqueSorted(events.map((event) => event.municipality || "")).length;
-  }, [events]);
+    return portugalMunicipalities.length;
+  }, []);
 
   function handleDistrictChange(value: string) {
     setDistrictFilter(value);
@@ -467,19 +476,12 @@ export default function AgendaPage() {
                   onChange={(event) =>
                     handleMunicipalityChange(event.target.value)
                   }
-                  disabled={municipalityOptions.length <= 1}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
                 >
                   {municipalityOptions.map((municipality) => (
                     <option key={municipality}>{municipality}</option>
                   ))}
                 </select>
-
-                {districtFilter !== "Todos" && municipalityOptions.length <= 1 && (
-                  <p className="mt-2 text-xs text-zinc-600">
-                    Ainda não há concelhos publicados neste distrito.
-                  </p>
-                )}
               </div>
 
               <div>
@@ -497,6 +499,12 @@ export default function AgendaPage() {
                     <option key={city}>{city}</option>
                   ))}
                 </select>
+
+                {cityOptions.length <= 1 && (
+                  <p className="mt-2 text-xs text-zinc-600">
+                    Ainda não há localidades publicadas para esta combinação.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -564,11 +572,9 @@ export default function AgendaPage() {
             {!loading &&
               filteredEvents.map((event) => {
                 const ticket = ticketLabel(event.ticket_mode);
-                const zone = [
-                  event.city,
-                  event.municipality,
-                  event.district,
-                ]
+                const eventDistrict = getEventDistrict(event);
+                const eventMunicipality = getEventMunicipality(event);
+                const zone = [event.city, eventMunicipality, eventDistrict]
                   .filter(Boolean)
                   .join(" · ");
 
@@ -601,9 +607,9 @@ export default function AgendaPage() {
                             {event.category || "Evento"}
                           </span>
 
-                          {event.municipality && (
+                          {eventMunicipality && (
                             <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-black uppercase text-zinc-500">
-                              {event.municipality}
+                              {eventMunicipality}
                             </span>
                           )}
 
