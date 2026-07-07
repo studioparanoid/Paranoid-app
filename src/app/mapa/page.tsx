@@ -2,6 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  getCanonicalDistrict,
+  getCanonicalMunicipality,
+  getMunicipalitiesForDistrict,
+  normalizeLocationText,
+  portugalDistricts,
+  portugalMunicipalities,
+} from "@/lib/portugalLocations";
 import { supabase } from "@/lib/supabase/public";
 
 type RadiusFilter = "5" | "15" | "50" | "150" | "all";
@@ -63,12 +71,38 @@ type EventWithLocation = EventRow & {
   locationLabel: string;
 };
 
+const fallbackCategories = [
+  "Concertos",
+  "Festivais",
+  "DJ Sets",
+  "Cinema",
+  "Exposições",
+  "Mercados",
+  "Workshops",
+  "Teatro",
+  "Outros",
+];
+
 function normalizeName(value: string | null | undefined) {
   return String(value || "")
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function normalizeSearchText(value: string | null | undefined) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function uniqueSorted(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((first, second) =>
+    first.localeCompare(second, "pt-PT")
+  );
 }
 
 function formatDate(value: string | null | undefined) {
@@ -210,10 +244,38 @@ function sortEvents(first: EventWithLocation, second: EventWithLocation) {
   return new Date(firstDate).getTime() - new Date(secondDate).getTime();
 }
 
-function uniqueSorted(values: string[]) {
-  return Array.from(new Set(values.filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b, "pt-PT")
+function getEventDistrict(event: EventWithLocation) {
+  return (
+    getCanonicalDistrict(event.district) ||
+    getCanonicalDistrict(event.venue?.district) ||
+    event.district?.trim() ||
+    event.venue?.district?.trim() ||
+    ""
   );
+}
+
+function getEventMunicipality(event: EventWithLocation) {
+  const district = getEventDistrict(event);
+
+  const explicitMunicipality =
+    getCanonicalMunicipality(event.municipality, district) ||
+    getCanonicalMunicipality(event.venue?.municipality, district) ||
+    event.municipality?.trim() ||
+    event.venue?.municipality?.trim() ||
+    "";
+
+  if (explicitMunicipality) {
+    return explicitMunicipality;
+  }
+
+  return (
+    getCanonicalMunicipality(event.city, district) ||
+    getCanonicalMunicipality(event.venue?.city, district)
+  );
+}
+
+function getEventCity(event: EventWithLocation) {
+  return event.city?.trim() || event.venue?.city?.trim() || "";
 }
 
 function EmptyState() {
@@ -228,7 +290,7 @@ function EmptyState() {
       </h2>
 
       <p className="mt-5 text-base leading-relaxed text-zinc-400">
-        Aumenta o raio, muda o concelho/localidade ou vê Portugal inteiro.
+        Muda o distrito, concelho, localidade ou vê Portugal inteiro.
       </p>
 
       <Link
@@ -252,9 +314,9 @@ export default function MapPage() {
 
   const [radiusFilter, setRadiusFilter] = useState<RadiusFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [cityFilter, setCityFilter] = useState("Todas");
-  const [municipalityFilter, setMunicipalityFilter] = useState("Todos");
   const [districtFilter, setDistrictFilter] = useState("Todos");
+  const [municipalityFilter, setMunicipalityFilter] = useState("Todos");
+  const [cityFilter, setCityFilter] = useState("Todas");
   const [categoryFilter, setCategoryFilter] = useState("Todas");
   const [onlyWithLocation, setOnlyWithLocation] = useState(false);
 
@@ -328,75 +390,98 @@ export default function MapPage() {
     });
   }, [events, venueById, venueByName, userLocation]);
 
-  const cityOptions = useMemo(() => {
-    const cities = eventsWithLocation
-      .map((event) => event.city || event.venue?.city || "")
-      .filter(Boolean);
-
-    return ["Todas", ...uniqueSorted(cities)];
-  }, [eventsWithLocation]);
+  const districtOptions = useMemo(() => {
+    return ["Todos", ...portugalDistricts];
+  }, []);
 
   const municipalityOptions = useMemo(() => {
-    const municipalities = eventsWithLocation
-      .map((event) => event.municipality || event.venue?.municipality || "")
-      .filter(Boolean);
+    if (districtFilter === "Todos") {
+      return ["Todos", ...portugalMunicipalities];
+    }
 
-    return ["Todos", ...uniqueSorted(municipalities)];
-  }, [eventsWithLocation]);
+    return ["Todos", ...getMunicipalitiesForDistrict(districtFilter)];
+  }, [districtFilter]);
 
-  const districtOptions = useMemo(() => {
-    const districts = eventsWithLocation
-      .map((event) => event.district || event.venue?.district || "")
-      .filter(Boolean);
+  const cityOptions = useMemo(() => {
+    const cities = eventsWithLocation
+      .filter((event) => {
+        const eventDistrict = getEventDistrict(event);
+        const eventMunicipality = getEventMunicipality(event);
 
-    return ["Todos", ...uniqueSorted(districts)];
-  }, [eventsWithLocation]);
+        if (
+          districtFilter !== "Todos" &&
+          normalizeLocationText(eventDistrict) !==
+            normalizeLocationText(districtFilter)
+        ) {
+          return false;
+        }
+
+        if (
+          municipalityFilter !== "Todos" &&
+          normalizeLocationText(eventMunicipality) !==
+            normalizeLocationText(municipalityFilter)
+        ) {
+          return false;
+        }
+
+        return true;
+      })
+      .map((event) => getEventCity(event));
+
+    return ["Todas", ...uniqueSorted(cities)];
+  }, [eventsWithLocation, districtFilter, municipalityFilter]);
 
   const categoryOptions = useMemo(() => {
-    const categories = eventsWithLocation
-      .map((event) => event.category || "")
-      .filter(Boolean);
+    const categories = [
+      ...fallbackCategories,
+      ...eventsWithLocation.map((event) => event.category || ""),
+    ];
 
     return ["Todas", ...uniqueSorted(categories)];
   }, [eventsWithLocation]);
 
   const filteredEvents = useMemo(() => {
-    const cleanSearch = normalizeName(searchQuery);
+    const cleanSearch = normalizeSearchText(searchQuery);
 
     return eventsWithLocation
       .filter((event) => {
         const hasCoordinates =
           event.finalLatitude !== null && event.finalLongitude !== null;
 
+        const eventDistrict = getEventDistrict(event);
+        const eventMunicipality = getEventMunicipality(event);
+        const eventCity = getEventCity(event);
+
         if (onlyWithLocation && !hasCoordinates) {
           return false;
         }
 
-        if (radiusFilter !== "all" && !hasCoordinates) {
+        if (userLocation && radiusFilter !== "all" && !hasCoordinates) {
           return false;
         }
 
-        if (cityFilter !== "Todas") {
-          const city = event.city || event.venue?.city || "";
-
-          if (city !== cityFilter) {
+        if (districtFilter !== "Todos") {
+          if (
+            normalizeLocationText(eventDistrict) !==
+            normalizeLocationText(districtFilter)
+          ) {
             return false;
           }
         }
 
         if (municipalityFilter !== "Todos") {
-          const municipality =
-            event.municipality || event.venue?.municipality || "";
-
-          if (municipality !== municipalityFilter) {
+          if (
+            normalizeLocationText(eventMunicipality) !==
+            normalizeLocationText(municipalityFilter)
+          ) {
             return false;
           }
         }
 
-        if (districtFilter !== "Todos") {
-          const district = event.district || event.venue?.district || "";
-
-          if (district !== districtFilter) {
+        if (cityFilter !== "Todas") {
+          if (
+            normalizeLocationText(eventCity) !== normalizeLocationText(cityFilter)
+          ) {
             return false;
           }
         }
@@ -406,7 +491,7 @@ export default function MapPage() {
         }
 
         if (cleanSearch) {
-          const searchableText = normalizeName(
+          const searchableText = normalizeSearchText(
             [
               event.title,
               event.venue_name,
@@ -414,15 +499,12 @@ export default function MapPage() {
               event.description,
               event.address,
               event.postal_code,
-              event.city,
-              event.municipality,
-              event.district,
+              eventCity,
+              eventMunicipality,
+              eventDistrict,
               event.venue?.name,
               event.venue?.address,
               event.venue?.postal_code,
-              event.venue?.city,
-              event.venue?.municipality,
-              event.venue?.district,
             ]
               .filter(Boolean)
               .join(" ")
@@ -448,9 +530,9 @@ export default function MapPage() {
     eventsWithLocation,
     onlyWithLocation,
     radiusFilter,
-    cityFilter,
-    municipalityFilter,
     districtFilter,
+    municipalityFilter,
+    cityFilter,
     categoryFilter,
     searchQuery,
     userLocation,
@@ -459,8 +541,6 @@ export default function MapPage() {
   const eventsWithCoordinatesCount = eventsWithLocation.filter(
     (event) => event.finalLatitude !== null && event.finalLongitude !== null
   ).length;
-
-  const municipalityCount = municipalityOptions.length - 1;
 
   const closestEvent = filteredEvents.find(
     (event) => event.distanceKm !== null
@@ -523,15 +603,12 @@ export default function MapPage() {
           longitude: position.coords.longitude,
         });
 
-        if (radiusFilter === "all") {
-          setRadiusFilter("50");
-        }
-
+        setRadiusFilter("50");
         setLocationLoading(false);
       },
       () => {
         setMessage(
-          "Não deu para obter a tua localização. Podes usar os filtros por concelho, localidade ou distrito."
+          "Não deu para obter a tua localização. Podes usar os filtros por distrito, concelho ou localidade."
         );
 
         setLocationLoading(false);
@@ -542,6 +619,27 @@ export default function MapPage() {
         maximumAge: 60000,
       }
     );
+  }
+
+  function handleDistrictChange(value: string) {
+    setDistrictFilter(value);
+    setMunicipalityFilter("Todos");
+    setCityFilter("Todas");
+  }
+
+  function handleMunicipalityChange(value: string) {
+    setMunicipalityFilter(value);
+    setCityFilter("Todas");
+  }
+
+  function clearFilters() {
+    setRadiusFilter(userLocation ? "50" : "all");
+    setSearchQuery("");
+    setDistrictFilter("Todos");
+    setMunicipalityFilter("Todos");
+    setCityFilter("Todas");
+    setCategoryFilter("Todas");
+    setOnlyWithLocation(false);
   }
 
   if (loading) {
@@ -570,8 +668,8 @@ export default function MapPage() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-400 lg:text-lg">
-              Eventos e espaços culturais por proximidade, concelho,
-              localidade, distrito ou pesquisa livre.
+              Eventos e espaços culturais por proximidade real, distrito,
+              concelho, localidade ou pesquisa livre.
             </p>
           </div>
 
@@ -666,7 +764,8 @@ export default function MapPage() {
                     onChange={(event) =>
                       setRadiusFilter(event.target.value as RadiusFilter)
                     }
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                    disabled={!userLocation}
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
                   >
                     <option value="all">Portugal inteiro</option>
                     <option value="5">Até 5 km</option>
@@ -675,17 +774,27 @@ export default function MapPage() {
                     <option value="150">Até 150 km</option>
                   </select>
 
-                  {!userLocation && radiusFilter !== "all" && (
+                  {!userLocation && (
                     <p className="mt-2 text-xs text-zinc-600">
-                      Para calcular raio real, ativa a tua localização.
+                      O raio só fica ativo depois de ligares a localização.
                     </p>
                   )}
+                </div>
 
-                  {radiusFilter !== "all" && (
-                    <p className="mt-2 text-xs text-zinc-600">
-                      Eventos sem coordenadas só aparecem em Portugal inteiro.
-                    </p>
-                  )}
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Distrito
+                  </label>
+
+                  <select
+                    value={districtFilter}
+                    onChange={(event) => handleDistrictChange(event.target.value)}
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  >
+                    {["Todos", ...portugalDistricts].map((district) => (
+                      <option key={district}>{district}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -696,7 +805,7 @@ export default function MapPage() {
                   <select
                     value={municipalityFilter}
                     onChange={(event) =>
-                      setMunicipalityFilter(event.target.value)
+                      handleMunicipalityChange(event.target.value)
                     }
                     className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
                   >
@@ -714,28 +823,19 @@ export default function MapPage() {
                   <select
                     value={cityFilter}
                     onChange={(event) => setCityFilter(event.target.value)}
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                    disabled={cityOptions.length <= 1}
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
                   >
                     {cityOptions.map((city) => (
                       <option key={city}>{city}</option>
                     ))}
                   </select>
-                </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Distrito
-                  </label>
-
-                  <select
-                    value={districtFilter}
-                    onChange={(event) => setDistrictFilter(event.target.value)}
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                  >
-                    {districtOptions.map((district) => (
-                      <option key={district}>{district}</option>
-                    ))}
-                  </select>
+                  {cityOptions.length <= 1 && (
+                    <p className="mt-2 text-xs text-zinc-600">
+                      Ainda não há localidades publicadas para esta combinação.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -772,15 +872,7 @@ export default function MapPage() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setRadiusFilter("all");
-                    setSearchQuery("");
-                    setCityFilter("Todas");
-                    setMunicipalityFilter("Todos");
-                    setDistrictFilter("Todos");
-                    setCategoryFilter("Todas");
-                    setOnlyWithLocation(false);
-                  }}
+                  onClick={clearFilters}
                   className="w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
                 >
                   Limpar filtros
@@ -819,7 +911,9 @@ export default function MapPage() {
                 </div>
 
                 <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                  <p className="text-3xl font-black">{municipalityCount}</p>
+                  <p className="text-3xl font-black">
+                    {portugalMunicipalities.length}
+                  </p>
                   <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
                     Concelhos
                   </p>
@@ -862,7 +956,9 @@ export default function MapPage() {
                   ? "Perto de ti."
                   : municipalityFilter !== "Todos"
                     ? municipalityFilter
-                    : "Mapa nacional."}
+                    : districtFilter !== "Todos"
+                      ? districtFilter
+                      : "Mapa nacional."}
               </h2>
 
               <p className="mt-4 text-sm text-zinc-500">
@@ -882,11 +978,9 @@ export default function MapPage() {
                 event.locationLabel
               );
 
-              const eventCity = event.city || event.venue?.city || "";
-              const eventMunicipality =
-                event.municipality || event.venue?.municipality || "";
-              const eventDistrict =
-                event.district || event.venue?.district || "";
+              const eventCity = getEventCity(event);
+              const eventMunicipality = getEventMunicipality(event);
+              const eventDistrict = getEventDistrict(event);
 
               return (
                 <article
