@@ -11,24 +11,18 @@ type ProfileRow = {
   id: string;
   email?: string | null;
   role?: string | null;
-
   display_name?: string | null;
   account_type?: AccountType | string | null;
   account_status?: AccountStatus | string | null;
-
   artist_name?: string | null;
   organizer_name?: string | null;
   venue_name?: string | null;
-
   city?: string | null;
   instagram_url?: string | null;
-
   entity_id?: string | null;
   entity_slug?: string | null;
-
   preferred_cities?: string[] | null;
   preferred_categories?: string[] | null;
-
   approved_at?: string | null;
   created_at?: string | null;
 };
@@ -89,135 +83,57 @@ const categories = [
 ];
 
 function accountTypeLabel(type: string | null | undefined) {
-  if (type === "artist") {
-    return "Artista";
-  }
-
-  if (type === "organizer") {
-    return "Organizador";
-  }
-
-  if (type === "venue") {
-    return "Espaço";
-  }
-
+  if (type === "artist") return "Artista";
+  if (type === "organizer") return "Organizador";
+  if (type === "venue") return "Espaço";
   return "Comunidade";
 }
 
 function accountTypeDescription(type: string | null | undefined) {
-  if (type === "artist") {
-    return "Perfil artístico ligado à rede cultural Paranoid.";
-  }
-
-  if (type === "organizer") {
-    return "Perfil de organizador, promotor, coletivo ou associação.";
-  }
-
-  if (type === "venue") {
-    return "Perfil de espaço cultural, sala, bar, galeria ou auditório.";
-  }
-
+  if (type === "artist") return "Perfil artístico ligado à rede cultural Paranoid.";
+  if (type === "organizer") return "Perfil de organizador, promotor, coletivo ou associação.";
+  if (type === "venue") return "Perfil de espaço cultural, sala, bar, galeria ou auditório.";
   return "Perfil de comunidade para guardar eventos, seguir a rede e reservar bilhetes.";
 }
 
 function statusLabel(status: string | null | undefined) {
-  if (status === "pending") {
-    return "Pendente";
-  }
-
-  if (status === "rejected") {
-    return "Rejeitado";
-  }
-
-  if (status === "archived") {
-    return "Arquivado";
-  }
-
-  if (status === "published") {
-    return "Publicado";
-  }
-
-  if (status === "cancelled") {
-    return "Cancelado";
-  }
-
-  if (status === "checked_in") {
-    return "Check-in feito";
-  }
-
-  if (status === "reserved") {
-    return "Reservado";
-  }
-
+  if (status === "pending") return "Pendente";
+  if (status === "rejected") return "Rejeitado";
+  if (status === "archived") return "Arquivado";
+  if (status === "published") return "Publicado";
+  if (status === "cancelled") return "Cancelado";
+  if (status === "checked_in") return "Check-in feito";
+  if (status === "reserved") return "Reservado";
   return "Aprovado";
 }
 
 function statusClasses(status: string | null | undefined) {
-  if (status === "pending") {
-    return "border-yellow-900 bg-yellow-950/30 text-yellow-500";
-  }
-
-  if (status === "rejected" || status === "cancelled") {
-    return "border-red-900 bg-red-950/30 text-red-400";
-  }
-
-  if (status === "archived") {
-    return "border-zinc-700 bg-zinc-900 text-zinc-400";
-  }
-
+  if (status === "pending") return "border-yellow-900 bg-yellow-950/30 text-yellow-500";
+  if (status === "rejected" || status === "cancelled") return "border-red-900 bg-red-950/30 text-red-400";
+  if (status === "archived") return "border-zinc-700 bg-zinc-900 text-zinc-400";
   return "border-green-900 bg-green-950/30 text-green-400";
 }
 
 function claimTypePath(type: string | null | undefined, slug: string | null) {
-  if (!slug) {
-    return null;
-  }
-
-  if (type === "artist") {
-    return `/artistas/${slug}`;
-  }
-
-  if (type === "organizer") {
-    return `/organizadores/${slug}`;
-  }
-
-  if (type === "venue") {
-    return `/espacos/${slug}`;
-  }
-
+  if (!slug) return null;
+  if (type === "artist") return `/artistas/${slug}`;
+  if (type === "organizer") return `/organizadores/${slug}`;
+  if (type === "venue") return `/espacos/${slug}`;
   return null;
 }
 
 function formatDate(value: string | null | undefined) {
-  if (!value) {
-    return "Sem data";
-  }
+  if (!value) return "Sem data";
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
+  if (Number.isNaN(date.getTime())) return value;
 
   return new Intl.DateTimeFormat("pt-PT", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   }).format(date);
-}
-
-function normalizeExternalUrl(value: string) {
-  const cleanValue = value.trim();
-
-  if (!cleanValue) {
-    return null;
-  }
-
-  if (cleanValue.startsWith("http://") || cleanValue.startsWith("https://")) {
-    return cleanValue;
-  }
-
-  return `https://${cleanValue}`;
 }
 
 function toggleArrayValue(values: string[], value: string) {
@@ -245,6 +161,7 @@ export function ProfileClient() {
 
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [claims, setClaims] = useState<ProfileClaimRow[]>([]);
@@ -252,21 +169,23 @@ export function ProfileClient() {
   const [tickets, setTickets] = useState<TicketRow[]>([]);
 
   const [displayName, setDisplayName] = useState("");
+  const [entityName, setEntityName] = useState("");
+  const [entityDescription, setEntityDescription] = useState("");
+
   const [city, setCity] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [preferredCities, setPreferredCities] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
 
-  const latestClaim = useMemo(() => {
-    return claims[0] || null;
-  }, [claims]);
+  const latestClaim = useMemo(() => claims[0] || null, [claims]);
 
   const accountType = profile?.account_type || "community";
   const accountStatus = profile?.account_status || "approved";
+  const hasPublicEntity = accountType !== "community";
 
   const publicPath = claimTypePath(accountType, profile?.entity_slug || null);
 
-  const profileTitle =
+  const fallbackProfileTitle =
     accountType === "artist"
       ? profile?.artist_name || profile?.display_name || email
       : accountType === "organizer"
@@ -274,6 +193,8 @@ export function ProfileClient() {
         : accountType === "venue"
           ? profile?.venue_name || profile?.display_name || email
           : profile?.display_name || email;
+
+  const profileTitle = entityName || fallbackProfileTitle;
 
   const pendingSubmissions = submissions.filter(
     (submission) => submission.status === "pending"
@@ -286,6 +207,59 @@ export function ProfileClient() {
 
   const activeTickets = tickets.filter((ticket) => ticket.status === "reserved");
 
+  async function loadPublicEntity(loadedProfile: ProfileRow | null) {
+    if (!loadedProfile?.entity_id || !loadedProfile.account_type) {
+      setEntityName(loadedProfile?.display_name || "");
+      setEntityDescription("");
+      return;
+    }
+
+    if (loadedProfile.account_type === "artist") {
+      const { data } = await supabase
+        .from("artists")
+        .select("name,city,description,instagram")
+        .eq("id", loadedProfile.entity_id)
+        .maybeSingle();
+
+      setEntityName(data?.name || loadedProfile.artist_name || "");
+      setCity(data?.city || loadedProfile.city || "");
+      setEntityDescription(data?.description || "");
+      setInstagramUrl(data?.instagram || loadedProfile.instagram_url || "");
+      return;
+    }
+
+    if (loadedProfile.account_type === "organizer") {
+      const { data } = await supabase
+        .from("organizers")
+        .select("name,city,description")
+        .eq("id", loadedProfile.entity_id)
+        .maybeSingle();
+
+      setEntityName(data?.name || loadedProfile.organizer_name || "");
+      setCity(data?.city || loadedProfile.city || "");
+      setEntityDescription(data?.description || "");
+      setInstagramUrl(loadedProfile.instagram_url || "");
+      return;
+    }
+
+    if (loadedProfile.account_type === "venue") {
+      const { data } = await supabase
+        .from("venues")
+        .select("name,city,description,instagram")
+        .eq("id", loadedProfile.entity_id)
+        .maybeSingle();
+
+      setEntityName(data?.name || loadedProfile.venue_name || "");
+      setCity(data?.city || loadedProfile.city || "");
+      setEntityDescription(data?.description || "");
+      setInstagramUrl(data?.instagram || loadedProfile.instagram_url || "");
+      return;
+    }
+
+    setEntityName(loadedProfile.display_name || "");
+    setEntityDescription("");
+  }
+
   async function loadProfile() {
     setLoading(true);
     setMessage("");
@@ -297,6 +271,7 @@ export function ProfileClient() {
     if (!user) {
       setUserId("");
       setEmail("");
+      setIsAdmin(false);
       setProfile(null);
       setClaims([]);
       setSubmissions([]);
@@ -307,6 +282,14 @@ export function ProfileClient() {
 
     setUserId(user.id);
     setEmail(user.email || "");
+
+    const { data: adminData } = await supabase
+      .from("app_admins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    setIsAdmin(Boolean(adminData));
 
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
@@ -330,6 +313,8 @@ export function ProfileClient() {
     setPreferredCities(loadedProfile?.preferred_cities || []);
     setPreferredCategories(loadedProfile?.preferred_categories || []);
 
+    await loadPublicEntity(loadedProfile);
+
     const { data: claimData } = await supabase
       .from("profile_claims")
       .select(
@@ -340,12 +325,15 @@ export function ProfileClient() {
 
     setClaims((claimData || []) as ProfileClaimRow[]);
 
-    const { data: submissionData } = await supabase
+    const submissionQuery = supabase
       .from("event_submissions")
       .select("id,title,status,event_date,city,created_at")
-      .eq("submitted_by", user.id)
       .order("created_at", { ascending: false })
       .limit(6);
+
+    const { data: submissionData } = user.email
+      ? await submissionQuery.or(`submitted_by.eq.${user.id},submitted_by.eq.${user.email}`)
+      : await submissionQuery.eq("submitted_by", user.id);
 
     setSubmissions((submissionData || []) as SubmissionRow[]);
 
@@ -373,18 +361,25 @@ export function ProfileClient() {
       return;
     }
 
+    const finalDisplayName = displayName.trim() || entityName.trim() || null;
+    const finalEntityName = hasPublicEntity ? entityName.trim() : null;
+
+    if (hasPublicEntity && !finalEntityName) {
+      setMessage("Mete o nome público da entidade.");
+      return;
+    }
+
     setSaving(true);
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        display_name: displayName.trim() || null,
-        city: city.trim() || null,
-        instagram_url: normalizeExternalUrl(instagramUrl),
-        preferred_cities: preferredCities,
-        preferred_categories: preferredCategories,
-      })
-      .eq("id", userId);
+    const { error } = await supabase.rpc("update_my_public_profile", {
+      p_display_name: finalDisplayName,
+      p_entity_name: finalEntityName,
+      p_city: city.trim() || null,
+      p_instagram_url: instagramUrl.trim() || null,
+      p_description: entityDescription.trim() || null,
+      p_preferred_cities: preferredCities,
+      p_preferred_categories: preferredCategories,
+    });
 
     setSaving(false);
 
@@ -519,22 +514,6 @@ export function ProfileClient() {
                 {statusLabel(accountStatus)}
               </div>
 
-              {accountStatus === "pending" && (
-                <p className="mt-4 rounded-2xl border border-yellow-900 bg-yellow-950/20 p-4 text-sm leading-relaxed text-yellow-500">
-                  O teu perfil está pendente. A Paranoid tem de aprovar antes de
-                  apareceres como artista, organizador ou espaço na rede.
-                </p>
-              )}
-
-              {accountStatus === "rejected" && (
-                <p className="mt-4 rounded-2xl border border-red-900 bg-red-950/20 p-4 text-sm leading-relaxed text-red-300">
-                  O teu pedido foi rejeitado.
-                  {latestClaim?.review_note
-                    ? ` Motivo: ${latestClaim.review_note}`
-                    : " Podes falar com a Paranoid para corrigir dados."}
-                </p>
-              )}
-
               {accountStatus === "approved" && publicPath && (
                 <Link
                   href={publicPath}
@@ -581,7 +560,7 @@ export function ProfileClient() {
                   Os meus bilhetes
                 </Link>
 
-                {profile?.role === "admin" && (
+                {isAdmin && (
                   <Link
                     href="/admin"
                     className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-300"
@@ -609,27 +588,37 @@ export function ProfileClient() {
                 </p>
 
                 <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                  Perfil base.
+                  Identidade pública.
                 </h2>
 
-                <p className="mt-4 text-sm leading-relaxed text-zinc-500">
-                  O email é só para login. O nome que aparece publicamente vem
-                  do perfil aprovado: artista, organizador ou espaço.
-                </p>
-
                 <div className="mt-8 grid gap-5 lg:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-bold text-zinc-300">
-                      Nome público
-                    </label>
+                  {hasPublicEntity ? (
+                    <div className="lg:col-span-2">
+                      <label className="mb-2 block text-sm font-bold text-zinc-300">
+                        Nome da entidade
+                      </label>
 
-                    <input
-                      value={displayName}
-                      onChange={(event) => setDisplayName(event.target.value)}
-                      placeholder="Nome público"
-                      className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                    />
-                  </div>
+                      <input
+                        value={entityName}
+                        onChange={(event) => setEntityName(event.target.value)}
+                        placeholder="Ex: Paranoid Crew"
+                        className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                      />
+                    </div>
+                  ) : (
+                    <div className="lg:col-span-2">
+                      <label className="mb-2 block text-sm font-bold text-zinc-300">
+                        Nome público
+                      </label>
+
+                      <input
+                        value={displayName}
+                        onChange={(event) => setDisplayName(event.target.value)}
+                        placeholder="Nome público"
+                        className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label className="mb-2 block text-sm font-bold text-zinc-300">
@@ -644,7 +633,7 @@ export function ProfileClient() {
                     />
                   </div>
 
-                  <div className="lg:col-span-2">
+                  <div>
                     <label className="mb-2 block text-sm font-bold text-zinc-300">
                       Instagram
                     </label>
@@ -656,6 +645,24 @@ export function ProfileClient() {
                       className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
                     />
                   </div>
+
+                  {hasPublicEntity && (
+                    <div className="lg:col-span-2">
+                      <label className="mb-2 block text-sm font-bold text-zinc-300">
+                        Descrição pública
+                      </label>
+
+                      <textarea
+                        value={entityDescription}
+                        onChange={(event) =>
+                          setEntityDescription(event.target.value)
+                        }
+                        placeholder="Descrição curta da entidade..."
+                        rows={5}
+                        className="w-full resize-none rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <button
