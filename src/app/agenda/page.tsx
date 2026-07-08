@@ -3,13 +3,24 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  getCanonicalDistrict,
-  getCanonicalMunicipality,
-  getMunicipalitiesForDistrict,
-  normalizeLocationText,
-  portugalDistricts,
-  portugalMunicipalities,
-} from "@/lib/portugalLocations";
+  ALL_CATEGORIES,
+  ALL_CITIES,
+  ALL_DISTRICTS,
+  ALL_MUNICIPALITIES,
+  buildEventFilterIndex,
+  eventDateFilterOptions,
+  type EventDateFilter,
+  eventPriceFilterOptions,
+  type EventPriceFilter,
+  filterIndexedEvents,
+  getCategoryOptionsForIndexedEvents,
+  getCityOptionsForIndexedEvents,
+  getEventDistrict,
+  getEventMunicipality,
+  getDistrictOptions,
+  getMunicipalityOptions,
+} from "@/lib/eventFilters";
+import { portugalMunicipalities } from "@/lib/portugalLocations";
 import { supabase } from "@/lib/supabase/public";
 
 type EventRow = {
@@ -38,32 +49,6 @@ type EventRow = {
   ticket_mode: string | null;
   ticket_price: string | null;
 };
-
-const fallbackCategories = [
-  "Concertos",
-  "Festivais",
-  "DJ Sets",
-  "Cinema",
-  "Exposições",
-  "Mercados",
-  "Workshops",
-  "Teatro",
-  "Outros",
-];
-
-function normalizeText(value: string | null | undefined) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function uniqueSorted(values: string[]) {
-  return Array.from(new Set(values.filter(Boolean))).sort((first, second) =>
-    first.localeCompare(second, "pt-PT")
-  );
-}
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -138,25 +123,6 @@ function sortEvents(first: EventRow, second: EventRow) {
   return new Date(firstDate).getTime() - new Date(secondDate).getTime();
 }
 
-function getEventDistrict(event: EventRow) {
-  return getCanonicalDistrict(event.district) || event.district?.trim() || "";
-}
-
-function getEventMunicipality(event: EventRow) {
-  const district = getEventDistrict(event);
-
-  const explicitMunicipality =
-    getCanonicalMunicipality(event.municipality, district) ||
-    event.municipality?.trim() ||
-    "";
-
-  if (explicitMunicipality) {
-    return explicitMunicipality;
-  }
-
-  return getCanonicalMunicipality(event.city, district);
-}
-
 function EmptyState() {
   return (
     <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
@@ -188,10 +154,13 @@ export default function AgendaPage() {
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [districtFilter, setDistrictFilter] = useState("Todos");
-  const [municipalityFilter, setMunicipalityFilter] = useState("Todos");
-  const [cityFilter, setCityFilter] = useState("Todas");
-  const [categoryFilter, setCategoryFilter] = useState("Todas");
+  const [districtFilter, setDistrictFilter] = useState(ALL_DISTRICTS);
+  const [municipalityFilter, setMunicipalityFilter] =
+    useState(ALL_MUNICIPALITIES);
+  const [cityFilter, setCityFilter] = useState(ALL_CITIES);
+  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
+  const [dateFilter, setDateFilter] = useState<EventDateFilter>("all");
+  const [priceFilter, setPriceFilter] = useState<EventPriceFilter>("all");
   const [onlyFeatured, setOnlyFeatured] = useState(false);
 
   async function loadEvents() {
@@ -222,121 +191,50 @@ export default function AgendaPage() {
     loadEvents();
   }, []);
 
-  const districtOptions = useMemo(() => {
-    return ["Todos", ...portugalDistricts];
-  }, []);
+  const indexedEvents = useMemo(() => {
+    return events.map((event) => buildEventFilterIndex(event));
+  }, [events]);
+
+  const districtOptions = useMemo(() => getDistrictOptions(), []);
 
   const municipalityOptions = useMemo(() => {
-    if (districtFilter === "Todos") {
-      return ["Todos", ...portugalMunicipalities];
-    }
-
-    return ["Todos", ...getMunicipalitiesForDistrict(districtFilter)];
+    return getMunicipalityOptions(districtFilter);
   }, [districtFilter]);
 
   const cityOptions = useMemo(() => {
-    const values = events
-      .filter((event) => {
-        const eventDistrict = getEventDistrict(event);
-        const eventMunicipality = getEventMunicipality(event);
-
-        if (
-          districtFilter !== "Todos" &&
-          normalizeLocationText(eventDistrict) !==
-            normalizeLocationText(districtFilter)
-        ) {
-          return false;
-        }
-
-        if (
-          municipalityFilter !== "Todos" &&
-          normalizeLocationText(eventMunicipality) !==
-            normalizeLocationText(municipalityFilter)
-        ) {
-          return false;
-        }
-
-        return true;
-      })
-      .map((event) => event.city?.trim() || "");
-
-    return ["Todas", ...uniqueSorted(values)];
-  }, [events, districtFilter, municipalityFilter]);
+    return getCityOptionsForIndexedEvents(
+      indexedEvents,
+      districtFilter,
+      municipalityFilter
+    );
+  }, [indexedEvents, districtFilter, municipalityFilter]);
 
   const categoryOptions = useMemo(() => {
-    const values = [
-      ...fallbackCategories,
-      ...events.map((event) => event.category || ""),
-    ];
-
-    return ["Todas", ...uniqueSorted(values)];
-  }, [events]);
+    return getCategoryOptionsForIndexedEvents(indexedEvents);
+  }, [indexedEvents]);
 
   const filteredEvents = useMemo(() => {
-    const cleanSearch = normalizeText(searchQuery);
-
-    return events
-      .filter((event) => {
-        const eventDistrict = getEventDistrict(event);
-        const eventMunicipality = getEventMunicipality(event);
-
-        const matchesDistrict =
-          districtFilter === "Todos" ||
-          normalizeLocationText(eventDistrict) ===
-            normalizeLocationText(districtFilter);
-
-        const matchesMunicipality =
-          municipalityFilter === "Todos" ||
-          normalizeLocationText(eventMunicipality) ===
-            normalizeLocationText(municipalityFilter);
-
-        const matchesCity =
-          cityFilter === "Todas" ||
-          normalizeLocationText(event.city) === normalizeLocationText(cityFilter);
-
-        const matchesCategory =
-          categoryFilter === "Todas" ||
-          String(event.category || "") === categoryFilter;
-
-        const matchesFeatured = !onlyFeatured || Boolean(event.featured);
-
-        const searchableText = normalizeText(
-          [
-            event.title,
-            event.venue_name,
-            event.organizer_name,
-            event.description,
-            event.city,
-            eventMunicipality,
-            eventDistrict,
-            event.address,
-            event.postal_code,
-            event.category,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        );
-
-        const matchesSearch =
-          !cleanSearch || searchableText.includes(cleanSearch);
-
-        return (
-          matchesDistrict &&
-          matchesMunicipality &&
-          matchesCity &&
-          matchesCategory &&
-          matchesFeatured &&
-          matchesSearch
-        );
-      })
+    return filterIndexedEvents(indexedEvents, {
+      searchQuery,
+      districtFilter,
+      municipalityFilter,
+      cityFilter,
+      categoryFilter,
+      dateFilter,
+      priceFilter,
+      onlyFeatured,
+    })
+      .map((indexedEvent) => indexedEvent.event)
       .sort(sortEvents);
   }, [
-    events,
+    indexedEvents,
     searchQuery,
     districtFilter,
     municipalityFilter,
     cityFilter,
     categoryFilter,
+    dateFilter,
+    priceFilter,
     onlyFeatured,
   ]);
 
@@ -350,21 +248,23 @@ export default function AgendaPage() {
 
   function handleDistrictChange(value: string) {
     setDistrictFilter(value);
-    setMunicipalityFilter("Todos");
-    setCityFilter("Todas");
+    setMunicipalityFilter(ALL_MUNICIPALITIES);
+    setCityFilter(ALL_CITIES);
   }
 
   function handleMunicipalityChange(value: string) {
     setMunicipalityFilter(value);
-    setCityFilter("Todas");
+    setCityFilter(ALL_CITIES);
   }
 
   function clearFilters() {
     setSearchQuery("");
-    setDistrictFilter("Todos");
-    setMunicipalityFilter("Todos");
-    setCityFilter("Todas");
-    setCategoryFilter("Todas");
+    setDistrictFilter(ALL_DISTRICTS);
+    setMunicipalityFilter(ALL_MUNICIPALITIES);
+    setCityFilter(ALL_CITIES);
+    setCategoryFilter(ALL_CATEGORIES);
+    setDateFilter("all");
+    setPriceFilter("all");
     setOnlyFeatured(false);
   }
 
@@ -519,6 +419,46 @@ export default function AgendaPage() {
                 >
                   {categoryOptions.map((category) => (
                     <option key={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Data
+                </label>
+
+                <select
+                  value={dateFilter}
+                  onChange={(event) =>
+                    setDateFilter(event.target.value as EventDateFilter)
+                  }
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                >
+                  {eventDateFilterOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  Preço
+                </label>
+
+                <select
+                  value={priceFilter}
+                  onChange={(event) =>
+                    setPriceFilter(event.target.value as EventPriceFilter)
+                  }
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                >
+                  {eventPriceFilterOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>

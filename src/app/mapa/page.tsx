@@ -3,11 +3,25 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ALL_CATEGORIES,
+  ALL_CITIES,
+  ALL_DISTRICTS,
+  ALL_MUNICIPALITIES,
+  buildEventFilterIndex,
+  eventDateFilterOptions,
+  type EventDateFilter,
+  eventPriceFilterOptions,
+  type EventPriceFilter,
+  filterIndexedEvents,
+  getCategoryOptionsForIndexedEvents,
+  getCityOptionsForIndexedEvents,
+  getDistrictOptions,
+  getMunicipalityOptions,
+  normalizeEventText,
+} from "@/lib/eventFilters";
+import {
   getCanonicalDistrict,
   getCanonicalMunicipality,
-  getMunicipalitiesForDistrict,
-  normalizeLocationText,
-  portugalDistricts,
   portugalMunicipalities,
 } from "@/lib/portugalLocations";
 import { supabase } from "@/lib/supabase/public";
@@ -17,7 +31,20 @@ type RadiusFilter = "5" | "15" | "50" | "150" | "all";
 type UserLocation = {
   latitude: number;
   longitude: number;
+  accuracyKm: number | null;
+  label: string;
+  source: "browser" | "manual";
 };
+
+type Coordinate = {
+  latitude: number;
+  longitude: number;
+};
+
+type GeolocationErrorCode = 1 | 2 | 3;
+
+const LOCATION_RADIUS_BUFFER_KM = 0.75;
+const GOOD_LOCATION_ACCURACY_METERS = 150;
 
 type VenueRow = {
   id: string;
@@ -29,8 +56,8 @@ type VenueRow = {
   address: string | null;
   postal_code: string | null;
   description: string | null;
-  latitude: number | null;
-  longitude: number | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
 };
 
 type EventRow = {
@@ -59,8 +86,8 @@ type EventRow = {
   featured: boolean | null;
   ticket_mode: string | null;
   ticket_price: string | null;
-  latitude: number | null;
-  longitude: number | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
 };
 
 type EventWithLocation = EventRow & {
@@ -71,39 +98,12 @@ type EventWithLocation = EventRow & {
   locationLabel: string;
 };
 
-const fallbackCategories = [
-  "Concertos",
-  "Festivais",
-  "DJ Sets",
-  "Cinema",
-  "Exposições",
-  "Mercados",
-  "Workshops",
-  "Teatro",
-  "Outros",
-];
-
-function normalizeName(value: string | null | undefined) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function normalizeSearchText(value: string | null | undefined) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function uniqueSorted(values: string[]) {
-  return Array.from(new Set(values.filter(Boolean))).sort((first, second) =>
-    first.localeCompare(second, "pt-PT")
-  );
-}
+type GeocodeResponse = {
+  latitude?: number;
+  longitude?: number;
+  display_name?: string;
+  error?: string;
+};
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -163,7 +163,7 @@ function toRadians(value: number) {
   return (value * Math.PI) / 180;
 }
 
-function distanceInKm(first: UserLocation, second: UserLocation) {
+function distanceInKm(first: Coordinate, second: Coordinate) {
   const earthRadiusKm = 6371;
 
   const latitudeDistance = toRadians(second.latitude - first.latitude);
@@ -195,6 +195,149 @@ function formatDistance(value: number | null) {
   }
 
   return `${value.toFixed(1)} km`;
+}
+
+function formatAccuracy(value: number | null) {
+  if (value === null) {
+    return "precisão desconhecida";
+  }
+
+  if (value < 1) {
+    return `precisão aprox. ${Math.round(value * 1000)} m`;
+  }
+
+  return `precisão aprox. ${value.toFixed(1)} km`;
+}
+
+function normalizeCoordinate(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed =
+    typeof value === "number" ? value : Number(value.replace(",", "."));
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function resolveCoordinates({
+  latitude,
+  longitude,
+}: {
+  latitude: number | string | null | undefined;
+  longitude: number | string | null | undefined;
+}) {
+  const parsedLatitude = normalizeCoordinate(latitude);
+  const parsedLongitude = normalizeCoordinate(longitude);
+
+  if (parsedLatitude === null || parsedLongitude === null) {
+    return {
+      latitude: null,
+      longitude: null,
+    };
+  }
+
+  const looksSwapped =
+    parsedLatitude >= -10 &&
+    parsedLatitude <= -5 &&
+    parsedLongitude >= 32 &&
+    parsedLongitude <= 43;
+
+  return {
+    latitude: looksSwapped ? parsedLongitude : parsedLatitude,
+    longitude: looksSwapped ? parsedLatitude : parsedLongitude,
+  };
+}
+
+function getGeolocationErrorMessage(error: GeolocationPositionError) {
+  const code = error.code as GeolocationErrorCode;
+
+  if (code === 1) {
+    return "A localização está bloqueada neste browser. Autoriza a localização para a Paranoid nas permissões do site e tenta outra vez.";
+  }
+
+  if (code === 2) {
+    return "Não consegui determinar a tua localização. Confirma se o GPS/Wi-Fi está ativo e tenta outra vez.";
+  }
+
+  if (code === 3) {
+    return "A localização demorou demasiado tempo. Tenta outra vez ou usa distrito/concelho enquanto isso.";
+  }
+
+  return "Não deu para obter a tua localização. Podes usar distrito, concelho ou localidade.";
+}
+
+function isGeolocationError(error: unknown): error is GeolocationPositionError {
+  return typeof error === "object" && error !== null && "code" in error;
+}
+
+function getCurrentPosition(options: PositionOptions) {
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+function getBestWatchedPosition() {
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    let bestPosition: GeolocationPosition | null = null;
+    let settled = false;
+
+    const finish = (position: GeolocationPosition) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      navigator.geolocation.clearWatch(watchId);
+      window.clearTimeout(timeoutId);
+      resolve(position);
+    };
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        if (
+          !bestPosition ||
+          position.coords.accuracy < bestPosition.coords.accuracy
+        ) {
+          bestPosition = position;
+        }
+
+        if (position.coords.accuracy <= GOOD_LOCATION_ACCURACY_METERS) {
+          finish(position);
+        }
+      },
+      (error) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        navigator.geolocation.clearWatch(watchId);
+        window.clearTimeout(timeoutId);
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 20000,
+      }
+    );
+
+    const timeoutId = window.setTimeout(() => {
+      if (settled) {
+        return;
+      }
+
+      if (bestPosition) {
+        finish(bestPosition);
+        return;
+      }
+
+      settled = true;
+      navigator.geolocation.clearWatch(watchId);
+      reject({ code: 3 });
+    }, 22000);
+  });
 }
 
 function buildGoogleMapsUrl(
@@ -311,13 +454,17 @@ export default function MapPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [manualLocationQuery, setManualLocationQuery] = useState("");
 
   const [radiusFilter, setRadiusFilter] = useState<RadiusFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [districtFilter, setDistrictFilter] = useState("Todos");
-  const [municipalityFilter, setMunicipalityFilter] = useState("Todos");
-  const [cityFilter, setCityFilter] = useState("Todas");
-  const [categoryFilter, setCategoryFilter] = useState("Todas");
+  const [districtFilter, setDistrictFilter] = useState(ALL_DISTRICTS);
+  const [municipalityFilter, setMunicipalityFilter] =
+    useState(ALL_MUNICIPALITIES);
+  const [cityFilter, setCityFilter] = useState(ALL_CITIES);
+  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
+  const [dateFilter, setDateFilter] = useState<EventDateFilter>("all");
+  const [priceFilter, setPriceFilter] = useState<EventPriceFilter>("all");
   const [onlyWithLocation, setOnlyWithLocation] = useState(false);
 
   const venueById = useMemo(() => {
@@ -334,7 +481,7 @@ export default function MapPage() {
     const map = new Map<string, VenueRow>();
 
     venues.forEach((venue) => {
-      map.set(normalizeName(venue.name), venue);
+      map.set(normalizeEventText(venue.name), venue);
     });
 
     return map;
@@ -344,18 +491,20 @@ export default function MapPage() {
     return events.map((event) => {
       const venue =
         (event.venue_id ? venueById.get(event.venue_id) || null : null) ||
-        venueByName.get(normalizeName(event.venue_name)) ||
+        venueByName.get(normalizeEventText(event.venue_name)) ||
         null;
 
-      const finalLatitude =
-        event.latitude !== null && event.latitude !== undefined
-          ? event.latitude
-          : venue?.latitude ?? null;
-
+      const eventCoordinates = resolveCoordinates({
+        latitude: event.latitude,
+        longitude: event.longitude,
+      });
+      const venueCoordinates = resolveCoordinates({
+        latitude: venue?.latitude,
+        longitude: venue?.longitude,
+      });
+      const finalLatitude = eventCoordinates.latitude ?? venueCoordinates.latitude;
       const finalLongitude =
-        event.longitude !== null && event.longitude !== undefined
-          ? event.longitude
-          : venue?.longitude ?? null;
+        eventCoordinates.longitude ?? venueCoordinates.longitude;
 
       const hasCoordinates = finalLatitude !== null && finalLongitude !== null;
 
@@ -390,67 +539,61 @@ export default function MapPage() {
     });
   }, [events, venueById, venueByName, userLocation]);
 
-  const districtOptions = useMemo(() => {
-    return ["Todos", ...portugalDistricts];
-  }, []);
+  const indexedEvents = useMemo(() => {
+    return eventsWithLocation.map((event) =>
+      buildEventFilterIndex(event, {
+        getDistrict: getEventDistrict,
+        getMunicipality: getEventMunicipality,
+        getCity: getEventCity,
+        extraSearchText: (event) => [
+          event.venue?.name,
+          event.venue?.address,
+          event.venue?.postal_code,
+          event.venue?.city,
+          event.venue?.municipality,
+          event.venue?.district,
+        ],
+      })
+    );
+  }, [eventsWithLocation]);
+
+  const districtOptions = useMemo(() => getDistrictOptions(), []);
 
   const municipalityOptions = useMemo(() => {
-    if (districtFilter === "Todos") {
-      return ["Todos", ...portugalMunicipalities];
-    }
-
-    return ["Todos", ...getMunicipalitiesForDistrict(districtFilter)];
+    return getMunicipalityOptions(districtFilter);
   }, [districtFilter]);
 
   const cityOptions = useMemo(() => {
-    const cities = eventsWithLocation
-      .filter((event) => {
-        const eventDistrict = getEventDistrict(event);
-        const eventMunicipality = getEventMunicipality(event);
-
-        if (
-          districtFilter !== "Todos" &&
-          normalizeLocationText(eventDistrict) !==
-            normalizeLocationText(districtFilter)
-        ) {
-          return false;
-        }
-
-        if (
-          municipalityFilter !== "Todos" &&
-          normalizeLocationText(eventMunicipality) !==
-            normalizeLocationText(municipalityFilter)
-        ) {
-          return false;
-        }
-
-        return true;
-      })
-      .map((event) => getEventCity(event));
-
-    return ["Todas", ...uniqueSorted(cities)];
-  }, [eventsWithLocation, districtFilter, municipalityFilter]);
+    return getCityOptionsForIndexedEvents(
+      indexedEvents,
+      districtFilter,
+      municipalityFilter
+    );
+  }, [indexedEvents, districtFilter, municipalityFilter]);
 
   const categoryOptions = useMemo(() => {
-    const categories = [
-      ...fallbackCategories,
-      ...eventsWithLocation.map((event) => event.category || ""),
-    ];
-
-    return ["Todas", ...uniqueSorted(categories)];
-  }, [eventsWithLocation]);
+    return getCategoryOptionsForIndexedEvents(indexedEvents);
+  }, [indexedEvents]);
 
   const filteredEvents = useMemo(() => {
-    const cleanSearch = normalizeSearchText(searchQuery);
+    const radiusLimit =
+      userLocation && radiusFilter !== "all"
+        ? Number(radiusFilter) + LOCATION_RADIUS_BUFFER_KM
+        : null;
 
-    return eventsWithLocation
+    return filterIndexedEvents(indexedEvents, {
+      searchQuery,
+      districtFilter,
+      municipalityFilter,
+      cityFilter,
+      categoryFilter,
+      dateFilter,
+      priceFilter,
+    })
+      .map((indexedEvent) => indexedEvent.event)
       .filter((event) => {
         const hasCoordinates =
           event.finalLatitude !== null && event.finalLongitude !== null;
-
-        const eventDistrict = getEventDistrict(event);
-        const eventMunicipality = getEventMunicipality(event);
-        const eventCity = getEventCity(event);
 
         if (onlyWithLocation && !hasCoordinates) {
           return false;
@@ -460,80 +603,27 @@ export default function MapPage() {
           return false;
         }
 
-        if (districtFilter !== "Todos") {
-          if (
-            normalizeLocationText(eventDistrict) !==
-            normalizeLocationText(districtFilter)
-          ) {
-            return false;
-          }
-        }
-
-        if (municipalityFilter !== "Todos") {
-          if (
-            normalizeLocationText(eventMunicipality) !==
-            normalizeLocationText(municipalityFilter)
-          ) {
-            return false;
-          }
-        }
-
-        if (cityFilter !== "Todas") {
-          if (
-            normalizeLocationText(eventCity) !== normalizeLocationText(cityFilter)
-          ) {
-            return false;
-          }
-        }
-
-        if (categoryFilter !== "Todas" && event.category !== categoryFilter) {
-          return false;
-        }
-
-        if (cleanSearch) {
-          const searchableText = normalizeSearchText(
-            [
-              event.title,
-              event.venue_name,
-              event.organizer_name,
-              event.description,
-              event.address,
-              event.postal_code,
-              eventCity,
-              eventMunicipality,
-              eventDistrict,
-              event.venue?.name,
-              event.venue?.address,
-              event.venue?.postal_code,
-            ]
-              .filter(Boolean)
-              .join(" ")
-          );
-
-          if (!searchableText.includes(cleanSearch)) {
-            return false;
-          }
-        }
-
         if (userLocation && radiusFilter !== "all") {
           if (event.distanceKm === null) {
             return false;
           }
 
-          return event.distanceKm <= Number(radiusFilter);
+          return radiusLimit !== null && event.distanceKm <= radiusLimit;
         }
 
         return true;
       })
       .sort(sortEvents);
   }, [
-    eventsWithLocation,
+    indexedEvents,
     onlyWithLocation,
     radiusFilter,
     districtFilter,
     municipalityFilter,
     cityFilter,
     categoryFilter,
+    dateFilter,
+    priceFilter,
     searchQuery,
     userLocation,
   ]);
@@ -586,7 +676,7 @@ export default function MapPage() {
     loadMapData();
   }, []);
 
-  function requestLocation() {
+  async function requestLocation(nextRadius: RadiusFilter = "50") {
     setMessage("");
 
     if (!navigator.geolocation) {
@@ -594,51 +684,201 @@ export default function MapPage() {
       return;
     }
 
+    if (!window.isSecureContext) {
+      setMessage(
+        "O browser só permite localização em HTTPS. Em telemóvel, um endereço local por HTTP costuma bloquear sempre. Abre a Paranoid num domínio seguro para usar o raio."
+      );
+      return;
+    }
+
     setLocationLoading(true);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+    try {
+      let position: GeolocationPosition;
+
+      try {
+        position = await getBestWatchedPosition();
+      } catch (error) {
+        if (isGeolocationError(error) && error.code === 1) {
+          throw error;
+        }
+
+        position = await getCurrentPosition({
+          enableHighAccuracy: false,
+          timeout: 18000,
+          maximumAge: 300000,
         });
-
-        setRadiusFilter("50");
-        setLocationLoading(false);
-      },
-      () => {
-        setMessage(
-          "Não deu para obter a tua localização. Podes usar os filtros por distrito, concelho ou localidade."
-        );
-
-        setLocationLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
       }
-    );
+
+      setUserLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracyKm: Number.isFinite(position.coords.accuracy)
+          ? position.coords.accuracy / 1000
+          : null,
+        label: "A tua localização atual",
+        source: "browser",
+      });
+
+      setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
+      setDistrictFilter(ALL_DISTRICTS);
+      setMunicipalityFilter(ALL_MUNICIPALITIES);
+      setCityFilter(ALL_CITIES);
+    } catch (error) {
+      setMessage(
+        isGeolocationError(error)
+          ? getGeolocationErrorMessage(error)
+          : "Não deu para obter a tua localização. Podes usar distrito, concelho ou localidade."
+      );
+    } finally {
+      setLocationLoading(false);
+    }
   }
+
+  function handleRadiusChange(value: RadiusFilter) {
+    if (value === "all") {
+      setRadiusFilter("all");
+      return;
+    }
+
+    if (!userLocation) {
+      if (manualLocationQuery.trim()) {
+        useManualLocation(value);
+        return;
+      }
+
+      requestLocation(value);
+      return;
+    }
+
+    setRadiusFilter(value);
+  }
+
+  function handleLocationButtonClick() {
+    requestLocation(radiusFilter === "all" ? "50" : radiusFilter);
+  }
+
+  async function useManualLocation(nextRadius: RadiusFilter = "50") {
+    const cleanQuery = manualLocationQuery.trim();
+
+    if (!cleanQuery) {
+      setMessage("Escreve uma morada, localidade, cidade ou concelho para usar como origem do raio.");
+      return;
+    }
+
+    setLocationLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/geocode", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: cleanQuery,
+        }),
+      });
+
+      const result = (await response.json()) as GeocodeResponse;
+
+      if (!response.ok) {
+        setMessage(result.error || "Não consegui localizar essa morada/localidade.");
+        return;
+      }
+
+      if (
+        typeof result.latitude !== "number" ||
+        typeof result.longitude !== "number"
+      ) {
+        setMessage("A localização encontrada veio sem coordenadas válidas.");
+        return;
+      }
+
+      setUserLocation({
+        latitude: result.latitude,
+        longitude: result.longitude,
+        accuracyKm: 0,
+        label: result.display_name || cleanQuery,
+        source: "manual",
+      });
+      setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
+      setDistrictFilter(ALL_DISTRICTS);
+      setMunicipalityFilter(ALL_MUNICIPALITIES);
+      setCityFilter(ALL_CITIES);
+    } catch {
+      setMessage("Não deu para localizar essa morada/localidade agora.");
+    } finally {
+      setLocationLoading(false);
+    }
+  }
+
+  function clearUserLocation() {
+    setUserLocation(null);
+    setRadiusFilter("all");
+  }
+
+  function getLocationHint() {
+    if (locationLoading) {
+      return "A pedir permissão ao browser e a calcular distâncias...";
+    }
+
+    if (userLocation) {
+      if (userLocation.source === "manual") {
+        return `Origem do raio: ${userLocation.label}. Podes ajustar o raio abaixo.`;
+      }
+
+      if (userLocation.accuracyKm !== null && userLocation.accuracyKm > 1) {
+        return `Localização automática pouco precisa (${formatAccuracy(
+          userLocation.accuracyKm
+        )}). Para raio de 5 km, escreve a tua morada/localidade no campo manual.`;
+      }
+
+      return `Localização automática ativa (${formatAccuracy(
+        userLocation.accuracyKm
+      )}).`;
+    }
+
+    return "Escolhe um raio ou usa o botão de localização para ver eventos perto de ti.";
+  }
+
+  function getRadiusLabel() {
+    if (!userLocation && radiusFilter !== "all") {
+      return "A pedir localização";
+    }
+
+    if (radiusFilter === "all") {
+      return "Portugal inteiro";
+    }
+
+    if (userLocation?.accuracyKm) {
+      return `Até ${radiusFilter} km`;
+    }
+
+    return `Até ${radiusFilter} km`;
+  }
+
 
   function handleDistrictChange(value: string) {
     setDistrictFilter(value);
-    setMunicipalityFilter("Todos");
-    setCityFilter("Todas");
+    setMunicipalityFilter(ALL_MUNICIPALITIES);
+    setCityFilter(ALL_CITIES);
   }
 
   function handleMunicipalityChange(value: string) {
     setMunicipalityFilter(value);
-    setCityFilter("Todas");
+    setCityFilter(ALL_CITIES);
   }
 
   function clearFilters() {
     setRadiusFilter(userLocation ? "50" : "all");
     setSearchQuery("");
-    setDistrictFilter("Todos");
-    setMunicipalityFilter("Todos");
-    setCityFilter("Todas");
-    setCategoryFilter("Todas");
+    setDistrictFilter(ALL_DISTRICTS);
+    setMunicipalityFilter(ALL_MUNICIPALITIES);
+    setCityFilter(ALL_CITIES);
+    setCategoryFilter(ALL_CATEGORIES);
+    setDateFilter("all");
+    setPriceFilter("all");
     setOnlyWithLocation(false);
   }
 
@@ -690,7 +930,7 @@ export default function MapPage() {
             <div className="mt-6 grid gap-3">
               <button
                 type="button"
-                onClick={requestLocation}
+                onClick={handleLocationButtonClick}
                 disabled={locationLoading}
                 className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
               >
@@ -704,10 +944,7 @@ export default function MapPage() {
               {userLocation && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setUserLocation(null);
-                    setRadiusFilter("all");
-                  }}
+                  onClick={clearUserLocation}
                   className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
                 >
                   Desligar localização
@@ -715,11 +952,42 @@ export default function MapPage() {
               )}
             </div>
 
-            {userLocation && (
-              <p className="mt-5 rounded-2xl border border-green-900 bg-green-950/20 p-4 text-sm text-green-400">
-                Localização ativa. A mostrar eventos por distância real.
-              </p>
-            )}
+            <form
+              className="mt-5 grid gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
+              }}
+            >
+              <label className="text-sm font-bold text-zinc-300">
+                Ou define a origem do raio
+              </label>
+
+              <input
+                value={manualLocationQuery}
+                onChange={(event) => setManualLocationQuery(event.target.value)}
+                placeholder="Ex: Rua..., Pombal ou Leiria"
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+
+              <button
+                type="submit"
+                disabled={locationLoading}
+                className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
+              >
+                Usar esta morada/localidade
+              </button>
+            </form>
+
+            <p
+              className={`mt-5 rounded-2xl border p-4 text-sm ${
+                userLocation
+                  ? "border-green-900 bg-green-950/20 text-green-400"
+                  : "border-zinc-800 bg-black text-zinc-500"
+              }`}
+            >
+              {getLocationHint()}
+            </p>
           </div>
         </section>
 
@@ -762,9 +1030,9 @@ export default function MapPage() {
                   <select
                     value={radiusFilter}
                     onChange={(event) =>
-                      setRadiusFilter(event.target.value as RadiusFilter)
+                      handleRadiusChange(event.target.value as RadiusFilter)
                     }
-                    disabled={!userLocation}
+                    disabled={locationLoading}
                     className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
                   >
                     <option value="all">Portugal inteiro</option>
@@ -776,7 +1044,7 @@ export default function MapPage() {
 
                   {!userLocation && (
                     <p className="mt-2 text-xs text-zinc-600">
-                      O raio só fica ativo depois de ligares a localização.
+                      Ao escolher um raio, o browser vai pedir a tua localização.
                     </p>
                   )}
                 </div>
@@ -791,7 +1059,7 @@ export default function MapPage() {
                     onChange={(event) => handleDistrictChange(event.target.value)}
                     className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
                   >
-                    {["Todos", ...portugalDistricts].map((district) => (
+                    {districtOptions.map((district) => (
                       <option key={district}>{district}</option>
                     ))}
                   </select>
@@ -852,6 +1120,46 @@ export default function MapPage() {
                   >
                     {categoryOptions.map((category) => (
                       <option key={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Data
+                  </label>
+
+                  <select
+                    value={dateFilter}
+                    onChange={(event) =>
+                      setDateFilter(event.target.value as EventDateFilter)
+                    }
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  >
+                    {eventDateFilterOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                    Preço
+                  </label>
+
+                  <select
+                    value={priceFilter}
+                    onChange={(event) =>
+                      setPriceFilter(event.target.value as EventPriceFilter)
+                    }
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  >
+                    {eventPriceFilterOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -964,7 +1272,7 @@ export default function MapPage() {
               <p className="mt-4 text-sm text-zinc-500">
                 {filteredEvents.length} evento
                 {filteredEvents.length === 1 ? "" : "s"} visível
-                {filteredEvents.length === 1 ? "" : "s"}.
+                {filteredEvents.length === 1 ? "" : "s"} · {getRadiusLabel()}.
               </p>
             </div>
 

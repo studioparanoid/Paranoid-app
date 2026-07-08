@@ -249,12 +249,18 @@ async function geocodeAddress({
   municipality: string;
   district: string;
 }) {
+  const query = [venue, address, postalCode, city, municipality, district]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(", ");
+
   const response = await fetch("/api/geocode", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      query,
       venue,
       address,
       postal_code: postalCode,
@@ -661,8 +667,8 @@ export function AdminEventCreateClient() {
   async function handleFindLocation() {
     setMessage("");
 
-    if (!address.trim() || (!city.trim() && !municipality.trim())) {
-      setMessage("Mete pelo menos morada e localidade/concelho para localizar.");
+    if (!address.trim()) {
+      setMessage("Mete a morada para localizar.");
       return null;
     }
 
@@ -751,9 +757,9 @@ export function AdminEventCreateClient() {
   async function handleCreateEvent() {
     setMessage("");
 
-    if (!title || !organizer || !city || !municipality || !venue || !eventDate) {
+    if (!title || !organizer || !venue || !eventDate) {
       setMessage(
-        "Preenche pelo menos nome do evento, organizador, localidade, concelho, espaço e data."
+        "Preenche pelo menos nome do evento, organizador, espaço e data."
       );
       return;
     }
@@ -816,6 +822,26 @@ export function AdminEventCreateClient() {
         setLatitude(result.latitude);
         setLongitude(result.longitude);
         setGeocodeLabel(result.display_name);
+
+        if (!city.trim() && finalCity) {
+          setCity(finalCity);
+        }
+
+        if (!municipality.trim() && finalMunicipality) {
+          setMunicipality(finalMunicipality);
+        }
+
+        if (!district.trim() && finalDistrict) {
+          setDistrict(finalDistrict);
+        }
+      }
+
+      if (!finalCity || !finalMunicipality || !finalDistrict) {
+        setMessage(
+          "Localização encontrada, mas faltou localidade, concelho ou distrito. Preenche esses campos para avançar."
+        );
+        setSaving(false);
+        return;
       }
 
       const location: LocationPayload = {
@@ -967,6 +993,13 @@ export function AdminEventCreateClient() {
         </div>
       </div>
 
+      <div className="mt-6 rounded-2xl border border-red-950 bg-red-950/20 p-4">
+        <p className="text-sm font-bold text-red-300">
+          Nova ordem: primeiro nome do evento, depois espaço e organizador,
+          depois localização automática pela morada.
+        </p>
+      </div>
+
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <div className="lg:col-span-2">
           <label className="mb-2 block text-sm font-bold text-zinc-300">
@@ -990,6 +1023,12 @@ export function AdminEventCreateClient() {
           />
         )}
 
+        <div className="lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            1. Evento
+          </p>
+        </div>
+
         <div>
           <label className="mb-2 block text-sm font-bold text-zinc-300">
             Nome do evento
@@ -999,6 +1038,28 @@ export function AdminEventCreateClient() {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Ex: Noite Paranoid Vol. I"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
+        </div>
+
+        <div className="lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            2. Espaço e organização
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Espaço / local
+          </label>
+
+          <input
+            value={venue}
+            onChange={(event) => {
+              setVenue(event.target.value);
+              clearGeocode();
+            }}
+            placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
             className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
           />
         </div>
@@ -1016,121 +1077,15 @@ export function AdminEventCreateClient() {
           />
         </div>
 
-        <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Artistas / bandas / DJs
-          </label>
-
-          <input
-            value={artistsText}
-            onChange={(event) => setArtistsText(event.target.value)}
-            placeholder="Separar por vírgulas"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Categoria
-          </label>
-
-          <select
-            value={category}
-            onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-          >
-            {categories.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Localidade
-          </label>
-
-          <input
-            list="admin-event-city-suggestions"
-            value={city}
-            onChange={(event) => {
-              setCity(event.target.value);
-              clearGeocode();
-            }}
-            placeholder="Ex: Alvorge, Pombal, Leiria..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-
-          <datalist id="admin-event-city-suggestions">
-            {citySuggestions.map((item) => (
-              <option key={item} value={item} />
-            ))}
-          </datalist>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Concelho
-          </label>
-
-          <input
-            list="admin-event-municipality-suggestions"
-            value={municipality}
-            onChange={(event) => {
-              setMunicipality(event.target.value);
-              clearGeocode();
-            }}
-            placeholder="Ex: Ansião, Pombal, Leiria..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-
-          <datalist id="admin-event-municipality-suggestions">
-            {municipalitySuggestions.map((item) => (
-              <option key={item} value={item} />
-            ))}
-          </datalist>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Distrito
-          </label>
-
-          <input
-            value={district}
-            onChange={(event) => {
-              setDistrict(event.target.value);
-              clearGeocode();
-            }}
-            placeholder="Ex: Leiria, Coimbra, Lisboa..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-        </div>
-
-        <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
-            Espaço / local
-          </label>
-
-          <input
-            value={venue}
-            onChange={(event) => {
-              setVenue(event.target.value);
-              clearGeocode();
-            }}
-            placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-          />
-        </div>
-
         <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">
           <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-            Morada
+            3. Localização automática
           </p>
 
           <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-            Mete a morada do espaço. A Paranoid calcula as coordenadas
-            automaticamente e guarda localidade, concelho e distrito para o mapa.
+            Mete a morada real do espaço. A Paranoid encontra as coordenadas
+            exatas primeiro; só depois guarda localidade, concelho e distrito
+            para o mapa.
           </p>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -1222,6 +1177,116 @@ export function AdminEventCreateClient() {
             Geocoding por OpenStreetMap/Nominatim. Sem autocomplete. Sem
             coordenadas manuais para o cliente.
           </p>
+        </div>
+
+        <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            4. Zona confirmada
+          </p>
+
+          <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+            A Paranoid tenta preencher isto pela morada. Corrige manualmente se
+            a localização automática não bater certo.
+          </p>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-3">
+            <div>
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Localidade
+              </label>
+
+              <input
+                list="admin-event-city-suggestions"
+                value={city}
+                onChange={(event) => {
+                  setCity(event.target.value);
+                  clearGeocode();
+                }}
+                placeholder="Ex: Alvorge, Pombal, Leiria..."
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+
+              <datalist id="admin-event-city-suggestions">
+                {citySuggestions.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Concelho
+              </label>
+
+              <input
+                list="admin-event-municipality-suggestions"
+                value={municipality}
+                onChange={(event) => {
+                  setMunicipality(event.target.value);
+                  clearGeocode();
+                }}
+                placeholder="Ex: Ansião, Pombal, Leiria..."
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+
+              <datalist id="admin-event-municipality-suggestions">
+                {municipalitySuggestions.map((item) => (
+                  <option key={item} value={item} />
+                ))}
+              </datalist>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-zinc-300">
+                Distrito
+              </label>
+
+              <input
+                value={district}
+                onChange={(event) => {
+                  setDistrict(event.target.value);
+                  clearGeocode();
+                }}
+                placeholder="Ex: Leiria, Coimbra, Lisboa..."
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            5. Detalhes do evento
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Categoria
+          </label>
+
+          <select
+            value={category}
+            onChange={(event) => handleCategoryChange(event.target.value)}
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+          >
+            {categories.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold text-zinc-300">
+            Artistas / bandas / DJs
+          </label>
+
+          <input
+            value={artistsText}
+            onChange={(event) => setArtistsText(event.target.value)}
+            placeholder="Separar por vírgulas"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+          />
         </div>
 
         <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3 lg:col-span-2">

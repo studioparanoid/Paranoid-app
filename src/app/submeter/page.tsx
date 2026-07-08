@@ -27,15 +27,19 @@ export default function SubmitEventPage() {
 
                 <div className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-400">
                   <p>
-                    1. Envias os dados do evento.
+                    1. Nome do evento.
                   </p>
 
                   <p>
-                    2. A Paranoid revê a submissão.
+                    2. Espaço e organizador.
                   </p>
 
                   <p>
-                    3. Se estiver tudo certo, o evento entra na agenda pública.
+                    3. Morada real para localização automática.
+                  </p>
+
+                  <p>
+                    4. Distrito, concelho e localidade ficam para confirmação.
                   </p>
                 </div>
               </div>

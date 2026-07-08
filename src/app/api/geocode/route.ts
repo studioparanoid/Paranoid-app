@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 type GeocodeRequestBody = {
+  query?: string;
   venue?: string;
   address?: string;
   postal_code?: string;
@@ -57,6 +58,52 @@ function firstCleanValue(values: Array<string | undefined>) {
   return "";
 }
 
+function buildQuery(values: string[]) {
+  return [...values.filter(Boolean), "Portugal"].join(", ");
+}
+
+function uniqueQueries(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function pickBestResult(results: NominatimResult[]) {
+  return (
+    results.find((result) => {
+      const resultType = `${result.class || ""}:${result.type || ""}`;
+
+      return ![
+        "boundary:administrative",
+        "place:district",
+        "place:county",
+      ].includes(resultType);
+    }) || results[0]
+  );
+}
+
+async function searchNominatim(query: string) {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("q", query);
+  url.searchParams.set("limit", "5");
+  url.searchParams.set("countrycodes", "pt");
+  url.searchParams.set("addressdetails", "1");
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "User-Agent": "ParanoidApp/1.0 (https://paranoid.pt)",
+      "Accept-Language": "pt-PT,pt;q=0.9,en;q=0.7",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("O serviço de localização não respondeu bem.");
+  }
+
+  return (await response.json()) as NominatimResult[];
+}
+
 export async function POST(request: Request) {
   let body: GeocodeRequestBody;
 
@@ -67,66 +114,56 @@ export async function POST(request: Request) {
   }
 
   const venue = cleanText(body.venue);
+  const manualQuery = cleanText(body.query);
   const address = cleanText(body.address);
   const postalCode = cleanText(body.postal_code);
   const city = cleanText(body.city);
   const municipality = cleanText(body.municipality);
   const district = cleanText(body.district);
 
-  if (!address || (!city && !municipality)) {
+  if (!manualQuery && (!address || (!city && !municipality))) {
     return NextResponse.json(
       {
         error:
-          "Mete pelo menos morada e cidade/localidade ou concelho para localizar.",
+          "Mete uma morada/localidade ou pelo menos morada e cidade/concelho para localizar.",
       },
       { status: 400 }
     );
   }
 
-  const query = [
-    venue,
-    address,
-    postalCode,
-    city,
-    municipality,
-    district,
-    "Portugal",
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("q", query);
-  url.searchParams.set("limit", "1");
-  url.searchParams.set("countrycodes", "pt");
-  url.searchParams.set("addressdetails", "1");
+  const queries = manualQuery
+    ? uniqueQueries([
+        buildQuery([manualQuery]),
+        buildQuery([manualQuery, postalCode]),
+        buildQuery([manualQuery, municipality || city || district]),
+      ])
+    : uniqueQueries([
+        buildQuery([venue, address, postalCode, city, municipality, district]),
+        buildQuery([address, postalCode, city, municipality, district]),
+        buildQuery([address, postalCode, municipality, district]),
+        buildQuery([address, city, municipality, district]),
+        buildQuery([postalCode, city, municipality, district]),
+      ]);
 
   try {
-    const response = await fetch(url.toString(), {
-      method: "GET",
-      headers: {
-        "User-Agent": "ParanoidApp/1.0 (https://paranoid.pt)",
-        "Accept-Language": "pt-PT,pt;q=0.9,en;q=0.7",
-      },
-      cache: "no-store",
-    });
+    let bestResult: NominatimResult | undefined;
+    let usedQuery = queries[0] || "";
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: "O serviço de localização não respondeu bem." },
-        { status: 502 }
-      );
+    for (const query of queries) {
+      const results = await searchNominatim(query);
+      bestResult = pickBestResult(results);
+
+      if (bestResult) {
+        usedQuery = query;
+        break;
+      }
     }
-
-    const results = (await response.json()) as NominatimResult[];
-    const bestResult = results[0];
 
     if (!bestResult) {
       return NextResponse.json(
         {
           error:
-            "Não consegui encontrar coordenadas para essa morada. Confirma rua, número, código postal, localidade e concelho.",
+            "Não consegui encontrar coordenadas para essa localização. Confirma rua, número, código postal, localidade ou concelho.",
         },
         { status: 404 }
       );
@@ -170,7 +207,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       latitude,
       longitude,
-      display_name: bestResult.display_name || query,
+      display_name: bestResult.display_name || usedQuery,
       provider: "nominatim",
       city: resolvedCity,
       municipality: resolvedMunicipality,
