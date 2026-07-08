@@ -512,8 +512,8 @@ export function AdminEventCreateClient() {
   const [organizer, setOrganizer] = useState("");
   const [artistsText, setArtistsText] = useState("");
   const [category, setCategory] = useState("Concertos");
-  const [city, setCity] = useState("Pombal");
-  const [municipality, setMunicipality] = useState("Pombal");
+  const [city, setCity] = useState("");
+  const [municipality, setMunicipality] = useState("");
   const [district, setDistrict] = useState("");
   const [venue, setVenue] = useState("");
   const [address, setAddress] = useState("");
@@ -728,8 +728,8 @@ export function AdminEventCreateClient() {
     setOrganizer("");
     setArtistsText("");
     setCategory("Concertos");
-    setCity("Pombal");
-    setMunicipality("Pombal");
+    setCity("");
+    setMunicipality("");
     setDistrict("");
     setVenue("");
     setAddress("");

@@ -311,10 +311,12 @@ function getBestWatchedPosition() {
           return;
         }
 
-        settled = true;
-        navigator.geolocation.clearWatch(watchId);
-        window.clearTimeout(timeoutId);
-        reject(error);
+        if (isGeolocationError(error) && error.code === 1) {
+          settled = true;
+          navigator.geolocation.clearWatch(watchId);
+          window.clearTimeout(timeoutId);
+          reject(error);
+        }
       },
       {
         enableHighAccuracy: true,
@@ -578,7 +580,8 @@ export default function MapPage() {
   const filteredEvents = useMemo(() => {
     const radiusLimit =
       userLocation && radiusFilter !== "all"
-        ? Number(radiusFilter) + LOCATION_RADIUS_BUFFER_KM
+        ? Number(radiusFilter) +
+          Math.max(LOCATION_RADIUS_BUFFER_KM, userLocation.accuracyKm || 0)
         : null;
 
     return filterIndexedEvents(indexedEvents, {

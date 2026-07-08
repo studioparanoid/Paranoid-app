@@ -207,8 +207,8 @@ export function SubmitEventClient() {
   );
 
   const [title, setTitle] = useState("");
-  const [district, setDistrict] = useState("Leiria");
-  const [municipality, setMunicipality] = useState("Pombal");
+  const [district, setDistrict] = useState("");
+  const [municipality, setMunicipality] = useState("");
   const [city, setCity] = useState("Pombal");
   const [venue, setVenue] = useState("");
   const [address, setAddress] = useState("");

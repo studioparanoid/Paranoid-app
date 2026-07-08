@@ -121,11 +121,11 @@ export async function POST(request: Request) {
   const municipality = cleanText(body.municipality);
   const district = cleanText(body.district);
 
-  if (!manualQuery && (!address || (!city && !municipality))) {
+  if (!manualQuery && (!address || (!postalCode && !city && !municipality && !district))) {
     return NextResponse.json(
       {
         error:
-          "Mete uma morada/localidade ou pelo menos morada e cidade/concelho para localizar.",
+          "Mete uma morada com código postal, localidade ou concelho para localizar.",
       },
       { status: 400 }
     );
@@ -138,9 +138,11 @@ export async function POST(request: Request) {
         buildQuery([manualQuery, municipality || city || district]),
       ])
     : uniqueQueries([
-        buildQuery([venue, address, postalCode, city, municipality, district]),
-        buildQuery([address, postalCode, city, municipality, district]),
+        buildQuery([address, postalCode]),
+        buildQuery([venue, address, postalCode]),
         buildQuery([address, postalCode, municipality, district]),
+        buildQuery([address, postalCode, city, municipality, district]),
+        buildQuery([venue, address, postalCode, city, municipality, district]),
         buildQuery([address, city, municipality, district]),
         buildQuery([postalCode, city, municipality, district]),
       ]);
@@ -180,23 +182,23 @@ export async function POST(request: Request) {
     }
 
     const resolvedCity = firstCleanValue([
-      city,
       bestResult.address?.city,
       bestResult.address?.town,
       bestResult.address?.village,
       bestResult.address?.suburb,
+      city,
     ]);
 
     const resolvedMunicipality = firstCleanValue([
-      municipality,
       bestResult.address?.municipality,
       bestResult.address?.county,
+      municipality,
     ]);
 
     const resolvedDistrict = firstCleanValue([
-      district,
       bestResult.address?.state,
       bestResult.address?.region,
+      district,
     ]);
 
     const resolvedPostalCode = firstCleanValue([
