@@ -36,6 +36,11 @@ type UserLocation = {
   source: "browser" | "manual";
 };
 
+type SavedManualLocation = UserLocation & {
+  query: string;
+  source: "manual";
+};
+
 type Coordinate = {
   latitude: number;
   longitude: number;
@@ -45,6 +50,7 @@ type GeolocationErrorCode = 1 | 2 | 3;
 
 const LOCATION_RADIUS_BUFFER_KM = 0.75;
 const GOOD_LOCATION_ACCURACY_METERS = 50;
+const SAVED_MANUAL_LOCATION_KEY = "paranoid.map.manualLocation";
 
 type VenueRow = {
   id: string;
@@ -456,6 +462,8 @@ export default function MapPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [savedManualLocation, setSavedManualLocation] =
+    useState<SavedManualLocation | null>(null);
   const [manualLocationQuery, setManualLocationQuery] = useState("");
 
   const [radiusFilter, setRadiusFilter] = useState<RadiusFilter>("all");
@@ -699,6 +707,56 @@ export default function MapPage() {
     loadMapData();
   }, []);
 
+  useEffect(() => {
+    try {
+      const rawValue = window.localStorage.getItem(SAVED_MANUAL_LOCATION_KEY);
+
+      if (!rawValue) {
+        return;
+      }
+
+      const parsed = JSON.parse(rawValue) as SavedManualLocation;
+
+      if (
+        typeof parsed.latitude === "number" &&
+        typeof parsed.longitude === "number" &&
+        parsed.source === "manual"
+      ) {
+        setSavedManualLocation(parsed);
+        setManualLocationQuery(parsed.query || parsed.label || "");
+      }
+    } catch {
+      window.localStorage.removeItem(SAVED_MANUAL_LOCATION_KEY);
+    }
+  }, []);
+
+  function saveManualLocation(location: SavedManualLocation) {
+    setSavedManualLocation(location);
+    window.localStorage.setItem(
+      SAVED_MANUAL_LOCATION_KEY,
+      JSON.stringify(location)
+    );
+  }
+
+  function useSavedManualLocation(nextRadius: RadiusFilter = "50") {
+    if (!savedManualLocation) {
+      return;
+    }
+
+    setUserLocation(savedManualLocation);
+    setManualLocationQuery(savedManualLocation.query);
+    setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
+    setDistrictFilter(ALL_DISTRICTS);
+    setMunicipalityFilter(ALL_MUNICIPALITIES);
+    setCityFilter(ALL_CITIES);
+    setMessage("");
+  }
+
+  function forgetSavedManualLocation() {
+    setSavedManualLocation(null);
+    window.localStorage.removeItem(SAVED_MANUAL_LOCATION_KEY);
+  }
+
   async function requestLocation(nextRadius: RadiusFilter = "50") {
     setMessage("");
 
@@ -770,6 +828,11 @@ export default function MapPage() {
         return;
       }
 
+      if (savedManualLocation) {
+        useSavedManualLocation(value);
+        return;
+      }
+
       requestLocation(value);
       return;
     }
@@ -818,13 +881,17 @@ export default function MapPage() {
         return;
       }
 
-      setUserLocation({
+      const manualLocation: SavedManualLocation = {
         latitude: result.latitude,
         longitude: result.longitude,
         accuracyKm: 0,
         label: result.display_name || cleanQuery,
         source: "manual",
-      });
+        query: cleanQuery,
+      };
+
+      setUserLocation(manualLocation);
+      saveManualLocation(manualLocation);
       setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
       setDistrictFilter(ALL_DISTRICTS);
       setMunicipalityFilter(ALL_MUNICIPALITIES);
@@ -861,7 +928,7 @@ export default function MapPage() {
           userLocation.accuracyKm
         )}), mas o evento mais próximo dessa coordenada fica a ${formatDistance(
           closestLocatedEvent.distanceKm
-        )}. Se isto não bater certo, o browser está a devolver a origem errada.`;
+        )}. Se isto não bater certo, usa a morada manual: a Paranoid guarda essa origem neste browser e usa-a no raio.`;
       }
 
       if (userLocation.accuracyKm !== null && userLocation.accuracyKm > 1) {
@@ -997,7 +1064,41 @@ export default function MapPage() {
                   Ver ponto automático no Maps
                 </a>
               )}
+
+              {savedManualLocation && userLocation?.source !== "manual" && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    useSavedManualLocation(
+                      radiusFilter === "all" ? "50" : radiusFilter
+                    )
+                  }
+                  className="rounded-full border border-yellow-900 px-5 py-4 text-sm font-bold text-yellow-400"
+                >
+                  Usar morada guardada
+                </button>
+              )}
             </div>
+
+            {savedManualLocation && (
+              <div className="mt-4 rounded-2xl border border-zinc-800 bg-black p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                  Origem manual guardada
+                </p>
+
+                <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                  {savedManualLocation.query || savedManualLocation.label}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={forgetSavedManualLocation}
+                  className="mt-3 text-xs font-bold text-zinc-500 underline"
+                >
+                  Esquecer esta origem
+                </button>
+              </div>
+            )}
 
             <form
               className="mt-5 grid gap-3"
@@ -1022,7 +1123,7 @@ export default function MapPage() {
                 disabled={locationLoading}
                 className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
               >
-                Usar esta morada/localidade
+                Usar e guardar esta origem
               </button>
             </form>
 
