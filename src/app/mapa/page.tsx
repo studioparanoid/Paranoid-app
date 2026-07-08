@@ -757,8 +757,8 @@ export default function MapPage() {
         )}
 
         <section
-          className={`fixed inset-x-0 bottom-16 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-auto lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
-            controlsCollapsed ? "translate-y-[calc(100%-3.5rem)] lg:translate-y-0" : ""
+          className={`fixed inset-x-0 bottom-[57px] z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-auto lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
+            controlsCollapsed ? "translate-y-[calc(100%-2.5rem)] lg:translate-y-0" : ""
           }`}
         >
           {controlsCollapsed && (
@@ -766,7 +766,7 @@ export default function MapPage() {
               type="button"
               onClick={() => setControlsCollapsed(false)}
               aria-label="Abrir filtros do mapa"
-              className="mx-auto mb-3 grid h-10 w-16 place-items-center rounded-full border border-zinc-700 bg-black text-xl font-black text-[#f2f1ec] lg:hidden"
+              className="mx-auto mb-2 grid h-8 w-12 place-items-center rounded-full border border-zinc-700 bg-black text-base font-black text-[#f2f1ec] lg:hidden"
             >
               ↑
             </button>
