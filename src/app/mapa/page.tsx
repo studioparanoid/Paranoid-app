@@ -51,6 +51,7 @@ type GeolocationErrorCode = 1 | 2 | 3;
 const LOCATION_RADIUS_BUFFER_KM = 0.75;
 const GOOD_LOCATION_ACCURACY_METERS = 50;
 const SAVED_MANUAL_LOCATION_KEY = "paranoid.map.manualLocation";
+const MAX_AUTO_TO_MANUAL_DISTANCE_KM = 25;
 
 type VenueRow = {
   id: string;
@@ -259,15 +260,15 @@ function getGeolocationErrorMessage(error: GeolocationPositionError) {
   const code = error.code as GeolocationErrorCode;
 
   if (code === 1) {
-    return "A localização está bloqueada neste browser. Autoriza a localização para a Paranoid nas permissões do site e tenta outra vez.";
+    return "A localização está bloqueada. No telemóvel, autoriza a localização para este site no browser e confirma que a localização do sistema está ligada.";
   }
 
   if (code === 2) {
-    return "Não consegui determinar a tua localização. Confirma se o GPS/Wi-Fi está ativo e tenta outra vez.";
+    return "Não consegui determinar a tua localização. Confirma GPS/localização do sistema, Wi-Fi/dados móveis e tenta outra vez.";
   }
 
   if (code === 3) {
-    return "A localização demorou demasiado tempo. Tenta outra vez ou usa distrito/concelho enquanto isso.";
+    return "A localização demorou demasiado tempo. Tenta outra vez ao ar livre ou usa uma morada manual guardada como origem do raio.";
   }
 
   return "Não deu para obter a tua localização. Podes usar distrito, concelho ou localidade.";
@@ -791,7 +792,7 @@ export default function MapPage() {
         });
       }
 
-      setUserLocation({
+      const browserLocation: UserLocation = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
         accuracyKm: Number.isFinite(position.coords.accuracy)
@@ -799,7 +800,31 @@ export default function MapPage() {
           : null,
         label: "A tua localização atual",
         source: "browser",
-      });
+      };
+
+      if (savedManualLocation) {
+        const distanceFromSavedOrigin = distanceInKm(browserLocation, {
+          latitude: savedManualLocation.latitude,
+          longitude: savedManualLocation.longitude,
+        });
+
+        if (distanceFromSavedOrigin > MAX_AUTO_TO_MANUAL_DISTANCE_KM) {
+          setUserLocation(savedManualLocation);
+          setManualLocationQuery(savedManualLocation.query);
+          setMessage(
+            `A localização automática veio ${formatDistance(
+              distanceFromSavedOrigin
+            )} longe da tua origem guardada. Usei a morada guardada como origem do raio.`
+          );
+          setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
+          setDistrictFilter(ALL_DISTRICTS);
+          setMunicipalityFilter(ALL_MUNICIPALITIES);
+          setCityFilter(ALL_CITIES);
+          return;
+        }
+      }
+
+      setUserLocation(browserLocation);
 
       setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
       setDistrictFilter(ALL_DISTRICTS);
@@ -1026,8 +1051,9 @@ export default function MapPage() {
             </h2>
 
             <p className="mt-4 text-sm leading-relaxed text-zinc-500">
-              A localização é usada só no browser para calcular distância. Não é
-              guardada na base de dados.
+              A localização automática pede autorização ao browser e só funciona
+              em HTTPS. Se o browser mandar o ponto errado, usa uma morada
+              manual guardada.
             </p>
 
             <div className="mt-6 grid gap-3">
@@ -1038,10 +1064,10 @@ export default function MapPage() {
                 className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
               >
                 {locationLoading
-                  ? "A pedir localização..."
+                  ? "A pedir autorização GPS..."
                   : userLocation
-                    ? "Atualizar localização"
-                    : "Usar a minha localização"}
+                    ? "Pedir GPS outra vez"
+                    : "Pedir autorização GPS"}
               </button>
 
               {userLocation && (
