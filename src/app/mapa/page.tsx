@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ALL_CATEGORIES,
   ALL_CITIES,
@@ -360,6 +360,8 @@ export default function MapPage() {
   const dateFilter: EventDateFilter = "all";
   const priceFilter: EventPriceFilter = "all";
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [controlsCollapsed, setControlsCollapsed] = useState(false);
+  const lastScrollY = useRef(0);
 
   const venueById = useMemo(() => {
     const map = new Map<string, VenueRow>();
@@ -550,6 +552,30 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
+    lastScrollY.current = window.scrollY;
+
+    function handleScroll() {
+      if (window.matchMedia("(min-width: 1024px)").matches) {
+        setControlsCollapsed(false);
+        return;
+      }
+
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY.current + 16 && currentScrollY > 180) {
+        setControlsCollapsed(true);
+        setShowCategoryPicker(false);
+      }
+
+      lastScrollY.current = currentScrollY;
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
     try {
       const rawValue = window.localStorage.getItem(SAVED_MANUAL_LOCATION_KEY);
 
@@ -705,7 +731,7 @@ export default function MapPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-64 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-56 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
       <section className="mx-auto max-w-md lg:max-w-7xl">
         <section>
           <div>
@@ -730,8 +756,27 @@ export default function MapPage() {
           </div>
         )}
 
-        <section className="fixed inset-x-0 bottom-20 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur lg:sticky lg:bottom-auto lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5">
-          <div className="mx-auto grid max-w-md gap-2 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr] lg:items-center">
+        <section
+          className={`fixed inset-x-0 bottom-16 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-auto lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
+            controlsCollapsed ? "translate-y-[calc(100%-3.5rem)] lg:translate-y-0" : ""
+          }`}
+        >
+          {controlsCollapsed && (
+            <button
+              type="button"
+              onClick={() => setControlsCollapsed(false)}
+              aria-label="Abrir filtros do mapa"
+              className="mx-auto mb-3 grid h-10 w-16 place-items-center rounded-full border border-zinc-700 bg-black text-xl font-black text-[#f2f1ec] lg:hidden"
+            >
+              ↑
+            </button>
+          )}
+
+          <div
+            className={`mx-auto max-w-md gap-2 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr] lg:items-center ${
+              controlsCollapsed ? "hidden lg:grid" : "grid"
+            }`}
+          >
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -819,7 +864,6 @@ export default function MapPage() {
               </div>
             </div>
           </div>
-
         </section>
 
         <section className="mt-8 space-y-5 lg:mt-10">
