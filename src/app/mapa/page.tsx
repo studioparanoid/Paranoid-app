@@ -564,7 +564,7 @@ export default function MapPage() {
         typeof parsed.longitude === "number" &&
         parsed.source === "manual"
       ) {
-        setSavedManualLocation(parsed);
+      setSavedManualLocation(parsed);
         setManualLocationQuery(parsed.query || parsed.label || "");
       }
     } catch {
@@ -586,7 +586,7 @@ export default function MapPage() {
     }
 
     setUserLocation(savedManualLocation);
-    setManualLocationQuery(savedManualLocation.query);
+    setManualLocationQuery(savedManualLocation.label || savedManualLocation.query);
     setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
     setDistrictFilter(ALL_DISTRICTS);
     setMunicipalityFilter(ALL_MUNICIPALITIES);
@@ -665,6 +665,7 @@ export default function MapPage() {
 
       setUserLocation(manualLocation);
       saveManualLocation(manualLocation);
+      setManualLocationQuery(manualLocation.label || cleanQuery);
       setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
       setDistrictFilter(ALL_DISTRICTS);
       setMunicipalityFilter(ALL_MUNICIPALITIES);
@@ -672,16 +673,6 @@ export default function MapPage() {
     } catch {
       setMessage("Não deu para localizar essa morada/localidade agora.");
     }
-  }
-
-  function getLocationHint() {
-    if (userLocation) {
-      if (userLocation.source === "manual") {
-        return `Origem do raio: ${userLocation.label}. Podes ajustar o raio abaixo.`;
-      }
-    }
-
-    return "Escreve onde estás para calcular eventos por raio.";
   }
 
   function getRadiusLabel() {
@@ -742,24 +733,23 @@ export default function MapPage() {
         <section className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 p-4 backdrop-blur lg:sticky lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5">
           <div className="mx-auto grid max-w-md gap-4 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr_auto] lg:items-center">
             <form
-              className="grid gap-2"
               onSubmit={(event) => {
                 event.preventDefault();
                 useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
               }}
             >
-              <label className="text-sm font-black text-zinc-300">
-                Onde estás?
-              </label>
-
               <div className="grid grid-cols-[1fr_auto] gap-2">
                 <input
                   value={manualLocationQuery}
                   onChange={(event) =>
                     setManualLocationQuery(event.target.value)
                   }
-                  placeholder="Pombal, rua ou morada"
-                  className="min-w-0 rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  placeholder="Onde estás?"
+                  className={`min-w-0 rounded-2xl border px-4 py-3 text-sm font-bold outline-none placeholder:text-zinc-600 ${
+                    userLocation
+                      ? "border-green-900 bg-green-950/20 text-green-400 focus:border-green-700"
+                      : "border-zinc-800 bg-black text-[#f2f1ec] focus:border-red-900"
+                  }`}
                 />
 
                 <button
@@ -853,15 +843,6 @@ export default function MapPage() {
             </div>
           </div>
 
-          <p
-            className={`mx-auto mt-3 max-w-md rounded-2xl border p-3 text-xs lg:max-w-7xl ${
-              userLocation
-                ? "border-green-900 bg-green-950/20 text-green-400"
-                : "border-zinc-800 bg-black text-zinc-500"
-            }`}
-          >
-            {getLocationHint()}
-          </p>
         </section>
 
         <section className="mt-8 space-y-5 lg:mt-10">
