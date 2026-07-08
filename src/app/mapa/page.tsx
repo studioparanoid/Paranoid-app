@@ -758,7 +758,7 @@ export default function MapPage() {
 
         <section
           className={`fixed inset-x-0 bottom-[53px] z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-auto lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
-            controlsCollapsed ? "translate-y-[calc(100%-4.5rem)] lg:translate-y-0" : ""
+            controlsCollapsed ? "translate-y-[calc(100%-3.5rem)] lg:translate-y-0" : ""
           }`}
         >
           {controlsCollapsed && (
