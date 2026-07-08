@@ -559,15 +559,25 @@ export default function MapPage() {
         setControlsCollapsed(false);
         return;
       }
-
       const currentScrollY = window.scrollY;
+      const activeElement = document.activeElement;
+      const isTyping =
+  activeElement instanceof HTMLInputElement ||
+  activeElement instanceof HTMLTextAreaElement ||
+  activeElement instanceof HTMLSelectElement;
 
-      if (currentScrollY > lastScrollY.current + 16 && currentScrollY > 180) {
-        setControlsCollapsed(true);
-        setShowCategoryPicker(false);
-      }
+if (isTyping) {
+  setControlsCollapsed(false);
+  lastScrollY.current = currentScrollY;
+  return;
+}
 
-      lastScrollY.current = currentScrollY;
+if (currentScrollY > lastScrollY.current + 16 && currentScrollY > 180) {
+  setControlsCollapsed(true);
+  setShowCategoryPicker(false);
+}
+
+lastScrollY.current = currentScrollY;
     }
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -702,10 +712,6 @@ export default function MapPage() {
   }
 
   function getRadiusLabel() {
-    if (!userLocation && radiusFilter !== "all") {
-      return "Define onde estás";
-    }
-
     if (radiusFilter === "all") {
       return "Portugal inteiro";
     }
@@ -781,10 +787,11 @@ export default function MapPage() {
               <div className="grid grid-cols-[1fr_auto] gap-2">
                 <input
                   value={manualLocationQuery}
-                  onChange={(event) =>
-                    setManualLocationQuery(event.target.value)
-                  }
-                  placeholder="Onde estás?"
+onFocus={() => setControlsCollapsed(false)}
+onChange={(event) =>
+  setManualLocationQuery(event.target.value)
+}
+placeholder="Onde estás?"
                   className={`min-w-0 rounded-2xl border px-4 py-3 text-sm font-bold outline-none placeholder:text-zinc-600 ${
                     userLocation
                       ? "border-green-900 bg-green-950/20 text-green-400 focus:border-green-700"
