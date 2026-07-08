@@ -705,7 +705,7 @@ export default function MapPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-72 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-56 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
       <section className="mx-auto max-w-md lg:max-w-7xl">
         <section>
           <div>
@@ -730,8 +730,8 @@ export default function MapPage() {
           </div>
         )}
 
-        <section className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 p-4 backdrop-blur lg:sticky lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5">
-          <div className="mx-auto grid max-w-md gap-3 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr] lg:items-center">
+        <section className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur lg:sticky lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5">
+          <div className="mx-auto grid max-w-md gap-2 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr] lg:items-center">
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -762,18 +762,11 @@ export default function MapPage() {
             </form>
 
             <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-black text-zinc-300">
+              <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
+                <p className="whitespace-nowrap text-sm font-black text-zinc-300">
                   {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`}
                 </p>
 
-                <p className="text-sm font-black text-zinc-400">
-                  {filteredEvents.length}{" "}
-                  {filteredEvents.length === 1 ? "evento" : "eventos"}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-[1fr_auto] items-center gap-3">
                 <input
                   type="range"
                   min="5"
@@ -785,6 +778,11 @@ export default function MapPage() {
                   }
                   className="h-2 w-full accent-[#f2f1ec]"
                 />
+
+                <p className="whitespace-nowrap text-sm font-black text-zinc-400">
+                  {filteredEvents.length}{" "}
+                  {filteredEvents.length === 1 ? "evento" : "eventos"}
+                </p>
 
                 <div className="relative">
                   <button

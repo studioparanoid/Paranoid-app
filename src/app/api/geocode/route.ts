@@ -136,6 +136,8 @@ export async function POST(request: Request) {
         buildQuery([manualQuery]),
         buildQuery([manualQuery, postalCode]),
         buildQuery([manualQuery, municipality || city || district]),
+        buildQuery([manualQuery, "Leiria"]),
+        buildQuery([manualQuery, "Portugal"]),
       ])
     : uniqueQueries([
         buildQuery([address, postalCode]),
@@ -148,10 +150,16 @@ export async function POST(request: Request) {
   try {
     let bestResult: NominatimResult | undefined;
     let usedQuery = queries[0] || "";
+    let lastError: unknown;
 
     for (const query of queries) {
-      const results = await searchNominatim(query);
-      bestResult = pickBestResult(results);
+      try {
+        const results = await searchNominatim(query);
+        bestResult = pickBestResult(results);
+      } catch (error) {
+        lastError = error;
+        continue;
+      }
 
       if (bestResult) {
         usedQuery = query;
@@ -160,6 +168,16 @@ export async function POST(request: Request) {
     }
 
     if (!bestResult) {
+      if (lastError) {
+        return NextResponse.json(
+          {
+            error:
+              "Não consegui contactar o serviço de localização agora. Tenta uma morada mais completa ou volta a tentar daqui a pouco.",
+          },
+          { status: 502 }
+        );
+      }
+
       return NextResponse.json(
         {
           error:
