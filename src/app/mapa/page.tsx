@@ -590,7 +590,7 @@ export default function MapPage() {
         typeof parsed.longitude === "number" &&
         parsed.source === "manual"
       ) {
-      setSavedManualLocation(parsed);
+        setSavedManualLocation(parsed);
         setManualLocationQuery(parsed.query || parsed.label || "");
       }
     } catch {
@@ -717,7 +717,6 @@ export default function MapPage() {
     return `Até ${radiusFilter} km`;
   }
 
-
   if (loading) {
     return (
       <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
@@ -757,7 +756,7 @@ export default function MapPage() {
         )}
 
         <section
-          className={`fixed inset-x-0 bottom-[57px] z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-[50px] lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
+          className={`fixed inset-x-0 bottom-[56px] z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-auto lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
             controlsCollapsed ? "translate-y-[calc(100%-2.5rem)] lg:translate-y-0" : ""
           }`}
         >
@@ -867,169 +866,181 @@ export default function MapPage() {
         </section>
 
         <section className="mt-8 space-y-5 lg:mt-10">
-            <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Resultados
-              </p>
+          <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+              Resultados
+            </p>
 
-              <h2 className="mt-3 text-5xl font-black leading-none lg:text-7xl">
-                {userLocation && radiusFilter !== "all"
-                  ? "Perto de ti."
-                  : municipalityFilter !== "Todos"
-                    ? municipalityFilter
-                    : districtFilter !== "Todos"
-                      ? districtFilter
-                      : "Mapa nacional."}
-              </h2>
+            <h2 className="mt-3 text-5xl font-black leading-none lg:text-7xl">
+              {userLocation && radiusFilter !== "all"
+                ? "Perto de ti."
+                : municipalityFilter !== "Todos"
+                  ? municipalityFilter
+                  : districtFilter !== "Todos"
+                    ? districtFilter
+                    : "Mapa nacional."}
+            </h2>
 
-              <p className="mt-4 text-sm text-zinc-500">
-                {filteredEvents.length} evento
-                {filteredEvents.length === 1 ? "" : "s"} visível
-                {filteredEvents.length === 1 ? "" : "s"} · {getRadiusLabel()}.
-              </p>
-            </div>
+            <p className="mt-4 text-sm text-zinc-500">
+              {filteredEvents.length} evento
+              {filteredEvents.length === 1 ? "" : "s"} visível
+              {filteredEvents.length === 1 ? "" : "s"} · {getRadiusLabel()}.
+            </p>
+          </div>
 
-            {filteredEvents.length === 0 && <EmptyState />}
+          {filteredEvents.length === 0 && <EmptyState />}
 
-            {filteredEvents.map((event) => {
-              const ticket = ticketLabel(event.ticket_mode);
-              const mapsUrl = buildGoogleMapsUrl(
-                event.finalLatitude,
-                event.finalLongitude,
-                event.locationLabel
-              );
+          {filteredEvents.map((event) => {
+            const ticket = ticketLabel(event.ticket_mode);
+            const mapsUrl = buildGoogleMapsUrl(
+              event.finalLatitude,
+              event.finalLongitude,
+              event.locationLabel
+            );
 
-              const eventCity = getEventCity(event);
-              const eventMunicipality = getEventMunicipality(event);
-              const eventDistrict = getEventDistrict(event);
+            const eventCity = getEventCity(event);
+            const eventMunicipality = getEventMunicipality(event);
+            const eventDistrict = getEventDistrict(event);
 
-              return (
-                <article
-                  key={event.id}
-                  className="overflow-hidden rounded-[2.5rem] border border-zinc-800 bg-zinc-950"
-                >
-                  <div className="grid gap-0 lg:grid-cols-[260px_1fr]">
-                    <Link
-                      href={`/eventos/${event.slug}`}
-                      className="block min-h-64 bg-zinc-900 bg-cover bg-center lg:min-h-full"
-                      style={{
-                        backgroundImage: event.image_url
-                          ? `url(${event.image_url})`
-                          : "radial-gradient(circle at top, #3f0d0d, #111)",
-                      }}
-                      aria-label={event.title}
-                    />
+            return (
+              <article
+                key={event.id}
+                className="overflow-hidden rounded-[2.5rem] border border-zinc-800 bg-zinc-950"
+              >
+                <div className="grid gap-0 lg:grid-cols-[260px_1fr]">
+                  <Link
+                    href={`/eventos/${event.slug}`}
+                    className="block min-h-64 bg-zinc-900 bg-cover bg-center lg:min-h-full"
+                    style={{
+                      backgroundImage: event.image_url
+                        ? `url(${event.image_url})`
+                        : "radial-gradient(circle at top, #3f0d0d, #111)",
+                    }}
+                    aria-label={event.title}
+                  />
 
-                    <div className="p-5 lg:p-6">
-                      <div className="flex flex-wrap gap-2">
-                        {event.distanceKm !== null && (
-                          <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
-                            {formatDistance(event.distanceKm)}
-                          </span>
-                        )}
-
-                        {event.featured && (
-                          <span className="rounded-full border border-yellow-900 bg-yellow-950/20 px-3 py-1 text-xs font-black uppercase text-yellow-500">
-                            Destaque
-                          </span>
-                        )}
-
-                        <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
-                          {event.category || "Evento"}
+                  <div className="p-5 lg:p-6">
+                    <div className="flex flex-wrap gap-2">
+                      {event.distanceKm !== null && (
+                        <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
+                          {formatDistance(event.distanceKm)}
                         </span>
-
-                        {eventMunicipality && (
-                          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-black uppercase text-zinc-500">
-                            {eventMunicipality}
-                          </span>
-                        )}
-
-                        {ticket && (
-                          <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
-                            {ticket}
-                          </span>
-                        )}
-
-                        {event.finalLatitude === null ||
-                        event.finalLongitude === null ? (
-                          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold uppercase text-zinc-600">
-                            Sem coordenadas
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <Link href={`/eventos/${event.slug}`}>
-                        <h3 className="mt-4 text-4xl font-black leading-none lg:text-6xl">
-                          {event.title}
-                        </h3>
-                      </Link>
-
-                      {event.description && (
-                        <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-zinc-400">
-                          {event.description}
-                        </p>
                       )}
 
-                      <div className="mt-5 grid gap-2 text-sm text-zinc-500 lg:grid-cols-2">
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Data
-                          </span>
-                          {event.display_date ||
-                            formatDate(event.start_at || event.start_date)}
-                          {event.is_multi_day && event.end_date
-                            ? ` — ${formatShortDate(event.end_date)}`
-                            : ""}
-                        </p>
+                      {event.featured && (
+                        <span className="rounded-full border border-yellow-900 bg-yellow-950/20 px-3 py-1 text-xs font-black uppercase text-yellow-500">
+                          Destaque
+                        </span>
+                      )}
 
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Hora
-                          </span>
-                          {event.display_time || "Hora por definir"}
-                        </p>
+                      <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
+                        {event.category || "Evento"}
+                      </span>
 
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Local
-                          </span>
-                          {event.venue_name || "Sem espaço"}
-                        </p>
+                      {eventMunicipality && (
+                        <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-black uppercase text-zinc-500">
+                          {eventMunicipality}
+                        </span>
+                      )}
 
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Zona
-                          </span>
-                          {[eventCity, eventMunicipality, eventDistrict]
-                            .filter(Boolean)
-                            .join(" · ") || "Sem zona"}
-                        </p>
-                      </div>
+                      {ticket && (
+                        <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
+                          {ticket}
+                        </span>
+                      )}
 
-                      <div className="mt-6 flex flex-wrap gap-3">
+                      {event.finalLatitude === null ||
+                      event.finalLongitude === null ? (
+                        <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold uppercase text-zinc-600">
+                          Sem coordenadas
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <Link href={`/eventos/${event.slug}`}>
+                      <h3 className="mt-4 text-4xl font-black leading-none lg:text-6xl">
+                        {event.title}
+                      </h3>
+                    </Link>
+
+                    {event.description && (
+                      <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-zinc-400">
+                        {event.description}
+                      </p>
+                    )}
+
+                    <div className="mt-5 grid gap-2 text-sm text-zinc-500 lg:grid-cols-2">
+                      <p>
+                        <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
+                          Data
+                        </span>
+                        {event.display_date ||
+                          formatDate(event.start_at || event.start_date)}
+                        {event.is_multi_day && event.end_date
+                          ? ` — ${formatShortDate(event.end_date)}`
+                          : ""}
+                      </p>
+
+                      <p>
+                        <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
+                          Hora
+                        </span>
+                        {event.display_time || "Hora por definir"}
+                      </p>
+
+                      <p>
+                        <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
+                          Local
+                        </span>
+                        {event.venue_name || "Sem espaço"}
+                      </p>
+
+                      <p>
+                        <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
+                          Zona
+                        </span>
+                        {[eventCity, eventMunicipality, eventDistrict]
+                          .filter(Boolean)
+                          .join(" · ") || "Sem zona"}
+                      </p>
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <Link
+                        href={`/eventos/${event.slug}`}
+                        className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
+                      >
+                        Ver evento
+                      </Link>
+
+                      {event.venue ? (
                         <Link
-                          href={`/eventos/${event.slug}`}
-                          className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-                        >
-                          Ver evento
-                        </Link>
-
-                        {event.venue ? (
-                          <Link
-                            href={`/espacos/${event.venue.slug}`}
-                            className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
-                          >
-                            Ver espaço
-                          </Link>
-                        ) : null}
-
-                        <a
-                          href={mapsUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                          href={`/espacos/${event.venue.slug}`}
                           className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
                         >
-                          Abrir no mapa
+                          Ver espaço
+                        </Link>
+                      ) : null}
+
+                      <a
+                        href={mapsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+                      >
+                        Abrir no mapa
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      </section>
+    </main>
+  );
+}
                         </a>
                       </div>
                     </div>
