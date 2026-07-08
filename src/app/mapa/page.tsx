@@ -739,13 +739,12 @@ export default function MapPage() {
               Mapa
             </p>
 
-            <h1 className="text-6xl font-black leading-none tracking-tight lg:text-9xl">
-              Portugal em ruído.
+            <h1 className="text-6xl font-black leading-none tracking-tight lg:text-7xl">
+              Radar cultural.
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-400 lg:text-lg">
-              Eventos e espaços culturais por proximidade real, distrito,
-              concelho, localidade ou pesquisa livre.
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-500 lg:text-lg">
+              Onde há ruído, aparece aqui.
             </p>
           </div>
         </section>
@@ -757,8 +756,8 @@ export default function MapPage() {
         )}
 
         <section
-          className={`fixed inset-x-0 bottom-[53px] z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-auto lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
-            controlsCollapsed ? "translate-y-[calc(100%-3.0rem)] lg:translate-y-0" : ""
+          className={`fixed inset-x-0 bottom-[53px] z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-auto lg:top-24 lg:mt-7 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
+            controlsCollapsed ? "translate-y-[calc(100%-3.5rem)] lg:translate-y-0" : ""
           }`}
         >
           {controlsCollapsed && (
