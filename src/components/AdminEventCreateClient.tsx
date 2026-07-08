@@ -249,7 +249,7 @@ async function geocodeAddress({
   municipality: string;
   district: string;
 }) {
-  const query = [venue, address, postalCode, city, municipality, district]
+  const query = [address, postalCode, city, municipality, district]
     .map((value) => value.trim())
     .filter(Boolean)
     .join(", ");
@@ -1062,6 +1062,11 @@ export function AdminEventCreateClient() {
             placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
             className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
           />
+
+          <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+            O nome do espaço é independente da morada e não é usado para
+            encontrar coordenadas.
+          </p>
         </div>
 
         <div>

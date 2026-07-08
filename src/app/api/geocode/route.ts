@@ -139,10 +139,8 @@ export async function POST(request: Request) {
       ])
     : uniqueQueries([
         buildQuery([address, postalCode]),
-        buildQuery([venue, address, postalCode]),
         buildQuery([address, postalCode, municipality, district]),
         buildQuery([address, postalCode, city, municipality, district]),
-        buildQuery([venue, address, postalCode, city, municipality, district]),
         buildQuery([address, city, municipality, district]),
         buildQuery([postalCode, city, municipality, district]),
       ]);
