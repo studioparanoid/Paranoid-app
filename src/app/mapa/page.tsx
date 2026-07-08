@@ -733,18 +733,16 @@ export default function MapPage() {
   return (
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-56 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
       <section className="mx-auto max-w-md lg:max-w-7xl">
-        <section className="mt-6 space-y-5 lg:mt-8">
-  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900 pb-4">
-    <p className="text-sm font-black text-zinc-300">
-      {filteredEvents.length} evento
-      {filteredEvents.length === 1 ? "" : "s"} no radar
-      <span className="font-bold text-zinc-600"> · {getRadiusLabel()}</span>
-    </p>
+        <section>
+          <div>
+            <h1 className="text-6xl font-black leading-none tracking-tight lg:text-7xl">
+              Radar cultural.
+            </h1>
 
-    <p className="text-xs uppercase tracking-[0.35em] text-red-700">
-      Resultados
-    </p>
-  </div>
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-500 lg:text-lg">
+              Onde há ruído, aparece aqui.
+            </p>
+          </div>
         </section>
 
         {message && (
@@ -863,28 +861,18 @@ export default function MapPage() {
           </div>
         </section>
 
-        <section className="mt-8 space-y-5 lg:mt-10">
-            <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Resultados
-              </p>
+        <section className="mt-6 space-y-5 lg:mt-8">
+  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900 pb-4">
+    <p className="text-sm font-black text-zinc-300">
+      {filteredEvents.length} evento
+      {filteredEvents.length === 1 ? "" : "s"} no radar
+      <span className="font-bold text-zinc-600"> · {getRadiusLabel()}</span>
+    </p>
 
-              <h2 className="mt-3 text-5xl font-black leading-none lg:text-7xl">
-                {userLocation && radiusFilter !== "all"
-                  ? "Perto de ti."
-                  : municipalityFilter !== "Todos"
-                    ? municipalityFilter
-                    : districtFilter !== "Todos"
-                      ? districtFilter
-                      : "Mapa nacional."}
-              </h2>
-
-              <p className="mt-4 text-sm text-zinc-500">
-                {filteredEvents.length} evento
-                {filteredEvents.length === 1 ? "" : "s"} visível
-                {filteredEvents.length === 1 ? "" : "s"} · {getRadiusLabel()}.
-              </p>
-            </div>
+    <p className="text-xs uppercase tracking-[0.35em] text-red-700">
+      Resultados
+    </p>
+  </div>
 
             {filteredEvents.length === 0 && <EmptyState />}
 
