@@ -8,25 +8,19 @@ import {
   ALL_DISTRICTS,
   ALL_MUNICIPALITIES,
   buildEventFilterIndex,
-  eventDateFilterOptions,
   type EventDateFilter,
-  eventPriceFilterOptions,
   type EventPriceFilter,
   filterIndexedEvents,
   getCategoryOptionsForIndexedEvents,
-  getCityOptionsForIndexedEvents,
-  getDistrictOptions,
-  getMunicipalityOptions,
   normalizeEventText,
 } from "@/lib/eventFilters";
 import {
   getCanonicalDistrict,
   getCanonicalMunicipality,
-  portugalMunicipalities,
 } from "@/lib/portugalLocations";
 import { supabase } from "@/lib/supabase/public";
 
-type RadiusFilter = "5" | "15" | "50" | "150" | "all";
+type RadiusFilter = `${number}` | "all";
 
 type UserLocation = {
   latitude: number;
@@ -357,16 +351,15 @@ export default function MapPage() {
     useState<SavedManualLocation | null>(null);
   const [manualLocationQuery, setManualLocationQuery] = useState("");
 
-  const [radiusFilter, setRadiusFilter] = useState<RadiusFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [radiusFilter, setRadiusFilter] = useState<RadiusFilter>("50");
   const [districtFilter, setDistrictFilter] = useState(ALL_DISTRICTS);
   const [municipalityFilter, setMunicipalityFilter] =
     useState(ALL_MUNICIPALITIES);
   const [cityFilter, setCityFilter] = useState(ALL_CITIES);
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
-  const [dateFilter, setDateFilter] = useState<EventDateFilter>("all");
-  const [priceFilter, setPriceFilter] = useState<EventPriceFilter>("all");
-  const [onlyWithLocation, setOnlyWithLocation] = useState(false);
+  const dateFilter: EventDateFilter = "all";
+  const priceFilter: EventPriceFilter = "all";
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   const venueById = useMemo(() => {
     const map = new Map<string, VenueRow>();
@@ -458,20 +451,6 @@ export default function MapPage() {
     );
   }, [eventsWithLocation]);
 
-  const districtOptions = useMemo(() => getDistrictOptions(), []);
-
-  const municipalityOptions = useMemo(() => {
-    return getMunicipalityOptions(districtFilter);
-  }, [districtFilter]);
-
-  const cityOptions = useMemo(() => {
-    return getCityOptionsForIndexedEvents(
-      indexedEvents,
-      districtFilter,
-      municipalityFilter
-    );
-  }, [indexedEvents, districtFilter, municipalityFilter]);
-
   const categoryOptions = useMemo(() => {
     return getCategoryOptionsForIndexedEvents(indexedEvents);
   }, [indexedEvents]);
@@ -484,7 +463,7 @@ export default function MapPage() {
         : null;
 
     return filterIndexedEvents(indexedEvents, {
-      searchQuery,
+      searchQuery: "",
       districtFilter,
       municipalityFilter,
       cityFilter,
@@ -496,10 +475,6 @@ export default function MapPage() {
       .filter((event) => {
         const hasCoordinates =
           event.finalLatitude !== null && event.finalLongitude !== null;
-
-        if (onlyWithLocation && !hasCoordinates) {
-          return false;
-        }
 
         if (userLocation && radiusFilter !== "all" && !hasCoordinates) {
           return false;
@@ -518,15 +493,11 @@ export default function MapPage() {
       .sort(sortEvents);
   }, [
     indexedEvents,
-    onlyWithLocation,
     radiusFilter,
     districtFilter,
     municipalityFilter,
     cityFilter,
     categoryFilter,
-    dateFilter,
-    priceFilter,
-    searchQuery,
     userLocation,
   ]);
 
@@ -537,26 +508,6 @@ export default function MapPage() {
   const closestEvent = filteredEvents.find(
     (event) => event.distanceKm !== null
   );
-
-  const closestLocatedEvent = useMemo(() => {
-    if (!userLocation) {
-      return null;
-    }
-
-    return (
-      [...eventsWithLocation]
-        .filter((event) => event.distanceKm !== null)
-        .sort(sortEvents)[0] || null
-    );
-  }, [eventsWithLocation, userLocation]);
-
-  const userLocationMapsUrl = userLocation
-    ? buildGoogleMapsUrl(
-        userLocation.latitude,
-        userLocation.longitude,
-        userLocation.label
-      )
-    : null;
 
   async function loadMapData() {
     setLoading(true);
@@ -643,11 +594,6 @@ export default function MapPage() {
     setMessage("");
   }
 
-  function forgetSavedManualLocation() {
-    setSavedManualLocation(null);
-    window.localStorage.removeItem(SAVED_MANUAL_LOCATION_KEY);
-  }
-
   function handleRadiusChange(value: RadiusFilter) {
     if (value === "all") {
       setRadiusFilter("all");
@@ -728,11 +674,6 @@ export default function MapPage() {
     }
   }
 
-  function clearUserLocation() {
-    setUserLocation(null);
-    setRadiusFilter("all");
-  }
-
   function getLocationHint() {
     if (userLocation) {
       if (userLocation.source === "manual") {
@@ -745,7 +686,7 @@ export default function MapPage() {
 
   function getRadiusLabel() {
     if (!userLocation && radiusFilter !== "all") {
-      return "A pedir localização";
+      return "Define onde estás";
     }
 
     if (radiusFilter === "all") {
@@ -760,29 +701,6 @@ export default function MapPage() {
   }
 
 
-  function handleDistrictChange(value: string) {
-    setDistrictFilter(value);
-    setMunicipalityFilter(ALL_MUNICIPALITIES);
-    setCityFilter(ALL_CITIES);
-  }
-
-  function handleMunicipalityChange(value: string) {
-    setMunicipalityFilter(value);
-    setCityFilter(ALL_CITIES);
-  }
-
-  function clearFilters() {
-    setRadiusFilter(userLocation ? "50" : "all");
-    setSearchQuery("");
-    setDistrictFilter(ALL_DISTRICTS);
-    setMunicipalityFilter(ALL_MUNICIPALITIES);
-    setCityFilter(ALL_CITIES);
-    setCategoryFilter(ALL_CATEGORIES);
-    setDateFilter("all");
-    setPriceFilter("all");
-    setOnlyWithLocation(false);
-  }
-
   if (loading) {
     return (
       <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
@@ -796,9 +714,9 @@ export default function MapPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-72 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
       <section className="mx-auto max-w-md lg:max-w-7xl">
-        <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
+        <section>
           <div>
             <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
               Mapa
@@ -813,114 +731,6 @@ export default function MapPage() {
               concelho, localidade ou pesquisa livre.
             </p>
           </div>
-
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-              Localização
-            </p>
-
-            <h2 className="mt-3 text-4xl font-black leading-none">
-              Perto de ti.
-            </h2>
-
-            <p className="mt-4 text-sm leading-relaxed text-zinc-500">
-              Escreve uma morada, localidade ou cidade para a Paranoid calcular
-              distâncias por raio. A origem fica guardada só neste browser.
-            </p>
-
-            <div className="mt-6 grid gap-3">
-              {userLocation && (
-                <button
-                  type="button"
-                  onClick={clearUserLocation}
-                  className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
-                >
-                  Desligar localização
-                </button>
-              )}
-
-              {userLocation && userLocationMapsUrl && (
-                <a
-                  href={userLocationMapsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-green-900 px-5 py-4 text-center text-sm font-bold text-green-400"
-                >
-                  Ver origem no Maps
-                </a>
-              )}
-
-              {savedManualLocation && !userLocation && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    useSavedManualLocation(
-                      radiusFilter === "all" ? "50" : radiusFilter
-                    )
-                  }
-                  className="rounded-full border border-yellow-900 px-5 py-4 text-sm font-bold text-yellow-400"
-                >
-                  Usar morada guardada
-                </button>
-              )}
-            </div>
-
-            {savedManualLocation && (
-              <div className="mt-4 rounded-2xl border border-zinc-800 bg-black p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">
-                  Origem manual guardada
-                </p>
-
-                <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-                  {savedManualLocation.query || savedManualLocation.label}
-                </p>
-
-                <button
-                  type="button"
-                  onClick={forgetSavedManualLocation}
-                  className="mt-3 text-xs font-bold text-zinc-500 underline"
-                >
-                  Esquecer esta origem
-                </button>
-              </div>
-            )}
-
-            <form
-              className="mt-5 grid gap-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
-              }}
-            >
-              <label className="text-sm font-bold text-zinc-300">
-                Onde estás?
-              </label>
-
-              <input
-                value={manualLocationQuery}
-                onChange={(event) => setManualLocationQuery(event.target.value)}
-                placeholder="Ex: Pombal, Largo do Cardal ou a tua morada"
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-              />
-
-              <button
-                type="submit"
-                className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
-              >
-                Usar e guardar esta origem
-              </button>
-            </form>
-
-            <p
-              className={`mt-5 rounded-2xl border p-4 text-sm ${
-                userLocation
-                  ? "border-green-900 bg-green-950/20 text-green-400"
-                  : "border-zinc-800 bg-black text-zinc-500"
-              }`}
-            >
-              {getLocationHint()}
-            </p>
-          </div>
         </section>
 
         {message && (
@@ -929,280 +739,132 @@ export default function MapPage() {
           </div>
         )}
 
-        <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[340px_1fr] lg:items-start">
-          <aside className="space-y-6 lg:sticky lg:top-28">
-            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Filtros
-              </p>
+        <section className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 p-4 backdrop-blur lg:sticky lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5">
+          <div className="mx-auto grid max-w-md gap-4 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr_auto] lg:items-center">
+            <form
+              className="grid gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
+              }}
+            >
+              <label className="text-sm font-black text-zinc-300">
+                Onde estás?
+              </label>
 
-              <h2 className="mt-3 text-4xl font-black leading-none">
-                Afinar radar.
-              </h2>
-
-              <div className="mt-6 space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Pesquisa
-                  </label>
-
-                  <input
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="Evento, espaço, morada..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Raio
-                  </label>
-
-                  <select
-                    value={radiusFilter}
-                    onChange={(event) =>
-                      handleRadiusChange(event.target.value as RadiusFilter)
-                    }
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                  >
-                    <option value="all">Portugal inteiro</option>
-                    <option value="5">Até 5 km</option>
-                    <option value="15">Até 15 km</option>
-                    <option value="50">Até 50 km</option>
-                    <option value="150">Até 150 km</option>
-                  </select>
-
-                  {!userLocation && (
-                    <p className="mt-2 text-xs text-zinc-600">
-                      Para usar raio, escreve primeiro onde estás.
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Distrito
-                  </label>
-
-                  <select
-                    value={districtFilter}
-                    onChange={(event) => handleDistrictChange(event.target.value)}
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                  >
-                    {districtOptions.map((district) => (
-                      <option key={district}>{district}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Concelho
-                  </label>
-
-                  <select
-                    value={municipalityFilter}
-                    onChange={(event) =>
-                      handleMunicipalityChange(event.target.value)
-                    }
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                  >
-                    {municipalityOptions.map((municipality) => (
-                      <option key={municipality}>{municipality}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Localidade
-                  </label>
-
-                  <select
-                    value={cityFilter}
-                    onChange={(event) => setCityFilter(event.target.value)}
-                    disabled={cityOptions.length <= 1}
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
-                  >
-                    {cityOptions.map((city) => (
-                      <option key={city}>{city}</option>
-                    ))}
-                  </select>
-
-                  {cityOptions.length <= 1 && (
-                    <p className="mt-2 text-xs text-zinc-600">
-                      Ainda não há localidades publicadas para esta combinação.
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Categoria
-                  </label>
-
-                  <select
-                    value={categoryFilter}
-                    onChange={(event) =>
-                      setCategoryFilter(event.target.value)
-                    }
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                  >
-                    {categoryOptions.map((category) => (
-                      <option key={category}>{category}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Data
-                  </label>
-
-                  <select
-                    value={dateFilter}
-                    onChange={(event) =>
-                      setDateFilter(event.target.value as EventDateFilter)
-                    }
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                  >
-                    {eventDateFilterOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
-                    Preço
-                  </label>
-
-                  <select
-                    value={priceFilter}
-                    onChange={(event) =>
-                      setPriceFilter(event.target.value as EventPriceFilter)
-                    }
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                  >
-                    {eventPriceFilterOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <input
+                  value={manualLocationQuery}
+                  onChange={(event) =>
+                    setManualLocationQuery(event.target.value)
+                  }
+                  placeholder="Pombal, rua ou morada"
+                  className="min-w-0 rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                />
 
                 <button
-                  type="button"
-                  onClick={() => setOnlyWithLocation((current) => !current)}
-                  className={`w-full rounded-full px-5 py-4 text-sm font-black ${
-                    onlyWithLocation
-                      ? "bg-[#f2f1ec] text-black"
-                      : "border border-zinc-700 text-zinc-300"
-                  }`}
+                  type="submit"
+                  className="rounded-2xl bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black"
                 >
-                  {onlyWithLocation
-                    ? "Só com coordenadas"
-                    : "Mostrar também sem coordenadas"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
-                >
-                  Limpar filtros
-                </button>
-
-                <button
-                  type="button"
-                  onClick={loadMapData}
-                  className="w-full rounded-full border border-zinc-800 px-5 py-4 text-sm font-bold text-zinc-500"
-                >
-                  Atualizar mapa
+                  Usar
                 </button>
               </div>
-            </section>
+            </form>
 
-            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Estado
-              </p>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-black text-zinc-300">
+                  {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`}
+                </p>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                  <p className="text-3xl font-black">{events.length}</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                    Eventos
-                  </p>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                  <p className="text-3xl font-black">
-                    {eventsWithCoordinatesCount}
-                  </p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                    Geo
-                  </p>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                  <p className="text-3xl font-black">
-                    {portugalMunicipalities.length}
-                  </p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                    Concelhos
-                  </p>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                  <p className="text-3xl font-black">
-                    {filteredEvents.length}
-                  </p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                    Visíveis
-                  </p>
+                <div className="flex items-center gap-2 overflow-x-auto text-xs font-bold text-zinc-500">
+                  <span className="rounded-full border border-zinc-800 px-3 py-2">
+                    {filteredEvents.length} visíveis
+                  </span>
+                  <span className="rounded-full border border-zinc-800 px-3 py-2">
+                    {eventsWithCoordinatesCount} geo
+                  </span>
+                  {closestEvent && (
+                    <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-2 text-green-400">
+                      {formatDistance(closestEvent.distanceKm)}
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {closestEvent && (
-                <div className="mt-4 rounded-[1.5rem] border border-green-900 bg-green-950/20 p-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-green-500">
-                    Mais perto
-                  </p>
-                  <p className="mt-2 text-lg font-black">
-                    {closestEvent.title}
-                  </p>
-                  <p className="mt-1 text-sm text-green-400">
-                    {formatDistance(closestEvent.distanceKm)}
-                  </p>
-                </div>
+              <input
+                type="range"
+                min="5"
+                max="150"
+                step="5"
+                value={radiusFilter === "all" ? "150" : radiusFilter}
+                onChange={(event) =>
+                  handleRadiusChange(event.target.value as RadiusFilter)
+                }
+                className="h-2 w-full accent-[#f2f1ec]"
+              />
+            </div>
+
+            <div className="relative flex items-center justify-end gap-2">
+              {savedManualLocation && !userLocation && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    useSavedManualLocation(
+                      radiusFilter === "all" ? "50" : radiusFilter
+                    )
+                  }
+                  className="rounded-full border border-yellow-900 px-4 py-3 text-xs font-bold text-yellow-400"
+                >
+                  Guardada
+                </button>
               )}
 
-              {!closestEvent &&
-                userLocation &&
-                radiusFilter !== "all" &&
-                closestLocatedEvent && (
-                  <div className="mt-4 rounded-[1.5rem] border border-yellow-900 bg-yellow-950/20 p-4">
-                    <p className="text-xs font-black uppercase tracking-wide text-yellow-500">
-                      Fora do raio
-                    </p>
-                    <p className="mt-2 text-lg font-black">
-                      {closestLocatedEvent.title}
-                    </p>
-                    <p className="mt-1 text-sm text-yellow-400">
-                      Evento mais próximo da tua origem:{" "}
-                      {formatDistance(closestLocatedEvent.distanceKm)}
-                    </p>
-                  </div>
-                )}
-            </section>
-          </aside>
+              <button
+                type="button"
+                onClick={() => setShowCategoryPicker((current) => !current)}
+                aria-label="Escolher tipo de evento"
+                className="grid h-12 w-12 place-items-center rounded-full border border-zinc-700 text-lg font-black text-zinc-200"
+              >
+                =
+              </button>
 
-          <section className="space-y-5">
+              {showCategoryPicker && (
+                <div className="absolute bottom-14 right-0 z-50 grid min-w-56 gap-2 rounded-2xl border border-zinc-800 bg-black p-3 shadow-2xl lg:bottom-auto lg:top-14">
+                  {categoryOptions.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => {
+                        setCategoryFilter(category);
+                        setShowCategoryPicker(false);
+                      }}
+                      className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
+                        categoryFilter === category
+                          ? "bg-[#f2f1ec] text-black"
+                          : "text-zinc-300 hover:bg-zinc-900"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <p
+            className={`mx-auto mt-3 max-w-md rounded-2xl border p-3 text-xs lg:max-w-7xl ${
+              userLocation
+                ? "border-green-900 bg-green-950/20 text-green-400"
+                : "border-zinc-800 bg-black text-zinc-500"
+            }`}
+          >
+            {getLocationHint()}
+          </p>
+        </section>
+
+        <section className="mt-8 space-y-5 lg:mt-10">
             <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Resultados
@@ -1374,7 +1036,6 @@ export default function MapPage() {
               );
             })}
           </section>
-        </section>
       </section>
     </main>
   );
