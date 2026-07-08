@@ -66,6 +66,44 @@ function uniqueQueries(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
 
+function normalizeLookupText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+const fallbackLocations = [
+  {
+    keys: ["pombal", "pombal leiria", "pombal portugal"],
+    latitude: 39.9167,
+    longitude: -8.6333,
+    display_name: "Pombal, Leiria, Portugal",
+    city: "Pombal",
+    municipality: "Pombal",
+    district: "Leiria",
+  },
+  {
+    keys: ["catela", "catela pombal", "catela pombal leiria"],
+    latitude: 39.907,
+    longitude: -8.584,
+    display_name: "Catela, Pombal, Leiria, Portugal",
+    city: "Catela",
+    municipality: "Pombal",
+    district: "Leiria",
+  },
+];
+
+function getFallbackLocation(query: string) {
+  const cleanQuery = normalizeLookupText(query);
+
+  return fallbackLocations.find((location) =>
+    location.keys.some((key) => cleanQuery === key)
+  );
+}
+
 function pickBestResult(results: NominatimResult[]) {
   return (
     results.find((result) => {
@@ -168,6 +206,21 @@ export async function POST(request: Request) {
     }
 
     if (!bestResult) {
+      const fallback = getFallbackLocation(manualQuery || address);
+
+      if (fallback) {
+        return NextResponse.json({
+          latitude: fallback.latitude,
+          longitude: fallback.longitude,
+          display_name: fallback.display_name,
+          provider: "fallback",
+          city: fallback.city,
+          municipality: fallback.municipality,
+          district: fallback.district,
+          postal_code: postalCode,
+        });
+      }
+
       if (lastError) {
         return NextResponse.json(
           {

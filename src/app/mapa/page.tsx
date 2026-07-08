@@ -705,7 +705,7 @@ export default function MapPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-56 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
+    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-64 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
       <section className="mx-auto max-w-md lg:max-w-7xl">
         <section>
           <div>
@@ -730,7 +730,7 @@ export default function MapPage() {
           </div>
         )}
 
-        <section className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur lg:sticky lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5">
+        <section className="fixed inset-x-0 bottom-20 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur lg:sticky lg:bottom-auto lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5">
           <div className="mx-auto grid max-w-md gap-2 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr] lg:items-center">
             <form
               onSubmit={(event) => {
