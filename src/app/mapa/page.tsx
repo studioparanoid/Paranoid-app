@@ -33,7 +33,7 @@ type UserLocation = {
   longitude: number;
   accuracyKm: number | null;
   label: string;
-  source: "browser" | "manual";
+  source: "manual";
 };
 
 type SavedManualLocation = UserLocation & {
@@ -46,12 +46,8 @@ type Coordinate = {
   longitude: number;
 };
 
-type GeolocationErrorCode = 1 | 2 | 3;
-
 const LOCATION_RADIUS_BUFFER_KM = 0.75;
-const GOOD_LOCATION_ACCURACY_METERS = 50;
 const SAVED_MANUAL_LOCATION_KEY = "paranoid.map.manualLocation";
-const MAX_AUTO_TO_MANUAL_DISTANCE_KM = 25;
 
 type VenueRow = {
   id: string;
@@ -204,18 +200,6 @@ function formatDistance(value: number | null) {
   return `${value.toFixed(1)} km`;
 }
 
-function formatAccuracy(value: number | null) {
-  if (value === null) {
-    return "precisão desconhecida";
-  }
-
-  if (value < 1) {
-    return `precisão aprox. ${Math.round(value * 1000)} m`;
-  }
-
-  return `precisão aprox. ${value.toFixed(1)} km`;
-}
-
 function normalizeCoordinate(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") {
     return null;
@@ -254,99 +238,6 @@ function resolveCoordinates({
     latitude: looksSwapped ? parsedLongitude : parsedLatitude,
     longitude: looksSwapped ? parsedLatitude : parsedLongitude,
   };
-}
-
-function getGeolocationErrorMessage(error: GeolocationPositionError) {
-  const code = error.code as GeolocationErrorCode;
-
-  if (code === 1) {
-    return "A localização está bloqueada. No telemóvel, autoriza a localização para este site no browser e confirma que a localização do sistema está ligada.";
-  }
-
-  if (code === 2) {
-    return "Não consegui determinar a tua localização. Confirma GPS/localização do sistema, Wi-Fi/dados móveis e tenta outra vez.";
-  }
-
-  if (code === 3) {
-    return "A localização demorou demasiado tempo. Tenta outra vez ao ar livre ou usa uma morada manual guardada como origem do raio.";
-  }
-
-  return "Não deu para obter a tua localização. Podes usar distrito, concelho ou localidade.";
-}
-
-function isGeolocationError(error: unknown): error is GeolocationPositionError {
-  return typeof error === "object" && error !== null && "code" in error;
-}
-
-function getCurrentPosition(options: PositionOptions) {
-  return new Promise<GeolocationPosition>((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, options);
-  });
-}
-
-function getBestWatchedPosition() {
-  return new Promise<GeolocationPosition>((resolve, reject) => {
-    let bestPosition: GeolocationPosition | null = null;
-    let settled = false;
-
-    const finish = (position: GeolocationPosition) => {
-      if (settled) {
-        return;
-      }
-
-      settled = true;
-      navigator.geolocation.clearWatch(watchId);
-      window.clearTimeout(timeoutId);
-      resolve(position);
-    };
-
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        if (
-          !bestPosition ||
-          position.coords.accuracy < bestPosition.coords.accuracy
-        ) {
-          bestPosition = position;
-        }
-
-        if (position.coords.accuracy <= GOOD_LOCATION_ACCURACY_METERS) {
-          finish(position);
-        }
-      },
-      (error) => {
-        if (settled) {
-          return;
-        }
-
-        if (isGeolocationError(error) && error.code === 1) {
-          settled = true;
-          navigator.geolocation.clearWatch(watchId);
-          window.clearTimeout(timeoutId);
-          reject(error);
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 35000,
-      }
-    );
-
-    const timeoutId = window.setTimeout(() => {
-      if (settled) {
-        return;
-      }
-
-      if (bestPosition) {
-        finish(bestPosition);
-        return;
-      }
-
-      settled = true;
-      navigator.geolocation.clearWatch(watchId);
-      reject({ code: 3 });
-    }, 38000);
-  });
 }
 
 function buildGoogleMapsUrl(
@@ -457,7 +348,6 @@ function EmptyState() {
 
 export default function MapPage() {
   const [loading, setLoading] = useState(true);
-  const [locationLoading, setLocationLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -758,89 +648,6 @@ export default function MapPage() {
     window.localStorage.removeItem(SAVED_MANUAL_LOCATION_KEY);
   }
 
-  async function requestLocation(nextRadius: RadiusFilter = "50") {
-    setMessage("");
-
-    if (!navigator.geolocation) {
-      setMessage("O teu browser não suporta localização.");
-      return;
-    }
-
-    if (!window.isSecureContext) {
-      setMessage(
-        "O browser só permite localização em HTTPS. Em telemóvel, um endereço local por HTTP costuma bloquear sempre. Abre a Paranoid num domínio seguro para usar o raio."
-      );
-      return;
-    }
-
-    setLocationLoading(true);
-
-    try {
-      let position: GeolocationPosition;
-
-      try {
-        position = await getBestWatchedPosition();
-      } catch (error) {
-        if (isGeolocationError(error) && error.code === 1) {
-          throw error;
-        }
-
-        position = await getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 30000,
-          maximumAge: 0,
-        });
-      }
-
-      const browserLocation: UserLocation = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracyKm: Number.isFinite(position.coords.accuracy)
-          ? position.coords.accuracy / 1000
-          : null,
-        label: "A tua localização atual",
-        source: "browser",
-      };
-
-      if (savedManualLocation) {
-        const distanceFromSavedOrigin = distanceInKm(browserLocation, {
-          latitude: savedManualLocation.latitude,
-          longitude: savedManualLocation.longitude,
-        });
-
-        if (distanceFromSavedOrigin > MAX_AUTO_TO_MANUAL_DISTANCE_KM) {
-          setUserLocation(savedManualLocation);
-          setManualLocationQuery(savedManualLocation.query);
-          setMessage(
-            `A localização automática veio ${formatDistance(
-              distanceFromSavedOrigin
-            )} longe da tua origem guardada. Usei a morada guardada como origem do raio.`
-          );
-          setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
-          setDistrictFilter(ALL_DISTRICTS);
-          setMunicipalityFilter(ALL_MUNICIPALITIES);
-          setCityFilter(ALL_CITIES);
-          return;
-        }
-      }
-
-      setUserLocation(browserLocation);
-
-      setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
-      setDistrictFilter(ALL_DISTRICTS);
-      setMunicipalityFilter(ALL_MUNICIPALITIES);
-      setCityFilter(ALL_CITIES);
-    } catch (error) {
-      setMessage(
-        isGeolocationError(error)
-          ? getGeolocationErrorMessage(error)
-          : "Não deu para obter a tua localização. Podes usar distrito, concelho ou localidade."
-      );
-    } finally {
-      setLocationLoading(false);
-    }
-  }
-
   function handleRadiusChange(value: RadiusFilter) {
     if (value === "all") {
       setRadiusFilter("all");
@@ -858,15 +665,11 @@ export default function MapPage() {
         return;
       }
 
-      requestLocation(value);
+      setMessage("Escreve onde estás para usar o filtro por raio.");
       return;
     }
 
     setRadiusFilter(value);
-  }
-
-  function handleLocationButtonClick() {
-    requestLocation(radiusFilter === "all" ? "50" : radiusFilter);
   }
 
   async function useManualLocation(nextRadius: RadiusFilter = "50") {
@@ -877,7 +680,6 @@ export default function MapPage() {
       return;
     }
 
-    setLocationLoading(true);
     setMessage("");
 
     try {
@@ -923,8 +725,6 @@ export default function MapPage() {
       setCityFilter(ALL_CITIES);
     } catch {
       setMessage("Não deu para localizar essa morada/localidade agora.");
-    } finally {
-      setLocationLoading(false);
     }
   }
 
@@ -934,40 +734,13 @@ export default function MapPage() {
   }
 
   function getLocationHint() {
-    if (locationLoading) {
-      return "A pedir permissão ao browser e a calcular distâncias...";
-    }
-
     if (userLocation) {
       if (userLocation.source === "manual") {
         return `Origem do raio: ${userLocation.label}. Podes ajustar o raio abaixo.`;
       }
-
-      if (
-        radiusFilter !== "all" &&
-        filteredEvents.length === 0 &&
-        closestLocatedEvent?.distanceKm !== null &&
-        closestLocatedEvent?.distanceKm !== undefined
-      ) {
-        return `Localização automática ativa (${formatAccuracy(
-          userLocation.accuracyKm
-        )}), mas o evento mais próximo dessa coordenada fica a ${formatDistance(
-          closestLocatedEvent.distanceKm
-        )}. Se isto não bater certo, usa a morada manual: a Paranoid guarda essa origem neste browser e usa-a no raio.`;
-      }
-
-      if (userLocation.accuracyKm !== null && userLocation.accuracyKm > 1) {
-        return `Localização automática pouco precisa (${formatAccuracy(
-          userLocation.accuracyKm
-        )}). Para raio de 5 km, escreve a tua morada/localidade no campo manual.`;
-      }
-
-      return `Localização automática ativa (${formatAccuracy(
-        userLocation.accuracyKm
-      )}).`;
     }
 
-    return "Escolhe um raio ou usa o botão de localização para ver eventos perto de ti.";
+    return "Escreve onde estás para calcular eventos por raio.";
   }
 
   function getRadiusLabel() {
@@ -1051,25 +824,11 @@ export default function MapPage() {
             </h2>
 
             <p className="mt-4 text-sm leading-relaxed text-zinc-500">
-              A localização automática pede autorização ao browser e só funciona
-              em HTTPS. Se o browser mandar o ponto errado, usa uma morada
-              manual guardada.
+              Escreve uma morada, localidade ou cidade para a Paranoid calcular
+              distâncias por raio. A origem fica guardada só neste browser.
             </p>
 
             <div className="mt-6 grid gap-3">
-              <button
-                type="button"
-                onClick={handleLocationButtonClick}
-                disabled={locationLoading}
-                className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-              >
-                {locationLoading
-                  ? "A pedir autorização GPS..."
-                  : userLocation
-                    ? "Pedir GPS outra vez"
-                    : "Pedir autorização GPS"}
-              </button>
-
               {userLocation && (
                 <button
                   type="button"
@@ -1080,18 +839,18 @@ export default function MapPage() {
                 </button>
               )}
 
-              {userLocationMapsUrl && (
+              {userLocation && userLocationMapsUrl && (
                 <a
                   href={userLocationMapsUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-full border border-green-900 px-5 py-4 text-center text-sm font-bold text-green-400"
                 >
-                  Ver ponto automático no Maps
+                  Ver origem no Maps
                 </a>
               )}
 
-              {savedManualLocation && userLocation?.source !== "manual" && (
+              {savedManualLocation && !userLocation && (
                 <button
                   type="button"
                   onClick={() =>
@@ -1134,20 +893,19 @@ export default function MapPage() {
               }}
             >
               <label className="text-sm font-bold text-zinc-300">
-                Ou define a origem do raio
+                Onde estás?
               </label>
 
               <input
                 value={manualLocationQuery}
                 onChange={(event) => setManualLocationQuery(event.target.value)}
-                placeholder="Ex: Rua..., Pombal ou Leiria"
+                placeholder="Ex: Pombal, Largo do Cardal ou a tua morada"
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
               />
 
               <button
                 type="submit"
-                disabled={locationLoading}
-                className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
+                className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
               >
                 Usar e guardar esta origem
               </button>
@@ -1206,8 +964,7 @@ export default function MapPage() {
                     onChange={(event) =>
                       handleRadiusChange(event.target.value as RadiusFilter)
                     }
-                    disabled={locationLoading}
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
                   >
                     <option value="all">Portugal inteiro</option>
                     <option value="5">Até 5 km</option>
@@ -1218,7 +975,7 @@ export default function MapPage() {
 
                   {!userLocation && (
                     <p className="mt-2 text-xs text-zinc-600">
-                      Ao escolher um raio, o browser vai pedir a tua localização.
+                      Para usar raio, escreve primeiro onde estás.
                     </p>
                   )}
                 </div>
@@ -1437,7 +1194,7 @@ export default function MapPage() {
                       {closestLocatedEvent.title}
                     </p>
                     <p className="mt-1 text-sm text-yellow-400">
-                      Evento mais próximo da localização automática:{" "}
+                      Evento mais próximo da tua origem:{" "}
                       {formatDistance(closestLocatedEvent.distanceKm)}
                     </p>
                   </div>
