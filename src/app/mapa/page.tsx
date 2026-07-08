@@ -731,7 +731,7 @@ export default function MapPage() {
         )}
 
         <section className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 p-4 backdrop-blur lg:sticky lg:top-24 lg:mt-8 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5">
-          <div className="mx-auto grid max-w-md gap-4 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr_auto] lg:items-center">
+          <div className="mx-auto grid max-w-md gap-3 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr] lg:items-center">
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -767,79 +767,58 @@ export default function MapPage() {
                   {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`}
                 </p>
 
-                <div className="flex items-center gap-2 overflow-x-auto text-xs font-bold text-zinc-500">
-                  <span className="rounded-full border border-zinc-800 px-3 py-2">
-                    {filteredEvents.length} visíveis
-                  </span>
-                  <span className="rounded-full border border-zinc-800 px-3 py-2">
-                    {eventsWithCoordinatesCount} geo
-                  </span>
-                  {closestEvent && (
-                    <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-2 text-green-400">
-                      {formatDistance(closestEvent.distanceKm)}
-                    </span>
+                <p className="text-sm font-black text-zinc-400">
+                  {filteredEvents.length}{" "}
+                  {filteredEvents.length === 1 ? "evento" : "eventos"}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-[1fr_auto] items-center gap-3">
+                <input
+                  type="range"
+                  min="5"
+                  max="150"
+                  step="5"
+                  value={radiusFilter === "all" ? "150" : radiusFilter}
+                  onChange={(event) =>
+                    handleRadiusChange(event.target.value as RadiusFilter)
+                  }
+                  className="h-2 w-full accent-[#f2f1ec]"
+                />
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryPicker((current) => !current)}
+                    aria-label="Escolher tipo de evento"
+                    className="grid h-11 w-11 place-items-center rounded-full border border-zinc-700 text-lg font-black text-zinc-200"
+                  >
+                    =
+                  </button>
+
+                  {showCategoryPicker && (
+                    <div className="absolute bottom-14 right-0 z-50 grid min-w-56 gap-2 rounded-2xl border border-zinc-800 bg-black p-3 shadow-2xl lg:bottom-auto lg:top-14">
+                      {categoryOptions.map((category) => (
+                        <button
+                          key={category}
+                          type="button"
+                          onClick={() => {
+                            setCategoryFilter(category);
+                            setShowCategoryPicker(false);
+                          }}
+                          className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
+                            categoryFilter === category
+                              ? "bg-[#f2f1ec] text-black"
+                              : "text-zinc-300 hover:bg-zinc-900"
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
-
-              <input
-                type="range"
-                min="5"
-                max="150"
-                step="5"
-                value={radiusFilter === "all" ? "150" : radiusFilter}
-                onChange={(event) =>
-                  handleRadiusChange(event.target.value as RadiusFilter)
-                }
-                className="h-2 w-full accent-[#f2f1ec]"
-              />
-            </div>
-
-            <div className="relative flex items-center justify-end gap-2">
-              {savedManualLocation && !userLocation && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    useSavedManualLocation(
-                      radiusFilter === "all" ? "50" : radiusFilter
-                    )
-                  }
-                  className="rounded-full border border-yellow-900 px-4 py-3 text-xs font-bold text-yellow-400"
-                >
-                  Guardada
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setShowCategoryPicker((current) => !current)}
-                aria-label="Escolher tipo de evento"
-                className="grid h-12 w-12 place-items-center rounded-full border border-zinc-700 text-lg font-black text-zinc-200"
-              >
-                =
-              </button>
-
-              {showCategoryPicker && (
-                <div className="absolute bottom-14 right-0 z-50 grid min-w-56 gap-2 rounded-2xl border border-zinc-800 bg-black p-3 shadow-2xl lg:bottom-auto lg:top-14">
-                  {categoryOptions.map((category) => (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() => {
-                        setCategoryFilter(category);
-                        setShowCategoryPicker(false);
-                      }}
-                      className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
-                        categoryFilter === category
-                          ? "bg-[#f2f1ec] text-black"
-                          : "text-zinc-300 hover:bg-zinc-900"
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
