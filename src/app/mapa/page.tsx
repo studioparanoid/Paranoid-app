@@ -733,20 +733,18 @@ export default function MapPage() {
   return (
     <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-56 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
       <section className="mx-auto max-w-md lg:max-w-7xl">
-        <section>
-          <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-              Mapa
-            </p>
+        <section className="mt-6 space-y-5 lg:mt-8">
+  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900 pb-4">
+    <p className="text-sm font-black text-zinc-300">
+      {filteredEvents.length} evento
+      {filteredEvents.length === 1 ? "" : "s"} no radar
+      <span className="font-bold text-zinc-600"> · {getRadiusLabel()}</span>
+    </p>
 
-            <h1 className="text-6xl font-black leading-none tracking-tight lg:text-7xl">
-              Radar cultural.
-            </h1>
-
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-500 lg:text-lg">
-              Onde há ruído, aparece aqui.
-            </p>
-          </div>
+    <p className="text-xs uppercase tracking-[0.35em] text-red-700">
+      Resultados
+    </p>
+  </div>
         </section>
 
         {message && (
