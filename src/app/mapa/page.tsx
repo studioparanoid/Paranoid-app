@@ -44,7 +44,7 @@ type Coordinate = {
 type GeolocationErrorCode = 1 | 2 | 3;
 
 const LOCATION_RADIUS_BUFFER_KM = 0.75;
-const GOOD_LOCATION_ACCURACY_METERS = 150;
+const GOOD_LOCATION_ACCURACY_METERS = 50;
 
 type VenueRow = {
   id: string;
@@ -321,7 +321,7 @@ function getBestWatchedPosition() {
       {
         enableHighAccuracy: true,
         maximumAge: 0,
-        timeout: 20000,
+        timeout: 35000,
       }
     );
 
@@ -338,7 +338,7 @@ function getBestWatchedPosition() {
       settled = true;
       navigator.geolocation.clearWatch(watchId);
       reject({ code: 3 });
-    }, 22000);
+    }, 38000);
   });
 }
 
@@ -639,6 +639,26 @@ export default function MapPage() {
     (event) => event.distanceKm !== null
   );
 
+  const closestLocatedEvent = useMemo(() => {
+    if (!userLocation) {
+      return null;
+    }
+
+    return (
+      [...eventsWithLocation]
+        .filter((event) => event.distanceKm !== null)
+        .sort(sortEvents)[0] || null
+    );
+  }, [eventsWithLocation, userLocation]);
+
+  const userLocationMapsUrl = userLocation
+    ? buildGoogleMapsUrl(
+        userLocation.latitude,
+        userLocation.longitude,
+        userLocation.label
+      )
+    : null;
+
   async function loadMapData() {
     setLoading(true);
     setMessage("");
@@ -707,9 +727,9 @@ export default function MapPage() {
         }
 
         position = await getCurrentPosition({
-          enableHighAccuracy: false,
-          timeout: 18000,
-          maximumAge: 300000,
+          enableHighAccuracy: true,
+          timeout: 30000,
+          maximumAge: 0,
         });
       }
 
@@ -829,6 +849,19 @@ export default function MapPage() {
     if (userLocation) {
       if (userLocation.source === "manual") {
         return `Origem do raio: ${userLocation.label}. Podes ajustar o raio abaixo.`;
+      }
+
+      if (
+        radiusFilter !== "all" &&
+        filteredEvents.length === 0 &&
+        closestLocatedEvent?.distanceKm !== null &&
+        closestLocatedEvent?.distanceKm !== undefined
+      ) {
+        return `Localização automática ativa (${formatAccuracy(
+          userLocation.accuracyKm
+        )}), mas o evento mais próximo dessa coordenada fica a ${formatDistance(
+          closestLocatedEvent.distanceKm
+        )}. Se isto não bater certo, o browser está a devolver a origem errada.`;
       }
 
       if (userLocation.accuracyKm !== null && userLocation.accuracyKm > 1) {
@@ -952,6 +985,17 @@ export default function MapPage() {
                 >
                   Desligar localização
                 </button>
+              )}
+
+              {userLocationMapsUrl && (
+                <a
+                  href={userLocationMapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-green-900 px-5 py-4 text-center text-sm font-bold text-green-400"
+                >
+                  Ver ponto automático no Maps
+                </a>
               )}
             </div>
 
@@ -1253,6 +1297,24 @@ export default function MapPage() {
                   </p>
                 </div>
               )}
+
+              {!closestEvent &&
+                userLocation &&
+                radiusFilter !== "all" &&
+                closestLocatedEvent && (
+                  <div className="mt-4 rounded-[1.5rem] border border-yellow-900 bg-yellow-950/20 p-4">
+                    <p className="text-xs font-black uppercase tracking-wide text-yellow-500">
+                      Fora do raio
+                    </p>
+                    <p className="mt-2 text-lg font-black">
+                      {closestLocatedEvent.title}
+                    </p>
+                    <p className="mt-1 text-sm text-yellow-400">
+                      Evento mais próximo da localização automática:{" "}
+                      {formatDistance(closestLocatedEvent.distanceKm)}
+                    </p>
+                  </div>
+                )}
             </section>
           </aside>
 
