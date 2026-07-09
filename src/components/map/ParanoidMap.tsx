@@ -273,6 +273,7 @@ export function ParanoidMap({
   const introPlayedRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
   const [styleReady, setStyleReady] = useState(false);
+  const [cinematicActive, setCinematicActive] = useState(false);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) || null,
@@ -359,6 +360,7 @@ export function ParanoidMap({
     }
 
     introPlayedRef.current = true;
+    setCinematicActive(true);
 
     window.setTimeout(() => {
       map.flyTo({
@@ -373,6 +375,12 @@ export function ParanoidMap({
         essential: true,
       });
     }, 750);
+
+    const cinematicTimer = window.setTimeout(() => {
+      setCinematicActive(false);
+    }, 6800);
+
+    return () => window.clearTimeout(cinematicTimer);
   }, [mapReady, userLocation]);
 
   useEffect(() => {
@@ -506,5 +514,27 @@ export function ParanoidMap({
     });
   }, [selectedEvent]);
 
-  return <div ref={containerRef} className="h-full min-h-[520px] w-full" />;
+  return (
+    <div className="relative h-full min-h-[520px] w-full overflow-hidden">
+      <div ref={containerRef} className="h-full min-h-[520px] w-full" />
+
+      {cinematicActive && (
+        <div className="paranoid-entry-cinematic pointer-events-none absolute inset-0 z-20">
+          <div className="paranoid-entry-stars" />
+          <div className="paranoid-entry-vortex" />
+          <div className="paranoid-entry-fire paranoid-entry-fire-left" />
+          <div className="paranoid-entry-fire paranoid-entry-fire-right" />
+          <div className="paranoid-entry-heat" />
+          <div className="paranoid-entry-inferno" />
+          <div className="paranoid-entry-silhouettes">
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
