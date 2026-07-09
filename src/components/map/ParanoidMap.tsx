@@ -103,6 +103,7 @@ type MapboxMap = {
   remove: () => void;
   resize: () => void;
   flyTo: (options: Record<string, unknown>) => void;
+  fitBounds: (bounds: MapboxBounds, options?: Record<string, unknown>) => void;
   easeTo: (options: Record<string, unknown>) => void;
   getZoom: () => number;
   on: (event: string, handler: () => void) => void;
@@ -399,7 +400,7 @@ export function ParanoidMap({
 
       if (event.id === selectedEventId) {
         markerElement.className =
-          "h-5 w-5 rounded-full border-2 border-white bg-red-500 shadow-[0_0_0_10px_rgba(239,68,68,0.3)]";
+          "h-6 w-6 scale-110 rounded-full border-[3px] border-white bg-red-600 shadow-[0_0_0_10px_rgba(239,68,68,0.38),0_0_30px_rgba(239,68,68,0.9)]";
       }
 
       markerElement.addEventListener("click", () => onSelectEvent(event));
@@ -425,6 +426,28 @@ export function ParanoidMap({
 
     map.resize();
   }, [events, mapReady, onSelectEvent, selectedEventId, userLocation]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const mapboxgl = mapboxRef.current;
+
+    if (!map || !mapboxgl || !userLocation || radiusKm === null) {
+      return;
+    }
+
+    const bounds = new mapboxgl.LngLatBounds();
+    bounds.extend([userLocation.longitude, userLocation.latitude]);
+
+    events.forEach((event) => {
+      bounds.extend([event.longitude, event.latitude]);
+    });
+
+    map.fitBounds(bounds, {
+      padding: { top: 120, right: 70, bottom: 260, left: 70 },
+      maxZoom: events.length > 0 ? 14.5 : 15.5,
+      duration: 700,
+    });
+  }, [events, radiusKm, userLocation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -494,6 +517,21 @@ export function ParanoidMap({
 
   useEffect(() => {
     if (!selectedEvent || !mapRef.current) {
+      return;
+    }
+
+    const mapboxgl = mapboxRef.current;
+
+    if (userLocation && mapboxgl) {
+      const bounds = new mapboxgl.LngLatBounds();
+      bounds.extend([userLocation.longitude, userLocation.latitude]);
+      bounds.extend([selectedEvent.longitude, selectedEvent.latitude]);
+
+      mapRef.current.fitBounds(bounds, {
+        padding: { top: 130, right: 65, bottom: 260, left: 65 },
+        maxZoom: 16,
+        duration: 700,
+      });
       return;
     }
 

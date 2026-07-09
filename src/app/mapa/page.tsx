@@ -423,6 +423,7 @@ export default function MapPage() {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [controlsCollapsed, setControlsCollapsed] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [eventCardOpen, setEventCardOpen] = useState(true);
   const lastScrollY = useRef(0);
 
   const venueById = useMemo(() => {
@@ -625,6 +626,7 @@ export default function MapPage() {
       (currentIndex + direction + filteredEvents.length) % filteredEvents.length;
 
     setSelectedEventId(filteredEvents[nextIndex].id);
+    setEventCardOpen(true);
   }
 
   async function loadMapData() {
@@ -757,11 +759,13 @@ export default function MapPage() {
     setMunicipalityFilter(ALL_MUNICIPALITIES);
     setCityFilter(ALL_CITIES);
     setMessage("");
+    setEventCardOpen(true);
   }
 
   function handleRadiusChange(value: RadiusFilter) {
     if (value === "all") {
       setRadiusFilter("all");
+      setEventCardOpen(true);
       return;
     }
 
@@ -781,6 +785,7 @@ export default function MapPage() {
     }
 
     setRadiusFilter(value);
+    setEventCardOpen(true);
   }
 
   async function useManualLocation(nextRadius: RadiusFilter = "50") {
@@ -794,6 +799,20 @@ export default function MapPage() {
     }
 
     setMessage("");
+
+    if (
+      userLocation &&
+      (cleanQuery === userLocation.label ||
+        (userLocation.source === "browser" && cleanQuery === "A tua localização"))
+    ) {
+      setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
+      setDistrictFilter(ALL_DISTRICTS);
+      setMunicipalityFilter(ALL_MUNICIPALITIES);
+      setCityFilter(ALL_CITIES);
+      setControlsCollapsed(true);
+      setEventCardOpen(true);
+      return;
+    }
 
     try {
       const response = await fetch("/api/geocode", {
@@ -838,6 +857,7 @@ export default function MapPage() {
       setMunicipalityFilter(ALL_MUNICIPALITIES);
       setCityFilter(ALL_CITIES);
       setControlsCollapsed(true);
+      setEventCardOpen(true);
     } catch {
       setMessage("Não deu para localizar essa morada/localidade agora.");
     }
@@ -871,6 +891,7 @@ export default function MapPage() {
         setCityFilter(ALL_CITIES);
         setMessage("");
         setLocating(false);
+        setEventCardOpen(true);
       },
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
@@ -896,6 +917,7 @@ export default function MapPage() {
   const handleSelectMapEvent = useCallback((event: ParanoidMapEvent) => {
     setSelectedEventId(event.id);
     setControlsCollapsed(false);
+    setEventCardOpen(true);
   }, []);
 
   const dateQuickFilters: Array<{
@@ -1071,6 +1093,7 @@ export default function MapPage() {
                           onClick={() => {
                             setCategoryFilter(category);
                             setShowCategoryPicker(false);
+                            setEventCardOpen(true);
                           }}
                           className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
                             categoryFilter === category
@@ -1093,7 +1116,10 @@ export default function MapPage() {
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setDateFilter(option.value)}
+                onClick={() => {
+                  setDateFilter(option.value);
+                  setEventCardOpen(true);
+                }}
                 className={`rounded-lg px-2 py-2 text-[11px] font-black ${
                   dateFilter === option.value
                     ? "bg-[#f2f1ec] text-black"
@@ -1109,7 +1135,10 @@ export default function MapPage() {
             <input
               type="date"
               value={customDateFilter}
-              onChange={(event) => setCustomDateFilter(event.target.value)}
+              onChange={(event) => {
+                setCustomDateFilter(event.target.value);
+                setEventCardOpen(true);
+              }}
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/70 px-4 py-2.5 text-sm font-black text-[#f2f1ec] outline-none focus:border-red-700"
             />
           )}
@@ -1165,6 +1194,7 @@ export default function MapPage() {
                         onClick={() => {
                           setCategoryFilter(category);
                           setShowCategoryPicker(false);
+                          setEventCardOpen(true);
                         }}
                         className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
                           categoryFilter === category
@@ -1185,7 +1215,7 @@ export default function MapPage() {
 
       <aside
         className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/72 shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
-          controlsCollapsed ? "block" : "hidden lg:flex"
+          controlsCollapsed && eventCardOpen ? "block" : "hidden lg:flex"
         }`}
       >
         {selectedEvent ? (
@@ -1239,7 +1269,7 @@ export default function MapPage() {
                 type="button"
                 onClick={() => selectRelativeEvent(1)}
                 aria-label="Próximo evento"
-              className="grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-[#f2f1ec] lg:hidden"
+                className="grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-[#f2f1ec] lg:hidden"
               >
                 ›
               </button>
@@ -1260,6 +1290,14 @@ export default function MapPage() {
               >
                 Rota
               </a>
+              <button
+                type="button"
+                onClick={() => setEventCardOpen(false)}
+                aria-label="Fechar evento"
+                className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/30 text-sm font-black text-zinc-100"
+              >
+                ×
+              </button>
             </div>
           </div>
         ) : (
