@@ -328,34 +328,34 @@ function EventSummary({
     <button
       type="button"
       onClick={onSelect}
-      className={`w-full rounded-2xl border p-4 text-left transition ${
+      className={`w-full rounded-xl border px-3 py-3 text-left transition ${
         selected
-          ? "border-red-600 bg-red-950/30"
-          : "border-zinc-900 bg-zinc-950/85 hover:border-zinc-700"
+          ? "border-red-500 bg-red-950/40"
+          : "border-white/10 bg-black/55 hover:border-white/25"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-red-500">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400">
             {eventDisplayDate(event)}
           </p>
-          <h3 className="mt-2 text-lg font-black leading-tight text-[#f2f1ec]">
+          <h3 className="mt-1 line-clamp-2 text-sm font-black leading-tight text-[#f2f1ec]">
             {event.title}
           </h3>
         </div>
-        <span className="whitespace-nowrap text-xs font-black text-zinc-500">
+        <span className="whitespace-nowrap rounded-full bg-white/10 px-2 py-1 text-[10px] font-black text-zinc-200">
           {formatDistance(event.distanceKm)}
         </span>
       </div>
 
-      <p className="mt-3 text-sm font-bold text-zinc-400">
+      <p className="mt-2 truncate text-xs font-bold text-zinc-300">
         {event.venue_name || event.venue?.name || "Sem espaco"}
       </p>
-      <p className="mt-1 text-xs uppercase tracking-wide text-zinc-600">
+      <p className="mt-1 truncate text-[10px] uppercase tracking-wide text-zinc-500">
         {cityArea || getEventDistrict(event) || "Sem zona"}
       </p>
       {event.finalLatitude === null || event.finalLongitude === null ? (
-        <p className="mt-3 text-xs font-bold uppercase text-zinc-600">
+        <p className="mt-2 text-[10px] font-bold uppercase text-zinc-500">
           Sem coordenadas
         </p>
       ) : null}
@@ -860,18 +860,18 @@ export default function MapPage() {
         />
       </section>
 
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 bg-gradient-to-b from-black via-black/75 to-transparent px-4 pt-4 lg:px-8 lg:pt-6">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 bg-gradient-to-b from-black/85 to-transparent px-4 pt-4 lg:px-8 lg:pt-5">
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
+          <div className="rounded-full border border-white/10 bg-black/45 px-4 py-2 backdrop-blur-md">
+            <p className="text-[10px] font-black uppercase tracking-[0.32em] text-red-400">
               Radar
             </p>
-            <h1 className="mt-1 text-2xl font-black leading-none lg:text-4xl">
+            <h1 className="text-sm font-black leading-none lg:text-base">
               Mapa Paranoid
             </h1>
           </div>
-          <p className="rounded-full border border-zinc-800 bg-black/70 px-3 py-2 text-xs font-black text-zinc-300 backdrop-blur">
-            {filteredEvents.length} eventos
+          <p className="rounded-full border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-black text-zinc-100 backdrop-blur-md">
+            {filteredEvents.length}
           </p>
         </div>
       </header>
@@ -883,7 +883,7 @@ export default function MapPage() {
       )}
 
       <section
-        className={`fixed inset-x-0 bottom-[calc(42vh+5rem+env(safe-area-inset-bottom))] z-50 border-y border-zinc-800 bg-black/95 px-4 py-3 backdrop-blur transition-transform lg:absolute lg:bottom-auto lg:left-8 lg:right-auto lg:top-28 lg:w-[420px] lg:rounded-2xl lg:border lg:bg-zinc-950/90 lg:p-4 ${
+        className={`fixed inset-x-3 bottom-[calc(42vh+5rem+env(safe-area-inset-bottom))] z-50 rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3 ${
           controlsCollapsed ? "translate-y-[calc(100%-3.25rem)] lg:translate-y-0" : ""
         }`}
       >
@@ -905,25 +905,90 @@ export default function MapPage() {
               useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
             }}
           >
-            <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div className="grid grid-cols-[1fr_auto] gap-2 lg:grid-cols-[minmax(180px,1fr)_auto_auto_minmax(180px,1fr)_auto_auto] lg:items-center">
               <input
                 value={manualLocationQuery}
                 onFocus={() => setControlsCollapsed(false)}
                 onChange={(event) => setManualLocationQuery(event.target.value)}
                 placeholder="Onde estás?"
-                className={`min-w-0 rounded-2xl border px-4 py-3 text-sm font-bold outline-none placeholder:text-zinc-600 ${
+                className={`min-w-0 rounded-xl border px-4 py-3 text-sm font-bold outline-none placeholder:text-zinc-600 ${
                   userLocation
                     ? "border-green-900 bg-green-950/20 text-green-300 focus:border-green-700"
-                    : "border-zinc-800 bg-black text-[#f2f1ec] focus:border-red-900"
+                    : "border-white/10 bg-black/70 text-[#f2f1ec] focus:border-red-700"
                 }`}
               />
 
               <button
                 type="submit"
-                className="rounded-2xl bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black"
+                className="rounded-xl bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black"
               >
                 Usar
               </button>
+
+              <button
+                type="button"
+                onClick={useBrowserLocation}
+                disabled={locating}
+                className="hidden rounded-xl border border-red-500/60 bg-red-950/35 px-4 py-3 text-sm font-black text-red-100 disabled:cursor-wait disabled:opacity-70 lg:block"
+              >
+                {locating ? "A localizar..." : "Localização"}
+              </button>
+
+              <div className="hidden grid-cols-[auto_1fr_auto_auto] items-center gap-3 lg:grid">
+                <p className="whitespace-nowrap text-sm font-black text-zinc-100">
+                  {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`}
+                </p>
+
+                <input
+                  type="range"
+                  min="5"
+                  max="150"
+                  step="5"
+                  value={radiusFilter === "all" ? "150" : radiusFilter}
+                  onFocus={() => setControlsCollapsed(false)}
+                  onChange={(event) =>
+                    handleRadiusChange(event.target.value as RadiusFilter)
+                  }
+                  className="h-2 w-full accent-[#f2f1ec]"
+                />
+
+                <p className="whitespace-nowrap text-sm font-black text-zinc-300">
+                  {filteredEvents.length}
+                </p>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryPicker((current) => !current)}
+                    aria-label="Escolher tipo de evento"
+                    className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-zinc-100"
+                  >
+                    =
+                  </button>
+
+                  {showCategoryPicker && (
+                    <div className="absolute bottom-14 right-0 z-50 grid max-h-72 min-w-56 gap-2 overflow-auto rounded-2xl border border-white/10 bg-black/90 p-3 shadow-2xl">
+                      {categoryOptions.map((category) => (
+                        <button
+                          key={category}
+                          type="button"
+                          onClick={() => {
+                            setCategoryFilter(category);
+                            setShowCategoryPicker(false);
+                          }}
+                          className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
+                            categoryFilter === category
+                              ? "bg-[#f2f1ec] text-black"
+                              : "text-zinc-300 hover:bg-zinc-900"
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </form>
 
@@ -931,12 +996,12 @@ export default function MapPage() {
             type="button"
             onClick={useBrowserLocation}
             disabled={locating}
-            className="mt-2 w-full rounded-2xl border border-red-900 bg-red-950/25 px-4 py-3 text-sm font-black text-red-100 disabled:cursor-wait disabled:opacity-70"
+            className="mt-2 w-full rounded-xl border border-red-500/60 bg-red-950/35 px-4 py-3 text-sm font-black text-red-100 disabled:cursor-wait disabled:opacity-70 lg:hidden"
           >
             {locating ? "A localizar..." : "Usar localização atual"}
           </button>
 
-          <div className="mt-3 grid gap-2">
+          <div className="mt-3 grid gap-2 lg:hidden">
             <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
               <p className="whitespace-nowrap text-sm font-black text-zinc-300">
                 {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`}
@@ -996,19 +1061,19 @@ export default function MapPage() {
         </div>
       </section>
 
-      <aside className="absolute bottom-0 left-0 right-0 z-40 max-h-[42vh] overflow-hidden rounded-t-3xl border-t border-zinc-800 bg-black/95 pb-[calc(5rem+env(safe-area-inset-bottom))] backdrop-blur lg:bottom-8 lg:left-auto lg:right-8 lg:top-28 lg:flex lg:max-h-none lg:w-[390px] lg:flex-col lg:rounded-2xl lg:border lg:pb-0">
+      <aside className="absolute bottom-0 left-0 right-0 z-40 max-h-[42vh] overflow-hidden rounded-t-3xl border-t border-white/10 bg-black/80 pb-[calc(5rem+env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:rounded-2xl lg:border lg:pb-0">
         {selectedEvent ? (
-          <div className="border-b border-zinc-900 p-4">
+          <div className="border-b border-white/10 p-4 lg:p-3">
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-700 lg:hidden" />
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">
               {eventDisplayDate(selectedEvent)}
             </p>
-            <h2 className="mt-2 text-2xl font-black leading-tight">
+            <h2 className="mt-1 line-clamp-2 text-xl font-black leading-tight lg:text-base">
               {selectedEvent.title}
             </h2>
-            <div className="mt-3 grid gap-1 text-sm text-zinc-400">
+            <div className="mt-2 grid gap-1 text-xs text-zinc-300">
               <p>{selectedEvent.display_time || "Hora por definir"}</p>
-              <p>{selectedEvent.venue_name || selectedEvent.venue?.name || "Sem espaco"}</p>
+              <p className="truncate">{selectedEvent.venue_name || selectedEvent.venue?.name || "Sem espaco"}</p>
               <p>
                 {[getEventCity(selectedEvent), getEventMunicipality(selectedEvent)]
                   .filter(Boolean)
@@ -1017,15 +1082,15 @@ export default function MapPage() {
                   "Sem zona"}
               </p>
               {selectedEvent.distanceKm !== null && (
-                <p className="font-black text-green-400">
+                <p className="font-black text-green-300">
                   {formatDistance(selectedEvent.distanceKm)}
                 </p>
               )}
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-3 flex gap-2">
               <Link
                 href={`/eventos/${selectedEvent.slug}`}
-                className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+                className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-2.5 text-center text-xs font-black text-black"
               >
                 Ver evento
               </Link>
@@ -1033,19 +1098,19 @@ export default function MapPage() {
                 href={selectedMapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-200"
+                className="rounded-full border border-white/15 bg-black/30 px-4 py-2.5 text-xs font-black text-zinc-100"
               >
                 Rota
               </a>
             </div>
           </div>
         ) : (
-          <div className="p-5">
+          <div className="p-4">
             <p className="text-sm font-bold text-zinc-500">Sem eventos no radar.</p>
           </div>
         )}
 
-        <div className="hidden flex-1 space-y-3 overflow-auto p-4 lg:block">
+        <div className="hidden flex-1 space-y-2 overflow-auto p-3 lg:block">
           {filteredEvents.length === 0 ? (
             <p className="rounded-2xl border border-zinc-900 p-4 text-sm font-bold text-zinc-500">
               Muda o raio ou a categoria.
