@@ -259,6 +259,13 @@ function buildCircleFeature(
   };
 }
 
+function resizeMapSoon(map: MapboxMap) {
+  window.requestAnimationFrame(() => map.resize());
+  window.setTimeout(() => map.resize(), 120);
+  window.setTimeout(() => map.resize(), 450);
+  window.setTimeout(() => map.resize(), 1100);
+}
+
 export function ParanoidMap({
   events,
   userLocation,
@@ -296,7 +303,7 @@ export function ParanoidMap({
         mapboxRef.current = mapboxgl;
         mapboxgl.accessToken = mapboxToken || "";
 
-        mapRef.current = new mapboxgl.Map({
+        const map = new mapboxgl.Map({
           container: containerRef.current,
           style: PUBLIC_SATELLITE_STYLE,
           center: WORLD_START_CENTER,
@@ -307,21 +314,21 @@ export function ParanoidMap({
           attributionControl: false,
         });
 
-        mapRef.current.addControl(
+        mapRef.current = map;
+
+        map.addControl(
           new mapboxgl.NavigationControl({ showCompass: true }),
           "top-right"
         );
-        mapRef.current.addControl(
+        map.addControl(
           new mapboxgl.AttributionControl({ compact: true }),
           "bottom-right"
         );
-        mapRef.current.on("style.load", () => {
-          const map = mapRef.current;
-
-          if (!map) {
-            return;
-          }
-
+        map.on("load", () => {
+          resizeMapSoon(map);
+          setMapReady(true);
+        });
+        map.on("style.load", () => {
           map.setProjection("globe");
           map.setFog({
             color: "rgb(8, 12, 20)",
@@ -331,9 +338,10 @@ export function ParanoidMap({
             "star-intensity": 0.35,
           });
 
+          resizeMapSoon(map);
           setStyleReady(true);
         });
-        setMapReady(true);
+        resizeMapSoon(map);
       })
       .catch(() => {
         mapRef.current = null;
@@ -351,6 +359,34 @@ export function ParanoidMap({
       setStyleReady(false);
     };
   }, [mapboxToken]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const container = containerRef.current;
+
+    if (!mapReady || !map || !container) {
+      return;
+    }
+
+    const resize = () => resizeMapSoon(map);
+    const observer =
+      "ResizeObserver" in window ? new ResizeObserver(resize) : null;
+
+    resize();
+    observer?.observe(container);
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
+    window.addEventListener("focus", resize);
+    document.addEventListener("visibilitychange", resize);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("orientationchange", resize);
+      window.removeEventListener("focus", resize);
+      document.removeEventListener("visibilitychange", resize);
+    };
+  }, [mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
