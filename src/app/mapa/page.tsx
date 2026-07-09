@@ -384,7 +384,7 @@ export default function MapPage() {
   const dateFilter: EventDateFilter = "all";
   const priceFilter: EventPriceFilter = "all";
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  const [controlsCollapsed, setControlsCollapsed] = useState(false);
+  const [controlsCollapsed, setControlsCollapsed] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const lastScrollY = useRef(0);
 
@@ -566,6 +566,22 @@ export default function MapPage() {
         selectedEvent.locationLabel
       )
     : "#";
+
+  const selectedEventIndex = selectedEvent
+    ? filteredEvents.findIndex((event) => event.id === selectedEvent.id)
+    : -1;
+
+  function selectRelativeEvent(direction: -1 | 1) {
+    if (filteredEvents.length === 0) {
+      return;
+    }
+
+    const currentIndex = selectedEventIndex >= 0 ? selectedEventIndex : 0;
+    const nextIndex =
+      (currentIndex + direction + filteredEvents.length) % filteredEvents.length;
+
+    setSelectedEventId(filteredEvents[nextIndex].id);
+  }
 
   async function loadMapData() {
     setLoading(true);
@@ -883,22 +899,47 @@ export default function MapPage() {
       )}
 
       <section
-        className={`fixed inset-x-3 bottom-[calc(42vh+5rem+env(safe-area-inset-bottom))] z-50 rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3 ${
-          controlsCollapsed ? "translate-y-[calc(100%-3.25rem)] lg:translate-y-0" : ""
-        }`}
+        className={`fixed inset-x-3 bottom-[calc(5.6rem+env(safe-area-inset-bottom))] z-50 rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3`}
       >
         {controlsCollapsed && (
           <button
             type="button"
             onClick={() => setControlsCollapsed(false)}
-            aria-label="Abrir filtros do mapa"
-            className="mx-auto mb-2 grid h-8 w-12 place-items-center rounded-full border border-zinc-700 bg-black text-base font-black text-[#f2f1ec] lg:hidden"
+            aria-label="Abrir filtros"
+            className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-3 text-left lg:hidden"
           >
-            ^
+            <span className="min-w-0">
+              <span className="block truncate text-xs font-black text-[#f2f1ec]">
+                {manualLocationQuery || userLocation?.label || "Definir zona"}
+              </span>
+              <span className="block text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`} ·{" "}
+                {filteredEvents.length} eventos
+              </span>
+            </span>
+            <span className="rounded-full border border-red-500/50 px-3 py-2 text-xs font-black text-red-100">
+              Filtros
+            </span>
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#f2f1ec] text-sm font-black text-black">
+              +
+            </span>
           </button>
         )}
 
         <div className={controlsCollapsed ? "hidden lg:block" : "block"}>
+          <div className="mb-2 flex items-center justify-between lg:hidden">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">
+              Filtros
+            </p>
+            <button
+              type="button"
+              onClick={() => setControlsCollapsed(true)}
+              className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-black text-zinc-200"
+            >
+              Fechar
+            </button>
+          </div>
+
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -996,12 +1037,12 @@ export default function MapPage() {
             type="button"
             onClick={useBrowserLocation}
             disabled={locating}
-            className="mt-2 w-full rounded-xl border border-red-500/60 bg-red-950/35 px-4 py-3 text-sm font-black text-red-100 disabled:cursor-wait disabled:opacity-70 lg:hidden"
+            className="mt-2 w-full rounded-xl border border-red-500/60 bg-red-950/35 px-4 py-2.5 text-sm font-black text-red-100 disabled:cursor-wait disabled:opacity-70 lg:hidden"
           >
             {locating ? "A localizar..." : "Usar localização atual"}
           </button>
 
-          <div className="mt-3 grid gap-2 lg:hidden">
+          <div className="mt-2 grid gap-2 lg:hidden">
             <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
               <p className="whitespace-nowrap text-sm font-black text-zinc-300">
                 {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`}
@@ -1061,32 +1102,68 @@ export default function MapPage() {
         </div>
       </section>
 
-      <aside className="absolute bottom-0 left-0 right-0 z-40 max-h-[42vh] overflow-hidden rounded-t-3xl border-t border-white/10 bg-black/80 pb-[calc(5rem+env(safe-area-inset-bottom))] shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:rounded-2xl lg:border lg:pb-0">
+      <aside
+        className={`absolute bottom-[calc(10.5rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/72 shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
+          controlsCollapsed ? "block" : "hidden lg:flex"
+        }`}
+      >
         {selectedEvent ? (
-          <div className="border-b border-white/10 p-4 lg:p-3">
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-700 lg:hidden" />
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">
-              {eventDisplayDate(selectedEvent)}
-            </p>
-            <h2 className="mt-1 line-clamp-2 text-xl font-black leading-tight lg:text-base">
-              {selectedEvent.title}
-            </h2>
-            <div className="mt-2 grid gap-1 text-xs text-zinc-300">
-              <p>{selectedEvent.display_time || "Hora por definir"}</p>
-              <p className="truncate">{selectedEvent.venue_name || selectedEvent.venue?.name || "Sem espaco"}</p>
-              <p>
-                {[getEventCity(selectedEvent), getEventMunicipality(selectedEvent)]
-                  .filter(Boolean)
-                  .join(" / ") ||
-                  getEventDistrict(selectedEvent) ||
-                  "Sem zona"}
-              </p>
-              {selectedEvent.distanceKm !== null && (
-                <p className="font-black text-green-300">
-                  {formatDistance(selectedEvent.distanceKm)}
+          <div className="border-b border-white/10 p-3">
+            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+              <button
+                type="button"
+                onClick={() => selectRelativeEvent(-1)}
+                aria-label="Evento anterior"
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-black/40 text-xl font-black text-[#f2f1ec] lg:hidden"
+              >
+                ‹
+              </button>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">
+                    {eventDisplayDate(selectedEvent)}
+                  </p>
+                  <p className="text-[10px] font-black text-zinc-500 lg:hidden">
+                    {selectedEventIndex + 1}/{filteredEvents.length}
+                  </p>
+                </div>
+                <h2 className="mt-1 line-clamp-1 text-lg font-black leading-tight lg:line-clamp-2 lg:text-base">
+                  {selectedEvent.title}
+                </h2>
+                <p className="mt-1 truncate text-xs text-zinc-300">
+                  {selectedEvent.venue_name ||
+                    selectedEvent.venue?.name ||
+                    "Sem espaco"}{" "}
+                  ·{" "}
+                  {[getEventCity(selectedEvent), getEventMunicipality(selectedEvent)]
+                    .filter(Boolean)
+                    .join(" / ") ||
+                    getEventDistrict(selectedEvent) ||
+                    "Sem zona"}
                 </p>
-              )}
+                <div className="mt-1 flex items-center gap-2 text-xs">
+                  <span className="text-zinc-400">
+                    {selectedEvent.display_time || "Hora por definir"}
+                  </span>
+                  {selectedEvent.distanceKm !== null && (
+                    <span className="font-black text-green-300">
+                      {formatDistance(selectedEvent.distanceKm)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => selectRelativeEvent(1)}
+                aria-label="Próximo evento"
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-black/40 text-xl font-black text-[#f2f1ec] lg:hidden"
+              >
+                ›
+              </button>
             </div>
+
             <div className="mt-3 flex gap-2">
               <Link
                 href={`/eventos/${selectedEvent.slug}`}
