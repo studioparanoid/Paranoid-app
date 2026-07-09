@@ -52,14 +52,19 @@ export function buildOrderPayload(order: ShopOrderDraft) {
     buyer_name: order.buyerName,
     buyer_email: order.buyerEmail,
     buyer_phone: order.buyerPhone,
-    shipping_address: order.shippingAddress,
+    shipping_address: {
+      address: order.shippingAddress,
+      postalCode: order.postalCode,
+      city: order.city,
+      country: order.country,
+      notes: order.notes,
+    },
     subtotal_cents: totals.subtotalCents,
     shipping_cents: totals.shippingCents || DEFAULT_SHIPPING_CENTS,
     commission_total_cents: totals.commissionTotalCents,
     total_cents: totals.totalCents,
     payment_status: "pending",
-    order_status: "draft",
+    order_status: "pending_payment",
     payment_provider: "payme",
   };
 }
-

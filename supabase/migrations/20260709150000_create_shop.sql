@@ -53,17 +53,26 @@ create table if not exists public.shop_orders (
   buyer_name text not null,
   buyer_phone text,
   shipping_address text not null,
+  postal_code text,
+  city text,
+  country text not null default 'Portugal',
+  notes text,
   subtotal_cents integer not null default 0,
   shipping_cents integer not null default 0,
   commission_total_cents integer not null default 0,
   total_cents integer not null default 0,
   payment_status text not null default 'pending',
-  order_status text not null default 'draft',
+  order_status text not null default 'pending_payment',
   payment_provider text,
   payment_reference text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.shop_orders add column if not exists postal_code text;
+alter table public.shop_orders add column if not exists city text;
+alter table public.shop_orders add column if not exists country text not null default 'Portugal';
+alter table public.shop_orders add column if not exists notes text;
 
 create table if not exists public.shop_order_items (
   id uuid primary key default gen_random_uuid(),
@@ -108,6 +117,18 @@ create table if not exists public.shop_settings (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.shop_order_emails (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.shop_orders(id) on delete cascade,
+  type text not null,
+  recipient text not null,
+  subject text not null,
+  status text not null default 'pending',
+  sent_at timestamptz,
+  error_message text,
+  created_at timestamptz not null default now()
+);
+
 insert into public.shop_settings (commission_rate, default_shipping_cents)
 select 0.05, 399
 where not exists (select 1 from public.shop_settings);
@@ -121,6 +142,7 @@ alter table public.shop_order_items enable row level security;
 alter table public.shop_shipments enable row level security;
 alter table public.shop_payouts enable row level security;
 alter table public.shop_settings enable row level security;
+alter table public.shop_order_emails enable row level security;
 
 create policy "Active products are public"
 on public.shop_products for select
@@ -192,3 +214,45 @@ with check (
     and shop_sellers.user_id = auth.uid()
   )
 );
+
+create policy "Anyone can create shop orders"
+on public.shop_orders for insert
+with check (auth.role() = 'service_role');
+
+create policy "Anyone can create shop order items"
+on public.shop_order_items for insert
+with check (auth.role() = 'service_role');
+
+create policy "Anyone can create shop shipments"
+on public.shop_shipments for insert
+with check (auth.role() = 'service_role');
+
+create policy "Order buyers can read their order by email"
+on public.shop_orders for select
+using (auth.role() = 'service_role');
+
+create policy "Order items are readable with orders"
+on public.shop_order_items for select
+using (auth.role() = 'service_role');
+
+create policy "Shipments are readable with orders"
+on public.shop_shipments for select
+using (auth.role() = 'service_role');
+
+create policy "Email logs can be inserted by checkout"
+on public.shop_order_emails for insert
+with check (auth.role() = 'service_role');
+
+create policy "Email logs readable for admin tooling"
+on public.shop_order_emails for select
+using (auth.role() = 'service_role');
+
+create policy "Shop orders can be updated by admin tooling"
+on public.shop_orders for update
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+create policy "Shipments can be updated by seller tooling"
+on public.shop_shipments for update
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');

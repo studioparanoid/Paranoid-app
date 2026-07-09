@@ -30,6 +30,7 @@ export type ShopProduct = {
 
 export type ShopCartItem = {
   productId: string;
+  sellerId: string;
   slug: string;
   name: string;
   sellerName: string;
@@ -39,6 +40,7 @@ export type ShopCartItem = {
   basePriceCents: number;
   commissionCents: number;
   finalPriceCents: number;
+  stockQuantity: number;
   variant?: string;
 };
 
@@ -47,17 +49,97 @@ export type ShopOrderDraft = {
   buyerEmail: string;
   buyerPhone: string;
   shippingAddress: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  notes: string;
   items: ShopCartItem[];
 };
 
-export const DEFAULT_COMMISSION_RATE = 0.05;
+export type ShopOrderStatus =
+  | "pending_payment"
+  | "paid"
+  | "awaiting_shipment"
+  | "shipped"
+  | "completed"
+  | "cancelled";
+
+export type ShopPaymentStatus = "pending" | "paid" | "paid_mock" | "failed";
+
+export type ShopOrder = {
+  id: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone: string | null;
+  shippingAddress: string;
+  postalCode: string | null;
+  city: string | null;
+  country: string | null;
+  notes: string | null;
+  subtotalCents: number;
+  shippingCents: number;
+  commissionTotalCents: number;
+  totalCents: number;
+  paymentStatus: ShopPaymentStatus;
+  orderStatus: ShopOrderStatus;
+  paymentProvider: string | null;
+  paymentReference: string | null;
+  createdAt: string;
+  items: ShopOrderItem[];
+  shipments: ShopShipment[];
+  emails: ShopOrderEmail[];
+};
+
+export type ShopOrderItem = {
+  id: string;
+  productId: string | null;
+  sellerId: string | null;
+  sellerName: string | null;
+  productName: string;
+  quantity: number;
+  basePriceCents: number;
+  commissionCents: number;
+  finalPriceCents: number;
+  payoutAmountCents: number;
+};
+
+export type ShopShipment = {
+  id: string;
+  orderId: string;
+  sellerId: string | null;
+  status: string;
+  carrier: string;
+  trackingCode: string | null;
+  shippingLabelUrl: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+};
+
+export type ShopOrderEmail = {
+  id: string;
+  orderId: string;
+  type: string;
+  recipient: string;
+  subject: string;
+  status: string;
+  sentAt: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+};
+
+export const DEFAULT_COMMISSION_RATE = 0.1;
+export const DEFAULT_MINIMUM_SERVICE_FEE_CENTS = 100;
 export const DEFAULT_SHIPPING_CENTS = 399;
 
 export function calculateShopPrice(
   basePriceCents: number,
-  commissionRate = DEFAULT_COMMISSION_RATE
+  commissionRate = DEFAULT_COMMISSION_RATE,
+  minimumServiceFeeCents = DEFAULT_MINIMUM_SERVICE_FEE_CENTS
 ) {
-  const commissionCents = Math.round(basePriceCents * commissionRate);
+  const commissionCents = Math.max(
+    Math.round(basePriceCents * commissionRate),
+    minimumServiceFeeCents
+  );
 
   return {
     basePriceCents,
@@ -76,7 +158,7 @@ export function formatMoney(cents: number) {
 
 export function getCartTotals(items: ShopCartItem[]) {
   const subtotalCents = items.reduce(
-    (total, item) => total + item.finalPriceCents * item.quantity,
+    (total, item) => total + item.basePriceCents * item.quantity,
     0
   );
   const commissionTotalCents = items.reduce(
@@ -89,14 +171,35 @@ export function getCartTotals(items: ShopCartItem[]) {
     subtotalCents,
     commissionTotalCents,
     shippingCents,
-    totalCents: subtotalCents + shippingCents,
+    totalCents: subtotalCents + commissionTotalCents + shippingCents,
   };
+}
+
+export function getOrderStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    pending_payment: "Pagamento pendente",
+    paid: "Pago",
+    awaiting_shipment: "A preparar",
+    shipped: "Enviado",
+    completed: "Concluído",
+    cancelled: "Cancelado",
+  };
+
+  return labels[status] || status;
+}
+
+export function normalizeOrderId(value: string | null | undefined) {
+  if (!value) {
+    return "PARANOID";
+  }
+
+  return value.slice(0, 8).toUpperCase();
 }
 
 const productSeeds = [
   {
-    id: "sample-zine",
-    sellerId: "paranoid-crew",
+    id: "11111111-1111-4111-8111-111111111111",
+    sellerId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     sellerName: "Paranoid Crew",
     sellerSlug: "paranoid-crew",
     name: "Zine Noite Interior",
@@ -113,8 +216,8 @@ const productSeeds = [
     variants: [{ name: "Edição", value: "Preto e branco", stockQuantity: 18 }],
   },
   {
-    id: "sample-shirt",
-    sellerId: "noise-club",
+    id: "22222222-2222-4222-8222-222222222222",
+    sellerId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
     sellerName: "Noise Club",
     sellerSlug: "noise-club",
     name: "T-shirt Paranoid Signal",
@@ -135,8 +238,8 @@ const productSeeds = [
     ],
   },
   {
-    id: "sample-vinyl",
-    sellerId: "subsolo",
+    id: "33333333-3333-4333-8333-333333333333",
+    sellerId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
     sellerName: "Subsolo",
     sellerSlug: "subsolo",
     name: "Vinil Subsolo Live",

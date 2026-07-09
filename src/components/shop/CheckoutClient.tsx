@@ -6,16 +6,11 @@ import {
   getCartTotals,
   type ShopCartItem,
 } from "@/lib/shop";
-
-const CART_KEY = "paranoid-shop-cart";
-
-function readCart(): ShopCartItem[] {
-  try {
-    return JSON.parse(window.localStorage.getItem(CART_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
+import {
+  clearShopCart,
+  readShopCart,
+  saveLastShopOrder,
+} from "@/lib/shop/cart";
 
 export function CheckoutClient() {
   const [items, setItems] = useState<ShopCartItem[]>([]);
@@ -23,11 +18,15 @@ export function CheckoutClient() {
   const [buyerEmail, setBuyerEmail] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("Portugal");
+  const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setItems(readCart());
+    setItems(readShopCart());
   }, []);
 
   const totals = useMemo(() => getCartTotals(items), [items]);
@@ -45,6 +44,10 @@ export function CheckoutClient() {
         buyerEmail,
         buyerPhone,
         shippingAddress,
+        postalCode,
+        city,
+        country,
+        notes,
         items,
       }),
     });
@@ -53,7 +56,9 @@ export function CheckoutClient() {
     setLoading(false);
 
     if (!response.ok) {
-      setMessage(payload.error || "Não foi possível preparar o pagamento.");
+      const error = payload.error || "Não foi possível preparar o pagamento.";
+      setMessage(error);
+      window.location.href = `/loja/checkout/erro?reason=${encodeURIComponent(error)}`;
       return;
     }
 
@@ -62,7 +67,11 @@ export function CheckoutClient() {
       return;
     }
 
-    setMessage("Encomenda criada em modo sandbox. O pagamento real fica para o adapter P@Y.ME.");
+    saveLastShopOrder(payload.order);
+    clearShopCart();
+    window.location.href = `/loja/checkout/sucesso?order=${encodeURIComponent(
+      payload.order?.id || payload.paymentReference || "sandbox"
+    )}`;
   }
 
   return (
@@ -120,12 +129,62 @@ export function CheckoutClient() {
           />
         </label>
 
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block space-y-2">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+              Código postal
+            </span>
+            <input
+              value={postalCode}
+              onChange={(event) => setPostalCode(event.target.value)}
+              required
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+              Localidade
+            </span>
+            <input
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              required
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+            />
+          </label>
+        </div>
+
+        <label className="block space-y-2">
+          <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+            País
+          </span>
+          <input
+            value={country}
+            onChange={(event) => setCountry(event.target.value)}
+            required
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+          />
+        </label>
+
+        <label className="block space-y-2">
+          <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+            Observações
+          </span>
+          <textarea
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            rows={3}
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+          />
+        </label>
+
         <button
           type="submit"
           disabled={loading || items.length === 0}
           className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
         >
-          {loading ? "A preparar..." : "Pagar"}
+          {loading ? "A preparar..." : "Pagar encomenda"}
         </button>
 
         {message && (
@@ -150,12 +209,25 @@ export function CheckoutClient() {
             </p>
           ))}
         </div>
-        <p className="mt-5 flex justify-between border-t border-zinc-900 pt-4 text-lg font-black">
-          <span>Total</span>
-          <span>{formatMoney(totals.totalCents)}</span>
-        </p>
+        <div className="mt-5 space-y-3 border-t border-zinc-900 pt-4 text-sm">
+          <p className="flex justify-between text-zinc-400">
+            <span>Subtotal produtos</span>
+            <span>{formatMoney(totals.subtotalCents)}</span>
+          </p>
+          <p className="flex justify-between text-zinc-400">
+            <span>Taxa de serviço</span>
+            <span>{formatMoney(totals.commissionTotalCents)}</span>
+          </p>
+          <p className="flex justify-between text-zinc-400">
+            <span>Envio</span>
+            <span>{formatMoney(totals.shippingCents)}</span>
+          </p>
+          <p className="flex justify-between pt-2 text-lg font-black">
+            <span>Total</span>
+            <span>{formatMoney(totals.totalCents)}</span>
+          </p>
+        </div>
       </aside>
     </section>
   );
 }
-

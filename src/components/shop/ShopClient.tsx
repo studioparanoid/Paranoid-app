@@ -14,7 +14,7 @@ type ShopClientProps = {
 export function ShopClient({ products }: ShopClientProps) {
   const [category, setCategory] = useState("Todas");
   const [seller, setSeller] = useState("Todos");
-  const [price, setPrice] = useState("Todos");
+  const [query, setQuery] = useState("");
 
   const categories = useMemo(
     () => ["Todas", ...Array.from(new Set(products.map((item) => item.category)))],
@@ -26,25 +26,32 @@ export function ShopClient({ products }: ShopClientProps) {
   );
 
   const filteredProducts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
     return products.filter((product) => {
       const matchesCategory = category === "Todas" || product.category === category;
       const matchesSeller = seller === "Todos" || product.sellerName === seller;
-      const matchesPrice =
-        price === "Todos" ||
-        (price === "Até 15€" && product.finalPriceCents <= 1500) ||
-        (price === "15€-30€" &&
-          product.finalPriceCents > 1500 &&
-          product.finalPriceCents <= 3000) ||
-        (price === "+30€" && product.finalPriceCents > 3000);
+      const matchesQuery =
+        !normalizedQuery ||
+        product.name.toLowerCase().includes(normalizedQuery) ||
+        product.sellerName.toLowerCase().includes(normalizedQuery) ||
+        product.category.toLowerCase().includes(normalizedQuery);
 
-      return matchesCategory && matchesSeller && matchesPrice;
+      return matchesCategory && matchesSeller && matchesQuery;
     });
-  }, [category, price, products, seller]);
+  }, [category, products, query, seller]);
 
   return (
     <div className="space-y-7">
       <section className="sticky top-0 z-10 -mx-5 border-b border-zinc-900 bg-[#0b0b0b]/95 px-5 py-4 backdrop-blur lg:static lg:mx-0 lg:border lg:bg-zinc-950 lg:p-4">
         <div className="grid gap-3 md:grid-cols-3">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Pesquisar"
+            className="rounded-full border border-zinc-800 bg-black px-4 py-3 text-sm font-bold text-[#f2f1ec] outline-none placeholder:text-zinc-600"
+          />
+
           <select
             value={category}
             onChange={(event) => setCategory(event.target.value)}
@@ -61,16 +68,6 @@ export function ShopClient({ products }: ShopClientProps) {
             className="rounded-full border border-zinc-800 bg-black px-4 py-3 text-sm font-bold text-[#f2f1ec] outline-none"
           >
             {sellers.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </select>
-
-          <select
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            className="rounded-full border border-zinc-800 bg-black px-4 py-3 text-sm font-bold text-[#f2f1ec] outline-none"
-          >
-            {["Todos", "Até 15€", "15€-30€", "+30€"].map((item) => (
               <option key={item}>{item}</option>
             ))}
           </select>
@@ -109,6 +106,10 @@ export function ShopClient({ products }: ShopClientProps) {
                 <p className="text-sm font-bold text-zinc-500">
                   {product.sellerName}
                 </p>
+
+                {product.stockQuantity <= 0 && (
+                  <p className="text-sm font-black text-red-500">Esgotado</p>
+                )}
               </div>
             </article>
           </Link>
@@ -123,4 +124,3 @@ export function ShopClient({ products }: ShopClientProps) {
     </div>
   );
 }
-

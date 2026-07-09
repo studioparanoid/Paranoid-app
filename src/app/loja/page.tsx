@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ShopCartLink } from "@/components/shop/ShopCartLink";
 import { ShopClient } from "@/components/shop/ShopClient";
 import { getActiveShopProducts } from "@/lib/shop";
 
@@ -18,12 +19,7 @@ export default async function ShopPage() {
             </h1>
           </div>
 
-          <Link
-            href="/loja/carrinho"
-            className="shrink-0 rounded-full border border-zinc-800 px-4 py-3 text-sm font-black"
-          >
-            Carrinho
-          </Link>
+          <ShopCartLink />
         </div>
 
         <ShopClient products={products} />
@@ -31,4 +27,3 @@ export default async function ShopPage() {
     </main>
   );
 }
-

@@ -1,31 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   formatMoney,
   type ShopCartItem,
   type ShopProduct,
 } from "@/lib/shop";
-
-const CART_KEY = "paranoid-shop-cart";
-
-function readCart(): ShopCartItem[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    return JSON.parse(window.localStorage.getItem(CART_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function writeCart(items: ShopCartItem[]) {
-  window.localStorage.setItem(CART_KEY, JSON.stringify(items));
-  window.dispatchEvent(new Event("paranoid-shop-cart-updated"));
-}
+import { readShopCart, writeShopCart } from "@/lib/shop/cart";
 
 type ProductDetailClientProps = {
   product: ShopProduct;
@@ -52,12 +33,13 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
       return;
     }
 
-    const cart = readCart();
+    const cart = readShopCart();
     const existingIndex = cart.findIndex(
       (item) => item.productId === product.id && item.variant === variant
     );
     const item: ShopCartItem = {
       productId: product.id,
+      sellerId: product.sellerId,
       slug: product.slug,
       name: product.name,
       sellerName: product.sellerName,
@@ -67,10 +49,16 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
       basePriceCents: product.basePriceCents,
       commissionCents: product.commissionCents,
       finalPriceCents: product.finalPriceCents,
+      stockQuantity: product.stockQuantity,
       variant: variant || undefined,
     };
 
     if (existingIndex >= 0) {
+      if (cart[existingIndex].quantity >= product.stockQuantity) {
+        setAdded(true);
+        return;
+      }
+
       cart[existingIndex] = {
         ...cart[existingIndex],
         quantity: cart[existingIndex].quantity + 1,
@@ -79,7 +67,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
       cart.push(item);
     }
 
-    writeCart(cart);
+    writeShopCart(cart);
     setAdded(true);
   }
 
@@ -127,23 +115,11 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         <p className="text-3xl font-black text-[#f2f1ec]">
           {formatMoney(product.finalPriceCents)}
         </p>
+        <p className="-mt-4 text-sm font-bold text-zinc-500">
+          Taxa de serviço incluída
+        </p>
 
         <p className="leading-relaxed text-zinc-300">{product.description}</p>
-
-        <div className="rounded-2xl border border-zinc-900 bg-black p-4 text-sm text-zinc-400">
-          <p>
-            Artista recebe:{" "}
-            <span className="font-black text-[#f2f1ec]">
-              {formatMoney(product.basePriceCents)}
-            </span>
-          </p>
-          <p>
-            Comissão Paranoid:{" "}
-            <span className="font-black text-[#f2f1ec]">
-              {formatMoney(product.commissionCents)}
-            </span>
-          </p>
-        </div>
 
         {variantOptions.length > 0 && (
           <label className="block space-y-2">
@@ -181,16 +157,15 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         {added && (
           <div className="grid gap-3 rounded-2xl border border-green-900 bg-green-950/30 p-4">
             <p className="font-bold text-green-300">Produto adicionado.</p>
-            <Link
+            <a
               href="/loja/carrinho"
               className="rounded-full border border-green-800 px-4 py-3 text-center text-sm font-black text-green-200"
             >
               Ver carrinho
-            </Link>
+            </a>
           </div>
         )}
       </div>
     </section>
   );
 }
-
