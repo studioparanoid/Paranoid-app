@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import mapboxgl from "mapbox-gl";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type ParanoidMapUserLocation = {
   latitude: number;
@@ -33,6 +32,101 @@ type ParanoidMapProps = {
 };
 
 const PORTUGAL_CENTER: [number, number] = [-8.2245, 39.3999];
+const MAPBOX_GL_SCRIPT_ID = "paranoid-mapbox-gl-js";
+const MAPBOX_GL_CSS_ID = "paranoid-mapbox-gl-css";
+const MAPBOX_GL_VERSION = "v3.10.0";
+
+type MapboxGlApi = {
+  accessToken: string;
+  Map: new (options: Record<string, unknown>) => MapboxMap;
+  Marker: new (options?: Record<string, unknown>) => MapboxMarker;
+  LngLatBounds: new () => MapboxBounds;
+  AttributionControl: new (options?: Record<string, unknown>) => unknown;
+};
+
+type MapboxMap = {
+  addControl: (control: unknown, position?: string) => void;
+  remove: () => void;
+  resize: () => void;
+  fitBounds: (
+    bounds: MapboxBounds,
+    options?: Record<string, unknown>
+  ) => void;
+  easeTo: (options: Record<string, unknown>) => void;
+  getZoom: () => number;
+};
+
+type MapboxMarker = {
+  setLngLat: (coordinates: [number, number]) => MapboxMarker;
+  addTo: (map: MapboxMap) => MapboxMarker;
+  remove: () => void;
+};
+
+type MapboxBounds = {
+  extend: (coordinates: [number, number]) => MapboxBounds;
+  isEmpty: () => boolean;
+};
+
+declare global {
+  interface Window {
+    mapboxgl?: MapboxGlApi;
+    paranoidMapboxGlPromise?: Promise<MapboxGlApi>;
+  }
+}
+
+function loadMapboxGl() {
+  if (window.mapboxgl) {
+    return Promise.resolve(window.mapboxgl);
+  }
+
+  if (window.paranoidMapboxGlPromise) {
+    return window.paranoidMapboxGlPromise;
+  }
+
+  window.paranoidMapboxGlPromise = new Promise((resolve, reject) => {
+    if (!document.getElementById(MAPBOX_GL_CSS_ID)) {
+      const link = document.createElement("link");
+      link.id = MAPBOX_GL_CSS_ID;
+      link.rel = "stylesheet";
+      link.href = `https://api.mapbox.com/mapbox-gl-js/${MAPBOX_GL_VERSION}/mapbox-gl.css`;
+      document.head.appendChild(link);
+    }
+
+    const existingScript = document.getElementById(
+      MAPBOX_GL_SCRIPT_ID
+    ) as HTMLScriptElement | null;
+
+    if (existingScript) {
+      existingScript.addEventListener("load", () => {
+        if (window.mapboxgl) {
+          resolve(window.mapboxgl);
+        } else {
+          reject(new Error("Mapbox GL did not load."));
+        }
+      });
+      existingScript.addEventListener("error", () => {
+        reject(new Error("Mapbox GL failed to load."));
+      });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = MAPBOX_GL_SCRIPT_ID;
+    script.src = `https://api.mapbox.com/mapbox-gl-js/${MAPBOX_GL_VERSION}/mapbox-gl.js`;
+    script.async = true;
+    script.onload = () => {
+      if (window.mapboxgl) {
+        resolve(window.mapboxgl);
+      } else {
+        reject(new Error("Mapbox GL did not load."));
+      }
+    };
+    script.onerror = () => reject(new Error("Mapbox GL failed to load."));
+    document.head.appendChild(script);
+  });
+
+  return window.paranoidMapboxGlPromise;
+}
 
 export function ParanoidMap({
   events,
@@ -42,8 +136,10 @@ export function ParanoidMap({
   onSelectEvent,
 }: ParanoidMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const mapRef = useRef<MapboxMap | null>(null);
+  const mapboxRef = useRef<MapboxGlApi | null>(null);
+  const markersRef = useRef<MapboxMarker[]>([]);
+  const [mapReady, setMapReady] = useState(false);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) || null,
@@ -55,28 +151,45 @@ export function ParanoidMap({
       return;
     }
 
-    mapboxgl.accessToken = mapboxToken;
+    let cancelled = false;
 
-    mapRef.current = new mapboxgl.Map({
-      container: containerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
-      center: userLocation
-        ? [userLocation.longitude, userLocation.latitude]
-        : PORTUGAL_CENTER,
-      zoom: userLocation ? 11 : 6,
-      attributionControl: false,
-    });
+    loadMapboxGl()
+      .then((mapboxgl) => {
+        if (cancelled || !containerRef.current || mapRef.current) {
+          return;
+        }
 
-    mapRef.current.addControl(
-      new mapboxgl.AttributionControl({ compact: true }),
-      "bottom-right"
-    );
+        mapboxRef.current = mapboxgl;
+        mapboxgl.accessToken = mapboxToken;
+
+        mapRef.current = new mapboxgl.Map({
+          container: containerRef.current,
+          style: "mapbox://styles/mapbox/dark-v11",
+          center: userLocation
+            ? [userLocation.longitude, userLocation.latitude]
+            : PORTUGAL_CENTER,
+          zoom: userLocation ? 11 : 6,
+          attributionControl: false,
+        });
+
+        mapRef.current.addControl(
+          new mapboxgl.AttributionControl({ compact: true }),
+          "bottom-right"
+        );
+        setMapReady(true);
+      })
+      .catch(() => {
+        mapRef.current = null;
+        setMapReady(false);
+      });
 
     return () => {
+      cancelled = true;
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
+      setMapReady(false);
     };
   }, [mapboxToken, userLocation]);
 
@@ -84,6 +197,11 @@ export function ParanoidMap({
     const map = mapRef.current;
 
     if (!map) {
+      return;
+    }
+    const mapboxgl = mapboxRef.current;
+
+    if (!mapboxgl) {
       return;
     }
 
@@ -136,7 +254,7 @@ export function ParanoidMap({
     }
 
     map.resize();
-  }, [events, onSelectEvent, selectedEventId, userLocation]);
+  }, [events, mapReady, onSelectEvent, selectedEventId, userLocation]);
 
   useEffect(() => {
     if (!selectedEvent || !mapRef.current) {
