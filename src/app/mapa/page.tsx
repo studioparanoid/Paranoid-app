@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ALL_CATEGORIES,
   ALL_CITIES,
@@ -18,17 +18,16 @@ import {
   getCanonicalDistrict,
   getCanonicalMunicipality,
 } from "@/lib/portugalLocations";
+import {
+  ParanoidMap,
+  type ParanoidMapEvent,
+  type ParanoidMapUserLocation,
+} from "@/components/map/ParanoidMap";
 import { supabase } from "@/lib/supabase/public";
 
 type RadiusFilter = `${number}` | "all";
 
-type UserLocation = {
-  latitude: number;
-  longitude: number;
-  accuracyKm: number | null;
-  label: string;
-  source: "manual";
-};
+type UserLocation = ParanoidMapUserLocation;
 
 type SavedManualLocation = UserLocation & {
   query: string;
@@ -42,6 +41,7 @@ type Coordinate = {
 
 const LOCATION_RADIUS_BUFFER_KM = 0.75;
 const SAVED_MANUAL_LOCATION_KEY = "paranoid.map.manualLocation";
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 type VenueRow = {
   id: string;
@@ -140,18 +140,6 @@ function formatShortDate(value: string | null | undefined) {
   }).format(date);
 }
 
-function ticketLabel(value: string | null | undefined) {
-  if (value === "internal") {
-    return "Bilheteira Paranoid";
-  }
-
-  if (value === "external") {
-    return "Bilhetes";
-  }
-
-  return null;
-}
-
 function eventDateValue(event: EventRow) {
   return event.start_at || event.start_date || event.display_date || "";
 }
@@ -162,10 +150,8 @@ function toRadians(value: number) {
 
 function distanceInKm(first: Coordinate, second: Coordinate) {
   const earthRadiusKm = 6371;
-
   const latitudeDistance = toRadians(second.latitude - first.latitude);
   const longitudeDistance = toRadians(second.longitude - first.longitude);
-
   const startLatitude = toRadians(first.latitude);
   const endLatitude = toRadians(second.latitude);
 
@@ -315,34 +301,72 @@ function getEventCity(event: EventWithLocation) {
   return event.city?.trim() || event.venue?.city?.trim() || "";
 }
 
-function EmptyState() {
+function eventDisplayDate(event: EventWithLocation) {
+  const date = event.display_date || formatDate(event.start_at || event.start_date);
+
+  if (event.is_multi_day && event.end_date) {
+    return `${date} - ${formatShortDate(event.end_date)}`;
+  }
+
+  return date;
+}
+
+function EventSummary({
+  event,
+  selected,
+  onSelect,
+}: {
+  event: EventWithLocation;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const cityArea = [getEventCity(event), getEventMunicipality(event)]
+    .filter(Boolean)
+    .join(" / ");
+
   return (
-    <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-      <p className="text-xs uppercase tracking-[0.35em] text-red-700">
-        Sem resultados
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full rounded-2xl border p-4 text-left transition ${
+        selected
+          ? "border-red-600 bg-red-950/30"
+          : "border-zinc-900 bg-zinc-950/85 hover:border-zinc-700"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-red-500">
+            {eventDisplayDate(event)}
+          </p>
+          <h3 className="mt-2 text-lg font-black leading-tight text-[#f2f1ec]">
+            {event.title}
+          </h3>
+        </div>
+        <span className="whitespace-nowrap text-xs font-black text-zinc-500">
+          {formatDistance(event.distanceKm)}
+        </span>
+      </div>
+
+      <p className="mt-3 text-sm font-bold text-zinc-400">
+        {event.venue_name || event.venue?.name || "Sem espaco"}
       </p>
-
-      <h2 className="mt-4 text-5xl font-black leading-none">
-        Nada neste radar.
-      </h2>
-
-      <p className="mt-5 text-base leading-relaxed text-zinc-400">
-        Muda o distrito, concelho, localidade ou vê Portugal inteiro.
+      <p className="mt-1 text-xs uppercase tracking-wide text-zinc-600">
+        {cityArea || getEventDistrict(event) || "Sem zona"}
       </p>
-
-      <Link
-        href="/agenda"
-        className="mt-8 inline-block rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-      >
-        Ver agenda completa
-      </Link>
-    </section>
+      {event.finalLatitude === null || event.finalLongitude === null ? (
+        <p className="mt-3 text-xs font-bold uppercase text-zinc-600">
+          Sem coordenadas
+        </p>
+      ) : null}
+    </button>
   );
 }
 
 export default function MapPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [locating, setLocating] = useState(false);
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [venues, setVenues] = useState<VenueRow[]>([]);
@@ -361,6 +385,7 @@ export default function MapPage() {
   const priceFilter: EventPriceFilter = "all";
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [controlsCollapsed, setControlsCollapsed] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const lastScrollY = useRef(0);
 
   const venueById = useMemo(() => {
@@ -401,7 +426,6 @@ export default function MapPage() {
       const finalLatitude = eventCoordinates.latitude ?? venueCoordinates.latitude;
       const finalLongitude =
         eventCoordinates.longitude ?? venueCoordinates.longitude;
-
       const hasCoordinates = finalLatitude !== null && finalLongitude !== null;
 
       const distanceKm =
@@ -503,13 +527,45 @@ export default function MapPage() {
     userLocation,
   ]);
 
-  const eventsWithCoordinatesCount = eventsWithLocation.filter(
-    (event) => event.finalLatitude !== null && event.finalLongitude !== null
-  ).length;
+  const pinEvents = useMemo<ParanoidMapEvent[]>(() => {
+    return filteredEvents
+      .filter(
+        (event) => event.finalLatitude !== null && event.finalLongitude !== null
+      )
+      .map((event) => ({
+        id: event.id,
+        slug: event.slug,
+        title: event.title,
+        displayDate: eventDisplayDate(event),
+        displayTime: event.display_time || "Hora por definir",
+        venueName: event.venue_name || event.venue?.name || "Sem espaco",
+        cityArea:
+          [getEventCity(event), getEventMunicipality(event)]
+            .filter(Boolean)
+            .join(" / ") ||
+          getEventDistrict(event) ||
+          "Sem zona",
+        latitude: event.finalLatitude as number,
+        longitude: event.finalLongitude as number,
+        distanceKm: event.distanceKm,
+      }));
+  }, [filteredEvents]);
 
-  const closestEvent = filteredEvents.find(
-    (event) => event.distanceKm !== null
-  );
+  const selectedEvent = useMemo(() => {
+    return (
+      filteredEvents.find((event) => event.id === selectedEventId) ||
+      filteredEvents[0] ||
+      null
+    );
+  }, [filteredEvents, selectedEventId]);
+
+  const selectedMapsUrl = selectedEvent
+    ? buildGoogleMapsUrl(
+        selectedEvent.finalLatitude,
+        selectedEvent.finalLongitude,
+        selectedEvent.locationLabel
+      )
+    : "#";
 
   async function loadMapData() {
     setLoading(true);
@@ -559,31 +615,38 @@ export default function MapPage() {
         setControlsCollapsed(false);
         return;
       }
+
       const currentScrollY = window.scrollY;
       const activeElement = document.activeElement;
       const isTyping =
-  activeElement instanceof HTMLInputElement ||
-  activeElement instanceof HTMLTextAreaElement ||
-  activeElement instanceof HTMLSelectElement;
+        activeElement instanceof HTMLInputElement ||
+        activeElement instanceof HTMLTextAreaElement ||
+        activeElement instanceof HTMLSelectElement;
 
-if (isTyping) {
-  setControlsCollapsed(false);
-  lastScrollY.current = currentScrollY;
-  return;
-}
+      if (isTyping || locating) {
+        setControlsCollapsed(false);
+        lastScrollY.current = currentScrollY;
+        return;
+      }
 
-if (currentScrollY > lastScrollY.current + 16 && currentScrollY > 180) {
-  setControlsCollapsed(true);
-  setShowCategoryPicker(false);
-}
+      if (currentScrollY > lastScrollY.current + 16 && currentScrollY > 180) {
+        setControlsCollapsed(true);
+        setShowCategoryPicker(false);
+      }
 
-lastScrollY.current = currentScrollY;
+      lastScrollY.current = currentScrollY;
     }
 
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [locating]);
+
+  useEffect(() => {
+    if (locating) {
+      setControlsCollapsed(false);
+    }
+  }, [locating]);
 
   useEffect(() => {
     try {
@@ -600,13 +663,19 @@ lastScrollY.current = currentScrollY;
         typeof parsed.longitude === "number" &&
         parsed.source === "manual"
       ) {
-      setSavedManualLocation(parsed);
+        setSavedManualLocation(parsed);
         setManualLocationQuery(parsed.query || parsed.label || "");
       }
     } catch {
       window.localStorage.removeItem(SAVED_MANUAL_LOCATION_KEY);
     }
   }, []);
+
+  useEffect(() => {
+    if (!selectedEventId && filteredEvents.length > 0) {
+      setSelectedEventId(filteredEvents[0].id);
+    }
+  }, [filteredEvents, selectedEventId]);
 
   function saveManualLocation(location: SavedManualLocation) {
     setSavedManualLocation(location);
@@ -658,7 +727,9 @@ lastScrollY.current = currentScrollY;
     const cleanQuery = manualLocationQuery.trim();
 
     if (!cleanQuery) {
-      setMessage("Escreve uma morada, localidade, cidade ou concelho para usar como origem do raio.");
+      setMessage(
+        "Escreve uma morada, localidade, cidade ou concelho para usar como origem do raio."
+      );
       return;
     }
 
@@ -711,326 +782,285 @@ lastScrollY.current = currentScrollY;
     }
   }
 
-  function getRadiusLabel() {
-    if (radiusFilter === "all") {
-      return "Portugal inteiro";
+  function useBrowserLocation() {
+    setControlsCollapsed(false);
+
+    if (!navigator.geolocation) {
+      setMessage("Este browser não suporta localização.");
+      return;
     }
 
-    if (userLocation?.accuracyKm) {
-      return `Até ${radiusFilter} km`;
-    }
+    setLocating(true);
+    setMessage("");
 
-    return `Até ${radiusFilter} km`;
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setUserLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracyKm: coords.accuracy ? coords.accuracy / 1000 : null,
+          label: "A tua localização",
+          source: "browser",
+        });
+
+        setManualLocationQuery("A tua localização");
+        setRadiusFilter((current) => (current === "all" ? "50" : current));
+        setDistrictFilter(ALL_DISTRICTS);
+        setMunicipalityFilter(ALL_MUNICIPALITIES);
+        setCityFilter(ALL_CITIES);
+        setMessage("");
+        setLocating(false);
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setMessage("Tens de permitir localização no browser.");
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setMessage("Não consegui obter a tua localização.");
+        } else if (error.code === error.TIMEOUT) {
+          setMessage("A localização demorou demasiado. Tenta outra vez.");
+        } else {
+          setMessage("Erro ao obter localização.");
+        }
+
+        setLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    );
   }
 
+  const handleSelectMapEvent = useCallback((event: ParanoidMapEvent) => {
+    setSelectedEventId(event.id);
+    setControlsCollapsed(false);
+  }, []);
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
-        <section className="mx-auto max-w-md lg:max-w-7xl">
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-            <p className="text-zinc-500">A carregar mapa cultural...</p>
-          </div>
-        </section>
+      <main className="grid min-h-[calc(100vh-5rem)] place-items-center bg-black px-5 pb-24 text-[#f2f1ec] lg:min-h-screen lg:pb-0">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
+          <p className="text-sm font-bold text-zinc-500">A carregar radar...</p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-56 text-[#f2f1ec] lg:px-10 lg:py-12 lg:pb-28">
-      <section className="mx-auto max-w-md lg:max-w-7xl">
-        <section>
+    <main className="relative min-h-[calc(100vh-5rem)] overflow-hidden bg-black text-[#f2f1ec] lg:min-h-screen">
+      <section className="absolute inset-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
+        <ParanoidMap
+          events={pinEvents}
+          userLocation={userLocation}
+          selectedEventId={selectedEvent?.id || null}
+          mapboxToken={MAPBOX_TOKEN}
+          onSelectEvent={handleSelectMapEvent}
+        />
+      </section>
+
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 bg-gradient-to-b from-black via-black/75 to-transparent px-4 pt-4 lg:px-8 lg:pt-6">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-6xl font-black leading-none tracking-tight lg:text-7xl">
-              Radar cultural.
-            </h1>
-
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-500 lg:text-lg">
-              Onde há ruído, aparece aqui.
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
+              Radar
             </p>
+            <h1 className="mt-1 text-2xl font-black leading-none lg:text-4xl">
+              Mapa Paranoid
+            </h1>
           </div>
-        </section>
+          <p className="rounded-full border border-zinc-800 bg-black/70 px-3 py-2 text-xs font-black text-zinc-300 backdrop-blur">
+            {filteredEvents.length} eventos
+          </p>
+        </div>
+      </header>
 
-        {message && (
-          <div className="mt-8 rounded-[2rem] border border-red-900 bg-red-950/20 p-5">
-            <p className="text-sm font-bold text-red-300">{message}</p>
-          </div>
+      {message && (
+        <div className="absolute inset-x-4 top-24 z-40 rounded-2xl border border-red-900 bg-red-950/80 p-4 backdrop-blur lg:left-8 lg:right-auto lg:max-w-md">
+          <p className="text-sm font-bold text-red-100">{message}</p>
+        </div>
+      )}
+
+      <section
+        className={`fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 border-t border-zinc-800 bg-black/95 px-4 py-3 backdrop-blur transition-transform lg:absolute lg:bottom-auto lg:left-8 lg:right-auto lg:top-28 lg:w-[420px] lg:rounded-2xl lg:border lg:bg-zinc-950/90 lg:p-4 ${
+          controlsCollapsed ? "translate-y-[calc(100%-3.25rem)] lg:translate-y-0" : ""
+        }`}
+      >
+        {controlsCollapsed && (
+          <button
+            type="button"
+            onClick={() => setControlsCollapsed(false)}
+            aria-label="Abrir filtros do mapa"
+            className="mx-auto mb-2 grid h-8 w-12 place-items-center rounded-full border border-zinc-700 bg-black text-base font-black text-[#f2f1ec] lg:hidden"
+          >
+            ^
+          </button>
         )}
 
-        <section
-          className={`fixed inset-x-0 bottom-[53px] z-40 border-t border-zinc-800 bg-[#0b0b0b]/95 px-4 py-3 backdrop-blur transition-transform lg:sticky lg:bottom-auto lg:top-24 lg:mt-7 lg:rounded-[2rem] lg:border lg:bg-zinc-950 lg:p-5 ${
-            controlsCollapsed ? "translate-y-[calc(100%-3.5rem)] lg:translate-y-0" : ""
-          }`}
-        >
-          {controlsCollapsed && (
-            <button
-              type="button"
-              onClick={() => setControlsCollapsed(false)}
-              aria-label="Abrir filtros do mapa"
-              className="mx-auto mb-2 grid h-8 w-12 place-items-center rounded-full border border-zinc-700 bg-black text-base font-black text-[#f2f1ec] lg:hidden"
-            >
-              ↑
-            </button>
-          )}
-
-          <div
-            className={`mx-auto max-w-md gap-2 lg:max-w-7xl lg:grid-cols-[minmax(260px,360px)_1fr] lg:items-center ${
-              controlsCollapsed ? "hidden lg:grid" : "grid"
-            }`}
+        <div className={controlsCollapsed ? "hidden lg:block" : "block"}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
+            }}
           >
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
-              }}
-            >
-              <div className="grid grid-cols-[1fr_auto] gap-2">
-                <input
-                  value={manualLocationQuery}
-onFocus={() => setControlsCollapsed(false)}
-onChange={(event) =>
-  setManualLocationQuery(event.target.value)
-}
-placeholder="Onde estás?"
-                  className={`min-w-0 rounded-2xl border px-4 py-3 text-sm font-bold outline-none placeholder:text-zinc-600 ${
-                    userLocation
-                      ? "border-green-900 bg-green-950/20 text-green-400 focus:border-green-700"
-                      : "border-zinc-800 bg-black text-[#f2f1ec] focus:border-red-900"
-                  }`}
-                />
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <input
+                value={manualLocationQuery}
+                onFocus={() => setControlsCollapsed(false)}
+                onChange={(event) => setManualLocationQuery(event.target.value)}
+                placeholder="Onde estás?"
+                className={`min-w-0 rounded-2xl border px-4 py-3 text-sm font-bold outline-none placeholder:text-zinc-600 ${
+                  userLocation
+                    ? "border-green-900 bg-green-950/20 text-green-300 focus:border-green-700"
+                    : "border-zinc-800 bg-black text-[#f2f1ec] focus:border-red-900"
+                }`}
+              />
 
+              <button
+                type="submit"
+                className="rounded-2xl bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black"
+              >
+                Usar
+              </button>
+            </div>
+          </form>
+
+          <button
+            type="button"
+            onClick={useBrowserLocation}
+            disabled={locating}
+            className="mt-2 w-full rounded-2xl border border-red-900 bg-red-950/25 px-4 py-3 text-sm font-black text-red-100 disabled:cursor-wait disabled:opacity-70"
+          >
+            {locating ? "A localizar..." : "Usar localização atual"}
+          </button>
+
+          <div className="mt-3 grid gap-2">
+            <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
+              <p className="whitespace-nowrap text-sm font-black text-zinc-300">
+                {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`}
+              </p>
+
+              <input
+                type="range"
+                min="5"
+                max="150"
+                step="5"
+                value={radiusFilter === "all" ? "150" : radiusFilter}
+                onFocus={() => setControlsCollapsed(false)}
+                onChange={(event) =>
+                  handleRadiusChange(event.target.value as RadiusFilter)
+                }
+                className="h-2 w-full accent-[#f2f1ec]"
+              />
+
+              <p className="whitespace-nowrap text-sm font-black text-zinc-400">
+                {filteredEvents.length}
+              </p>
+
+              <div className="relative">
                 <button
-                  type="submit"
-                  className="rounded-2xl bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black"
+                  type="button"
+                  onClick={() => setShowCategoryPicker((current) => !current)}
+                  aria-label="Escolher tipo de evento"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-zinc-700 text-lg font-black text-zinc-200"
                 >
-                  Usar
+                  =
                 </button>
-              </div>
-            </form>
 
-            <div className="grid gap-2">
-              <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
-                <p className="whitespace-nowrap text-sm font-black text-zinc-300">
-                  {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`}
-                </p>
-
-                <input
-                  type="range"
-                  min="5"
-                  max="150"
-                  step="5"
-                  value={radiusFilter === "all" ? "150" : radiusFilter}
-                  onChange={(event) =>
-                    handleRadiusChange(event.target.value as RadiusFilter)
-                  }
-                  className="h-2 w-full accent-[#f2f1ec]"
-                />
-
-                <p className="whitespace-nowrap text-sm font-black text-zinc-400">
-                  {filteredEvents.length}{" "}
-                  {filteredEvents.length === 1 ? "evento" : "eventos"}
-                </p>
-
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowCategoryPicker((current) => !current)}
-                    aria-label="Escolher tipo de evento"
-                    className="grid h-11 w-11 place-items-center rounded-full border border-zinc-700 text-lg font-black text-zinc-200"
-                  >
-                    =
-                  </button>
-
-                  {showCategoryPicker && (
-                    <div className="absolute bottom-14 right-0 z-50 grid min-w-56 gap-2 rounded-2xl border border-zinc-800 bg-black p-3 shadow-2xl lg:bottom-auto lg:top-14">
-                      {categoryOptions.map((category) => (
-                        <button
-                          key={category}
-                          type="button"
-                          onClick={() => {
-                            setCategoryFilter(category);
-                            setShowCategoryPicker(false);
-                          }}
-                          className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
-                            categoryFilter === category
-                              ? "bg-[#f2f1ec] text-black"
-                              : "text-zinc-300 hover:bg-zinc-900"
-                          }`}
-                        >
-                          {category}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {showCategoryPicker && (
+                  <div className="absolute bottom-14 right-0 z-50 grid max-h-72 min-w-56 gap-2 overflow-auto rounded-2xl border border-zinc-800 bg-black p-3 shadow-2xl lg:bottom-auto lg:top-14">
+                    {categoryOptions.map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => {
+                          setCategoryFilter(category);
+                          setShowCategoryPicker(false);
+                        }}
+                        className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
+                          categoryFilter === category
+                            ? "bg-[#f2f1ec] text-black"
+                            : "text-zinc-300 hover:bg-zinc-900"
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </section>
-
-        <section className="mt-6 space-y-5 lg:mt-8">
-  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900 pb-4">
-    <p className="text-sm font-black text-zinc-300">
-      {filteredEvents.length} evento
-      {filteredEvents.length === 1 ? "" : "s"} no radar
-      <span className="font-bold text-zinc-600"> · {getRadiusLabel()}</span>
-    </p>
-
-    <p className="text-xs uppercase tracking-[0.35em] text-red-700">
-      Resultados
-    </p>
-  </div>
-
-            {filteredEvents.length === 0 && <EmptyState />}
-
-            {filteredEvents.map((event) => {
-              const ticket = ticketLabel(event.ticket_mode);
-              const mapsUrl = buildGoogleMapsUrl(
-                event.finalLatitude,
-                event.finalLongitude,
-                event.locationLabel
-              );
-
-              const eventCity = getEventCity(event);
-              const eventMunicipality = getEventMunicipality(event);
-              const eventDistrict = getEventDistrict(event);
-
-              return (
-                <article
-                  key={event.id}
-                  className="overflow-hidden rounded-[2.5rem] border border-zinc-800 bg-zinc-950"
-                >
-                  <div className="grid gap-0 lg:grid-cols-[260px_1fr]">
-                    <Link
-                      href={`/eventos/${event.slug}`}
-                      className="block min-h-64 bg-zinc-900 bg-cover bg-center lg:min-h-full"
-                      style={{
-                        backgroundImage: event.image_url
-                          ? `url(${event.image_url})`
-                          : "radial-gradient(circle at top, #3f0d0d, #111)",
-                      }}
-                      aria-label={event.title}
-                    />
-
-                    <div className="p-5 lg:p-6">
-                      <div className="flex flex-wrap gap-2">
-                        {event.distanceKm !== null && (
-                          <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
-                            {formatDistance(event.distanceKm)}
-                          </span>
-                        )}
-
-                        {event.featured && (
-                          <span className="rounded-full border border-yellow-900 bg-yellow-950/20 px-3 py-1 text-xs font-black uppercase text-yellow-500">
-                            Destaque
-                          </span>
-                        )}
-
-                        <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
-                          {event.category || "Evento"}
-                        </span>
-
-                        {eventMunicipality && (
-                          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-black uppercase text-zinc-500">
-                            {eventMunicipality}
-                          </span>
-                        )}
-
-                        {ticket && (
-                          <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
-                            {ticket}
-                          </span>
-                        )}
-
-                        {event.finalLatitude === null ||
-                        event.finalLongitude === null ? (
-                          <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold uppercase text-zinc-600">
-                            Sem coordenadas
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <Link href={`/eventos/${event.slug}`}>
-                        <h3 className="mt-4 text-4xl font-black leading-none lg:text-6xl">
-                          {event.title}
-                        </h3>
-                      </Link>
-
-                      {event.description && (
-                        <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-zinc-400">
-                          {event.description}
-                        </p>
-                      )}
-
-                      <div className="mt-5 grid gap-2 text-sm text-zinc-500 lg:grid-cols-2">
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Data
-                          </span>
-                          {event.display_date ||
-                            formatDate(event.start_at || event.start_date)}
-                          {event.is_multi_day && event.end_date
-                            ? ` — ${formatShortDate(event.end_date)}`
-                            : ""}
-                        </p>
-
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Hora
-                          </span>
-                          {event.display_time || "Hora por definir"}
-                        </p>
-
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Local
-                          </span>
-                          {event.venue_name || "Sem espaço"}
-                        </p>
-
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Zona
-                          </span>
-                          {[eventCity, eventMunicipality, eventDistrict]
-                            .filter(Boolean)
-                            .join(" · ") || "Sem zona"}
-                        </p>
-                      </div>
-
-                      <div className="mt-6 flex flex-wrap gap-3">
-                        <Link
-                          href={`/eventos/${event.slug}`}
-                          className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-                        >
-                          Ver evento
-                        </Link>
-
-                        {event.venue ? (
-                          <Link
-                            href={`/espacos/${event.venue.slug}`}
-                            className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
-                          >
-                            Ver espaço
-                          </Link>
-                        ) : null}
-
-                        <a
-                          href={mapsUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
-                        >
-                          Abrir no mapa
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </section>
+        </div>
       </section>
+
+      <aside className="absolute bottom-0 left-0 right-0 z-40 max-h-[42vh] overflow-hidden rounded-t-3xl border-t border-zinc-800 bg-black/95 pb-[calc(5rem+env(safe-area-inset-bottom))] backdrop-blur lg:bottom-8 lg:left-auto lg:right-8 lg:top-28 lg:flex lg:max-h-none lg:w-[390px] lg:flex-col lg:rounded-2xl lg:border lg:pb-0">
+        {selectedEvent ? (
+          <div className="border-b border-zinc-900 p-4">
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-700 lg:hidden" />
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
+              {eventDisplayDate(selectedEvent)}
+            </p>
+            <h2 className="mt-2 text-2xl font-black leading-tight">
+              {selectedEvent.title}
+            </h2>
+            <div className="mt-3 grid gap-1 text-sm text-zinc-400">
+              <p>{selectedEvent.display_time || "Hora por definir"}</p>
+              <p>{selectedEvent.venue_name || selectedEvent.venue?.name || "Sem espaco"}</p>
+              <p>
+                {[getEventCity(selectedEvent), getEventMunicipality(selectedEvent)]
+                  .filter(Boolean)
+                  .join(" / ") ||
+                  getEventDistrict(selectedEvent) ||
+                  "Sem zona"}
+              </p>
+              {selectedEvent.distanceKm !== null && (
+                <p className="font-black text-green-400">
+                  {formatDistance(selectedEvent.distanceKm)}
+                </p>
+              )}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <Link
+                href={`/eventos/${selectedEvent.slug}`}
+                className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+              >
+                Ver evento
+              </Link>
+              <a
+                href={selectedMapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-200"
+              >
+                Rota
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="p-5">
+            <p className="text-sm font-bold text-zinc-500">Sem eventos no radar.</p>
+          </div>
+        )}
+
+        <div className="hidden flex-1 space-y-3 overflow-auto p-4 lg:block">
+          {filteredEvents.length === 0 ? (
+            <p className="rounded-2xl border border-zinc-900 p-4 text-sm font-bold text-zinc-500">
+              Muda o raio ou a categoria.
+            </p>
+          ) : (
+            filteredEvents.map((event) => (
+              <EventSummary
+                key={event.id}
+                event={event}
+                selected={event.id === selectedEvent?.id}
+                onSelect={() => setSelectedEventId(event.id)}
+              />
+            ))
+          )}
+        </div>
+      </aside>
     </main>
   );
 }
