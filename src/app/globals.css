@@ -35,36 +35,16 @@ body {
 
 .paranoid-cockpit-space {
   position: absolute;
-  inset: -20%;
-  animation: paranoid-space-rush 6.4s cubic-bezier(0.12, 0.72, 0.18, 1) forwards;
-  background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 1px, transparent 1.6px),
-    radial-gradient(circle, rgba(120, 180, 255, 0.9) 0 1px, transparent 1.8px),
-    radial-gradient(circle, rgba(255, 80, 40, 0.9) 0 1px, transparent 1.7px);
-  background-position: 0 0, 38px 64px, 82px 28px;
-  background-size: 110px 110px, 180px 180px, 260px 260px;
-  opacity: 0.7;
+  inset: -5%;
+  animation: paranoid-cockpit-photo 7s cubic-bezier(0.12, 0.72, 0.18, 1) forwards;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.28)),
+    url("/map/spaceship-descent.png") center / cover no-repeat;
+  filter: contrast(1.08) saturate(1.08);
 }
 
 .paranoid-cockpit-earth {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(64vw, 660px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  animation: paranoid-earth-approach 6.8s cubic-bezier(0.1, 0.76, 0.14, 1) forwards;
-  background:
-    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.95) 0 4%, transparent 12%),
-    radial-gradient(circle at 43% 48%, rgba(37, 135, 71, 0.9) 0 10%, transparent 18%),
-    radial-gradient(circle at 62% 42%, rgba(190, 158, 93, 0.86) 0 9%, transparent 17%),
-    radial-gradient(circle at 48% 54%, #1a72c4 0 44%, #12376b 62%, #02040a 70%);
-  box-shadow:
-    inset -42px -42px 80px rgba(0, 0, 0, 0.72),
-    0 0 80px rgba(68, 151, 255, 0.35),
-    0 0 180px rgba(255, 58, 20, 0.18);
-  filter: saturate(1.28) contrast(1.05);
-  transform: translate3d(-50%, -50%, 0) scale(0.12) rotate(-18deg);
+  display: none;
 }
 
 .paranoid-cockpit-speed-lines {
@@ -79,23 +59,15 @@ body {
 }
 
 .paranoid-cockpit-window {
-  position: absolute;
-  inset: 8% 11% 18%;
-  border: 2px solid rgba(235, 244, 255, 0.22);
-  border-radius: 48% 48% 44% 44% / 42% 42% 52% 52%;
-  box-shadow:
-    inset 0 0 55px rgba(0, 0, 0, 0.82),
-    inset 0 0 0 18px rgba(0, 0, 0, 0.34),
-    0 0 70px rgba(255, 48, 16, 0.22);
+  display: none;
 }
 
 .paranoid-cockpit-frame {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.94) 0 8%, transparent 17% 83%, rgba(0, 0, 0, 0.94) 92% 100%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.94) 0 9%, transparent 20% 72%, rgba(0, 0, 0, 0.96) 87% 100%),
-    radial-gradient(ellipse at 50% 112%, rgba(0, 0, 0, 0.98) 0 42%, transparent 43%);
+    radial-gradient(circle at 50% 47%, transparent 0 32%, rgba(0, 0, 0, 0.14) 54%, rgba(0, 0, 0, 0.78) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.26), transparent 36%, rgba(0, 0, 0, 0.52));
 }
 
 .paranoid-cockpit-console {
@@ -173,14 +145,7 @@ body {
 }
 
 .paranoid-cockpit-party {
-  position: absolute;
-  left: 50%;
-  bottom: 22%;
-  display: flex;
-  gap: 10px;
-  opacity: 0;
-  transform: translateX(-50%) scale(0.4);
-  animation: paranoid-party-found 6.8s ease forwards;
+  display: none;
 }
 
 .paranoid-cockpit-party i {
@@ -235,15 +200,18 @@ body {
   }
 }
 
-@keyframes paranoid-earth-approach {
+@keyframes paranoid-cockpit-photo {
   0% {
-    transform: translate3d(-50%, -50%, 0) scale(0.1) rotate(-24deg);
+    transform: scale(1.02) translateY(0) rotate(0deg);
   }
-  58% {
-    transform: translate3d(-50%, -50%, 0) scale(0.82) rotate(-8deg);
+  18% {
+    transform: scale(1.08) translateY(-1.4%) rotate(-0.25deg);
+  }
+  48% {
+    transform: scale(1.18) translateY(-3.6%) rotate(0.3deg);
   }
   100% {
-    transform: translate3d(-50%, -35%, 0) scale(2.25) rotate(2deg);
+    transform: scale(1.34) translateY(-7%) rotate(-0.2deg);
   }
 }
 
