@@ -854,6 +854,7 @@ export default function MapPage() {
           events={pinEvents}
           userLocation={userLocation}
           selectedEventId={selectedEvent?.id || null}
+          radiusKm={radiusFilter === "all" ? null : Number(radiusFilter)}
           mapboxToken={MAPBOX_TOKEN}
           onSelectEvent={handleSelectMapEvent}
         />

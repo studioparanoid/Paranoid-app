@@ -27,6 +27,7 @@ type ParanoidMapProps = {
   events: ParanoidMapEvent[];
   userLocation: ParanoidMapUserLocation | null;
   selectedEventId: string | null;
+  radiusKm: number | null;
   mapboxToken?: string;
   onSelectEvent: (event: ParanoidMapEvent) => void;
 };
@@ -42,18 +43,24 @@ type MapboxGlApi = {
   Marker: new (options?: Record<string, unknown>) => MapboxMarker;
   LngLatBounds: new () => MapboxBounds;
   AttributionControl: new (options?: Record<string, unknown>) => unknown;
+  NavigationControl: new (options?: Record<string, unknown>) => unknown;
 };
 
 type MapboxMap = {
   addControl: (control: unknown, position?: string) => void;
   remove: () => void;
   resize: () => void;
-  fitBounds: (
-    bounds: MapboxBounds,
-    options?: Record<string, unknown>
-  ) => void;
+  flyTo: (options: Record<string, unknown>) => void;
   easeTo: (options: Record<string, unknown>) => void;
   getZoom: () => number;
+  on: (event: string, handler: () => void) => void;
+  isStyleLoaded: () => boolean;
+  addSource: (id: string, source: Record<string, unknown>) => void;
+  getSource: (id: string) => MapboxGeoJsonSource | undefined;
+  removeSource: (id: string) => void;
+  addLayer: (layer: Record<string, unknown>) => void;
+  getLayer: (id: string) => unknown;
+  removeLayer: (id: string) => void;
 };
 
 type MapboxMarker = {
@@ -65,6 +72,24 @@ type MapboxMarker = {
 type MapboxBounds = {
   extend: (coordinates: [number, number]) => MapboxBounds;
   isEmpty: () => boolean;
+};
+
+type MapboxGeoJsonSource = {
+  setData: (data: GeoJSONFeatureCollection) => void;
+};
+
+type GeoJSONFeatureCollection = {
+  type: "FeatureCollection";
+  features: GeoJSONFeature[];
+};
+
+type GeoJSONFeature = {
+  type: "Feature";
+  properties: Record<string, unknown>;
+  geometry: {
+    type: "Polygon";
+    coordinates: number[][][];
+  };
 };
 
 declare global {
@@ -128,10 +153,62 @@ function loadMapboxGl() {
   return window.paranoidMapboxGlPromise;
 }
 
+function buildCircleFeature(
+  center: [number, number],
+  radiusKm: number
+): GeoJSONFeatureCollection {
+  const points = 96;
+  const earthRadiusKm = 6371;
+  const coordinates: number[][] = [];
+  const [longitude, latitude] = center;
+  const latitudeRadians = (latitude * Math.PI) / 180;
+  const longitudeRadians = (longitude * Math.PI) / 180;
+  const angularDistance = radiusKm / earthRadiusKm;
+
+  for (let index = 0; index <= points; index += 1) {
+    const bearing = (index / points) * 2 * Math.PI;
+    const pointLatitude = Math.asin(
+      Math.sin(latitudeRadians) * Math.cos(angularDistance) +
+        Math.cos(latitudeRadians) *
+          Math.sin(angularDistance) *
+          Math.cos(bearing)
+    );
+    const pointLongitude =
+      longitudeRadians +
+      Math.atan2(
+        Math.sin(bearing) *
+          Math.sin(angularDistance) *
+          Math.cos(latitudeRadians),
+        Math.cos(angularDistance) -
+          Math.sin(latitudeRadians) * Math.sin(pointLatitude)
+      );
+
+    coordinates.push([
+      (pointLongitude * 180) / Math.PI,
+      (pointLatitude * 180) / Math.PI,
+    ]);
+  }
+
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Polygon",
+          coordinates: [coordinates],
+        },
+      },
+    ],
+  };
+}
+
 export function ParanoidMap({
   events,
   userLocation,
   selectedEventId,
+  radiusKm,
   mapboxToken,
   onSelectEvent,
 }: ParanoidMapProps) {
@@ -139,7 +216,9 @@ export function ParanoidMap({
   const mapRef = useRef<MapboxMap | null>(null);
   const mapboxRef = useRef<MapboxGlApi | null>(null);
   const markersRef = useRef<MapboxMarker[]>([]);
+  const introPlayedRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
+  const [styleReady, setStyleReady] = useState(false);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) || null,
@@ -165,17 +244,22 @@ export function ParanoidMap({
         mapRef.current = new mapboxgl.Map({
           container: containerRef.current,
           style: "mapbox://styles/mapbox/dark-v11",
-          center: userLocation
-            ? [userLocation.longitude, userLocation.latitude]
-            : PORTUGAL_CENTER,
-          zoom: userLocation ? 11 : 6,
+          center: [0, 20],
+          zoom: 1.4,
+          pitch: 0,
+          bearing: 0,
           attributionControl: false,
         });
 
         mapRef.current.addControl(
+          new mapboxgl.NavigationControl({ showCompass: true }),
+          "top-right"
+        );
+        mapRef.current.addControl(
           new mapboxgl.AttributionControl({ compact: true }),
           "bottom-right"
         );
+        mapRef.current.on("load", () => setStyleReady(true));
         setMapReady(true);
       })
       .catch(() => {
@@ -189,9 +273,35 @@ export function ParanoidMap({
       markersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
+      introPlayedRef.current = false;
       setMapReady(false);
+      setStyleReady(false);
     };
-  }, [mapboxToken, userLocation]);
+  }, [mapboxToken]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!mapReady || !map || introPlayedRef.current) {
+      return;
+    }
+
+    introPlayedRef.current = true;
+
+    window.setTimeout(() => {
+      map.flyTo({
+        center: userLocation
+          ? [userLocation.longitude, userLocation.latitude]
+          : PORTUGAL_CENTER,
+        zoom: userLocation ? 12 : 6,
+        pitch: 0,
+        bearing: 0,
+        speed: 0.65,
+        curve: 1.45,
+        essential: true,
+      });
+    }, 550);
+  }, [mapReady, userLocation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -207,8 +317,6 @@ export function ParanoidMap({
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
-
-    const bounds = new mapboxgl.LngLatBounds();
 
     events.forEach((event) => {
       const markerElement = document.createElement("button");
@@ -229,7 +337,6 @@ export function ParanoidMap({
         .addTo(map);
 
       markersRef.current.push(marker);
-      bounds.extend([event.longitude, event.latitude]);
     });
 
     if (userLocation) {
@@ -242,19 +349,76 @@ export function ParanoidMap({
         .addTo(map);
 
       markersRef.current.push(marker);
-      bounds.extend([userLocation.longitude, userLocation.latitude]);
-    }
-
-    if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, {
-        padding: { top: 96, right: 64, bottom: 180, left: 64 },
-        maxZoom: 13,
-        duration: 800,
-      });
     }
 
     map.resize();
   }, [events, mapReady, onSelectEvent, selectedEventId, userLocation]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || !styleReady || !map.isStyleLoaded()) {
+      return;
+    }
+
+    const sourceId = "paranoid-radius";
+    const fillId = "paranoid-radius-fill";
+    const lineId = "paranoid-radius-line";
+
+    if (!userLocation || radiusKm === null) {
+      if (map.getLayer(fillId)) {
+        map.removeLayer(fillId);
+      }
+      if (map.getLayer(lineId)) {
+        map.removeLayer(lineId);
+      }
+      if (map.getSource(sourceId)) {
+        map.removeSource(sourceId);
+      }
+      return;
+    }
+
+    const data = buildCircleFeature(
+      [userLocation.longitude, userLocation.latitude],
+      radiusKm
+    );
+    const source = map.getSource(sourceId);
+
+    if (source) {
+      source.setData(data);
+    } else {
+      map.addSource(sourceId, {
+        type: "geojson",
+        data,
+      });
+    }
+
+    if (!map.getLayer(fillId)) {
+      map.addLayer({
+        id: fillId,
+        type: "fill",
+        source: sourceId,
+        paint: {
+          "fill-color": "#dc2626",
+          "fill-opacity": 0.12,
+        },
+      });
+    }
+
+    if (!map.getLayer(lineId)) {
+      map.addLayer({
+        id: lineId,
+        type: "line",
+        source: sourceId,
+        paint: {
+          "line-color": "#f2f1ec",
+          "line-opacity": 0.8,
+          "line-width": 2,
+          "line-dasharray": [2, 2],
+        },
+      });
+    }
+  }, [radiusKm, styleReady, userLocation]);
 
   useEffect(() => {
     if (!selectedEvent || !mapRef.current) {
@@ -264,6 +428,8 @@ export function ParanoidMap({
     mapRef.current.easeTo({
       center: [selectedEvent.longitude, selectedEvent.latitude],
       zoom: Math.max(mapRef.current.getZoom(), 12),
+      pitch: 0,
+      bearing: 0,
       duration: 500,
     });
   }, [selectedEvent]);
