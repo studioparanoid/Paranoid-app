@@ -33,7 +33,7 @@ type ParanoidMapProps = {
 };
 
 const PORTUGAL_CENTER: [number, number] = [-8.2245, 39.3999];
-const WORLD_START_CENTER: [number, number] = [-35, 28];
+const WORLD_START_CENTER: [number, number] = [-28, 37];
 const MAPBOX_GL_SCRIPT_ID = "paranoid-mapbox-gl-js";
 const MAPBOX_GL_CSS_ID = "paranoid-mapbox-gl-css";
 const MAPBOX_GL_VERSION = "v3.10.0";
@@ -273,7 +273,6 @@ export function ParanoidMap({
   const introPlayedRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
   const [styleReady, setStyleReady] = useState(false);
-  const [cinematicActive, setCinematicActive] = useState(false);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) || null,
@@ -300,9 +299,9 @@ export function ParanoidMap({
           container: containerRef.current,
           style: PUBLIC_SATELLITE_STYLE,
           center: WORLD_START_CENTER,
-          zoom: 1.15,
-          pitch: 38,
-          bearing: -18,
+          zoom: 1.05,
+          pitch: 0,
+          bearing: 0,
           projection: "globe",
           attributionControl: false,
         });
@@ -360,27 +359,20 @@ export function ParanoidMap({
     }
 
     introPlayedRef.current = true;
-    setCinematicActive(true);
 
     window.setTimeout(() => {
       map.flyTo({
         center: userLocation
           ? [userLocation.longitude, userLocation.latitude]
           : PORTUGAL_CENTER,
-        zoom: userLocation ? 15.6 : 7,
-        pitch: userLocation ? 58 : 42,
-        bearing: userLocation ? -22 : -12,
-        speed: 0.48,
-        curve: 1.8,
+        zoom: userLocation ? 14.8 : 7,
+        pitch: userLocation ? 45 : 28,
+        bearing: userLocation ? -12 : 0,
+        speed: 0.36,
+        curve: 1.65,
         essential: true,
       });
     }, 750);
-
-    const cinematicTimer = window.setTimeout(() => {
-      setCinematicActive(false);
-    }, 6800);
-
-    return () => window.clearTimeout(cinematicTimer);
   }, [mapReady, userLocation]);
 
   useEffect(() => {
@@ -507,47 +499,12 @@ export function ParanoidMap({
 
     mapRef.current.easeTo({
       center: [selectedEvent.longitude, selectedEvent.latitude],
-      zoom: Math.max(mapRef.current.getZoom(), 16),
-      pitch: 58,
-      bearing: -22,
+      zoom: Math.max(mapRef.current.getZoom(), 15.5),
+      pitch: 45,
+      bearing: -12,
       duration: 850,
     });
   }, [selectedEvent]);
 
-  return (
-    <div className="relative h-full min-h-[520px] w-full overflow-hidden">
-      <div ref={containerRef} className="h-full min-h-[520px] w-full" />
-
-      {cinematicActive && (
-        <div className="paranoid-entry-cinematic pointer-events-none absolute inset-0 z-20">
-          <div className="paranoid-cockpit-space" />
-          <div className="paranoid-cockpit-earth" />
-          <div className="paranoid-cockpit-speed-lines" />
-          <div className="paranoid-cockpit-window" />
-          <div className="paranoid-cockpit-frame" />
-          <div className="paranoid-cockpit-console">
-            <div className="paranoid-cockpit-readout">
-              <span>DESCENT VECTOR</span>
-              <strong>PARANOID / PARTY LOCK</strong>
-            </div>
-            <div className="paranoid-cockpit-speed">
-              <span>VELOCIDADE</span>
-              <strong>12 840 KM/H</strong>
-            </div>
-          </div>
-          <div className="paranoid-cockpit-target">
-            <span />
-            <strong>FESTA DETETADA</strong>
-          </div>
-          <div className="paranoid-cockpit-party">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  return <div ref={containerRef} className="h-full min-h-[520px] w-full" />;
 }
