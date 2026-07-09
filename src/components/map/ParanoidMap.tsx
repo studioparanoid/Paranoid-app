@@ -33,9 +33,12 @@ type ParanoidMapProps = {
 };
 
 const PORTUGAL_CENTER: [number, number] = [-8.2245, 39.3999];
+const WORLD_START_CENTER: [number, number] = [-35, 28];
 const MAPBOX_GL_SCRIPT_ID = "paranoid-mapbox-gl-js";
 const MAPBOX_GL_CSS_ID = "paranoid-mapbox-gl-css";
 const MAPBOX_GL_VERSION = "v3.10.0";
+const MAPBOX_DEM_SOURCE_ID = "mapbox-dem";
+const MAPBOX_BUILDINGS_LAYER_ID = "paranoid-3d-buildings";
 
 type MapboxGlApi = {
   accessToken: string;
@@ -55,6 +58,9 @@ type MapboxMap = {
   getZoom: () => number;
   on: (event: string, handler: () => void) => void;
   isStyleLoaded: () => boolean;
+  setProjection: (projection: string | Record<string, unknown>) => void;
+  setFog: (fog: Record<string, unknown>) => void;
+  setTerrain: (terrain: Record<string, unknown> | null) => void;
   addSource: (id: string, source: Record<string, unknown>) => void;
   getSource: (id: string) => MapboxGeoJsonSource | undefined;
   removeSource: (id: string) => void;
@@ -243,11 +249,12 @@ export function ParanoidMap({
 
         mapRef.current = new mapboxgl.Map({
           container: containerRef.current,
-          style: "mapbox://styles/mapbox/dark-v11",
-          center: [0, 20],
-          zoom: 1.4,
-          pitch: 0,
-          bearing: 0,
+          style: "mapbox://styles/mapbox/satellite-streets-v12",
+          center: WORLD_START_CENTER,
+          zoom: 1.15,
+          pitch: 38,
+          bearing: -18,
+          projection: "globe",
           attributionControl: false,
         });
 
@@ -259,7 +266,71 @@ export function ParanoidMap({
           new mapboxgl.AttributionControl({ compact: true }),
           "bottom-right"
         );
-        mapRef.current.on("load", () => setStyleReady(true));
+        mapRef.current.on("style.load", () => {
+          const map = mapRef.current;
+
+          if (!map) {
+            return;
+          }
+
+          map.setProjection("globe");
+          map.setFog({
+            color: "rgb(8, 12, 20)",
+            "high-color": "rgb(35, 65, 120)",
+            "horizon-blend": 0.08,
+            "space-color": "rgb(0, 0, 0)",
+            "star-intensity": 0.35,
+          });
+
+          if (!map.getSource(MAPBOX_DEM_SOURCE_ID)) {
+            map.addSource(MAPBOX_DEM_SOURCE_ID, {
+              type: "raster-dem",
+              url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+              tileSize: 512,
+              maxzoom: 14,
+            });
+          }
+
+          map.setTerrain({
+            source: MAPBOX_DEM_SOURCE_ID,
+            exaggeration: 1.25,
+          });
+
+          if (!map.getLayer(MAPBOX_BUILDINGS_LAYER_ID)) {
+            map.addLayer({
+              id: MAPBOX_BUILDINGS_LAYER_ID,
+              source: "composite",
+              "source-layer": "building",
+              filter: ["==", ["get", "extrude"], "true"],
+              type: "fill-extrusion",
+              minzoom: 14,
+              paint: {
+                "fill-extrusion-color": "#d8d2c7",
+                "fill-extrusion-height": [
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  14,
+                  0,
+                  16,
+                  ["get", "height"],
+                ],
+                "fill-extrusion-base": [
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  14,
+                  0,
+                  16,
+                  ["get", "min_height"],
+                ],
+                "fill-extrusion-opacity": 0.62,
+              },
+            });
+          }
+
+          setStyleReady(true);
+        });
         setMapReady(true);
       })
       .catch(() => {
@@ -293,14 +364,14 @@ export function ParanoidMap({
         center: userLocation
           ? [userLocation.longitude, userLocation.latitude]
           : PORTUGAL_CENTER,
-        zoom: userLocation ? 12 : 6,
-        pitch: 0,
-        bearing: 0,
-        speed: 0.65,
-        curve: 1.45,
+        zoom: userLocation ? 15.6 : 7,
+        pitch: userLocation ? 58 : 42,
+        bearing: userLocation ? -22 : -12,
+        speed: 0.48,
+        curve: 1.8,
         essential: true,
       });
-    }, 550);
+    }, 750);
   }, [mapReady, userLocation]);
 
   useEffect(() => {
@@ -427,10 +498,10 @@ export function ParanoidMap({
 
     mapRef.current.easeTo({
       center: [selectedEvent.longitude, selectedEvent.latitude],
-      zoom: Math.max(mapRef.current.getZoom(), 12),
-      pitch: 0,
-      bearing: 0,
-      duration: 500,
+      zoom: Math.max(mapRef.current.getZoom(), 16),
+      pitch: 58,
+      bearing: -22,
+      duration: 850,
     });
   }, [selectedEvent]);
 
