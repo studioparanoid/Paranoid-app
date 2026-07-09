@@ -882,7 +882,7 @@ export default function MapPage() {
       )}
 
       <section
-        className={`fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 border-t border-zinc-800 bg-black/95 px-4 py-3 backdrop-blur transition-transform lg:absolute lg:bottom-auto lg:left-8 lg:right-auto lg:top-28 lg:w-[420px] lg:rounded-2xl lg:border lg:bg-zinc-950/90 lg:p-4 ${
+        className={`fixed inset-x-0 bottom-[calc(42vh+5rem+env(safe-area-inset-bottom))] z-50 border-y border-zinc-800 bg-black/95 px-4 py-3 backdrop-blur transition-transform lg:absolute lg:bottom-auto lg:left-8 lg:right-auto lg:top-28 lg:w-[420px] lg:rounded-2xl lg:border lg:bg-zinc-950/90 lg:p-4 ${
           controlsCollapsed ? "translate-y-[calc(100%-3.25rem)] lg:translate-y-0" : ""
         }`}
       >
