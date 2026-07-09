@@ -1,0 +1,318 @@
+⨯ ./src/app/mapa/page.tsx:1044:25
+Expression expected
+  [90m1042 |[0m   );
+  [90m1043 |[0m }
+[31m[1m>[0m [90m1044 |[0m                         </a>
+  [90m     |[0m                         [31m[1m^[0m
+  [90m1045 |[0m                       </div>
+  [90m1046 |[0m                     </div>
+  [90m1047 |[0m                   </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+
+./src/app/mapa/page.tsx:1044:26
+Unterminated regexp literal
+  [90m1042 |[0m   );
+  [90m1043 |[0m }
+[31m[1m>[0m [90m1044 |[0m                         </a>
+  [90m     |[0m                          [31m[1m^^^[0m
+  [90m1045 |[0m                       </div>
+  [90m1046 |[0m                     </div>
+  [90m1047 |[0m                   </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+⨯ ./src/app/mapa/page.tsx:1044:25
+Expression expected
+  [90m1042 |[0m   );
+  [90m1043 |[0m }
+[31m[1m>[0m [90m1044 |[0m                         </a>
+  [90m     |[0m                         [31m[1m^[0m
+  [90m1045 |[0m                       </div>
+  [90m1046 |[0m                     </div>
+  [90m1047 |[0m                   </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+
+./src/app/mapa/page.tsx:1044:26
+Unterminated regexp literal
+  [90m1042 |[0m   );
+  [90m1043 |[0m }
+[31m[1m>[0m [90m1044 |[0m                         </a>
+  [90m     |[0m                          [31m[1m^^^[0m
+  [90m1045 |[0m                       </div>
+  [90m1046 |[0m                     </div>
+  [90m1047 |[0m                   </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+⨯ ./src/app/mapa/page.tsx:1044:25
+Expression expected
+  [90m1042 |[0m   );
+  [90m1043 |[0m }
+[31m[1m>[0m [90m1044 |[0m                         </a>
+  [90m     |[0m                         [31m[1m^[0m
+  [90m1045 |[0m                       </div>
+  [90m1046 |[0m                     </div>
+  [90m1047 |[0m                   </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+
+./src/app/mapa/page.tsx:1044:26
+Unterminated regexp literal
+  [90m1042 |[0m   );
+  [90m1043 |[0m }
+[31m[1m>[0m [90m1044 |[0m                         </a>
+  [90m     |[0m                          [31m[1m^^^[0m
+  [90m1045 |[0m                       </div>
+  [90m1046 |[0m                     </div>
+  [90m1047 |[0m                   </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+[browser] Uncaught Error: ./src/app/mapa/page.tsx:1044:25
+Expression expected
+  1042 |   );
+  1043 | }
+> 1044 |                         </a>
+       |                         ^
+  1045 |                       </div>
+  1046 |                     </div>
+  1047 |                   </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/app/mapa/page.tsx:1044:25)
+    at <unknown> (Error: (./src/app/mapa/page.tsx:1044:25)
+⨯ ./src/app/mapa/page.tsx:1040:5
+Expression expected
+  [90m1038 |[0m           </section>
+  [90m1039 |[0m       </section>
+[31m[1m>[0m [90m1040 |[0m     </main>
+  [90m     |[0m     [31m[1m^[0m
+  [90m1041 |[0m   );
+  [90m1042 |[0m }
+  [90m1043 |[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+
+./src/app/mapa/page.tsx:1040:6
+Unterminated regexp literal
+  [90m1038 |[0m           </section>
+  [90m1039 |[0m       </section>
+[31m[1m>[0m [90m1040 |[0m     </main>
+  [90m     |[0m      [31m[1m^^^^^^[0m
+  [90m1041 |[0m   );
+  [90m1042 |[0m }
+  [90m1043 |[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+⨯ ./src/app/mapa/page.tsx:1040:5
+Expression expected
+  [90m1038 |[0m           </section>
+  [90m1039 |[0m       </section>
+[31m[1m>[0m [90m1040 |[0m     </main>
+  [90m     |[0m     [31m[1m^[0m
+  [90m1041 |[0m   );
+  [90m1042 |[0m }
+  [90m1043 |[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+
+./src/app/mapa/page.tsx:1040:6
+Unterminated regexp literal
+  [90m1038 |[0m           </section>
+  [90m1039 |[0m       </section>
+[31m[1m>[0m [90m1040 |[0m     </main>
+  [90m     |[0m      [31m[1m^^^^^^[0m
+  [90m1041 |[0m   );
+  [90m1042 |[0m }
+  [90m1043 |[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+⨯ ./src/app/mapa/page.tsx:1040:5
+Expression expected
+  [90m1038 |[0m           </section>
+  [90m1039 |[0m       </section>
+[31m[1m>[0m [90m1040 |[0m     </main>
+  [90m     |[0m     [31m[1m^[0m
+  [90m1041 |[0m   );
+  [90m1042 |[0m }
+  [90m1043 |[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+
+./src/app/mapa/page.tsx:1040:6
+Unterminated regexp literal
+  [90m1038 |[0m           </section>
+  [90m1039 |[0m       </section>
+[31m[1m>[0m [90m1040 |[0m     </main>
+  [90m     |[0m      [31m[1m^^^^^^[0m
+  [90m1041 |[0m   );
+  [90m1042 |[0m }
+  [90m1043 |[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+[browser] Uncaught Error: ./src/app/mapa/page.tsx:1040:5
+Expression expected
+  1038 |           </section>
+  1039 |       </section>
+> 1040 |     </main>
+       |     ^
+  1041 |   );
+  1042 | }
+  1043 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/mapa/page.tsx [Client Component Browser]
+    ./src/app/mapa/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/mapa/page.tsx [Client Component SSR]
+    ./src/app/mapa/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/app/mapa/page.tsx:1040:5)
+    at <unknown> (Error: (./src/app/mapa/page.tsx:1040:5)

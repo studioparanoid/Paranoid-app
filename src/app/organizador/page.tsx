@@ -1,4 +1,5 @@
 import { OrganizerDashboardClient } from "@/components/OrganizerDashboardClient";
+import Link from "next/link";
 
 export default function OrganizerPage() {
   return (
@@ -22,6 +23,19 @@ export default function OrganizerPage() {
             </p>
           </div>
         </section>
+
+        <Link
+          href="/organizador/loja"
+          className="mt-6 block rounded-[1.5rem] border border-red-950 bg-red-950/25 p-5 transition hover:border-red-800 lg:max-w-xl"
+        >
+          <p className="text-xs font-black uppercase tracking-[0.35em] text-red-500">
+            Loja
+          </p>
+          <p className="mt-2 text-2xl font-black">Gerir merch e encomendas</p>
+          <p className="mt-2 text-sm text-zinc-500">
+            Submete produtos, vê estados e prepara envios.
+          </p>
+        </Link>
 
         <OrganizerDashboardClient />
       </section>
