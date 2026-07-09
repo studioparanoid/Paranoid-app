@@ -520,18 +520,31 @@ export function ParanoidMap({
 
       {cinematicActive && (
         <div className="paranoid-entry-cinematic pointer-events-none absolute inset-0 z-20">
-          <div className="paranoid-entry-stars" />
-          <div className="paranoid-entry-vortex" />
-          <div className="paranoid-entry-fire paranoid-entry-fire-left" />
-          <div className="paranoid-entry-fire paranoid-entry-fire-right" />
-          <div className="paranoid-entry-heat" />
-          <div className="paranoid-entry-inferno" />
-          <div className="paranoid-entry-silhouettes">
+          <div className="paranoid-cockpit-space" />
+          <div className="paranoid-cockpit-earth" />
+          <div className="paranoid-cockpit-speed-lines" />
+          <div className="paranoid-cockpit-window" />
+          <div className="paranoid-cockpit-frame" />
+          <div className="paranoid-cockpit-console">
+            <div className="paranoid-cockpit-readout">
+              <span>DESCENT VECTOR</span>
+              <strong>PARANOID / PARTY LOCK</strong>
+            </div>
+            <div className="paranoid-cockpit-speed">
+              <span>VELOCIDADE</span>
+              <strong>12 840 KM/H</strong>
+            </div>
+          </div>
+          <div className="paranoid-cockpit-target">
             <span />
-            <span />
-            <span />
-            <span />
-            <span />
+            <strong>FESTA DETETADA</strong>
+          </div>
+          <div className="paranoid-cockpit-party">
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
           </div>
         </div>
       )}

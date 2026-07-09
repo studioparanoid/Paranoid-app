@@ -28,132 +28,193 @@ body {
 }
 
 .paranoid-entry-cinematic {
-  animation: paranoid-entry-fade 6.8s ease forwards;
-  background:
-    radial-gradient(circle at 50% 50%, transparent 0 16%, rgba(0, 0, 0, 0.2) 34%, rgba(0, 0, 0, 0.72) 72%),
-    linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(32, 0, 0, 0.12) 42%, rgba(0, 0, 0, 0.25));
-  mix-blend-mode: screen;
+  animation: paranoid-entry-fade 7s ease forwards;
+  background: #02040a;
+  perspective: 900px;
 }
 
-.paranoid-entry-stars {
+.paranoid-cockpit-space {
   position: absolute;
   inset: -20%;
-  animation: paranoid-stars-fall 4.8s cubic-bezier(0.12, 0.72, 0.22, 1) forwards;
+  animation: paranoid-space-rush 6.4s cubic-bezier(0.12, 0.72, 0.18, 1) forwards;
   background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 1px, transparent 1.5px),
-    radial-gradient(circle, rgba(255, 92, 35, 0.85) 0 1px, transparent 1.5px);
-  background-position: 0 0, 28px 42px;
-  background-size: 72px 72px, 116px 116px;
-  opacity: 0.58;
-  transform: scale(1);
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 1px, transparent 1.6px),
+    radial-gradient(circle, rgba(120, 180, 255, 0.9) 0 1px, transparent 1.8px),
+    radial-gradient(circle, rgba(255, 80, 40, 0.9) 0 1px, transparent 1.7px);
+  background-position: 0 0, 38px 64px, 82px 28px;
+  background-size: 110px 110px, 180px 180px, 260px 260px;
+  opacity: 0.7;
 }
 
-.paranoid-entry-vortex {
+.paranoid-cockpit-earth {
   position: absolute;
-  inset: -10%;
-  animation: paranoid-vortex-drop 5.8s cubic-bezier(0.08, 0.78, 0.18, 1) forwards;
+  left: 50%;
+  top: 50%;
+  width: min(64vw, 660px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  animation: paranoid-earth-approach 6.8s cubic-bezier(0.1, 0.76, 0.14, 1) forwards;
   background:
-    conic-gradient(from 0deg at 50% 52%, rgba(255, 255, 255, 0.18), transparent 18%, rgba(255, 40, 0, 0.28), transparent 42%, rgba(255, 177, 66, 0.2), transparent 72%, rgba(255, 255, 255, 0.12)),
-    radial-gradient(circle at 50% 55%, transparent 0 12%, rgba(255, 69, 0, 0.2) 18%, transparent 38%, rgba(0, 0, 0, 0.75) 76%);
-  filter: blur(0.4px) saturate(1.45);
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.95) 0 4%, transparent 12%),
+    radial-gradient(circle at 43% 48%, rgba(37, 135, 71, 0.9) 0 10%, transparent 18%),
+    radial-gradient(circle at 62% 42%, rgba(190, 158, 93, 0.86) 0 9%, transparent 17%),
+    radial-gradient(circle at 48% 54%, #1a72c4 0 44%, #12376b 62%, #02040a 70%);
+  box-shadow:
+    inset -42px -42px 80px rgba(0, 0, 0, 0.72),
+    0 0 80px rgba(68, 151, 255, 0.35),
+    0 0 180px rgba(255, 58, 20, 0.18);
+  filter: saturate(1.28) contrast(1.05);
+  transform: translate3d(-50%, -50%, 0) scale(0.12) rotate(-18deg);
 }
 
-.paranoid-entry-fire {
+.paranoid-cockpit-speed-lines {
   position: absolute;
-  bottom: -22%;
-  width: 36%;
-  height: 92%;
-  animation: paranoid-fire-rise 5.9s ease-out forwards;
+  inset: -25%;
+  animation: paranoid-speed-warp 6.1s ease-in forwards;
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(255, 245, 160, 0.94), transparent 22%),
-    radial-gradient(ellipse at 52% 82%, rgba(255, 106, 0, 0.95), transparent 38%),
-    radial-gradient(ellipse at 46% 64%, rgba(205, 0, 0, 0.88), transparent 50%),
-    linear-gradient(180deg, transparent, rgba(255, 30, 0, 0.72));
-  filter: blur(10px) saturate(1.6);
-  opacity: 0.88;
+    repeating-radial-gradient(circle at 50% 52%, transparent 0 38px, rgba(255, 255, 255, 0.16) 40px 42px),
+    conic-gradient(from 18deg at 50% 52%, transparent 0 5deg, rgba(255, 255, 255, 0.42) 6deg 7deg, transparent 8deg 14deg);
+  filter: blur(1px);
+  opacity: 0;
 }
 
-.paranoid-entry-fire-left {
-  left: -12%;
-  transform: rotate(16deg);
+.paranoid-cockpit-window {
+  position: absolute;
+  inset: 8% 11% 18%;
+  border: 2px solid rgba(235, 244, 255, 0.22);
+  border-radius: 48% 48% 44% 44% / 42% 42% 52% 52%;
+  box-shadow:
+    inset 0 0 55px rgba(0, 0, 0, 0.82),
+    inset 0 0 0 18px rgba(0, 0, 0, 0.34),
+    0 0 70px rgba(255, 48, 16, 0.22);
 }
 
-.paranoid-entry-fire-right {
-  right: -12%;
-  transform: rotate(-16deg);
-}
-
-.paranoid-entry-heat {
+.paranoid-cockpit-frame {
   position: absolute;
   inset: 0;
-  animation: paranoid-heat-flash 6.4s ease forwards;
   background:
-    repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.035) 20px 22px),
-    radial-gradient(circle at 50% 68%, rgba(255, 64, 0, 0.42), transparent 34%),
-    linear-gradient(180deg, transparent 35%, rgba(126, 0, 0, 0.46) 100%);
-  filter: contrast(1.25);
+    linear-gradient(90deg, rgba(0, 0, 0, 0.94) 0 8%, transparent 17% 83%, rgba(0, 0, 0, 0.94) 92% 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.94) 0 9%, transparent 20% 72%, rgba(0, 0, 0, 0.96) 87% 100%),
+    radial-gradient(ellipse at 50% 112%, rgba(0, 0, 0, 0.98) 0 42%, transparent 43%);
 }
 
-.paranoid-entry-inferno {
+.paranoid-cockpit-console {
   position: absolute;
-  inset: auto 0 0;
-  height: 34%;
-  animation: paranoid-inferno 6.8s ease forwards;
-  background:
-    radial-gradient(ellipse at 20% 100%, rgba(255, 170, 34, 0.52), transparent 36%),
-    radial-gradient(ellipse at 52% 100%, rgba(255, 40, 0, 0.62), transparent 44%),
-    radial-gradient(ellipse at 78% 100%, rgba(255, 210, 90, 0.44), transparent 30%),
-    linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.86));
-  filter: blur(4px) saturate(1.8);
+  inset: auto 7% 5%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  color: #f2f1ec;
 }
 
-.paranoid-entry-silhouettes {
-  position: absolute;
-  inset: auto 8% 6%;
-  display: flex;
-  height: 18%;
-  align-items: end;
-  justify-content: space-around;
-  opacity: 0;
-  animation: paranoid-silhouettes 6.2s ease forwards;
+.paranoid-cockpit-readout,
+.paranoid-cockpit-speed {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.58);
+  padding: 10px 12px;
+  box-shadow: inset 0 0 24px rgba(255, 0, 0, 0.12);
+  backdrop-filter: blur(12px);
 }
 
-.paranoid-entry-silhouettes span {
+.paranoid-cockpit-readout span,
+.paranoid-cockpit-speed span {
   display: block;
-  width: 22px;
-  height: 78px;
-  border-radius: 999px 999px 30px 30px;
-  background:
-    radial-gradient(circle at 50% 10%, #050505 0 9px, transparent 10px),
-    linear-gradient(180deg, #050505, #010101);
-  box-shadow: 0 0 22px rgba(255, 66, 0, 0.45);
+  color: #ff334d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+}
+
+.paranoid-cockpit-readout strong,
+.paranoid-cockpit-speed strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.paranoid-cockpit-speed strong {
+  animation: paranoid-speed-counter 6.4s steps(6) forwards;
+}
+
+.paranoid-cockpit-target {
+  position: absolute;
+  left: 50%;
+  top: 49%;
+  display: grid;
+  place-items: center;
+  color: #ffedf0;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  animation: paranoid-target-lock 6.8s ease forwards;
+}
+
+.paranoid-cockpit-target span {
+  display: block;
+  width: 128px;
+  height: 128px;
+  border: 2px solid rgba(255, 36, 56, 0.9);
+  border-radius: 50%;
+  box-shadow:
+    0 0 26px rgba(255, 36, 56, 0.55),
+    inset 0 0 22px rgba(255, 36, 56, 0.25);
+}
+
+.paranoid-cockpit-target strong {
+  margin-top: 10px;
+  border: 1px solid rgba(255, 36, 56, 0.7);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.68);
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+
+.paranoid-cockpit-party {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transform: translateX(-50%) scale(0.4);
+  animation: paranoid-party-found 6.8s ease forwards;
+}
+
+.paranoid-cockpit-party i {
+  width: 9px;
+  height: 38px;
+  border-radius: 999px 999px 10px 10px;
+  background: #020202;
+  box-shadow:
+    0 -9px 0 2px #020202,
+    0 0 18px rgba(255, 40, 70, 0.85),
+    12px -16px 20px rgba(255, 210, 60, 0.6);
   transform-origin: bottom center;
-  animation: paranoid-lost-dance 1.28s ease-in-out infinite alternate;
+  animation: paranoid-party-dance 0.58s ease-in-out infinite alternate;
 }
 
-.paranoid-entry-silhouettes span:nth-child(2) {
-  height: 94px;
-  animation-delay: -0.35s;
-}
-
-.paranoid-entry-silhouettes span:nth-child(3) {
-  height: 70px;
-  animation-delay: -0.72s;
-}
-
-.paranoid-entry-silhouettes span:nth-child(4) {
-  height: 102px;
+.paranoid-cockpit-party i:nth-child(2) {
   animation-delay: -0.18s;
 }
 
-.paranoid-entry-silhouettes span:nth-child(5) {
-  height: 82px;
-  animation-delay: -0.54s;
+.paranoid-cockpit-party i:nth-child(3) {
+  animation-delay: -0.34s;
+}
+
+.paranoid-cockpit-party i:nth-child(4) {
+  animation-delay: -0.07s;
+}
+
+.paranoid-cockpit-party i:nth-child(5) {
+  animation-delay: -0.26s;
 }
 
 @keyframes paranoid-entry-fade {
   0%,
-  72% {
+  82% {
     opacity: 1;
   }
   100% {
@@ -161,97 +222,95 @@ body {
   }
 }
 
-@keyframes paranoid-stars-fall {
+@keyframes paranoid-space-rush {
   0% {
-    transform: scale(0.55) translateY(-18%);
+    transform: scale(0.7) translateY(-8%);
   }
-  100% {
-    transform: scale(2.8) translateY(24%);
-  }
-}
-
-@keyframes paranoid-vortex-drop {
-  0% {
-    opacity: 0.95;
-    transform: scale(0.45) rotate(0deg);
-  }
-  70% {
+  45% {
     opacity: 0.86;
   }
   100% {
-    opacity: 0;
-    transform: scale(3.2) rotate(260deg);
+    opacity: 0.2;
+    transform: scale(3.4) translateY(24%);
   }
 }
 
-@keyframes paranoid-fire-rise {
+@keyframes paranoid-earth-approach {
   0% {
-    opacity: 0;
-    transform: translateY(28%) scaleY(0.8);
-  }
-  18% {
-    opacity: 0.95;
-  }
-  74% {
-    opacity: 0.86;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-18%) scaleY(1.15);
-  }
-}
-
-@keyframes paranoid-heat-flash {
-  0% {
-    opacity: 0;
-  }
-  32% {
-    opacity: 0.72;
-  }
-  72% {
-    opacity: 0.48;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes paranoid-inferno {
-  0%,
-  34% {
-    opacity: 0;
-    transform: translateY(22%);
+    transform: translate3d(-50%, -50%, 0) scale(0.1) rotate(-24deg);
   }
   58% {
-    opacity: 0.95;
+    transform: translate3d(-50%, -50%, 0) scale(0.82) rotate(-8deg);
   }
   100% {
-    opacity: 0;
-    transform: translateY(2%);
+    transform: translate3d(-50%, -35%, 0) scale(2.25) rotate(2deg);
   }
 }
 
-@keyframes paranoid-silhouettes {
+@keyframes paranoid-speed-warp {
   0%,
-  42% {
+  18% {
     opacity: 0;
-    transform: translateY(18%);
+    transform: scale(0.7) rotate(0deg);
   }
-  58%,
-  80% {
-    opacity: 0.72;
+  48% {
+    opacity: 0.44;
   }
   100% {
-    opacity: 0;
-    transform: translateY(4%);
+    opacity: 0.82;
+    transform: scale(1.9) rotate(16deg);
   }
 }
 
-@keyframes paranoid-lost-dance {
+@keyframes paranoid-speed-counter {
   0% {
-    transform: rotate(-7deg) translateY(0) scaleX(0.86);
+    opacity: 0.65;
   }
   100% {
-    transform: rotate(8deg) translateY(-8px) scaleX(1.08);
+    opacity: 1;
+    text-shadow: 0 0 18px rgba(255, 45, 68, 0.8);
+  }
+}
+
+@keyframes paranoid-target-lock {
+  0%,
+  52% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8);
+  }
+  66%,
+  86% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.75);
+  }
+}
+
+@keyframes paranoid-party-found {
+  0%,
+  60% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.25);
+  }
+  74%,
+  88% {
+    opacity: 0.9;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1.25);
+  }
+}
+
+@keyframes paranoid-party-dance {
+  0% {
+    transform: rotate(-12deg) translateY(0);
+  }
+  100% {
+    transform: rotate(12deg) translateY(-8px);
   }
 }
