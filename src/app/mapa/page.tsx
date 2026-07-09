@@ -39,6 +39,8 @@ type Coordinate = {
   longitude: number;
 };
 
+type MapDateFilter = EventDateFilter | "date";
+
 const LOCATION_RADIUS_BUFFER_KM = 0.75;
 const SAVED_MANUAL_LOCATION_KEY = "paranoid.map.manualLocation";
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -142,6 +144,40 @@ function formatShortDate(value: string | null | undefined) {
 
 function eventDateValue(event: EventRow) {
   return event.start_at || event.start_date || event.display_date || "";
+}
+
+function dateKey(value: string | null | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const cleanValue = value.includes("T") ? value : `${value}T00:00:00`;
+  const date = new Date(cleanValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 10);
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function eventMatchesCustomDate(event: EventRow, customDate: string) {
+  if (!customDate) {
+    return true;
+  }
+
+  const startKey = dateKey(event.start_at || event.start_date || event.display_date);
+  const endKey = dateKey(event.end_date);
+
+  if (!startKey) {
+    return false;
+  }
+
+  if (endKey) {
+    return customDate >= startKey && customDate <= endKey;
+  }
+
+  return customDate === startKey;
 }
 
 function toRadians(value: number) {
@@ -381,7 +417,8 @@ export default function MapPage() {
     useState(ALL_MUNICIPALITIES);
   const [cityFilter, setCityFilter] = useState(ALL_CITIES);
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
-  const dateFilter: EventDateFilter = "all";
+  const [dateFilter, setDateFilter] = useState<MapDateFilter>("all");
+  const [customDateFilter, setCustomDateFilter] = useState("");
   const priceFilter: EventPriceFilter = "all";
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [controlsCollapsed, setControlsCollapsed] = useState(true);
@@ -494,10 +531,15 @@ export default function MapPage() {
       municipalityFilter,
       cityFilter,
       categoryFilter,
-      dateFilter,
+      dateFilter: dateFilter === "date" ? "all" : dateFilter,
       priceFilter,
     })
       .map((indexedEvent) => indexedEvent.event)
+      .filter((event) =>
+        dateFilter === "date"
+          ? eventMatchesCustomDate(event, customDateFilter)
+          : true
+      )
       .filter((event) => {
         const hasCoordinates =
           event.finalLatitude !== null && event.finalLongitude !== null;
@@ -524,6 +566,8 @@ export default function MapPage() {
     municipalityFilter,
     cityFilter,
     categoryFilter,
+    dateFilter,
+    customDateFilter,
     userLocation,
   ]);
 
@@ -793,6 +837,7 @@ export default function MapPage() {
       setDistrictFilter(ALL_DISTRICTS);
       setMunicipalityFilter(ALL_MUNICIPALITIES);
       setCityFilter(ALL_CITIES);
+      setControlsCollapsed(true);
     } catch {
       setMessage("Não deu para localizar essa morada/localidade agora.");
     }
@@ -853,6 +898,16 @@ export default function MapPage() {
     setControlsCollapsed(false);
   }, []);
 
+  const dateQuickFilters: Array<{
+    value: MapDateFilter;
+    label: string;
+  }> = [
+    { value: "today", label: "Hoje" },
+    { value: "7d", label: "7 dias" },
+    { value: "30d", label: "Mês" },
+    { value: "date", label: "Data" },
+  ];
+
   if (loading) {
     return (
       <main className="grid min-h-[calc(100vh-5rem)] place-items-center bg-black px-5 pb-24 text-[#f2f1ec] lg:min-h-screen lg:pb-0">
@@ -899,7 +954,7 @@ export default function MapPage() {
       )}
 
       <section
-        className={`fixed inset-x-3 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[60] rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3`}
+        className={`fixed inset-x-3 bottom-[calc(3.95rem+env(safe-area-inset-bottom))] z-[60] rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3`}
       >
         {controlsCollapsed && (
           <button
@@ -1033,6 +1088,32 @@ export default function MapPage() {
             </div>
           </form>
 
+          <div className="mt-2 grid grid-cols-4 gap-1 rounded-xl border border-white/10 bg-black/45 p-1">
+            {dateQuickFilters.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setDateFilter(option.value)}
+                className={`rounded-lg px-2 py-2 text-[11px] font-black ${
+                  dateFilter === option.value
+                    ? "bg-[#f2f1ec] text-black"
+                    : "text-zinc-300"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {dateFilter === "date" && (
+            <input
+              type="date"
+              value={customDateFilter}
+              onChange={(event) => setCustomDateFilter(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/70 px-4 py-2.5 text-sm font-black text-[#f2f1ec] outline-none focus:border-red-700"
+            />
+          )}
+
           <button
             type="button"
             onClick={useBrowserLocation}
@@ -1103,18 +1184,18 @@ export default function MapPage() {
       </section>
 
       <aside
-        className={`absolute bottom-[calc(8.85rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/72 shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
+        className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/72 shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
           controlsCollapsed ? "block" : "hidden lg:flex"
         }`}
       >
         {selectedEvent ? (
-          <div className="border-b border-white/10 p-3">
-            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+          <div className="border-b border-white/10 p-2.5 lg:p-3">
+            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => selectRelativeEvent(-1)}
                 aria-label="Evento anterior"
-                className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-black/40 text-xl font-black text-[#f2f1ec] lg:hidden"
+                className="grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-[#f2f1ec] lg:hidden"
               >
                 ‹
               </button>
@@ -1128,7 +1209,7 @@ export default function MapPage() {
                     {selectedEventIndex + 1}/{filteredEvents.length}
                   </p>
                 </div>
-                <h2 className="mt-1 line-clamp-1 text-lg font-black leading-tight lg:line-clamp-2 lg:text-base">
+                <h2 className="mt-1 line-clamp-1 text-base font-black leading-tight lg:line-clamp-2 lg:text-base">
                   {selectedEvent.title}
                 </h2>
                 <p className="mt-1 truncate text-xs text-zinc-300">
@@ -1158,16 +1239,16 @@ export default function MapPage() {
                 type="button"
                 onClick={() => selectRelativeEvent(1)}
                 aria-label="Próximo evento"
-                className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-black/40 text-xl font-black text-[#f2f1ec] lg:hidden"
+              className="grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-[#f2f1ec] lg:hidden"
               >
                 ›
               </button>
             </div>
 
-            <div className="mt-3 flex gap-2">
+            <div className="mt-2.5 flex gap-2">
               <Link
                 href={`/eventos/${selectedEvent.slug}`}
-                className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-2.5 text-center text-xs font-black text-black"
+                className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-2 text-center text-xs font-black text-black"
               >
                 Ver evento
               </Link>
@@ -1175,7 +1256,7 @@ export default function MapPage() {
                 href={selectedMapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-white/15 bg-black/30 px-4 py-2.5 text-xs font-black text-zinc-100"
+                className="rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-black text-zinc-100"
               >
                 Rota
               </a>
