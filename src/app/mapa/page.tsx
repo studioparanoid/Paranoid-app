@@ -421,7 +421,8 @@ export default function MapPage() {
   const [customDateFilter, setCustomDateFilter] = useState("");
   const priceFilter: EventPriceFilter = "all";
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  const [controlsCollapsed, setControlsCollapsed] = useState(true);
+  const [controlsCollapsed, setControlsCollapsed] = useState(false);
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [eventCardOpen, setEventCardOpen] = useState(true);
   const lastScrollY = useRef(0);
@@ -596,13 +597,21 @@ export default function MapPage() {
       }));
   }, [filteredEvents]);
 
+  const visiblePinEvents = useMemo(() => {
+    return hasAppliedFilters ? pinEvents : [];
+  }, [hasAppliedFilters, pinEvents]);
+
   const selectedEvent = useMemo(() => {
+    if (!hasAppliedFilters) {
+      return null;
+    }
+
     return (
       filteredEvents.find((event) => event.id === selectedEventId) ||
       filteredEvents[0] ||
       null
     );
-  }, [filteredEvents, selectedEventId]);
+  }, [filteredEvents, hasAppliedFilters, selectedEventId]);
 
   const selectedMapsUrl = selectedEvent
     ? buildGoogleMapsUrl(
@@ -685,7 +694,7 @@ export default function MapPage() {
         activeElement instanceof HTMLTextAreaElement ||
         activeElement instanceof HTMLSelectElement;
 
-      if (isTyping || locating) {
+      if (!hasAppliedFilters || isTyping || locating) {
         setControlsCollapsed(false);
         lastScrollY.current = currentScrollY;
         return;
@@ -702,7 +711,7 @@ export default function MapPage() {
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [locating]);
+  }, [hasAppliedFilters, locating]);
 
   useEffect(() => {
     if (locating) {
@@ -726,7 +735,6 @@ export default function MapPage() {
         parsed.source === "manual"
       ) {
         setSavedManualLocation(parsed);
-        setManualLocationQuery(parsed.query || parsed.label || "");
       }
     } catch {
       window.localStorage.removeItem(SAVED_MANUAL_LOCATION_KEY);
@@ -734,10 +742,10 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedEventId && filteredEvents.length > 0) {
+    if (hasAppliedFilters && !selectedEventId && filteredEvents.length > 0) {
       setSelectedEventId(filteredEvents[0].id);
     }
-  }, [filteredEvents, selectedEventId]);
+  }, [filteredEvents, hasAppliedFilters, selectedEventId]);
 
   function saveManualLocation(location: SavedManualLocation) {
     setSavedManualLocation(location);
@@ -759,12 +767,16 @@ export default function MapPage() {
     setMunicipalityFilter(ALL_MUNICIPALITIES);
     setCityFilter(ALL_CITIES);
     setMessage("");
+    setHasAppliedFilters(true);
+    setControlsCollapsed(true);
     setEventCardOpen(true);
   }
 
   function handleRadiusChange(value: RadiusFilter) {
     if (value === "all") {
       setRadiusFilter("all");
+      setHasAppliedFilters(true);
+      setControlsCollapsed(true);
       setEventCardOpen(true);
       return;
     }
@@ -785,7 +797,25 @@ export default function MapPage() {
     }
 
     setRadiusFilter(value);
+    setHasAppliedFilters(true);
+    setControlsCollapsed(true);
     setEventCardOpen(true);
+  }
+
+  function applyFiltersWithoutLocation() {
+    setMessage("");
+    setHasAppliedFilters(true);
+    setControlsCollapsed(true);
+    setEventCardOpen(true);
+  }
+
+  function handleApplyFilters() {
+    if (manualLocationQuery.trim()) {
+      useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
+      return;
+    }
+
+    applyFiltersWithoutLocation();
   }
 
   async function useManualLocation(nextRadius: RadiusFilter = "50") {
@@ -809,6 +839,7 @@ export default function MapPage() {
       setDistrictFilter(ALL_DISTRICTS);
       setMunicipalityFilter(ALL_MUNICIPALITIES);
       setCityFilter(ALL_CITIES);
+      setHasAppliedFilters(true);
       setControlsCollapsed(true);
       setEventCardOpen(true);
       return;
@@ -856,6 +887,7 @@ export default function MapPage() {
       setDistrictFilter(ALL_DISTRICTS);
       setMunicipalityFilter(ALL_MUNICIPALITIES);
       setCityFilter(ALL_CITIES);
+      setHasAppliedFilters(true);
       setControlsCollapsed(true);
       setEventCardOpen(true);
     } catch {
@@ -891,6 +923,8 @@ export default function MapPage() {
         setCityFilter(ALL_CITIES);
         setMessage("");
         setLocating(false);
+        setHasAppliedFilters(true);
+        setControlsCollapsed(true);
         setEventCardOpen(true);
       },
       (error) => {
@@ -916,7 +950,8 @@ export default function MapPage() {
 
   const handleSelectMapEvent = useCallback((event: ParanoidMapEvent) => {
     setSelectedEventId(event.id);
-    setControlsCollapsed(false);
+    setHasAppliedFilters(true);
+    setControlsCollapsed(true);
     setEventCardOpen(true);
   }, []);
 
@@ -944,9 +979,9 @@ export default function MapPage() {
     <main className="relative min-h-[calc(100vh-5rem)] overflow-hidden bg-black text-[#f2f1ec] lg:min-h-screen">
       <section className="absolute inset-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
         <ParanoidMap
-          events={pinEvents}
+          events={visiblePinEvents}
           userLocation={userLocation}
-          selectedEventId={selectedEvent?.id || null}
+          selectedEventId={hasAppliedFilters ? selectedEvent?.id || null : null}
           radiusKm={radiusFilter === "all" ? null : Number(radiusFilter)}
           mapboxToken={MAPBOX_TOKEN}
           onSelectEvent={handleSelectMapEvent}
@@ -964,7 +999,7 @@ export default function MapPage() {
             </h1>
           </div>
           <p className="rounded-full border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-black text-zinc-100 backdrop-blur-md">
-            {filteredEvents.length}
+            {hasAppliedFilters ? filteredEvents.length : 0}
           </p>
         </div>
       </header>
@@ -991,7 +1026,7 @@ export default function MapPage() {
               </span>
               <span className="block text-[10px] font-bold uppercase tracking-wide text-zinc-500">
                 {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`} ·{" "}
-                {filteredEvents.length} eventos
+                {hasAppliedFilters ? filteredEvents.length : 0} eventos
               </span>
             </span>
             <span className="rounded-full border border-red-500/50 px-3 py-2 text-xs font-black text-red-100">
@@ -1020,7 +1055,7 @@ export default function MapPage() {
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
+              handleApplyFilters();
             }}
           >
             <div className="grid grid-cols-[1fr_auto] gap-2 lg:grid-cols-[minmax(180px,1fr)_auto_auto_minmax(180px,1fr)_auto_auto] lg:items-center">
@@ -1215,7 +1250,9 @@ export default function MapPage() {
 
       <aside
         className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/72 shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
-          controlsCollapsed && eventCardOpen ? "block" : "hidden lg:flex"
+          hasAppliedFilters && controlsCollapsed && eventCardOpen
+            ? "block"
+            : "hidden lg:flex"
         }`}
       >
         {selectedEvent ? (

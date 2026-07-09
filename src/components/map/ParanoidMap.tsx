@@ -32,7 +32,7 @@ type ParanoidMapProps = {
   onSelectEvent: (event: ParanoidMapEvent) => void;
 };
 
-const PORTUGAL_CENTER: [number, number] = [-8.2245, 39.3999];
+const PORTUGAL_CENTER: [number, number] = [-8.0, 39.68];
 const WORLD_START_CENTER: [number, number] = [-28, 37];
 const MAPBOX_GL_SCRIPT_ID = "paranoid-mapbox-gl-js";
 const MAPBOX_GL_CSS_ID = "paranoid-mapbox-gl-css";
