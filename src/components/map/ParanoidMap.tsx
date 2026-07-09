@@ -37,8 +37,57 @@ const WORLD_START_CENTER: [number, number] = [-35, 28];
 const MAPBOX_GL_SCRIPT_ID = "paranoid-mapbox-gl-js";
 const MAPBOX_GL_CSS_ID = "paranoid-mapbox-gl-css";
 const MAPBOX_GL_VERSION = "v3.10.0";
-const MAPBOX_DEM_SOURCE_ID = "mapbox-dem";
-const MAPBOX_BUILDINGS_LAYER_ID = "paranoid-3d-buildings";
+
+const PUBLIC_SATELLITE_STYLE = {
+  version: 8,
+  sources: {
+    satellite: {
+      type: "raster",
+      tiles: [
+        "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      attribution:
+        "Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+    },
+    labels: {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png",
+      ],
+      tileSize: 256,
+      attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+    },
+  },
+  layers: [
+    {
+      id: "background",
+      type: "background",
+      paint: {
+        "background-color": "#050505",
+      },
+    },
+    {
+      id: "satellite",
+      type: "raster",
+      source: "satellite",
+      paint: {
+        "raster-saturation": 0.1,
+        "raster-contrast": 0.08,
+      },
+    },
+    {
+      id: "labels",
+      type: "raster",
+      source: "labels",
+      paint: {
+        "raster-opacity": 0.92,
+      },
+    },
+  ],
+};
 
 type MapboxGlApi = {
   accessToken: string;
@@ -60,7 +109,6 @@ type MapboxMap = {
   isStyleLoaded: () => boolean;
   setProjection: (projection: string | Record<string, unknown>) => void;
   setFog: (fog: Record<string, unknown>) => void;
-  setTerrain: (terrain: Record<string, unknown> | null) => void;
   addSource: (id: string, source: Record<string, unknown>) => void;
   getSource: (id: string) => MapboxGeoJsonSource | undefined;
   removeSource: (id: string) => void;
@@ -232,7 +280,7 @@ export function ParanoidMap({
   );
 
   useEffect(() => {
-    if (!mapboxToken || !containerRef.current || mapRef.current) {
+    if (!containerRef.current || mapRef.current) {
       return;
     }
 
@@ -245,11 +293,11 @@ export function ParanoidMap({
         }
 
         mapboxRef.current = mapboxgl;
-        mapboxgl.accessToken = mapboxToken;
+        mapboxgl.accessToken = mapboxToken || "";
 
         mapRef.current = new mapboxgl.Map({
           container: containerRef.current,
-          style: "mapbox://styles/mapbox/satellite-streets-v12",
+          style: PUBLIC_SATELLITE_STYLE,
           center: WORLD_START_CENTER,
           zoom: 1.15,
           pitch: 38,
@@ -281,53 +329,6 @@ export function ParanoidMap({
             "space-color": "rgb(0, 0, 0)",
             "star-intensity": 0.35,
           });
-
-          if (!map.getSource(MAPBOX_DEM_SOURCE_ID)) {
-            map.addSource(MAPBOX_DEM_SOURCE_ID, {
-              type: "raster-dem",
-              url: "mapbox://mapbox.mapbox-terrain-dem-v1",
-              tileSize: 512,
-              maxzoom: 14,
-            });
-          }
-
-          map.setTerrain({
-            source: MAPBOX_DEM_SOURCE_ID,
-            exaggeration: 1.25,
-          });
-
-          if (!map.getLayer(MAPBOX_BUILDINGS_LAYER_ID)) {
-            map.addLayer({
-              id: MAPBOX_BUILDINGS_LAYER_ID,
-              source: "composite",
-              "source-layer": "building",
-              filter: ["==", ["get", "extrude"], "true"],
-              type: "fill-extrusion",
-              minzoom: 14,
-              paint: {
-                "fill-extrusion-color": "#d8d2c7",
-                "fill-extrusion-height": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  14,
-                  0,
-                  16,
-                  ["get", "height"],
-                ],
-                "fill-extrusion-base": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  14,
-                  0,
-                  16,
-                  ["get", "min_height"],
-                ],
-                "fill-extrusion-opacity": 0.62,
-              },
-            });
-          }
 
           setStyleReady(true);
         });
@@ -504,36 +505,6 @@ export function ParanoidMap({
       duration: 850,
     });
   }, [selectedEvent]);
-
-  if (!mapboxToken) {
-    return (
-      <div className="relative h-full min-h-[520px] overflow-hidden bg-black">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(220,38,38,0.22),transparent_35%),linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[length:100%_100%,48px_48px,48px_48px]" />
-        <div className="absolute inset-x-4 top-24 rounded-2xl border border-red-900/60 bg-black/80 p-4 backdrop-blur lg:left-8 lg:right-auto lg:max-w-sm">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
-            Mapa em espera
-          </p>
-          <p className="mt-2 text-sm text-zinc-300">
-            Adiciona NEXT_PUBLIC_MAPBOX_TOKEN para ativar o mapa escuro. Os
-            eventos continuam disponíveis na lista.
-          </p>
-        </div>
-        {events.slice(0, 24).map((event, index) => (
-          <button
-            key={event.id}
-            type="button"
-            onClick={() => onSelectEvent(event)}
-            className="absolute h-4 w-4 rounded-full border-2 border-[#f2f1ec] bg-red-600"
-            style={{
-              left: `${12 + ((index * 29) % 76)}%`,
-              top: `${18 + ((index * 17) % 58)}%`,
-            }}
-            aria-label={event.title}
-          />
-        ))}
-      </div>
-    );
-  }
 
   return <div ref={containerRef} className="h-full min-h-[520px] w-full" />;
 }
