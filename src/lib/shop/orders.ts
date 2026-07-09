@@ -483,7 +483,7 @@ export async function getShopOrder(id: string) {
 export async function updateShopOrderStatus(id: string, status: string) {
   const previousOrder = await getShopOrder(id);
   const nextPaymentStatus =
-    status === "paid" || status === "awaiting_shipment" ? "paid_mock" : undefined;
+    status === "paid" || status === "awaiting_shipment" ? "paid" : undefined;
   const updatePayload: Record<string, string> = {
     order_status: status,
   };
