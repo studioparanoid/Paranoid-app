@@ -23,7 +23,6 @@ import {
   type ParanoidMapEvent,
   type ParanoidMapUserLocation,
 } from "@/components/map/ParanoidMap";
-import { StreetViewPanel } from "@/components/map/StreetViewPanel";
 import { supabase } from "@/lib/supabase/public";
 
 type RadiusFilter = `${number}` | "all";
@@ -43,7 +42,6 @@ type Coordinate = {
 const LOCATION_RADIUS_BUFFER_KM = 0.75;
 const SAVED_MANUAL_LOCATION_KEY = "paranoid.map.manualLocation";
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 type VenueRow = {
   id: string;
@@ -388,7 +386,6 @@ export default function MapPage() {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [controlsCollapsed, setControlsCollapsed] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [streetViewOpen, setStreetViewOpen] = useState(false);
   const lastScrollY = useRef(0);
 
   const venueById = useMemo(() => {
@@ -854,7 +851,6 @@ export default function MapPage() {
   const handleSelectMapEvent = useCallback((event: ParanoidMapEvent) => {
     setSelectedEventId(event.id);
     setControlsCollapsed(false);
-    setStreetViewOpen(false);
   }, []);
 
   if (loading) {
@@ -903,7 +899,7 @@ export default function MapPage() {
       )}
 
       <section
-        className={`fixed inset-x-3 bottom-[calc(5.6rem+env(safe-area-inset-bottom))] z-50 rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3`}
+        className={`fixed inset-x-3 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[60] rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3`}
       >
         {controlsCollapsed && (
           <button
@@ -1107,7 +1103,7 @@ export default function MapPage() {
       </section>
 
       <aside
-        className={`absolute bottom-[calc(10.5rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/72 shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
+        className={`absolute bottom-[calc(8.85rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/72 shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
           controlsCollapsed ? "block" : "hidden lg:flex"
         }`}
       >
@@ -1183,19 +1179,6 @@ export default function MapPage() {
               >
                 Rota
               </a>
-              {selectedEvent.finalLatitude !== null &&
-              selectedEvent.finalLongitude !== null ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStreetViewOpen(true);
-                    setControlsCollapsed(true);
-                  }}
-                  className="rounded-full border border-white/15 bg-black/30 px-4 py-2.5 text-xs font-black text-zinc-100"
-                >
-                  Street
-                </button>
-              ) : null}
             </div>
           </div>
         ) : (
@@ -1221,15 +1204,6 @@ export default function MapPage() {
           )}
         </div>
       </aside>
-
-      <StreetViewPanel
-        apiKey={GOOGLE_MAPS_API_KEY}
-        latitude={selectedEvent?.finalLatitude ?? null}
-        longitude={selectedEvent?.finalLongitude ?? null}
-        title={selectedEvent?.title || "Evento"}
-        open={streetViewOpen}
-        onClose={() => setStreetViewOpen(false)}
-      />
     </main>
   );
 }
