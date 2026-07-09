@@ -773,33 +773,8 @@ export default function MapPage() {
   }
 
   function handleRadiusChange(value: RadiusFilter) {
-    if (value === "all") {
-      setRadiusFilter("all");
-      setHasAppliedFilters(true);
-      setControlsCollapsed(true);
-      setEventCardOpen(true);
-      return;
-    }
-
-    if (!userLocation) {
-      if (manualLocationQuery.trim()) {
-        useManualLocation(value);
-        return;
-      }
-
-      if (savedManualLocation) {
-        useSavedManualLocation(value);
-        return;
-      }
-
-      setMessage("Escreve onde estás para usar o filtro por raio.");
-      return;
-    }
-
     setRadiusFilter(value);
-    setHasAppliedFilters(true);
-    setControlsCollapsed(true);
-    setEventCardOpen(true);
+    setControlsCollapsed(false);
   }
 
   function applyFiltersWithoutLocation() {
