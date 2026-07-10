@@ -44,6 +44,7 @@ type ProductValidationRow = {
   id: string;
   seller_id: string;
   name: string;
+  slug: string;
   base_price_cents: number;
   commission_cents: number;
   final_price_cents: number;
@@ -57,6 +58,12 @@ type ProductValidationRow = {
   status: string | null;
   shop_sellers?: { display_name: string | null } | { display_name: string | null }[] | null;
 };
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
+}
 
 type OrderRow = {
   id: string;
@@ -355,19 +362,17 @@ async function logEmails(orderId: string, results: ShopEmailResult[]) {
   }
 }
 
-async function validateOrderItems(items: ShopCartItem[]) {
-  const productIds = Array.from(new Set(items.map((item) => item.productId)));
-
-  if (productIds.length === 0) {
-    throw new Error("Carrinho vazio.");
+async function fetchCheckoutProducts(column: "id" | "slug", values: string[]) {
+  if (values.length === 0) {
+    return [];
   }
 
   const productResponse = await supabase
     .from("shop_products")
     .select(
-      "id,seller_id,name,base_price_cents,commission_cents,final_price_cents,ownership_model,partner_payout_type,partner_payout_cents,partner_payout_rate,production_cost_cents,vat_rate,stock_quantity,status,shop_sellers(display_name)"
+      "id,seller_id,name,slug,base_price_cents,commission_cents,final_price_cents,ownership_model,partner_payout_type,partner_payout_cents,partner_payout_rate,production_cost_cents,vat_rate,stock_quantity,status,shop_sellers(display_name)"
     )
-    .in("id", productIds);
+    .in(column, values);
   let data = productResponse.data as unknown[] | null;
   let error: unknown = productResponse.error;
 
@@ -375,9 +380,9 @@ async function validateOrderItems(items: ShopCartItem[]) {
     const legacyResponse = await supabase
       .from("shop_products")
       .select(
-        "id,seller_id,name,base_price_cents,commission_cents,final_price_cents,stock_quantity,status,shop_sellers(display_name)"
+        "id,seller_id,name,slug,base_price_cents,commission_cents,final_price_cents,stock_quantity,status,shop_sellers(display_name)"
       )
-      .in("id", productIds);
+      .in(column, values);
 
     data = legacyResponse.data as unknown[] | null;
     error = legacyResponse.error;
@@ -387,15 +392,39 @@ async function validateOrderItems(items: ShopCartItem[]) {
     throw error;
   }
 
-  const productMap = new Map(
-    ((data || []) as unknown as ProductValidationRow[]).map((product) => [
-      product.id,
-      product,
-    ])
+  return (data || []) as unknown as ProductValidationRow[];
+}
+
+async function validateOrderItems(items: ShopCartItem[]) {
+  const productIds = Array.from(
+    new Set(items.map((item) => item.productId).filter(isUuid))
+  );
+  const productSlugs = Array.from(
+    new Set(
+      items
+        .map((item) => (isUuid(item.productId) ? item.slug : item.productId))
+        .filter(Boolean)
+    )
+  );
+
+  if (productIds.length === 0 && productSlugs.length === 0) {
+    throw new Error("Carrinho vazio.");
+  }
+
+  const products = [
+    ...(await fetchCheckoutProducts("id", productIds)),
+    ...(await fetchCheckoutProducts("slug", productSlugs)),
+  ];
+
+  const productById = new Map(products.map((product) => [product.id, product]));
+  const productBySlug = new Map(
+    products.map((product) => [product.slug, product])
   );
 
   return items.map((item) => {
-    const product = productMap.get(item.productId);
+    const product = isUuid(item.productId)
+      ? productById.get(item.productId) || productBySlug.get(item.slug)
+      : productBySlug.get(item.productId) || productBySlug.get(item.slug);
 
     if (!product) {
       throw new Error(`Produto indisponível: ${item.name}`);
