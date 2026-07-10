@@ -1,4 +1,4 @@
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getRequiredSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   DEFAULT_SHIPPING_CENTS,
   calculateInternalShopLine,
@@ -16,8 +16,11 @@ import {
   type ShopEmailResult,
 } from "@/lib/shop/email";
 
-const supabase = getSupabaseAdminClient();
 const UNDEFINED_COLUMN_CODE = "42703";
+
+function getShopSupabase() {
+  return getRequiredSupabaseAdminClient();
+}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
@@ -346,7 +349,7 @@ function buildMockOrder(order: ShopOrderDraft, paymentReference: string): ShopOr
 
 async function logEmails(orderId: string, results: ShopEmailResult[]) {
   try {
-    await supabase.from("shop_order_emails").insert(
+    await getShopSupabase().from("shop_order_emails").insert(
       results.map((result) => ({
         order_id: orderId,
         type: result.type,
@@ -367,7 +370,7 @@ async function fetchCheckoutProducts(column: "id" | "slug", values: string[]) {
     return [];
   }
 
-  const productResponse = await supabase
+  const productResponse = await getShopSupabase()
     .from("shop_products")
     .select(
       "id,seller_id,name,slug,base_price_cents,commission_cents,final_price_cents,ownership_model,partner_payout_type,partner_payout_cents,partner_payout_rate,production_cost_cents,vat_rate,stock_quantity,status,shop_sellers(display_name)"
@@ -377,7 +380,7 @@ async function fetchCheckoutProducts(column: "id" | "slug", values: string[]) {
   let error: unknown = productResponse.error;
 
   if (isMissingColumnError(error)) {
-    const legacyResponse = await supabase
+    const legacyResponse = await getShopSupabase()
       .from("shop_products")
       .select(
         "id,seller_id,name,slug,base_price_cents,commission_cents,final_price_cents,stock_quantity,status,shop_sellers(display_name)"
@@ -509,14 +512,14 @@ export async function createShopOrder(
       payment_provider: orderPayload.payment_provider,
       payment_reference: orderPayload.payment_reference,
     };
-    let { data: orderData, error: orderError } = await supabase
+    let { data: orderData, error: orderError } = await getShopSupabase()
       .from("shop_orders")
       .insert(orderPayload)
       .select("*")
       .single();
 
     if (isMissingColumnError(orderError)) {
-      const legacyResponse = await supabase
+      const legacyResponse = await getShopSupabase()
         .from("shop_orders")
         .insert(legacyOrderPayload)
         .select("*")
@@ -569,12 +572,12 @@ export async function createShopOrder(
       final_price_cents: item.finalPriceCents,
       payout_amount_cents: line.partnerPayoutAmountCents,
     }));
-    let { error: itemsError } = await supabase
+    let { error: itemsError } = await getShopSupabase()
       .from("shop_order_items")
       .insert(itemPayload);
 
     if (isMissingColumnError(itemsError)) {
-      const legacyResponse = await supabase
+      const legacyResponse = await getShopSupabase()
         .from("shop_order_items")
         .insert(legacyItemPayload);
 
@@ -588,7 +591,7 @@ export async function createShopOrder(
     const sellerIds = Array.from(
       new Set(validatedItems.map((item) => item.sellerId))
     );
-    const { error: shipmentsError } = await supabase.from("shop_shipments").insert(
+    const { error: shipmentsError } = await getShopSupabase().from("shop_shipments").insert(
       sellerIds.map((sellerId) => ({
         order_id: orderId,
         seller_id: sellerId,
@@ -615,12 +618,12 @@ export async function createShopOrder(
       .filter((payout) => payout.amount_cents > 0);
 
     if (payoutRows.length > 0) {
-      let { error: payoutsError } = await supabase
+      let { error: payoutsError } = await getShopSupabase()
         .from("shop_payouts")
         .insert(payoutRows);
 
       if (isMissingColumnError(payoutsError)) {
-        const legacyResponse = await supabase.from("shop_payouts").insert(
+        const legacyResponse = await getShopSupabase().from("shop_payouts").insert(
           payoutRows.map((payout) => ({
             order_id: payout.order_id,
             seller_id: payout.seller_id,
@@ -658,7 +661,7 @@ export async function createShopOrder(
 
 export async function getShopOrders() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getShopSupabase()
       .from("shop_orders")
       .select(
         "*,shop_order_items(*,shop_sellers(display_name)),shop_shipments(*),shop_order_emails(*),shop_payouts(*,shop_sellers(display_name))"
@@ -677,7 +680,7 @@ export async function getShopOrders() {
 
 export async function getShopOrdersForSellerUser(userId: string) {
   try {
-    const { data: sellers } = await supabase
+    const { data: sellers } = await getShopSupabase()
       .from("shop_sellers")
       .select("id")
       .eq("user_id", userId);
@@ -705,7 +708,7 @@ export async function userCanShipShopOrder(orderId: string, userId: string) {
 
 export async function getShopOrder(id: string) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getShopSupabase()
       .from("shop_orders")
       .select(
         "*,shop_order_items(*,shop_sellers(display_name)),shop_shipments(*),shop_order_emails(*),shop_payouts(*,shop_sellers(display_name))"
@@ -735,7 +738,7 @@ export async function updateShopOrderStatus(id: string, status: string) {
     updatePayload.payment_status = nextPaymentStatus;
   }
 
-  const { error } = await supabase
+  const { error } = await getShopSupabase()
     .from("shop_orders")
     .update(updatePayload)
     .eq("id", id);
@@ -757,7 +760,7 @@ export async function updateShopOrderStatus(id: string, status: string) {
             return;
           }
 
-          const { data } = await supabase
+          const { data } = await getShopSupabase()
             .from("shop_products")
             .select("stock_quantity")
             .eq("id", item.productId)
@@ -765,7 +768,7 @@ export async function updateShopOrderStatus(id: string, status: string) {
           const currentStock = Number(data?.stock_quantity ?? 0);
           const nextStock = Math.max(0, currentStock - item.quantity);
 
-          await supabase
+          await getShopSupabase()
             .from("shop_products")
             .update({
               stock_quantity: nextStock,
@@ -779,7 +782,7 @@ export async function updateShopOrderStatus(id: string, status: string) {
       const sellerIds = Array.from(
         new Set(order.items.map((item) => item.sellerId).filter(Boolean))
       ) as string[];
-      const { data: sellers } = await supabase
+      const { data: sellers } = await getShopSupabase()
         .from("shop_sellers")
         .select("id,payout_email")
         .in("id", sellerIds);
@@ -804,7 +807,7 @@ export async function updateShopOrderStatus(id: string, status: string) {
 }
 
 export async function markShopPayoutPaid(orderId: string) {
-  const { data: payouts, error } = await supabase
+  const { data: payouts, error } = await getShopSupabase()
     .from("shop_payouts")
     .select(
       "id,seller_id,amount_cents,fiscal_document_status,shop_sellers(fiscal_status,contract_status)"
@@ -829,7 +832,7 @@ export async function markShopPayoutPaid(orderId: string) {
   });
 
   if (blocked) {
-    await supabase
+    await getShopSupabase()
       .from("shop_payouts")
       .update({
         blocked_reason:
@@ -841,7 +844,7 @@ export async function markShopPayoutPaid(orderId: string) {
     );
   }
 
-  await supabase
+  await getShopSupabase()
     .from("shop_payouts")
     .update({
       status: "paid",
@@ -872,7 +875,7 @@ export async function updateShopPayoutFiscalDocument(
     updatePayload.approved_for_payment_by = approvedBy || null;
   }
 
-  const { error } = await supabase
+  const { error } = await getShopSupabase()
     .from("shop_payouts")
     .update(updatePayload)
     .eq("order_id", orderId);
@@ -885,7 +888,7 @@ export async function updateShopPayoutFiscalDocument(
 }
 
 export async function approveSellerForShopPayment(orderId: string) {
-  const { data: payouts, error } = await supabase
+  const { data: payouts, error } = await getShopSupabase()
     .from("shop_payouts")
     .select("seller_id")
     .eq("order_id", orderId)
@@ -900,7 +903,7 @@ export async function approveSellerForShopPayment(orderId: string) {
   );
 
   if (sellerIds.length > 0) {
-    await supabase
+    await getShopSupabase()
       .from("shop_sellers")
       .update({
         fiscal_status: "valid",
@@ -918,7 +921,7 @@ export async function markShopOrderShipped(
   trackingCode: string,
   carrier = "CTT"
 ) {
-  await supabase
+  await getShopSupabase()
     .from("shop_shipments")
     .update({
       status: "shipped",
@@ -928,7 +931,7 @@ export async function markShopOrderShipped(
     })
     .eq("order_id", id);
 
-  await supabase
+  await getShopSupabase()
     .from("shop_orders")
     .update({ order_status: "shipped" })
     .eq("id", id);
