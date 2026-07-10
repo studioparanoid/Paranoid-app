@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createBillingPayment } from "@/lib/billing/payments";
 import { createShopOrder } from "@/lib/shop/orders";
 import { createPaymeCheckout } from "@/lib/shop/payments";
 import { type ShopOrderDraft } from "@/lib/shop";
@@ -69,6 +70,18 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    await createBillingPayment({
+      productCode: "shop_order",
+      relatedType: "shop_order",
+      relatedId: createdOrder.order.id,
+      amountCents: createdOrder.order.totalCents,
+      provider: payment.status === "sandbox" ? "mock" : "payme",
+      metadata: {
+        paymentReference: payment.paymentReference,
+        buyerEmail: createdOrder.order.buyerEmail,
+      },
+    });
 
     return NextResponse.json({
       order: createdOrder.order,

@@ -24,18 +24,46 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <Link
-          href="/admin/loja"
-          className="mt-6 block rounded-[1.5rem] border border-red-950 bg-red-950/25 p-5 transition hover:border-red-800 lg:max-w-xl"
-        >
-          <p className="text-xs font-black uppercase tracking-[0.35em] text-red-500">
-            Loja
-          </p>
-          <p className="mt-2 text-2xl font-black">Aprovar produtos e comissões</p>
-          <p className="mt-2 text-sm text-zinc-500">
-            Gere aprovação, envios, pagamentos e comissão da Paranoid.
-          </p>
-        </Link>
+        <div className="mt-6 grid gap-3 lg:grid-cols-4">
+          {[
+            [
+              "/admin/loja",
+              "Loja",
+              "Aprovar produtos e encomendas",
+              "Gere produtos, envios e payouts.",
+            ],
+            [
+              "/admin/pagamentos",
+              "Pagamentos",
+              "Billing central",
+              "Mock, estados e pagamentos futuros.",
+            ],
+            [
+              "/admin/destaques",
+              "Destaques",
+              "Eventos destacados",
+              "Pagamentos e ativações de destaque.",
+            ],
+            [
+              "/admin/planos",
+              "Planos",
+              "Packs organizador",
+              "Wall Rip e Paranoid Crew.",
+            ],
+          ].map(([href, eyebrow, title, description]) => (
+            <Link
+              key={href}
+              href={href}
+              className="rounded-[1.5rem] border border-red-950 bg-red-950/25 p-5 transition hover:border-red-800"
+            >
+              <p className="text-xs font-black uppercase tracking-[0.35em] text-red-500">
+                {eyebrow}
+              </p>
+              <p className="mt-2 text-xl font-black">{title}</p>
+              <p className="mt-2 text-sm text-zinc-500">{description}</p>
+            </Link>
+          ))}
+        </div>
 
         <AdminDashboardClient />
       </section>
