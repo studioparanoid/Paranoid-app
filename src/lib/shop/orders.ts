@@ -17,6 +17,28 @@ import {
 } from "@/lib/shop/email";
 
 const supabase = getSupabaseAdminClient();
+const UNDEFINED_COLUMN_CODE = "42703";
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "object" && error && "message" in error) {
+    return String((error as { message?: unknown }).message);
+  }
+
+  return "Erro desconhecido.";
+}
+
+function isMissingColumnError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === UNDEFINED_COLUMN_CODE
+  );
+}
 
 type ProductValidationRow = {
   id: string;
@@ -340,12 +362,26 @@ async function validateOrderItems(items: ShopCartItem[]) {
     throw new Error("Carrinho vazio.");
   }
 
-  const { data, error } = await supabase
+  const productResponse = await supabase
     .from("shop_products")
     .select(
       "id,seller_id,name,base_price_cents,commission_cents,final_price_cents,ownership_model,partner_payout_type,partner_payout_cents,partner_payout_rate,production_cost_cents,vat_rate,stock_quantity,status,shop_sellers(display_name)"
     )
     .in("id", productIds);
+  let data = productResponse.data as unknown[] | null;
+  let error: unknown = productResponse.error;
+
+  if (isMissingColumnError(error)) {
+    const legacyResponse = await supabase
+      .from("shop_products")
+      .select(
+        "id,seller_id,name,base_price_cents,commission_cents,final_price_cents,stock_quantity,status,shop_sellers(display_name)"
+      )
+      .in("id", productIds);
+
+    data = legacyResponse.data as unknown[] | null;
+    error = legacyResponse.error;
+  }
 
   if (error) {
     throw error;
@@ -407,33 +443,59 @@ export async function createShopOrder(
     const normalizedOrder = { ...order, items: validatedItems };
     const totals = getCartTotals(validatedItems);
 
-    const { data: orderData, error: orderError } = await supabase
+    const orderPayload = {
+      buyer_email: normalizedOrder.buyerEmail,
+      buyer_name: normalizedOrder.buyerName,
+      buyer_phone: normalizedOrder.buyerPhone,
+      shipping_address: {
+        address: normalizedOrder.shippingAddress,
+        postalCode: normalizedOrder.postalCode,
+        city: normalizedOrder.city,
+        country: normalizedOrder.country,
+        notes: normalizedOrder.notes,
+      },
+      subtotal_cents: totals.subtotalCents,
+      shipping_cents: totals.shippingCents || DEFAULT_SHIPPING_CENTS,
+      commission_total_cents: totals.commissionTotalCents,
+      vat_total_cents: totals.vatTotalCents,
+      partner_payout_total_cents: totals.partnerPayoutTotalCents,
+      paranoid_margin_total_cents: totals.paranoidMarginTotalCents,
+      payment_status: "pending",
+      order_status: "pending_payment",
+      payment_provider: "payme",
+      payment_reference: paymentReference,
+      total_cents: totals.totalCents,
+    };
+    const legacyOrderPayload = {
+      buyer_email: orderPayload.buyer_email,
+      buyer_name: orderPayload.buyer_name,
+      buyer_phone: orderPayload.buyer_phone,
+      shipping_address: orderPayload.shipping_address,
+      subtotal_cents: orderPayload.subtotal_cents,
+      shipping_cents: orderPayload.shipping_cents,
+      commission_total_cents: orderPayload.commission_total_cents,
+      total_cents: orderPayload.total_cents,
+      payment_status: orderPayload.payment_status,
+      order_status: orderPayload.order_status,
+      payment_provider: orderPayload.payment_provider,
+      payment_reference: orderPayload.payment_reference,
+    };
+    let { data: orderData, error: orderError } = await supabase
       .from("shop_orders")
-      .insert({
-        buyer_email: normalizedOrder.buyerEmail,
-        buyer_name: normalizedOrder.buyerName,
-        buyer_phone: normalizedOrder.buyerPhone,
-        shipping_address: {
-          address: normalizedOrder.shippingAddress,
-          postalCode: normalizedOrder.postalCode,
-          city: normalizedOrder.city,
-          country: normalizedOrder.country,
-          notes: normalizedOrder.notes,
-        },
-        subtotal_cents: totals.subtotalCents,
-        shipping_cents: totals.shippingCents || DEFAULT_SHIPPING_CENTS,
-        commission_total_cents: totals.commissionTotalCents,
-        vat_total_cents: totals.vatTotalCents,
-        partner_payout_total_cents: totals.partnerPayoutTotalCents,
-        paranoid_margin_total_cents: totals.paranoidMarginTotalCents,
-        total_cents: totals.totalCents,
-        payment_status: "pending",
-        order_status: "pending_payment",
-        payment_provider: "payme",
-        payment_reference: paymentReference,
-      })
+      .insert(orderPayload)
       .select("*")
       .single();
+
+    if (isMissingColumnError(orderError)) {
+      const legacyResponse = await supabase
+        .from("shop_orders")
+        .insert(legacyOrderPayload)
+        .select("*")
+        .single();
+
+      orderData = legacyResponse.data;
+      orderError = legacyResponse.error;
+    }
 
     if (orderError || !orderData) {
       throw orderError || new Error("Não foi possível criar encomenda.");
@@ -448,27 +510,47 @@ export async function createShopOrder(
         line,
       };
     });
-    const { error: itemsError } = await supabase.from("shop_order_items").insert(
-      frozenItems.map(({ item, line }) => ({
-        order_id: orderId,
-        product_id: item.productId,
-        seller_id: item.sellerId,
-        product_name: item.name,
-        quantity: item.quantity,
-        base_price_cents: item.basePriceCents,
-        commission_cents: item.commissionCents,
-        final_price_cents: item.finalPriceCents,
-        payout_amount_cents: line.partnerPayoutAmountCents,
-        partner_payout_type: item.partnerPayoutType || "none",
-        partner_payout_cents: item.partnerPayoutCents ?? 0,
-        partner_payout_rate: item.partnerPayoutRate ?? 0,
-        partner_payout_amount_cents: line.partnerPayoutAmountCents,
-        production_cost_cents: item.productionCostCents ?? 0,
-        vat_rate: item.vatRate ?? 0.23,
-        vat_cents: line.vatCents,
-        paranoid_margin_cents: line.paranoidMarginCents,
-      }))
-    );
+    const itemPayload = frozenItems.map(({ item, line }) => ({
+      order_id: orderId,
+      product_id: item.productId,
+      seller_id: item.sellerId,
+      product_name: item.name,
+      quantity: item.quantity,
+      base_price_cents: item.basePriceCents,
+      commission_cents: item.commissionCents,
+      final_price_cents: item.finalPriceCents,
+      payout_amount_cents: line.partnerPayoutAmountCents,
+      partner_payout_type: item.partnerPayoutType || "none",
+      partner_payout_cents: item.partnerPayoutCents ?? 0,
+      partner_payout_rate: item.partnerPayoutRate ?? 0,
+      partner_payout_amount_cents: line.partnerPayoutAmountCents,
+      production_cost_cents: item.productionCostCents ?? 0,
+      vat_rate: item.vatRate ?? 0.23,
+      vat_cents: line.vatCents,
+      paranoid_margin_cents: line.paranoidMarginCents,
+    }));
+    const legacyItemPayload = frozenItems.map(({ item, line }) => ({
+      order_id: orderId,
+      product_id: item.productId,
+      seller_id: item.sellerId,
+      product_name: item.name,
+      quantity: item.quantity,
+      base_price_cents: item.basePriceCents,
+      commission_cents: item.commissionCents,
+      final_price_cents: item.finalPriceCents,
+      payout_amount_cents: line.partnerPayoutAmountCents,
+    }));
+    let { error: itemsError } = await supabase
+      .from("shop_order_items")
+      .insert(itemPayload);
+
+    if (isMissingColumnError(itemsError)) {
+      const legacyResponse = await supabase
+        .from("shop_order_items")
+        .insert(legacyItemPayload);
+
+      itemsError = legacyResponse.error;
+    }
 
     if (itemsError) {
       throw itemsError;
@@ -504,9 +586,22 @@ export async function createShopOrder(
       .filter((payout) => payout.amount_cents > 0);
 
     if (payoutRows.length > 0) {
-      const { error: payoutsError } = await supabase
+      let { error: payoutsError } = await supabase
         .from("shop_payouts")
         .insert(payoutRows);
+
+      if (isMissingColumnError(payoutsError)) {
+        const legacyResponse = await supabase.from("shop_payouts").insert(
+          payoutRows.map((payout) => ({
+            order_id: payout.order_id,
+            seller_id: payout.seller_id,
+            amount_cents: payout.amount_cents,
+            status: payout.status,
+          }))
+        );
+
+        payoutsError = legacyResponse.error;
+      }
 
       if (payoutsError) {
         throw payoutsError;
@@ -518,11 +613,17 @@ export async function createShopOrder(
     await logEmails(finalOrder.id, await buildOrderCreatedEmails(finalOrder));
 
     return { order: finalOrder, persisted: true };
-  } catch {
+  } catch (error) {
+    const message = getErrorMessage(error);
+
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[shop-checkout:create-order]", error);
+    }
+
     const mockOrder = buildMockOrder(order, paymentReference);
     await buildOrderCreatedEmails(mockOrder);
 
-    return { order: mockOrder, persisted: false };
+    return { order: mockOrder, persisted: false, error: message };
   }
 }
 

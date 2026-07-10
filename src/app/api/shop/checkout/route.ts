@@ -4,7 +4,16 @@ import { createPaymeCheckout } from "@/lib/shop/payments";
 import { type ShopOrderDraft } from "@/lib/shop";
 
 export async function POST(request: Request) {
-  const order = (await request.json()) as Partial<ShopOrderDraft>;
+  let order: Partial<ShopOrderDraft>;
+
+  try {
+    order = (await request.json()) as Partial<ShopOrderDraft>;
+  } catch {
+    return NextResponse.json(
+      { error: "Pedido de checkout inválido." },
+      { status: 400 }
+    );
+  }
 
   if (
     !order.buyerName ||
@@ -33,24 +42,51 @@ export async function POST(request: Request) {
     notes: order.notes || "",
     items: order.items,
   };
-  const payment = await createPaymeCheckout(normalizedOrder);
-  const createdOrder = await createShopOrder(
-    normalizedOrder,
-    payment.paymentReference
-  );
-
-  if (!createdOrder.persisted) {
-    return NextResponse.json(
-      { error: "Não foi possível guardar a encomenda na base de dados." },
-      { status: 500 }
+  try {
+    const payment = await createPaymeCheckout(normalizedOrder);
+    const createdOrder = await createShopOrder(
+      normalizedOrder,
+      payment.paymentReference
     );
-  }
 
-  return NextResponse.json({
-    order: createdOrder.order,
-    paymentReference: payment.paymentReference,
-    checkoutUrl: payment.checkoutUrl,
-    sandbox: payment.status === "sandbox",
-    persisted: createdOrder.persisted,
-  });
+    if (!createdOrder.persisted) {
+      const error =
+        createdOrder.error ||
+        "Não foi possível guardar a encomenda na base de dados.";
+
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[shop-checkout]", error);
+      }
+
+      return NextResponse.json(
+        {
+          error,
+          developerHint:
+            process.env.NODE_ENV !== "production"
+              ? "Verifica migrations shop_* e colunas novas da loja."
+              : undefined,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      order: createdOrder.order,
+      paymentReference: payment.paymentReference,
+      checkoutUrl: payment.checkoutUrl,
+      sandbox: payment.status === "sandbox",
+      persisted: createdOrder.persisted,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Não foi possível preparar a encomenda.";
+
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[shop-checkout]", error);
+    }
+
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

@@ -35,6 +35,9 @@ alter table public.shop_order_items add column if not exists paranoid_margin_cen
 alter table public.shop_orders add column if not exists vat_total_cents integer default 0;
 alter table public.shop_orders add column if not exists partner_payout_total_cents integer default 0;
 alter table public.shop_orders add column if not exists paranoid_margin_total_cents integer default 0;
+alter table public.shop_orders add column if not exists terms_accepted boolean default false;
+alter table public.shop_orders add column if not exists terms_accepted_at timestamptz;
+alter table public.shop_orders add column if not exists terms_version text;
 
 alter table public.shop_payouts add column if not exists fiscal_document_status text default 'pending';
 alter table public.shop_payouts add column if not exists fiscal_document_reference text;
