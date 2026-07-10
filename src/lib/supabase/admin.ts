@@ -1,6 +1,36 @@
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/public";
 
+const SERVICE_ROLE_ENV_NAMES = [
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SERVICE_KEY",
+  "SUPABASE_SECRET_KEY",
+];
+
+function getServerEnvValue(name: string) {
+  const value = process.env[name]?.trim();
+
+  return value || "";
+}
+
+function getServiceRoleKey() {
+  for (const name of SERVICE_ROLE_ENV_NAMES) {
+    const value = getServerEnvValue(name);
+
+    if (value) {
+      return { name, value };
+    }
+  }
+
+  return null;
+}
+
+function getServiceRoleEnvDebug() {
+  return SERVICE_ROLE_ENV_NAMES.map(
+    (name) => `${name}=${getServerEnvValue(name) ? "set" : "missing"}`
+  ).join(", ");
+}
+
 function readJwtPayload(token: string) {
   try {
     const [, payload] = token.split(".");
@@ -17,14 +47,14 @@ function readJwtPayload(token: string) {
 }
 
 export function getSupabaseAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getServerEnvValue("NEXT_PUBLIC_SUPABASE_URL");
+  const serviceRoleKey = getServiceRoleKey();
 
   if (!url || !serviceRoleKey) {
     return supabase;
   }
 
-  return createClient(url, serviceRoleKey, {
+  return createClient(url, serviceRoleKey.value, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -33,26 +63,28 @@ export function getSupabaseAdminClient() {
 }
 
 export function getRequiredSupabaseAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getServerEnvValue("NEXT_PUBLIC_SUPABASE_URL");
+  const serviceRoleKey = getServiceRoleKey();
 
   if (!url) {
     throw new Error("NEXT_PUBLIC_SUPABASE_URL não está configurada.");
   }
 
   if (!serviceRoleKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY não está configurada.");
-  }
-
-  const payload = readJwtPayload(serviceRoleKey);
-
-  if (payload?.role && payload.role !== "service_role") {
     throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY não é uma service role key válida."
+      `Service role da Supabase não está configurada no servidor. Estado: ${getServiceRoleEnvDebug()}.`
     );
   }
 
-  return createClient(url, serviceRoleKey, {
+  const payload = readJwtPayload(serviceRoleKey.value);
+
+  if (payload?.role && payload.role !== "service_role") {
+    throw new Error(
+      `${serviceRoleKey.name} não é uma service role key válida.`
+    );
+  }
+
+  return createClient(url, serviceRoleKey.value, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
