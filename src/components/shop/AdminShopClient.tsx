@@ -74,18 +74,19 @@ export function AdminShopClient() {
     return orders.reduce(
       (acc, order) => ({
         commission: acc.commission + order.commissionTotalCents,
-        payout:
-          acc.payout +
-          order.items.reduce(
-            (total, item) => total + item.payoutAmountCents,
-            0
-          ),
+        vat: acc.vat + order.vatTotalCents,
+        payout: acc.payout + order.partnerPayoutTotalCents,
+        margin: acc.margin + order.paranoidMarginTotalCents,
       }),
-      { commission: 0, payout: 0 }
+      { commission: 0, vat: 0, payout: 0, margin: 0 }
     );
   }, [orders]);
 
-  async function updateStatus(orderId: string, status: string) {
+  async function updateStatus(
+    orderId: string,
+    status: string,
+    fiscalDocumentStatus?: string
+  ) {
     setMessage("");
     const {
       data: { session },
@@ -102,11 +103,12 @@ export function AdminShopClient() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, fiscalDocumentStatus }),
     });
 
     if (!response.ok) {
-      setMessage("Não consegui atualizar a encomenda.");
+      const payload = await response.json().catch(() => ({}));
+      setMessage(payload.error || "Não consegui atualizar a encomenda.");
       return;
     }
 
@@ -164,6 +166,10 @@ export function AdminShopClient() {
                   {getOrderStatusLabel(order.orderStatus)} ·{" "}
                   {formatMoney(order.totalCents)}
                 </p>
+                <p className="mt-1 text-xs font-bold text-zinc-600">
+                  IVA estimado {formatMoney(order.vatTotalCents)} · margem{" "}
+                  {formatMoney(order.paranoidMarginTotalCents)}
+                </p>
               </div>
               <p className="rounded-full bg-[#f2f1ec] px-3 py-1 text-sm font-black text-black">
                 {order.paymentStatus}
@@ -172,12 +178,42 @@ export function AdminShopClient() {
 
             <div className="mt-5 space-y-2 text-sm text-zinc-400">
               {order.items.map((item) => (
-                <p key={item.id}>
-                  {item.quantity}x {item.productName} · payout{" "}
-                  {formatMoney(item.payoutAmountCents)}
-                </p>
+                <div key={item.id} className="rounded-2xl bg-black/40 p-3">
+                  <p className="font-bold text-zinc-200">
+                    {item.quantity}x {item.productName}
+                  </p>
+                  <p>
+                    preço final {formatMoney(item.finalPriceCents)} · IVA{" "}
+                    {formatMoney(item.vatCents)} · produção{" "}
+                    {formatMoney(item.productionCostCents * item.quantity)}
+                  </p>
+                  <p>
+                    parceiro {formatMoney(item.partnerPayoutAmountCents)} ·
+                    margem {formatMoney(item.paranoidMarginCents)}
+                  </p>
+                </div>
               ))}
             </div>
+
+            {order.payouts.length > 0 && (
+              <div className="mt-5 space-y-2 rounded-2xl border border-zinc-900 bg-black/40 p-4 text-sm">
+                <p className="font-black text-zinc-200">Payouts</p>
+                {order.payouts.map((payout) => (
+                  <div key={payout.id} className="text-zinc-400">
+                    <p>
+                      {payout.sellerName || "Parceiro"} ·{" "}
+                      {formatMoney(payout.amountCents)} · documento{" "}
+                      {payout.fiscalDocumentStatus} · {payout.status}
+                    </p>
+                    {payout.blockedReason && (
+                      <p className="mt-1 text-red-300">
+                        {payout.blockedReason}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="mt-5 grid gap-2 sm:grid-cols-4">
               <button
@@ -204,11 +240,43 @@ export function AdminShopClient() {
               <button
                 type="button"
                 onClick={() => updateStatus(order.id, "payout_paid")}
-                className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300"
+                disabled={
+                  order.payouts.length === 0 ||
+                  order.payouts.some(
+                    (payout) => payout.fiscalDocumentStatus !== "approved"
+                  )
+                }
+                className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300 disabled:cursor-not-allowed disabled:text-zinc-700"
               >
                 Payout pago
               </button>
             </div>
+
+            {order.payouts.length > 0 && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                {["requested", "received", "approved", "rejected"].map(
+                  (status) => (
+                    <button
+                      type="button"
+                      key={status}
+                      onClick={() =>
+                        updateStatus(order.id, "payout_fiscal_document", status)
+                      }
+                      className="rounded-full border border-zinc-800 px-4 py-3 text-xs font-black text-zinc-400"
+                    >
+                      Doc. {status}
+                    </button>
+                  )
+                )}
+                <button
+                  type="button"
+                  onClick={() => updateStatus(order.id, "approve_seller_payment")}
+                  className="rounded-full border border-green-900 px-4 py-3 text-xs font-black text-green-300 sm:col-span-4"
+                >
+                  Validar fiscal + contrato do parceiro
+                </button>
+              </div>
+            )}
           </article>
         ))}
       </section>
@@ -218,12 +286,20 @@ export function AdminShopClient() {
           <h2 className="text-2xl font-black">Totais</h2>
           <div className="mt-5 space-y-3 text-sm">
             <p className="flex justify-between text-zinc-400">
-              <span>Taxa Paranoid</span>
+              <span>IVA estimado</span>
+              <span>{formatMoney(totals.vat)}</span>
+            </p>
+            <p className="flex justify-between text-zinc-400">
+              <span>Taxa/margem bruta Paranoid</span>
               <span>{formatMoney(totals.commission)}</span>
             </p>
             <p className="flex justify-between text-zinc-400">
-              <span>Payout artistas</span>
+              <span>Payout parceiros</span>
               <span>{formatMoney(totals.payout)}</span>
+            </p>
+            <p className="flex justify-between text-zinc-400">
+              <span>Margem estimada</span>
+              <span>{formatMoney(totals.margin)}</span>
             </p>
           </div>
         </section>

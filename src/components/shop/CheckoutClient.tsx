@@ -211,20 +211,19 @@ export function CheckoutClient() {
         </div>
         <div className="mt-5 space-y-3 border-t border-zinc-900 pt-4 text-sm">
           <p className="flex justify-between text-zinc-400">
-            <span>Subtotal produtos</span>
+            <span>Subtotal</span>
             <span>{formatMoney(totals.subtotalCents)}</span>
           </p>
           <p className="flex justify-between text-zinc-400">
-            <span>Taxa de serviço</span>
-            <span>{formatMoney(totals.commissionTotalCents)}</span>
-          </p>
-          <p className="flex justify-between text-zinc-400">
-            <span>Envio</span>
+            <span>Envio CTT</span>
             <span>{formatMoney(totals.shippingCents)}</span>
           </p>
           <p className="flex justify-between pt-2 text-lg font-black">
             <span>Total</span>
             <span>{formatMoney(totals.totalCents)}</span>
+          </p>
+          <p className="text-xs font-bold text-zinc-500">
+            IVA incluído nos preços apresentados.
           </p>
         </div>
       </aside>

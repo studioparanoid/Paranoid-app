@@ -16,13 +16,33 @@ type SellerProduct = {
   status: string | null;
   stock_quantity: number | null;
   final_price_cents: number | null;
+  partner_payout_type: string | null;
+  partner_payout_cents: number | null;
+  partner_payout_rate: number | null;
+  production_cost_cents: number | null;
   category: string | null;
+};
+
+type SellerProfile = {
+  id: string;
+  legal_name: string | null;
+  tax_number: string | null;
+  fiscal_email: string | null;
+  iban: string | null;
+  seller_type: string | null;
+  legal_entity_type: string | null;
+  can_issue_invoice: boolean | null;
+  fiscal_status: string | null;
+  contract_status: string | null;
 };
 
 export function OrganizerShopClient() {
   const [basePrice, setBasePrice] = useState("20");
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [products, setProducts] = useState<SellerProduct[]>([]);
+  const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(
+    null
+  );
   const [trackingByOrder, setTrackingByOrder] = useState<Record<string, string>>(
     {}
   );
@@ -63,9 +83,12 @@ export function OrganizerShopClient() {
 
     const { data: sellers } = await supabase
       .from("shop_sellers")
-      .select("id")
+      .select(
+        "id,legal_name,tax_number,fiscal_email,iban,seller_type,legal_entity_type,can_issue_invoice,fiscal_status,contract_status"
+      )
       .eq("user_id", user.id);
     const sellerIds = (sellers || []).map((seller) => seller.id);
+    setSellerProfile(((sellers || [])[0] as SellerProfile) || null);
 
     if (sellerIds.length === 0) {
       setProducts([]);
@@ -74,7 +97,9 @@ export function OrganizerShopClient() {
 
     const { data } = await supabase
       .from("shop_products")
-      .select("id,name,status,stock_quantity,final_price_cents,category")
+      .select(
+        "id,name,status,stock_quantity,final_price_cents,partner_payout_type,partner_payout_cents,partner_payout_rate,production_cost_cents,category"
+      )
       .in("seller_id", sellerIds)
       .order("created_at", { ascending: false });
 
@@ -85,6 +110,33 @@ export function OrganizerShopClient() {
     loadOrders();
     loadProducts();
   }, []);
+
+  async function saveFiscalProfile() {
+    if (!sellerProfile) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("shop_sellers")
+      .update({
+        legal_name: sellerProfile.legal_name,
+        tax_number: sellerProfile.tax_number,
+        fiscal_email: sellerProfile.fiscal_email,
+        iban: sellerProfile.iban,
+        seller_type: sellerProfile.seller_type,
+        legal_entity_type: sellerProfile.legal_entity_type,
+        can_issue_invoice: sellerProfile.can_issue_invoice,
+        fiscal_status: "pending",
+      })
+      .eq("id", sellerProfile.id);
+
+    setMessage(
+      error
+        ? "Não consegui guardar os dados fiscais."
+        : "Dados fiscais guardados para validação."
+    );
+    await loadProducts();
+  }
 
   const payoutTotal = useMemo(() => {
     return orders.reduce(
@@ -131,6 +183,118 @@ export function OrganizerShopClient() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
       <section className="space-y-4">
+        <div className="rounded-[1.5rem] border border-red-950 bg-red-950/20 p-5">
+          <p className="text-sm font-bold leading-relaxed text-red-100">
+            Para receber pagamentos da Paranoid, tens de emitir fatura,
+            fatura-recibo, ato isolado ou documento fiscal válido à Paranoid.
+          </p>
+          <p className="mt-3 text-xs font-bold text-zinc-500">
+            A Paranoid só processa pagamentos após receber documento fiscal
+            válido. O parceiro é fornecedor/licenciador/parceiro comercial, não
+            funcionário da Paranoid.
+          </p>
+        </div>
+
+        {sellerProfile && (
+          <div className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
+            <p className="text-xs font-black uppercase tracking-[0.35em] text-red-600">
+              Fiscal
+            </p>
+            <h2 className="mt-3 text-3xl font-black">Dados para pagamento</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {[
+                ["legal_name", "Nome legal"],
+                ["tax_number", "NIF"],
+                ["fiscal_email", "Email fiscal"],
+                ["iban", "IBAN"],
+              ].map(([key, label]) => (
+                <label key={key} className="block space-y-2">
+                  <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+                    {label}
+                  </span>
+                  <input
+                    value={String(
+                      sellerProfile[key as keyof SellerProfile] || ""
+                    )}
+                    onChange={(event) =>
+                      setSellerProfile((current) =>
+                        current
+                          ? { ...current, [key]: event.target.value }
+                          : current
+                      )
+                    }
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                  />
+                </label>
+              ))}
+
+              <label className="block space-y-2">
+                <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+                  Tipo de entidade
+                </span>
+                <select
+                  value={sellerProfile.seller_type || "artist"}
+                  onChange={(event) =>
+                    setSellerProfile((current) =>
+                      current
+                        ? { ...current, seller_type: event.target.value }
+                        : current
+                    )
+                  }
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                >
+                  <option value="artist">Artista individual</option>
+                  <option value="band">Banda/coletivo</option>
+                  <option value="organizer">Organizador</option>
+                  <option value="label">Editora</option>
+                  <option value="association">Associação</option>
+                  <option value="company">Empresa</option>
+                </select>
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+                  Documento fiscal
+                </span>
+                <select
+                  value={sellerProfile.can_issue_invoice ? "yes" : "no"}
+                  onChange={(event) =>
+                    setSellerProfile((current) =>
+                      current
+                        ? {
+                            ...current,
+                            can_issue_invoice: event.target.value === "yes",
+                          }
+                        : current
+                    )
+                  }
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                >
+                  <option value="yes">Consigo emitir</option>
+                  <option value="no">Ainda não consigo</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
+              <span className="rounded-full border border-zinc-800 px-3 py-2 text-zinc-400">
+                Fiscal: {sellerProfile.fiscal_status || "pending"}
+              </span>
+              <span className="rounded-full border border-zinc-800 px-3 py-2 text-zinc-400">
+                Contrato: {sellerProfile.contract_status || "pending"}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={saveFiscalProfile}
+              className="mt-5 rounded-full bg-[#f2f1ec] px-5 py-3 font-black text-black"
+            >
+              Guardar dados fiscais
+            </button>
+          </div>
+        )}
+
         <div className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
           <p className="text-xs font-black uppercase tracking-[0.35em] text-red-600">
             Produto
@@ -197,10 +361,14 @@ export function OrganizerShopClient() {
                     {product.category || "Merch"}
                   </p>
                   <h3 className="mt-2 text-2xl font-black">{product.name}</h3>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {product.status || "sem estado"} · stock{" "}
-                    {product.stock_quantity ?? 0}
-                  </p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {product.status || "sem estado"} · stock{" "}
+                  {product.stock_quantity ?? 0}
+                </p>
+                <p className="mt-1 text-xs font-bold text-zinc-600">
+                  payout {product.partner_payout_type || "none"} · produção{" "}
+                  {formatMoney(product.production_cost_cents || 0)}
+                </p>
                 </div>
                 <p className="rounded-full bg-[#f2f1ec] px-3 py-1 text-sm font-black text-black">
                   {formatMoney(product.final_price_cents || 0)}
@@ -291,11 +459,11 @@ export function OrganizerShopClient() {
           <h2 className="text-2xl font-black">Preço final</h2>
           <div className="mt-5 space-y-3 text-sm">
             <p className="flex justify-between text-zinc-400">
-              <span>Recebes</span>
+              <span>Valor parceiro</span>
               <span>{formatMoney(price.basePriceCents)}</span>
             </p>
             <p className="flex justify-between text-zinc-400">
-              <span>Taxa de serviço</span>
+              <span>Taxa incluída</span>
               <span>{formatMoney(price.commissionCents)}</span>
             </p>
             <p className="flex justify-between border-t border-zinc-900 pt-3 text-lg font-black">
@@ -306,11 +474,11 @@ export function OrganizerShopClient() {
         </section>
 
         <section className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
-          <h2 className="text-2xl font-black">A receber</h2>
+          <h2 className="text-2xl font-black">Previsto a receber</h2>
           <p className="mt-4 text-4xl font-black">{formatMoney(payoutTotal)}</p>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            Embala a encomenda, cola a etiqueta CTT se existir, deposita nos CTT
-            e adiciona o código de tracking.
+            Pagamentos só são processados depois de documento fiscal válido
+            aprovado pela Paranoid.
           </p>
         </section>
       </aside>

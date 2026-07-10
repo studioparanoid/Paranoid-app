@@ -1,6 +1,7 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   DEFAULT_SHIPPING_CENTS,
+  calculateInternalShopLine,
   getCartTotals,
   type ShopCartItem,
   type ShopOrder,
@@ -24,6 +25,12 @@ type ProductValidationRow = {
   base_price_cents: number;
   commission_cents: number;
   final_price_cents: number;
+  ownership_model: "paranoid_owned" | "paranoid_managed" | null;
+  partner_payout_type: "fixed_per_unit" | "percentage" | "none" | null;
+  partner_payout_cents: number | null;
+  partner_payout_rate: number | string | null;
+  production_cost_cents: number | null;
+  vat_rate: number | string | null;
   stock_quantity: number | null;
   status: string | null;
   shop_sellers?: { display_name: string | null } | { display_name: string | null }[] | null;
@@ -47,6 +54,9 @@ type OrderRow = {
   subtotal_cents: number;
   shipping_cents: number;
   commission_total_cents: number;
+  vat_total_cents?: number | null;
+  partner_payout_total_cents?: number | null;
+  paranoid_margin_total_cents?: number | null;
   total_cents: number;
   payment_status: "pending" | "paid" | "paid_mock" | "failed";
   order_status:
@@ -69,6 +79,14 @@ type OrderRow = {
     commission_cents: number;
     final_price_cents: number;
     payout_amount_cents: number;
+    partner_payout_type?: "fixed_per_unit" | "percentage" | "none" | null;
+    partner_payout_cents?: number | null;
+    partner_payout_rate?: number | string | null;
+    partner_payout_amount_cents?: number | null;
+    production_cost_cents?: number | null;
+    vat_rate?: number | string | null;
+    vat_cents?: number | null;
+    paranoid_margin_cents?: number | null;
     shop_sellers?: { display_name: string | null } | { display_name: string | null }[] | null;
   }[];
   shop_shipments?: {
@@ -92,6 +110,21 @@ type OrderRow = {
     sent_at: string | null;
     error_message: string | null;
     created_at: string;
+  }[];
+  shop_payouts?: {
+    id: string;
+    order_id: string | null;
+    seller_id: string | null;
+    amount_cents: number;
+    status: string;
+    paid_at: string | null;
+    fiscal_document_status?: string | null;
+    fiscal_document_reference?: string | null;
+    fiscal_document_url?: string | null;
+    fiscal_document_notes?: string | null;
+    approved_for_payment_at?: string | null;
+    blocked_reason?: string | null;
+    shop_sellers?: { display_name: string | null } | { display_name: string | null }[] | null;
   }[];
 };
 
@@ -141,6 +174,9 @@ function mapOrder(row: OrderRow): ShopOrder {
     subtotalCents: row.subtotal_cents,
     shippingCents: row.shipping_cents,
     commissionTotalCents: row.commission_total_cents,
+    vatTotalCents: row.vat_total_cents ?? 0,
+    partnerPayoutTotalCents: row.partner_payout_total_cents ?? 0,
+    paranoidMarginTotalCents: row.paranoid_margin_total_cents ?? 0,
     totalCents: row.total_cents,
     paymentStatus: row.payment_status,
     orderStatus: row.order_status,
@@ -164,6 +200,15 @@ function mapOrder(row: OrderRow): ShopOrder {
           commissionCents: item.commission_cents,
           finalPriceCents: item.final_price_cents,
           payoutAmountCents: item.payout_amount_cents,
+          partnerPayoutType: item.partner_payout_type || null,
+          partnerPayoutCents: item.partner_payout_cents ?? 0,
+          partnerPayoutRate: Number(item.partner_payout_rate ?? 0),
+          partnerPayoutAmountCents:
+            item.partner_payout_amount_cents ?? item.payout_amount_cents,
+          productionCostCents: item.production_cost_cents ?? 0,
+          vatRate: Number(item.vat_rate ?? 0.23),
+          vatCents: item.vat_cents ?? 0,
+          paranoidMarginCents: item.paranoid_margin_cents ?? 0,
         };
       }) || [],
     shipments:
@@ -190,6 +235,28 @@ function mapOrder(row: OrderRow): ShopOrder {
         errorMessage: email.error_message,
         createdAt: email.created_at,
       })) || [],
+    payouts:
+      row.shop_payouts?.map((payout) => {
+        const seller = Array.isArray(payout.shop_sellers)
+          ? payout.shop_sellers[0]
+          : payout.shop_sellers;
+
+        return {
+          id: payout.id,
+          orderId: payout.order_id,
+          sellerId: payout.seller_id,
+          sellerName: seller?.display_name || null,
+          amountCents: payout.amount_cents,
+          status: payout.status,
+          fiscalDocumentStatus: payout.fiscal_document_status || "pending",
+          fiscalDocumentReference: payout.fiscal_document_reference || null,
+          fiscalDocumentUrl: payout.fiscal_document_url || null,
+          fiscalDocumentNotes: payout.fiscal_document_notes || null,
+          blockedReason: payout.blocked_reason || null,
+          approvedForPaymentAt: payout.approved_for_payment_at || null,
+          paidAt: payout.paid_at,
+        };
+      }) || [],
   };
 }
 
@@ -209,26 +276,42 @@ function buildMockOrder(order: ShopOrderDraft, paymentReference: string): ShopOr
     subtotalCents: totals.subtotalCents,
     shippingCents: totals.shippingCents,
     commissionTotalCents: totals.commissionTotalCents,
+    vatTotalCents: totals.vatTotalCents,
+    partnerPayoutTotalCents: totals.partnerPayoutTotalCents,
+    paranoidMarginTotalCents: totals.paranoidMarginTotalCents,
     totalCents: totals.totalCents,
     paymentStatus: "pending",
     orderStatus: "pending_payment",
     paymentProvider: "payme",
     paymentReference,
     createdAt: new Date().toISOString(),
-    items: order.items.map((item) => ({
-      id: `${paymentReference}-${item.productId}`,
-      productId: item.productId,
-      sellerId: item.sellerId,
-      sellerName: item.sellerName,
-      productName: item.name,
-      quantity: item.quantity,
-      basePriceCents: item.basePriceCents,
-      commissionCents: item.commissionCents,
-      finalPriceCents: item.finalPriceCents,
-      payoutAmountCents: item.basePriceCents * item.quantity,
-    })),
+    items: order.items.map((item) => {
+      const line = calculateInternalShopLine(item);
+
+      return {
+        id: `${paymentReference}-${item.productId}`,
+        productId: item.productId,
+        sellerId: item.sellerId,
+        sellerName: item.sellerName,
+        productName: item.name,
+        quantity: item.quantity,
+        basePriceCents: item.basePriceCents,
+        commissionCents: item.commissionCents,
+        finalPriceCents: item.finalPriceCents,
+        payoutAmountCents: line.partnerPayoutAmountCents,
+        partnerPayoutType: item.partnerPayoutType || null,
+        partnerPayoutCents: item.partnerPayoutCents ?? 0,
+        partnerPayoutRate: item.partnerPayoutRate ?? 0,
+        partnerPayoutAmountCents: line.partnerPayoutAmountCents,
+        productionCostCents: item.productionCostCents ?? 0,
+        vatRate: item.vatRate ?? 0.23,
+        vatCents: line.vatCents,
+        paranoidMarginCents: line.paranoidMarginCents,
+      };
+    }),
     shipments: [],
     emails: [],
+    payouts: [],
   };
 }
 
@@ -260,7 +343,7 @@ async function validateOrderItems(items: ShopCartItem[]) {
   const { data, error } = await supabase
     .from("shop_products")
     .select(
-      "id,seller_id,name,base_price_cents,commission_cents,final_price_cents,stock_quantity,status,shop_sellers(display_name)"
+      "id,seller_id,name,base_price_cents,commission_cents,final_price_cents,ownership_model,partner_payout_type,partner_payout_cents,partner_payout_rate,production_cost_cents,vat_rate,stock_quantity,status,shop_sellers(display_name)"
     )
     .in("id", productIds);
 
@@ -304,6 +387,12 @@ async function validateOrderItems(items: ShopCartItem[]) {
       basePriceCents: product.base_price_cents,
       commissionCents: product.commission_cents,
       finalPriceCents: product.final_price_cents,
+      ownershipModel: product.ownership_model || "paranoid_managed",
+      partnerPayoutType: product.partner_payout_type || "fixed_per_unit",
+      partnerPayoutCents: product.partner_payout_cents ?? product.base_price_cents,
+      partnerPayoutRate: Number(product.partner_payout_rate ?? 0),
+      productionCostCents: product.production_cost_cents ?? 0,
+      vatRate: Number(product.vat_rate ?? 0.23),
       stockQuantity: stock,
     };
   });
@@ -334,6 +423,9 @@ export async function createShopOrder(
         subtotal_cents: totals.subtotalCents,
         shipping_cents: totals.shippingCents || DEFAULT_SHIPPING_CENTS,
         commission_total_cents: totals.commissionTotalCents,
+        vat_total_cents: totals.vatTotalCents,
+        partner_payout_total_cents: totals.partnerPayoutTotalCents,
+        paranoid_margin_total_cents: totals.paranoidMarginTotalCents,
         total_cents: totals.totalCents,
         payment_status: "pending",
         order_status: "pending_payment",
@@ -348,8 +440,16 @@ export async function createShopOrder(
     }
 
     const orderId = orderData.id as string;
+    const frozenItems = validatedItems.map((item) => {
+      const line = calculateInternalShopLine(item);
+
+      return {
+        item,
+        line,
+      };
+    });
     const { error: itemsError } = await supabase.from("shop_order_items").insert(
-      validatedItems.map((item) => ({
+      frozenItems.map(({ item, line }) => ({
         order_id: orderId,
         product_id: item.productId,
         seller_id: item.sellerId,
@@ -358,7 +458,15 @@ export async function createShopOrder(
         base_price_cents: item.basePriceCents,
         commission_cents: item.commissionCents,
         final_price_cents: item.finalPriceCents,
-        payout_amount_cents: item.basePriceCents * item.quantity,
+        payout_amount_cents: line.partnerPayoutAmountCents,
+        partner_payout_type: item.partnerPayoutType || "none",
+        partner_payout_cents: item.partnerPayoutCents ?? 0,
+        partner_payout_rate: item.partnerPayoutRate ?? 0,
+        partner_payout_amount_cents: line.partnerPayoutAmountCents,
+        production_cost_cents: item.productionCostCents ?? 0,
+        vat_rate: item.vatRate ?? 0.23,
+        vat_cents: line.vatCents,
+        paranoid_margin_cents: line.paranoidMarginCents,
       }))
     );
 
@@ -382,22 +490,27 @@ export async function createShopOrder(
       throw shipmentsError;
     }
 
-    const { error: payoutsError } = await supabase.from("shop_payouts").insert(
-      sellerIds.map((sellerId) => ({
+    const payoutRows = sellerIds
+      .map((sellerId) => ({
         order_id: orderId,
         seller_id: sellerId,
-        amount_cents: validatedItems
-          .filter((item) => item.sellerId === sellerId)
-          .reduce(
-            (total, item) => total + item.basePriceCents * item.quantity,
-            0
-          ),
+        amount_cents: frozenItems
+          .filter(({ item }) => item.sellerId === sellerId)
+          .reduce((total, { line }) => total + line.partnerPayoutAmountCents, 0),
         status: "pending",
+        fiscal_document_status: "pending",
+        blocked_reason: "Documento fiscal ainda não aprovado.",
       }))
-    );
+      .filter((payout) => payout.amount_cents > 0);
 
-    if (payoutsError) {
-      throw payoutsError;
+    if (payoutRows.length > 0) {
+      const { error: payoutsError } = await supabase
+        .from("shop_payouts")
+        .insert(payoutRows);
+
+      if (payoutsError) {
+        throw payoutsError;
+      }
     }
 
     const created = await getShopOrder(orderId);
@@ -418,7 +531,7 @@ export async function getShopOrders() {
     const { data, error } = await supabase
       .from("shop_orders")
       .select(
-        "*,shop_order_items(*,shop_sellers(display_name)),shop_shipments(*),shop_order_emails(*)"
+        "*,shop_order_items(*,shop_sellers(display_name)),shop_shipments(*),shop_order_emails(*),shop_payouts(*,shop_sellers(display_name))"
       )
       .order("created_at", { ascending: false });
 
@@ -465,7 +578,7 @@ export async function getShopOrder(id: string) {
     const { data, error } = await supabase
       .from("shop_orders")
       .select(
-        "*,shop_order_items(*,shop_sellers(display_name)),shop_shipments(*),shop_order_emails(*)"
+        "*,shop_order_items(*,shop_sellers(display_name)),shop_shipments(*),shop_order_emails(*),shop_payouts(*,shop_sellers(display_name))"
       )
       .eq("id", id)
       .single();
@@ -561,40 +674,113 @@ export async function updateShopOrderStatus(id: string, status: string) {
 }
 
 export async function markShopPayoutPaid(orderId: string) {
-  const order = await getShopOrder(orderId);
+  const { data: payouts, error } = await supabase
+    .from("shop_payouts")
+    .select(
+      "id,seller_id,amount_cents,fiscal_document_status,shop_sellers(fiscal_status,contract_status)"
+    )
+    .eq("order_id", orderId)
+    .gt("amount_cents", 0);
 
-  if (!order) {
-    return null;
+  if (error) {
+    throw error;
   }
 
-  const sellerTotals = new Map<string, number>();
+  const blocked = (payouts || []).find((payout) => {
+    const seller = Array.isArray(payout.shop_sellers)
+      ? payout.shop_sellers[0]
+      : payout.shop_sellers;
 
-  order.items.forEach((item) => {
-    if (!item.sellerId) {
-      return;
-    }
-
-    sellerTotals.set(
-      item.sellerId,
-      (sellerTotals.get(item.sellerId) || 0) + item.payoutAmountCents
+    return (
+      payout.fiscal_document_status !== "approved" ||
+      seller?.fiscal_status !== "valid" ||
+      seller?.contract_status !== "signed"
     );
   });
 
-  await Promise.all(
-    Array.from(sellerTotals.entries()).map(([sellerId, amountCents]) =>
-      supabase
-        .from("shop_payouts")
-        .update({
-          amount_cents: amountCents,
-          status: "paid",
-          paid_at: new Date().toISOString(),
-        })
-        .eq("order_id", orderId)
-        .eq("seller_id", sellerId)
-    )
+  if (blocked) {
+    await supabase
+      .from("shop_payouts")
+      .update({
+        blocked_reason:
+          "Não é possível pagar este parceiro sem documento fiscal aprovado, fiscal válido e contrato assinado.",
+      })
+      .eq("order_id", orderId);
+    throw new Error(
+      "Não é possível pagar este parceiro sem documento fiscal aprovado."
+    );
+  }
+
+  await supabase
+    .from("shop_payouts")
+    .update({
+      status: "paid",
+      paid_at: new Date().toISOString(),
+      blocked_reason: null,
+    })
+    .eq("order_id", orderId)
+    .gt("amount_cents", 0);
+
+  return getShopOrder(orderId);
+}
+
+export async function updateShopPayoutFiscalDocument(
+  orderId: string,
+  status: string,
+  approvedBy?: string
+) {
+  const updatePayload: Record<string, string | null> = {
+    fiscal_document_status: status,
+    blocked_reason:
+      status === "approved"
+        ? null
+        : "Documento fiscal ainda não aprovado.",
+  };
+
+  if (status === "approved") {
+    updatePayload.approved_for_payment_at = new Date().toISOString();
+    updatePayload.approved_for_payment_by = approvedBy || null;
+  }
+
+  const { error } = await supabase
+    .from("shop_payouts")
+    .update(updatePayload)
+    .eq("order_id", orderId);
+
+  if (error) {
+    throw error;
+  }
+
+  return getShopOrder(orderId);
+}
+
+export async function approveSellerForShopPayment(orderId: string) {
+  const { data: payouts, error } = await supabase
+    .from("shop_payouts")
+    .select("seller_id")
+    .eq("order_id", orderId)
+    .gt("amount_cents", 0);
+
+  if (error) {
+    throw error;
+  }
+
+  const sellerIds = Array.from(
+    new Set((payouts || []).map((payout) => payout.seller_id).filter(Boolean))
   );
 
-  return order;
+  if (sellerIds.length > 0) {
+    await supabase
+      .from("shop_sellers")
+      .update({
+        fiscal_status: "valid",
+        contract_status: "signed",
+        contract_signed_at: new Date().toISOString(),
+      })
+      .in("id", sellerIds);
+  }
+
+  return getShopOrder(orderId);
 }
 
 export async function markShopOrderShipped(

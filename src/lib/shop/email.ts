@@ -44,6 +44,22 @@ function summarizeItems(order: ShopOrder) {
     .join("\n");
 }
 
+function summarizePartnerPayout(order: ShopOrder) {
+  const total = order.items.reduce(
+    (value, item) => value + item.partnerPayoutAmountCents,
+    0
+  );
+
+  if (total <= 0) {
+    return "Sem payout de parceiro nesta encomenda.";
+  }
+
+  return [
+    `Payout devido a parceiro: ${formatMoney(total)}`,
+    "Atenção: só pagar após documento fiscal aprovado.",
+  ].join("\n");
+}
+
 async function sendShopEmail(
   type: ShopEmailType,
   recipient: string,
@@ -102,7 +118,8 @@ export async function buildOrderCreatedEmails(order: ShopOrder) {
     summarizeItems(order),
     "",
     `Total: ${formatMoney(order.totalCents)}`,
-    `Taxa de serviço total: ${formatMoney(order.commissionTotalCents)}`,
+    `IVA estimado: ${formatMoney(order.vatTotalCents)}`,
+    summarizePartnerPayout(order),
     `Estado: ${order.orderStatus}`,
   ].join("\n");
 
@@ -146,6 +163,10 @@ export async function buildSellerPaidOrderEmails(
   >();
 
   order.items.forEach((item) => {
+    if (item.partnerPayoutAmountCents <= 0) {
+      return;
+    }
+
     const key = item.sellerId || item.sellerName || "seller";
     const current = sellerGroups.get(key) || {
       name: item.sellerName || "Artista Paranoid",
@@ -173,13 +194,13 @@ export async function buildSellerPaidOrderEmails(
         [
           `Olá ${seller.name},`,
           "",
-          `Tens uma nova encomenda paga para preparar (#${orderNumber}).`,
+          `Tens uma venda gerida pela Paranoid (#${orderNumber}).`,
           "",
           seller.lines.join("\n"),
           "",
-          `Valor a receber: ${formatMoney(seller.total)}`,
+          `Valor previsto a receber: ${formatMoney(seller.total)}`,
           "",
-          "Embala a encomenda, deposita nos CTT e adiciona o código de tracking na tua área.",
+          "O pagamento será processado após validação do documento fiscal.",
         ].join("\n")
       )
     );

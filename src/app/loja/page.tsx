@@ -17,6 +17,9 @@ export default async function ShopPage() {
             <h1 className="text-5xl font-black leading-none tracking-tight lg:text-7xl">
               Merch Paranoid.
             </h1>
+            <p className="mt-3 max-w-xl text-sm font-bold text-zinc-500">
+              Merch oficial selecionado e gerido pela Paranoid.
+            </p>
           </div>
 
           <ShopCartLink />

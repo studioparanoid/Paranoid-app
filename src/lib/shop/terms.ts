@@ -1,0 +1,2 @@
+export const SHOP_TERMS_BASE_TEXT =
+  "A Paranoid vende e gere merchandising selecionado em parceria com artistas, bandas, organizadores, editoras ou outras entidades. Quando aplicável, os parceiros autorizam a Paranoid a produzir, divulgar e vender produtos associados à sua marca, nome, imagem ou artwork. Os pagamentos a parceiros são feitos conforme acordo comercial e apenas mediante apresentação de documento fiscal válido.";

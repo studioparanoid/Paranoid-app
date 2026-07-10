@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getShopApiUser, isShopAdminUser } from "@/lib/shop/api-auth";
 import {
+  approveSellerForShopPayment,
   markShopOrderShipped,
   markShopPayoutPaid,
+  updateShopPayoutFiscalDocument,
   updateShopOrderStatus,
   userCanShipShopOrder,
 } from "@/lib/shop/orders";
@@ -23,6 +25,7 @@ export async function POST(request: Request, { params }: StatusRouteProps) {
     status?: string;
     trackingCode?: string;
     carrier?: string;
+    fiscalDocumentStatus?: string;
   };
 
   if (!body.status) {
@@ -55,12 +58,25 @@ export async function POST(request: Request, { params }: StatusRouteProps) {
     const order =
       body.status === "payout_paid"
         ? await markShopPayoutPaid(id)
-        : await updateShopOrderStatus(id, body.status);
+        : body.status === "payout_fiscal_document"
+          ? await updateShopPayoutFiscalDocument(
+              id,
+              body.fiscalDocumentStatus || "pending",
+              user.id
+            )
+          : body.status === "approve_seller_payment"
+            ? await approveSellerForShopPayment(id)
+            : await updateShopOrderStatus(id, body.status);
 
     return NextResponse.json({ order });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Não foi possível atualizar a encomenda." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível atualizar a encomenda.",
+      },
       { status: 400 }
     );
   }

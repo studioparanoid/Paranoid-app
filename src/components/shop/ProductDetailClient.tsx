@@ -49,6 +49,12 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
       basePriceCents: product.basePriceCents,
       commissionCents: product.commissionCents,
       finalPriceCents: product.finalPriceCents,
+      ownershipModel: product.ownershipModel,
+      partnerPayoutType: product.partnerPayoutType,
+      partnerPayoutCents: product.partnerPayoutCents,
+      partnerPayoutRate: product.partnerPayoutRate,
+      productionCostCents: product.productionCostCents,
+      vatRate: product.vatRate,
       stockQuantity: product.stockQuantity,
       variant: variant || undefined,
     };
@@ -116,7 +122,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           {formatMoney(product.finalPriceCents)}
         </p>
         <p className="-mt-4 text-sm font-bold text-zinc-500">
-          Taxa de serviço incluída
+          IVA incluído · Merch oficial gerido pela Paranoid
         </p>
 
         <p className="leading-relaxed text-zinc-300">{product.description}</p>
