@@ -29,6 +29,9 @@ const SPONSORSHIP_CONFIG: Record<string, SponsorshipConfig> = {
   },
 };
 
+const SPONSORSHIP_SELECT =
+  "id,user_id,sponsor_id,product_code,payment_id,starts_at,ends_at,status,sponsored_post_limit,sponsored_posts_used,founding_partner_number,created_at,updated_at";
+
 function addDays(date: Date, days: number) {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
@@ -45,7 +48,7 @@ export async function activateSponsorship(payment: BillingPayment) {
   const supabase = getRequiredSupabaseAdminClient();
   const { data: existing } = await supabase
     .from("sponsorship_campaigns")
-    .select("*")
+    .select(SPONSORSHIP_SELECT)
     .eq("payment_id", payment.id)
     .maybeSingle();
 
@@ -94,7 +97,7 @@ export async function activateSponsorship(payment: BillingPayment) {
       sponsored_posts_used: 0,
       founding_partner_number: foundingPartnerNumber,
     })
-    .select("*")
+    .select(SPONSORSHIP_SELECT)
     .single();
 
   if (error || !campaign) {
@@ -132,7 +135,7 @@ export async function getActiveSponsorshipCampaigns() {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("sponsorship_campaigns")
-    .select("*")
+    .select(SPONSORSHIP_SELECT)
     .eq("status", "active")
     .gt("ends_at", now)
     .order("founding_partner_number", { ascending: true, nullsFirst: false })
@@ -149,7 +152,7 @@ export async function getAllSponsorshipCampaigns() {
   const supabase = getRequiredSupabaseAdminClient();
   const { data, error } = await supabase
     .from("sponsorship_campaigns")
-    .select("*")
+    .select(SPONSORSHIP_SELECT)
     .order("created_at", { ascending: false })
     .limit(200);
 

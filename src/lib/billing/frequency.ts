@@ -47,6 +47,9 @@ type OrganizerVisibilityPassRow = {
   updated_at: string | null;
 };
 
+const PASS_SELECT =
+  "id,organizer_id,user_id,product_code,payment_id,starts_at,ends_at,status,auto_feature_events,homepage_eligible,agenda_priority,map_priority,editorial_inclusion,created_at,updated_at";
+
 type EventVisibilityInput = {
   organizer_id?: string | null;
   organizerId?: string | null;
@@ -84,7 +87,7 @@ async function getPassByPayment(paymentId: string) {
   const supabase = getRequiredSupabaseAdminClient();
   const { data, error } = await supabase
     .from("organizer_visibility_passes")
-    .select("*")
+    .select(PASS_SELECT)
     .eq("payment_id", paymentId)
     .maybeSingle();
 
@@ -100,7 +103,7 @@ export async function getActiveOrganizerFrequencyPass(organizerId: string) {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("organizer_visibility_passes")
-    .select("*")
+    .select(PASS_SELECT)
     .eq("organizer_id", organizerId)
     .eq("status", "active")
     .gt("ends_at", now)
@@ -151,7 +154,7 @@ export async function activateOrganizerFrequencyPass(payment: BillingPayment) {
         updated_at: now.toISOString(),
       })
       .eq("id", activePass.id)
-      .select("*")
+      .select(PASS_SELECT)
       .single();
 
     if (error || !data) {
@@ -178,7 +181,7 @@ export async function activateOrganizerFrequencyPass(payment: BillingPayment) {
       map_priority: 1,
       editorial_inclusion: true,
     })
-    .select("*")
+    .select(PASS_SELECT)
     .single();
 
   if (error || !data) {
@@ -283,7 +286,7 @@ export async function getOrganizerFrequencyPasses() {
   const supabase = getRequiredSupabaseAdminClient();
   const { data, error } = await supabase
     .from("organizer_visibility_passes")
-    .select("*")
+    .select(PASS_SELECT)
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -303,7 +306,7 @@ export async function expireOrganizerFrequencyPasses() {
     .update({ status: "expired", updated_at: now })
     .eq("status", "active")
     .lt("ends_at", now)
-    .select("*");
+    .select(PASS_SELECT);
 
   if (error) {
     throw error;
@@ -343,7 +346,7 @@ export async function updateOrganizerFrequencyPass(
     .from("organizer_visibility_passes")
     .update(payload)
     .eq("id", passId)
-    .select("*")
+    .select(PASS_SELECT)
     .single();
 
   if (error || !data) {

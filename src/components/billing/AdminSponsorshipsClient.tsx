@@ -60,7 +60,11 @@ export function AdminSponsorshipsClient() {
   }
 
   useEffect(() => {
-    loadCampaigns();
+    const timeoutId = window.setTimeout(() => {
+      loadCampaigns();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   return (

@@ -2,524 +2,80 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase/public";
+import { EmptyState } from "@/components/EmptyState";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { StatusBadge } from "@/components/StatusBadge";
 import { TicketQrCode } from "@/components/TicketQrCode";
+import { supabase } from "@/lib/supabase/public";
 
-type ReservationRow = {
-  id: string;
-  event_id: string;
-  user_id: string | null;
-  user_email: string | null;
-  quantity: number;
-  status: "reserved" | "cancelled" | "checked_in";
-  check_in_code: string;
-  created_at: string;
-  updated_at: string | null;
-};
+type Reservation = { id: string; event_id: string; quantity: number; status: "reserved" | "cancelled" | "checked_in"; check_in_code: string; created_at: string };
+type EventRow = { id: string; slug: string; title: string; city: string | null; venue_name: string | null; display_date: string | null; display_time: string | null; start_at: string | null; image_url: string | null };
+type Ticket = Reservation & { event: EventRow | null };
+type TicketTab = "upcoming" | "past";
 
-type EventRow = {
-  id: string;
-  slug: string;
-  title: string;
-  city: string;
-  venue_name: string | null;
-  display_date: string | null;
-  display_time: string | null;
-  image_url: string | null;
-  ticket_price: string | null;
-  status: string | null;
-};
-
-type TicketWithEvent = ReservationRow & {
-  event: EventRow | null;
-};
-
-function normalize(value: string | null | undefined) {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+function isPast(ticket: Ticket) {
+  if (ticket.status !== "reserved") return true;
+  const value = ticket.event?.start_at;
+  return Boolean(value && new Date(value).getTime() < Date.now());
 }
 
-function formatDateTime(value: string | null | undefined) {
-  if (!value) {
-    return "Sem data";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("pt-PT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function statusLabel(status: ReservationRow["status"]) {
-  if (status === "reserved") {
-    return "Reservado";
-  }
-
-  if (status === "checked_in") {
-    return "Entrada feita";
-  }
-
-  return "Cancelado";
-}
-
-function statusClasses(status: ReservationRow["status"]) {
-  if (status === "reserved") {
-    return "border-yellow-900 bg-yellow-950/30 text-yellow-500";
-  }
-
-  if (status === "checked_in") {
-    return "border-green-900 bg-green-950/30 text-green-500";
-  }
-
-  return "border-zinc-800 bg-zinc-950 text-zinc-500";
-}
-
-function EmptyCard({ text }: { text: string }) {
-  return (
-    <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-      <p className="text-zinc-500">{text}</p>
-    </div>
-  );
+function status(ticket: Ticket) {
+  if (ticket.status === "checked_in") return { label: "Usado", tone: "success" as const };
+  if (ticket.status === "cancelled") return { label: "Cancelado", tone: "danger" as const };
+  return { label: "Válido", tone: "warning" as const };
 }
 
 export function UserTicketsClient() {
   const [loading, setLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [message, setMessage] = useState("");
-
-  const [email, setEmail] = useState("");
-  const [tickets, setTickets] = useState<TicketWithEvent[]>([]);
-
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "reserved" | "checked_in" | "cancelled"
-  >("all");
-
-  const filteredTickets = useMemo(() => {
-    const cleanSearch = normalize(search);
-
-    return tickets.filter((ticket) => {
-      const event = ticket.event;
-
-      const matchesSearch =
-        !cleanSearch ||
-        normalize(
-          [
-            ticket.check_in_code,
-            ticket.status,
-            event?.title,
-            event?.city,
-            event?.venue_name,
-            event?.display_date,
-          ].join(" ")
-        ).includes(cleanSearch);
-
-      const matchesStatus =
-        statusFilter === "all" || ticket.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [tickets, search, statusFilter]);
-
-  const activeTickets = tickets.filter((ticket) => ticket.status === "reserved");
-  const checkedInTickets = tickets.filter(
-    (ticket) => ticket.status === "checked_in"
-  );
-  const cancelledTickets = tickets.filter(
-    (ticket) => ticket.status === "cancelled"
-  );
-
-  const activeQuantity = activeTickets.reduce(
-    (sum, ticket) => sum + Number(ticket.quantity || 0),
-    0
-  );
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [tab, setTab] = useState<TicketTab>("upcoming");
+  const [openTicketId, setOpenTicketId] = useState("");
 
   async function loadTickets() {
-    setLoading(true);
-    setMessage("");
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setEmail("");
-      setTickets([]);
-      setLoading(false);
-      return;
+    setLoading(true); setMessage("");
+    const { data: { user } } = await supabase.auth.getUser();
+    setLoggedIn(Boolean(user));
+    if (!user) { setTickets([]); setLoading(false); return; }
+    const reservationResponse = await supabase.from("ticket_reservations").select("id,event_id,quantity,status,check_in_code,created_at").eq("user_id", user.id).order("created_at", { ascending: false });
+    if (reservationResponse.error) { setMessage("Não foi possível carregar os bilhetes."); setLoading(false); return; }
+    const reservations = (reservationResponse.data || []) as Reservation[];
+    const ids = Array.from(new Set(reservations.map((item) => item.event_id)));
+    let events: EventRow[] = [];
+    if (ids.length > 0) {
+      const eventsResponse = await supabase.from("events").select("id,slug,title,city,venue_name,display_date,display_time,start_at,image_url").in("id", ids);
+      events = (eventsResponse.data || []) as EventRow[];
     }
-
-    setEmail(user.email || "");
-
-    const { data: reservationData, error: reservationError } = await supabase
-      .from("ticket_reservations")
-      .select(
-        "id,event_id,user_id,user_email,quantity,status,check_in_code,created_at,updated_at"
-      )
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (reservationError) {
-      setMessage(reservationError.message);
-      setTickets([]);
-      setLoading(false);
-      return;
-    }
-
-    const reservations = (reservationData || []) as ReservationRow[];
-    const eventIds = Array.from(
-      new Set(reservations.map((reservation) => reservation.event_id))
-    );
-
-    if (eventIds.length === 0) {
-      setTickets([]);
-      setLoading(false);
-      return;
-    }
-
-    const { data: eventsData, error: eventsError } = await supabase
-      .from("events")
-      .select(
-        "id,slug,title,city,venue_name,display_date,display_time,image_url,ticket_price,status"
-      )
-      .in("id", eventIds);
-
-    if (eventsError) {
-      setMessage(eventsError.message);
-      setTickets([]);
-      setLoading(false);
-      return;
-    }
-
-    const events = (eventsData || []) as EventRow[];
-
-    const ticketsWithEvents = reservations.map((reservation) => ({
-      ...reservation,
-      event: events.find((event) => event.id === reservation.event_id) || null,
-    }));
-
-    setTickets(ticketsWithEvents);
+    setTickets(reservations.map((reservation) => ({ ...reservation, event: events.find((event) => event.id === reservation.event_id) || null })));
     setLoading(false);
   }
 
-  useEffect(() => {
-    loadTickets();
-  }, []);
+  useEffect(() => { const timer = window.setTimeout(() => { void loadTickets(); }, 0); return () => window.clearTimeout(timer); }, []);
 
-  async function cancelReservation(reservationId: string) {
-    setMessage("");
+  const upcoming = useMemo(() => tickets.filter((ticket) => !isPast(ticket)), [tickets]);
+  const past = useMemo(() => tickets.filter(isPast), [tickets]);
+  const visible = tab === "upcoming" ? upcoming : past;
 
-    if (!confirm("Cancelar esta reserva?")) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from("ticket_reservations")
-      .update({
-        status: "cancelled",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", reservationId);
-
-    if (error) {
-      setMessage(`Erro ao cancelar reserva: ${error.message}`);
-      return;
-    }
-
+  async function cancelTicket(id: string) {
+    if (!window.confirm("Cancelar esta reserva?")) return;
+    const { error } = await supabase.from("ticket_reservations").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) { setMessage("Não foi possível cancelar a reserva."); return; }
     await loadTickets();
   }
 
-  if (loading) {
-    return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar bilhetes...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSkeleton rows={4} />;
+  if (!loggedIn) return <EmptyState title="Entra para veres os teus bilhetes." actionLabel="Iniciar sessão" actionHref="/login" />;
 
-  if (!email) {
-    return (
-      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-          Sem sessão
-        </p>
-
-        <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-          Entra para ver os teus bilhetes.
-        </h2>
-
-        <p className="mt-5 text-sm leading-relaxed text-zinc-400 lg:text-base">
-          As reservas ficam ligadas à tua conta.
-        </p>
-
-        <Link
-          href="/login"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
-        >
-          Entrar
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-8 lg:mt-12">
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:items-start">
-        <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-            Conta
-          </p>
-
-          <h2 className="mt-3 break-words text-2xl font-black leading-tight">
-            {email}
-          </h2>
-
-          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-zinc-600">
-            Bilhetes Paranoid
-          </p>
-
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{activeTickets.length}</p>
-
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Ativos
-              </p>
-            </div>
-
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{activeQuantity}</p>
-
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Lug.
-              </p>
-            </div>
-
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{checkedInTickets.length}</p>
-
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Check
-              </p>
-            </div>
-
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{cancelledTickets.length}</p>
-
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Canc.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            <button
-              type="button"
-              onClick={loadTickets}
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-            >
-              Atualizar
-            </button>
-
-            <Link
-              href="/agenda"
-              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-            >
-              Explorar agenda
-            </Link>
-          </div>
-
-          {message && (
-            <p className="mt-5 rounded-2xl border border-red-950 bg-red-950/20 p-4 text-xs leading-relaxed text-red-300">
-              {message}
-            </p>
-          )}
-        </aside>
-
-        <section className="space-y-8">
-          <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-            <div className="grid gap-5 lg:grid-cols-2">
-              <div className="lg:col-span-2">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Filtros
-                </p>
-
-                <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                  Encontrar bilhete.
-                </h2>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Pesquisa
-                </label>
-
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Código, evento, cidade..."
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Estado
-                </label>
-
-                <select
-                  value={statusFilter}
-                  onChange={(event) =>
-                    setStatusFilter(
-                      event.target.value as
-                        | "all"
-                        | "reserved"
-                        | "checked_in"
-                        | "cancelled"
-                    )
-                  }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                >
-                  <option value="all">Todos</option>
-                  <option value="reserved">Reservados</option>
-                  <option value="checked_in">Entrada feita</option>
-                  <option value="cancelled">Cancelados</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Lista
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black lg:text-5xl">
-                  Os teus bilhetes
-                </h2>
-              </div>
-
-              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
-                {filteredTickets.length}
-              </span>
-            </div>
-
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">
-              {filteredTickets.length === 0 && (
-                <EmptyCard text="Não encontrei bilhetes com estes filtros." />
-              )}
-
-              {filteredTickets.map((ticket) => (
-                <article
-                  key={ticket.id}
-                  className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
-                >
-                  {ticket.event?.image_url && (
-                    <Link
-                      href={`/eventos/${ticket.event.slug}`}
-                      className="mb-4 block h-52 rounded-[1.5rem] bg-cover bg-center"
-                      style={{
-                        backgroundImage: `url(${ticket.event.image_url})`,
-                      }}
-                    />
-                  )}
-
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-red-700">
-                        {ticket.event?.title || "Evento"}
-                      </p>
-
-                      <h3 className="mt-2 text-4xl font-black leading-none">
-                        {ticket.check_in_code}
-                      </h3>
-                    </div>
-
-                    <span
-                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClasses(
-                        ticket.status
-                      )}`}
-                    >
-                      {statusLabel(ticket.status)}
-                    </span>
-                  </div>
-
-                  {ticket.status === "reserved" && (
-                    <div className="mt-5">
-                      <TicketQrCode value={ticket.check_in_code} />
-                    </div>
-                  )}
-
-                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-zinc-800 bg-black p-4 text-sm text-zinc-400">
-                    <p>
-                      <span className="font-bold text-zinc-300">Quantidade:</span>{" "}
-                      {ticket.quantity}
-                    </p>
-
-                    <p>
-                      <span className="font-bold text-zinc-300">Data:</span>{" "}
-                      {ticket.event?.display_date || "Data por definir"}
-                      {ticket.event?.display_time
-                        ? ` · ${ticket.event.display_time}`
-                        : ""}
-                    </p>
-
-                    <p>
-                      <span className="font-bold text-zinc-300">Local:</span>{" "}
-                      {[ticket.event?.venue_name, ticket.event?.city]
-                        .filter(Boolean)
-                        .join(" · ") || "Local por definir"}
-                    </p>
-
-                    <p>
-                      <span className="font-bold text-zinc-300">Preço:</span>{" "}
-                      {ticket.event?.ticket_price || "Preço por definir"}
-                    </p>
-
-                    <p>
-                      <span className="font-bold text-zinc-300">Criado:</span>{" "}
-                      {formatDateTime(ticket.created_at)}
-                    </p>
-                  </div>
-
-                  <div className="mt-5 grid gap-2">
-                    {ticket.event && (
-                      <Link
-                        href={`/eventos/${ticket.event.slug}`}
-                        className="rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
-                      >
-                        Ver evento
-                      </Link>
-                    )}
-
-                    {ticket.status === "reserved" && (
-                      <button
-                        type="button"
-                        onClick={() => cancelReservation(ticket.id)}
-                        className="rounded-full border border-red-900 px-4 py-3 text-sm font-bold text-red-400"
-                      >
-                        Cancelar reserva
-                      </button>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        </section>
-      </div>
-    </div>
-  );
+  return <div>
+    <div className="grid max-w-sm grid-cols-2 rounded border border-zinc-800 bg-black p-1"><button type="button" onClick={() => setTab("upcoming")} className={`min-h-11 rounded text-sm font-black ${tab === "upcoming" ? "bg-[#f2f1ec] text-black" : "text-zinc-500"}`}>Próximos · {upcoming.length}</button><button type="button" onClick={() => setTab("past")} className={`min-h-11 rounded text-sm font-black ${tab === "past" ? "bg-[#f2f1ec] text-black" : "text-zinc-500"}`}>Passados · {past.length}</button></div>
+    {message && <p className="mt-5 border-l-2 border-red-800 pl-4 text-sm text-red-300">{message}</p>}
+    <section className="mt-6">{visible.length === 0 ? <EmptyState title="Ainda não tens bilhetes." actionLabel="Ver Agenda" actionHref="/agenda" /> : <div className="divide-y divide-zinc-900 border-y border-zinc-900">{visible.map((ticket) => {
+      const ticketStatus = status(ticket); const open = openTicketId === ticket.id;
+      return <article key={ticket.id} className="py-5"><div className="flex items-start gap-4">{ticket.event?.image_url && <img src={ticket.event.image_url} alt="" loading="lazy" className="h-20 w-20 shrink-0 rounded object-cover" />}<div className="min-w-0 flex-1"><h2 className="text-lg font-black">{ticket.event?.title || "Evento"}</h2><p className="mt-1 text-sm text-zinc-500">{ticket.event?.display_date || "Data por definir"}{ticket.event?.display_time ? ` · ${ticket.event.display_time}` : ""}</p><p className="mt-1 text-xs text-zinc-600">{[ticket.event?.venue_name, ticket.event?.city].filter(Boolean).join(" · ")}</p><p className="mt-2 text-xs font-bold text-zinc-400">{ticket.quantity} {ticket.quantity === 1 ? "bilhete" : "bilhetes"}</p></div><StatusBadge label={ticketStatus.label} tone={ticketStatus.tone} /></div>
+      <button type="button" onClick={() => setOpenTicketId(open ? "" : ticket.id)} className="mt-4 rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black">{open ? "Fechar bilhete" : "Ver bilhete"}</button>
+      {open && <div className="mt-5 rounded border border-zinc-800 bg-black p-5"><p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-zinc-600">Código de entrada</p>{ticket.status === "reserved" && <div className="mt-4"><TicketQrCode value={ticket.check_in_code} /></div>}<p className="mt-4 text-center font-mono text-lg font-black">{ticket.check_in_code}</p><div className="mt-5 flex flex-wrap justify-center gap-2">{ticket.event && <Link href={`/eventos/${ticket.event.slug}`} className="rounded-full border border-zinc-700 px-4 py-2 text-xs font-bold">Ver evento</Link>}{ticket.status === "reserved" && <button type="button" onClick={() => void cancelTicket(ticket.id)} className="rounded-full border border-red-900 px-4 py-2 text-xs font-bold text-red-400">Cancelar reserva</button>}</div></div>}
+      </article>;
+    })}</div>}</section>
+  </div>;
 }

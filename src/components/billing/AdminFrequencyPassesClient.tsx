@@ -61,7 +61,11 @@ export function AdminFrequencyPassesClient() {
   }
 
   useEffect(() => {
-    loadPasses();
+    const timeoutId = window.setTimeout(() => {
+      loadPasses();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   async function updatePass(

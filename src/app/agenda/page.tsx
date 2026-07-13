@@ -1,671 +1,114 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { DateQuickFilters, type QuickDateValue } from "@/components/DateQuickFilters";
+import { EmptyState } from "@/components/EmptyState";
+import { EventCardCompact } from "@/components/EventCardCompact";
+import { FilterDrawer } from "@/components/FilterDrawer";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { PageHeader } from "@/components/PageHeader";
 import {
-  ALL_CATEGORIES,
-  ALL_CITIES,
-  ALL_DISTRICTS,
-  ALL_MUNICIPALITIES,
-  buildEventFilterIndex,
-  eventDateFilterOptions,
-  type EventDateFilter,
-  eventPriceFilterOptions,
-  type EventPriceFilter,
-  filterIndexedEvents,
-  getCategoryOptionsForIndexedEvents,
-  getCityOptionsForIndexedEvents,
-  getEventDistrict,
-  getEventMunicipality,
-  getDistrictOptions,
-  getMunicipalityOptions,
+  ALL_CATEGORIES, ALL_CITIES, ALL_DISTRICTS, ALL_MUNICIPALITIES,
+  buildEventFilterIndex, filterIndexedEvents, getCategoryOptionsForIndexedEvents,
+  getDistrictOptions, getMunicipalityOptions, type EventDateFilter,
+  eventPriceFilterOptions, type EventPriceFilter,
 } from "@/lib/eventFilters";
-import { portugalMunicipalities } from "@/lib/portugalLocations";
 import { supabase } from "@/lib/supabase/public";
 
 type EventRow = {
-  id: string;
-  slug: string;
-  title: string;
-  status: string | null;
-  city: string | null;
-  municipality: string | null;
-  district: string | null;
-  address: string | null;
-  postal_code: string | null;
-  venue_name: string | null;
-  organizer_id: string | null;
-  organizer_name: string | null;
-  display_date: string | null;
-  display_time: string | null;
-  start_at: string | null;
-  start_date: string | null;
-  end_date: string | null;
-  is_multi_day: boolean | null;
-  category: string | null;
-  price: string | null;
-  description: string | null;
-  image_url: string | null;
-  featured: boolean | null;
-  frequencyActive?: boolean;
-  ticket_mode: string | null;
-  ticket_price: string | null;
+  id: string; slug: string; title: string; city: string | null; municipality: string | null;
+  district: string | null; address: string | null; postal_code: string | null; venue_name: string | null;
+  organizer_id: string | null; organizer_name: string | null; display_date: string | null; display_time: string | null;
+  start_at: string | null; start_date: string | null; end_date: string | null; category: string | null;
+  price: string | null; description: string | null; image_url: string | null; featured: boolean | null;
+  ticket_price: string | null; frequencyActive?: boolean;
 };
 
-function formatDate(value: string | null | undefined) {
-  if (!value) {
-    return "Data por definir";
-  }
-
-  const cleanValue = value.includes("T") ? value : `${value}T00:00:00`;
-  const date = new Date(cleanValue);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("pt-PT", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-  }).format(date);
+function eventDateValue(event: EventRow) { return event.start_at || event.start_date || event.display_date || ""; }
+function eventTime(event: EventRow) { const value = eventDateValue(event); const date = value ? new Date(value.includes("T") ? value : `${value}T00:00:00`) : null; return date && !Number.isNaN(date.getTime()) ? date.getTime() : Number.MAX_SAFE_INTEGER; }
+function compactDate(event: EventRow) {
+  if (event.display_date) return event.display_date;
+  const value = eventDateValue(event); if (!value) return "Data por definir";
+  const date = new Date(value.includes("T") ? value : `${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "short" }).format(date);
 }
-
-function formatFullDate(value: string | null | undefined) {
-  if (!value) {
-    return "Data por definir";
-  }
-
-  const cleanValue = value.includes("T") ? value : `${value}T00:00:00`;
-  const date = new Date(cleanValue);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("pt-PT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
-function ticketLabel(value: string | null | undefined) {
-  if (value === "internal") {
-    return "Bilheteira Paranoid";
-  }
-
-  if (value === "external") {
-    return "Bilhetes";
-  }
-
-  return null;
-}
-
-function eventDateValue(event: EventRow) {
-  return event.start_at || event.start_date || event.display_date || "";
-}
-
-function sortEvents(first: EventRow, second: EventRow) {
-  const firstPriority = first.featured ? 2 : first.frequencyActive ? 1 : 0;
-  const secondPriority = second.featured ? 2 : second.frequencyActive ? 1 : 0;
-
-  if (firstPriority !== secondPriority) {
-    return secondPriority - firstPriority;
-  }
-
-  const firstDate = eventDateValue(first);
-  const secondDate = eventDateValue(second);
-
-  if (!firstDate && !secondDate) {
-    return first.title.localeCompare(second.title, "pt-PT");
-  }
-
-  if (!firstDate) {
-    return 1;
-  }
-
-  if (!secondDate) {
-    return -1;
-  }
-
-  return new Date(firstDate).getTime() - new Date(secondDate).getTime();
-}
-
-function EmptyState() {
-  return (
-    <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-      <p className="text-xs uppercase tracking-[0.35em] text-red-700">
-        Sem eventos
-      </p>
-
-      <h2 className="mt-4 text-5xl font-black leading-none">
-        A agenda está limpa.
-      </h2>
-
-      <p className="mt-5 text-base leading-relaxed text-zinc-400">
-        Ainda não há eventos publicados com estes filtros.
-      </p>
-
-      <Link
-        href="/submeter"
-        className="mt-8 inline-block rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-      >
-        Submeter evento
-      </Link>
-    </section>
-  );
+function groupLabel(event: EventRow) {
+  const value = eventDateValue(event); if (!value) return "Data por definir";
+  const date = new Date(value.includes("T") ? value : `${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("pt-PT", { weekday: "long", day: "numeric", month: "long" }).format(date);
 }
 
 export default function AgendaPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-
   const [events, setEvents] = useState<EventRow[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [districtFilter, setDistrictFilter] = useState(ALL_DISTRICTS);
-  const [municipalityFilter, setMunicipalityFilter] =
-    useState(ALL_MUNICIPALITIES);
-  const [cityFilter, setCityFilter] = useState(ALL_CITIES);
-  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
-  const [dateFilter, setDateFilter] = useState<EventDateFilter>("all");
-  const [priceFilter, setPriceFilter] = useState<EventPriceFilter>("all");
+  const [search, setSearch] = useState("");
+  const [quickDate, setQuickDate] = useState<QuickDateValue>("7d");
+  const [customDate, setCustomDate] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [district, setDistrict] = useState(ALL_DISTRICTS);
+  const [municipality, setMunicipality] = useState(ALL_MUNICIPALITIES);
+  const [category, setCategory] = useState(ALL_CATEGORIES);
+  const [price, setPrice] = useState<EventPriceFilter>("all");
   const [onlyFeatured, setOnlyFeatured] = useState(false);
 
   async function loadEvents() {
-    setLoading(true);
-    setMessage("");
-
+    setLoading(true); setMessage("");
     const [eventsResponse, frequencyResponse] = await Promise.all([
-      supabase
-      .from("events")
-      .select(
-        "id,slug,title,status,city,municipality,district,address,postal_code,venue_name,organizer_id,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price"
-      )
-      .eq("status", "published")
-      .order("start_at", { ascending: true, nullsFirst: false })
-        .order("created_at", { ascending: false }),
+      supabase.from("events").select("id,slug,title,city,municipality,district,address,postal_code,venue_name,organizer_id,organizer_name,display_date,display_time,start_at,start_date,end_date,category,price,description,image_url,featured,ticket_price").eq("status", "published").order("start_at", { ascending: true, nullsFirst: false }).limit(120),
       fetch("/api/billing/frequency/active-organizers").catch(() => null),
     ]);
-
-    if (eventsResponse.error) {
-      setMessage(eventsResponse.error.message);
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
-
-    const frequencyPayload = frequencyResponse?.ok
-      ? await frequencyResponse.json().catch(() => ({ organizerIds: [] }))
-      : { organizerIds: [] };
-    const frequencyOrganizerIds = new Set<string>(
-      frequencyPayload.organizerIds || []
-    );
-
-    setEvents(
-      ((eventsResponse.data || []) as EventRow[]).map((event) => ({
-        ...event,
-        frequencyActive: Boolean(
-          event.organizer_id && frequencyOrganizerIds.has(event.organizer_id)
-        ),
-      }))
-    );
+    if (eventsResponse.error) { setMessage("Não foi possível carregar a Agenda."); setEvents([]); setLoading(false); return; }
+    const payload = frequencyResponse?.ok ? await frequencyResponse.json().catch(() => ({})) : {};
+    const priorityIds = new Set<string>(payload.organizerIds || []);
+    setEvents(((eventsResponse.data || []) as EventRow[]).map((event) => ({ ...event, frequencyActive: Boolean(event.organizer_id && priorityIds.has(event.organizer_id)) })));
     setLoading(false);
   }
 
-  useEffect(() => {
-    loadEvents();
-  }, []);
+  useEffect(() => { const timer = window.setTimeout(() => { void loadEvents(); }, 0); return () => window.clearTimeout(timer); }, []);
 
-  const indexedEvents = useMemo(() => {
-    return events.map((event) => buildEventFilterIndex(event));
-  }, [events]);
-
+  const indexed = useMemo(() => events.map((event) => buildEventFilterIndex(event)), [events]);
   const districtOptions = useMemo(() => getDistrictOptions(), []);
+  const municipalityOptions = useMemo(() => getMunicipalityOptions(district), [district]);
+  const categoryOptions = useMemo(() => getCategoryOptionsForIndexedEvents(indexed), [indexed]);
+  const dateFilter: EventDateFilter = quickDate === "custom" ? "all" : quickDate;
 
-  const municipalityOptions = useMemo(() => {
-    return getMunicipalityOptions(districtFilter);
-  }, [districtFilter]);
+  const filtered = useMemo(() => {
+    let next = filterIndexedEvents(indexed, { searchQuery: search, districtFilter: district, municipalityFilter: municipality, cityFilter: ALL_CITIES, categoryFilter: category, dateFilter, priceFilter: price, onlyFeatured }).map((item) => item.event);
+    if (quickDate === "custom" && customDate) next = next.filter((event) => { const value = eventDateValue(event); if (!value) return false; const date = new Date(value.includes("T") ? value : `${value}T00:00:00`); const selected = new Date(`${customDate}T00:00:00`); return date.getFullYear() === selected.getFullYear() && date.getMonth() === selected.getMonth() && date.getDate() === selected.getDate(); });
+    return next.sort((first, second) => { const priority = Number(Boolean(second.featured)) * 2 + Number(Boolean(second.frequencyActive)) - (Number(Boolean(first.featured)) * 2 + Number(Boolean(first.frequencyActive))); return priority || eventTime(first) - eventTime(second); });
+  }, [indexed, search, district, municipality, category, dateFilter, price, onlyFeatured, quickDate, customDate]);
 
-  const cityOptions = useMemo(() => {
-    return getCityOptionsForIndexedEvents(
-      indexedEvents,
-      districtFilter,
-      municipalityFilter
-    );
-  }, [indexedEvents, districtFilter, municipalityFilter]);
+  const groups = useMemo(() => { const map = new Map<string, EventRow[]>(); filtered.forEach((event) => { const key = groupLabel(event); map.set(key, [...(map.get(key) || []), event]); }); return Array.from(map.entries()); }, [filtered]);
+  const activeAdvanced = [district !== ALL_DISTRICTS, municipality !== ALL_MUNICIPALITIES, category !== ALL_CATEGORIES, price !== "all", onlyFeatured].filter(Boolean).length;
 
-  const categoryOptions = useMemo(() => {
-    return getCategoryOptionsForIndexedEvents(indexedEvents);
-  }, [indexedEvents]);
+  function clearAdvanced() { setDistrict(ALL_DISTRICTS); setMunicipality(ALL_MUNICIPALITIES); setCategory(ALL_CATEGORIES); setPrice("all"); setOnlyFeatured(false); }
 
-  const filteredEvents = useMemo(() => {
-    return filterIndexedEvents(indexedEvents, {
-      searchQuery,
-      districtFilter,
-      municipalityFilter,
-      cityFilter,
-      categoryFilter,
-      dateFilter,
-      priceFilter,
-      onlyFeatured,
-    })
-      .map((indexedEvent) => indexedEvent.event)
-      .sort(sortEvents);
-  }, [
-    indexedEvents,
-    searchQuery,
-    districtFilter,
-    municipalityFilter,
-    cityFilter,
-    categoryFilter,
-    dateFilter,
-    priceFilter,
-    onlyFeatured,
-  ]);
+  return <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 text-[#f2f1ec] sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-6xl">
+    <PageHeader eyebrow="Agenda" title="Eventos" description="Encontra o que acontece por data, local e categoria." />
+    <div className="sticky top-16 z-30 -mx-4 mt-5 border-y border-zinc-900 bg-[#0b0b0b]/96 px-4 py-4 backdrop-blur-xl sm:mx-0 sm:rounded sm:border sm:px-4">
+      <div className="grid gap-3 lg:grid-cols-[1fr_360px_auto] lg:items-center">
+        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar evento, espaço ou cidade" aria-label="Pesquisar eventos" className="h-11 w-full rounded border border-zinc-800 bg-black px-4 text-sm font-bold outline-none placeholder:text-zinc-700 focus:border-red-800" />
+        <DateQuickFilters value={quickDate} onChange={setQuickDate} />
+        <button type="button" onClick={() => setFiltersOpen(true)} className="h-11 rounded border border-zinc-700 px-5 text-sm font-black">Filtros{activeAdvanced > 0 ? ` · ${activeAdvanced}` : ""}</button>
+      </div>
+      {quickDate === "custom" && <input type="date" value={customDate} onChange={(event) => setCustomDate(event.target.value)} aria-label="Escolher data" className="mt-3 h-11 w-full rounded border border-zinc-800 bg-black px-4 text-sm sm:w-auto" />}
+    </div>
 
-  const featuredEvents = useMemo(() => {
-    return events.filter((event) => event.featured).slice(0, 3);
-  }, [events]);
+    <div className="mt-6 flex items-center justify-between"><p className="text-xs font-bold text-zinc-600">{filtered.length} resultado{filtered.length === 1 ? "" : "s"}</p>{(search || activeAdvanced > 0) && <button type="button" onClick={() => { setSearch(""); clearAdvanced(); }} className="text-xs font-bold text-zinc-500 underline underline-offset-4">Limpar filtros</button>}</div>
+    {message && <p className="mt-5 border-l-2 border-red-800 pl-4 text-sm text-red-300">{message}</p>}
+    <div className="mt-3">{loading ? <LoadingSkeleton rows={6} /> : groups.length === 0 ? <EmptyState title="Não encontrámos eventos para estes filtros." actionLabel="Limpar filtros" actionHref="/agenda" /> : groups.map(([label, dayEvents]) => <section key={label} className="mt-8 first:mt-0"><h2 className="border-b border-zinc-800 pb-2 text-sm font-black capitalize">{label}</h2>{dayEvents.map((event) => <EventCardCompact key={event.id} event={{ id: event.id, slug: event.slug, title: event.title, date: compactDate(event), time: event.display_time, venue: event.venue_name, city: event.city, price: event.price || event.ticket_price, category: event.category, image: event.image_url, featured: event.featured }} />)}</section>)}</div>
 
-  const municipalityCount = useMemo(() => {
-    return portugalMunicipalities.length;
-  }, []);
+    <FilterDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} footer={<div className="flex gap-3"><button type="button" onClick={clearAdvanced} className="flex-1 rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold">Limpar</button><button type="button" onClick={() => setFiltersOpen(false)} className="flex-1 rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black">Aplicar</button></div>}>
+      <SelectField label="Distrito" value={district} onChange={(value) => { setDistrict(value); setMunicipality(ALL_MUNICIPALITIES); }} options={districtOptions} />
+      <SelectField label="Concelho" value={municipality} onChange={setMunicipality} options={municipalityOptions} />
+      <SelectField label="Categoria" value={category} onChange={setCategory} options={categoryOptions} />
+      <SelectField label="Preço" value={price} onChange={(value) => setPrice(value as EventPriceFilter)} options={eventPriceFilterOptions.map((option) => option.value)} labels={Object.fromEntries(eventPriceFilterOptions.map((option) => [option.value, option.label]))} />
+      <label className="flex min-h-12 items-center justify-between border-y border-zinc-900 py-3 text-sm font-bold"><span>Apenas eventos destacados</span><input type="checkbox" checked={onlyFeatured} onChange={(event) => setOnlyFeatured(event.target.checked)} className="h-5 w-5 accent-red-700" /></label>
+    </FilterDrawer>
+  </section></main>;
+}
 
-  function handleDistrictChange(value: string) {
-    setDistrictFilter(value);
-    setMunicipalityFilter(ALL_MUNICIPALITIES);
-    setCityFilter(ALL_CITIES);
-  }
-
-  function handleMunicipalityChange(value: string) {
-    setMunicipalityFilter(value);
-    setCityFilter(ALL_CITIES);
-  }
-
-  function clearFilters() {
-    setSearchQuery("");
-    setDistrictFilter(ALL_DISTRICTS);
-    setMunicipalityFilter(ALL_MUNICIPALITIES);
-    setCityFilter(ALL_CITIES);
-    setCategoryFilter(ALL_CATEGORIES);
-    setDateFilter("all");
-    setPriceFilter("all");
-    setOnlyFeatured(false);
-  }
-
-  return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
-      <section className="mx-auto max-w-md lg:max-w-7xl">
-        <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
-          <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-              Agenda
-            </p>
-
-            <h1 className="text-6xl font-black leading-none tracking-tight lg:text-9xl">
-              Próximos ruídos.
-            </h1>
-          </div>
-
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
-            <p className="text-base leading-relaxed text-zinc-400 lg:text-lg">
-              Eventos publicados pela Paranoid. Filtra por distrito, concelho,
-              localidade, categoria ou pesquisa direta.
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                <p className="text-3xl font-black">{events.length}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                  Publicados
-                </p>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                <p className="text-3xl font-black">{municipalityCount}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                  Concelhos
-                </p>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                <p className="text-3xl font-black">{featuredEvents.length}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                  Destaques
-                </p>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                <p className="text-3xl font-black">{filteredEvents.length}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                  Visíveis
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {message && (
-          <div className="mt-8 rounded-[2rem] border border-red-900 bg-red-950/20 p-5">
-            <p className="text-sm font-bold text-red-300">{message}</p>
-          </div>
-        )}
-
-        <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[320px_1fr] lg:items-start">
-          <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
-            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-              Filtros
-            </p>
-
-            <h2 className="mt-3 text-4xl font-black leading-none">
-              Escolhe a zona.
-            </h2>
-
-            <div className="mt-6 space-y-5">
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Pesquisa
-                </label>
-
-                <input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Evento, espaço, morada..."
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Distrito
-                </label>
-
-                <select
-                  value={districtFilter}
-                  onChange={(event) => handleDistrictChange(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                >
-                  {districtOptions.map((district) => (
-                    <option key={district}>{district}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Concelho
-                </label>
-
-                <select
-                  value={municipalityFilter}
-                  onChange={(event) =>
-                    handleMunicipalityChange(event.target.value)
-                  }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                >
-                  {municipalityOptions.map((municipality) => (
-                    <option key={municipality}>{municipality}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Localidade
-                </label>
-
-                <select
-                  value={cityFilter}
-                  onChange={(event) => setCityFilter(event.target.value)}
-                  disabled={cityOptions.length <= 1}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-900"
-                >
-                  {cityOptions.map((city) => (
-                    <option key={city}>{city}</option>
-                  ))}
-                </select>
-
-                {cityOptions.length <= 1 && (
-                  <p className="mt-2 text-xs text-zinc-600">
-                    Ainda não há localidades publicadas para esta combinação.
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Categoria
-                </label>
-
-                <select
-                  value={categoryFilter}
-                  onChange={(event) => setCategoryFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                >
-                  {categoryOptions.map((category) => (
-                    <option key={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Data
-                </label>
-
-                <select
-                  value={dateFilter}
-                  onChange={(event) =>
-                    setDateFilter(event.target.value as EventDateFilter)
-                  }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                >
-                  {eventDateFilterOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
-                  Preço
-                </label>
-
-                <select
-                  value={priceFilter}
-                  onChange={(event) =>
-                    setPriceFilter(event.target.value as EventPriceFilter)
-                  }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
-                >
-                  {eventPriceFilterOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setOnlyFeatured((current) => !current)}
-                className={`w-full rounded-full px-5 py-4 text-sm font-black ${
-                  onlyFeatured
-                    ? "bg-[#f2f1ec] text-black"
-                    : "border border-zinc-700 text-zinc-300"
-                }`}
-              >
-                Só destaques
-              </button>
-
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
-              >
-                Limpar filtros
-              </button>
-
-              <button
-                type="button"
-                onClick={loadEvents}
-                className="w-full rounded-full border border-zinc-800 px-5 py-4 text-sm font-bold text-zinc-500"
-              >
-                Atualizar agenda
-              </button>
-
-              <Link
-                href="/submeter"
-                className="block rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-300"
-              >
-                Submeter evento
-              </Link>
-            </div>
-          </aside>
-
-          <section className="space-y-5">
-            {loading && (
-              <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-                <p className="text-zinc-500">A carregar agenda...</p>
-              </div>
-            )}
-
-            {!loading && filteredEvents.length === 0 && <EmptyState />}
-
-            {!loading &&
-              filteredEvents.map((event) => {
-                const ticket = ticketLabel(event.ticket_mode);
-                const eventDistrict = getEventDistrict(event);
-                const eventMunicipality = getEventMunicipality(event);
-                const zone = [event.city, eventMunicipality, eventDistrict]
-                  .filter(Boolean)
-                  .join(" · ");
-
-                return (
-                  <article
-                    key={event.id}
-                    className="overflow-hidden rounded-[2.5rem] border border-zinc-800 bg-zinc-950"
-                  >
-                    <div className="grid gap-0 lg:grid-cols-[280px_1fr]">
-                      <Link
-                        href={`/eventos/${event.slug}`}
-                        className="block min-h-64 bg-zinc-900 bg-cover bg-center lg:min-h-full"
-                        style={{
-                          backgroundImage: event.image_url
-                            ? `url(${event.image_url})`
-                            : "radial-gradient(circle at top, #3f0d0d, #111)",
-                        }}
-                        aria-label={event.title}
-                      />
-
-                      <div className="p-5 lg:p-7">
-                        <div className="flex flex-wrap gap-2">
-                          {event.featured && (
-                            <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-black uppercase text-red-300">
-                              Destaque
-                            </span>
-                          )}
-
-                          <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
-                            {event.category || "Evento"}
-                          </span>
-
-                          {eventMunicipality && (
-                            <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-black uppercase text-zinc-500">
-                              {eventMunicipality}
-                            </span>
-                          )}
-
-                          {ticket && (
-                            <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
-                              {ticket}
-                            </span>
-                          )}
-                        </div>
-
-                        <Link href={`/eventos/${event.slug}`}>
-                          <h2 className="mt-5 text-4xl font-black leading-none lg:text-6xl">
-                            {event.title}
-                          </h2>
-                        </Link>
-
-                        <div className="mt-5 grid gap-3 text-sm text-zinc-400 lg:grid-cols-2">
-                          <p>
-                            <span className="block text-xs font-black uppercase tracking-wide text-zinc-600">
-                              Data
-                            </span>
-                            {event.display_date ||
-                              formatDate(event.start_at || event.start_date)}
-                            {event.is_multi_day && event.end_date
-                              ? ` — ${formatFullDate(event.end_date)}`
-                              : ""}
-                          </p>
-
-                          <p>
-                            <span className="block text-xs font-black uppercase tracking-wide text-zinc-600">
-                              Hora
-                            </span>
-                            {event.display_time || "Hora por definir"}
-                          </p>
-
-                          <p>
-                            <span className="block text-xs font-black uppercase tracking-wide text-zinc-600">
-                              Zona
-                            </span>
-                            {zone || "Sem zona"}
-                          </p>
-
-                          <p>
-                            <span className="block text-xs font-black uppercase tracking-wide text-zinc-600">
-                              Espaço
-                            </span>
-                            {event.venue_name || "Sem espaço"}
-                          </p>
-                        </div>
-
-                        <div className="mt-5 flex flex-wrap items-center gap-3">
-                          <span className="rounded-full border border-zinc-800 px-4 py-2 text-sm font-bold text-zinc-400">
-                            {event.price ||
-                              event.ticket_price ||
-                              "Preço por definir"}
-                          </span>
-
-                          {event.organizer_name && (
-                            <span className="rounded-full border border-zinc-800 px-4 py-2 text-sm font-bold text-zinc-500">
-                              {event.organizer_name}
-                            </span>
-                          )}
-
-                          {event.postal_code && (
-                            <span className="rounded-full border border-zinc-800 px-4 py-2 text-sm font-bold text-zinc-600">
-                              {event.postal_code}
-                            </span>
-                          )}
-                        </div>
-
-                        {event.description && (
-                          <p className="mt-5 line-clamp-3 text-sm leading-relaxed text-zinc-500">
-                            {event.description}
-                          </p>
-                        )}
-
-                        <Link
-                          href={`/eventos/${event.slug}`}
-                          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-                        >
-                          Ver evento
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-          </section>
-        </section>
-      </section>
-    </main>
-  );
+function SelectField({ label, value, onChange, options, labels = {} }: { label: string; value: string; onChange: (value: string) => void; options: readonly string[]; labels?: Record<string, string> }) {
+  return <label><span className="mb-2 block text-xs font-bold text-zinc-500">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="h-12 w-full rounded border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-red-800">{options.map((option) => <option key={option} value={option}>{labels[option] || option}</option>)}</select></label>;
 }

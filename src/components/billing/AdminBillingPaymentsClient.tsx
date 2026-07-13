@@ -58,7 +58,11 @@ export function AdminBillingPaymentsClient({
   }
 
   useEffect(() => {
-    loadPayments();
+    const timeoutId = window.setTimeout(() => {
+      loadPayments();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [filter]);
 
   const visiblePayments = useMemo(() => {

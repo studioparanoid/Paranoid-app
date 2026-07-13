@@ -1,0 +1,5 @@
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+
+export default function ForYouLoading() {
+  return <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 text-[#f2f1ec] lg:px-10 lg:py-10"><section className="mx-auto max-w-6xl"><LoadingSkeleton rows={6} /></section></main>;
+}

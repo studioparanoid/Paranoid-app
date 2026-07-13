@@ -23,7 +23,8 @@ function hasPaymeConfig() {
 export async function createPaymeCheckout(
   order: ShopOrderDraft
 ): Promise<PaymentCreateResult> {
-  const totals = getCartTotals(order.items);
+  void order;
+
   const paymentReference = `PARANOID-${Date.now()}`;
 
   if (!hasPaymeConfig()) {

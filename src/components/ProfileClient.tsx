@@ -1,120 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { LoadingSkeleton } from "@/components/LoadingSkeleton";
+import { SectionHeader } from "@/components/SectionHeader";
+import { SettingsList, type SettingsListItem } from "@/components/SettingsList";
+import { StatusBadge } from "@/components/StatusBadge";
+import { profileActivityNavigation, profilePurchaseNavigation } from "@/config/navigation";
 import { supabase } from "@/lib/supabase/public";
 
 type AccountType = "community" | "artist" | "organizer" | "venue";
-type AccountStatus = "approved" | "pending" | "rejected";
-
 type ProfileRow = {
   id: string;
-  email?: string | null;
-  role?: string | null;
-  display_name?: string | null;
-  account_type?: AccountType | string | null;
-  account_status?: AccountStatus | string | null;
-  artist_name?: string | null;
-  organizer_name?: string | null;
-  venue_name?: string | null;
-  city?: string | null;
-  instagram_url?: string | null;
-  entity_id?: string | null;
-  entity_slug?: string | null;
-  preferred_cities?: string[] | null;
-  preferred_categories?: string[] | null;
-  approved_at?: string | null;
-  created_at?: string | null;
-};
-
-type ProfileClaimRow = {
-  id: string;
-  user_id: string;
-  account_type: "artist" | "organizer" | "venue";
   display_name: string | null;
-  entity_name: string;
+  account_type: AccountType | null;
+  account_status: string | null;
+  artist_name: string | null;
+  organizer_name: string | null;
+  venue_name: string | null;
   city: string | null;
   instagram_url: string | null;
-  status: "pending" | "approved" | "rejected";
   entity_id: string | null;
   entity_slug: string | null;
-  review_note: string | null;
-  reviewed_at: string | null;
-  created_at: string;
+  preferred_cities: string[] | null;
+  preferred_categories: string[] | null;
 };
 
-type SubmissionRow = {
-  id: string;
-  title: string;
-  status: string;
-  event_date: string | null;
-  city: string | null;
-  created_at: string;
-};
+const cities = ["Pombal", "Leiria", "Coimbra", "Figueira da Foz", "Caldas da Rainha", "Marinha Grande"];
+const categories = ["Concertos", "Festivais", "DJ Sets", "Cinema", "Exposições", "Mercados", "Workshops", "Teatro", "Outros"];
 
-type TicketRow = {
-  id: string;
-  event_id: string;
-  quantity: number;
-  status: string;
-  check_in_code: string;
-  created_at: string;
-};
-
-const cities = [
-  "Pombal",
-  "Leiria",
-  "Coimbra",
-  "Figueira da Foz",
-  "Caldas da Rainha",
-  "Marinha Grande",
-];
-
-const categories = [
-  "Concertos",
-  "Festivais",
-  "DJ Sets",
-  "Cinema",
-  "Exposições",
-  "Mercados",
-  "Workshops",
-  "Teatro",
-  "Outros",
-];
-
-function accountTypeLabel(type: string | null | undefined) {
-  if (type === "artist") return "Artista";
-  if (type === "organizer") return "Organizador";
-  if (type === "venue") return "Espaço";
-  return "Comunidade";
+function toggle(values: string[], value: string) {
+  return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
 }
 
-function accountTypeDescription(type: string | null | undefined) {
-  if (type === "artist") return "Perfil artístico ligado à rede cultural Paranoid.";
-  if (type === "organizer") return "Perfil de organizador, promotor, coletivo ou associação.";
-  if (type === "venue") return "Perfil de espaço cultural, sala, bar, galeria ou auditório.";
-  return "Perfil de comunidade para guardar eventos, seguir a rede e reservar bilhetes.";
-}
-
-function statusLabel(status: string | null | undefined) {
-  if (status === "pending") return "Pendente";
-  if (status === "rejected") return "Rejeitado";
-  if (status === "archived") return "Arquivado";
-  if (status === "published") return "Publicado";
-  if (status === "cancelled") return "Cancelado";
-  if (status === "checked_in") return "Check-in feito";
-  if (status === "reserved") return "Reservado";
-  return "Aprovado";
-}
-
-function statusClasses(status: string | null | undefined) {
-  if (status === "pending") return "border-yellow-900 bg-yellow-950/30 text-yellow-500";
-  if (status === "rejected" || status === "cancelled") return "border-red-900 bg-red-950/30 text-red-400";
-  if (status === "archived") return "border-zinc-700 bg-zinc-900 text-zinc-400";
-  return "border-green-900 bg-green-950/30 text-green-400";
-}
-
-function claimTypePath(type: string | null | undefined, slug: string | null) {
+function publicPath(type: AccountType, slug: string | null) {
   if (!slug) return null;
   if (type === "artist") return `/artistas/${slug}`;
   if (type === "organizer") return `/organizadores/${slug}`;
@@ -122,275 +41,91 @@ function claimTypePath(type: string | null | undefined, slug: string | null) {
   return null;
 }
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return "Sem data";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat("pt-PT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
-function toggleArrayValue(values: string[], value: string) {
-  if (values.includes(value)) {
-    return values.filter((item) => item !== value);
-  }
-
-  return [...values, value];
-}
-
-function EmptyCard({ text }: { text: string }) {
-  return (
-    <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
-      <p className="text-sm text-zinc-500">{text}</p>
-    </div>
-  );
+function accountTypeLabel(type: AccountType) {
+  if (type === "artist") return "Artista";
+  if (type === "organizer") return "Organizador";
+  if (type === "venue") return "Espaço";
+  return "Comunidade";
 }
 
 export function ProfileClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState("");
-
-  const [editingProfile, setEditingProfile] = useState(false);
-
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
-
   const [profile, setProfile] = useState<ProfileRow | null>(null);
-  const [claims, setClaims] = useState<ProfileClaimRow[]>([]);
-  const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
-  const [tickets, setTickets] = useState<TicketRow[]>([]);
-
   const [displayName, setDisplayName] = useState("");
   const [entityName, setEntityName] = useState("");
-  const [entityDescription, setEntityDescription] = useState("");
-
+  const [description, setDescription] = useState("");
   const [city, setCity] = useState("");
-  const [instagramUrl, setInstagramUrl] = useState("");
+  const [instagram, setInstagram] = useState("");
   const [preferredCities, setPreferredCities] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
 
-  const latestClaim = useMemo(() => claims[0] || null, [claims]);
-
-  const accountType = profile?.account_type || "community";
-  const accountStatus = profile?.account_status || "approved";
-  const hasPublicEntity = accountType !== "community";
-
-  const publicPath = claimTypePath(accountType, profile?.entity_slug || null);
-
-  const fallbackProfileTitle =
-    accountType === "artist"
-      ? profile?.artist_name || profile?.display_name || email
-      : accountType === "organizer"
-        ? profile?.organizer_name || profile?.display_name || email
-        : accountType === "venue"
-          ? profile?.venue_name || profile?.display_name || email
-          : profile?.display_name || email;
-
-  const profileTitle = entityName || fallbackProfileTitle;
-
-  const pendingSubmissions = submissions.filter(
-    (submission) => submission.status === "pending"
-  );
-
-  const approvedSubmissions = submissions.filter(
-    (submission) =>
-      submission.status === "approved" || submission.status === "published"
-  );
-
-  const activeTickets = tickets.filter((ticket) => ticket.status === "reserved");
-
-  async function loadPublicEntity(loadedProfile: ProfileRow | null) {
-    if (!loadedProfile?.entity_id || !loadedProfile.account_type) {
-      setEntityName(loadedProfile?.display_name || "");
-      setEntityDescription("");
-      return;
-    }
-
-    if (loadedProfile.account_type === "artist") {
-      const { data } = await supabase
-        .from("artists")
-        .select("name,city,description,instagram")
-        .eq("id", loadedProfile.entity_id)
-        .maybeSingle();
-
-      setEntityName(data?.name || loadedProfile.artist_name || "");
-      setCity(data?.city || loadedProfile.city || "");
-      setEntityDescription(data?.description || "");
-      setInstagramUrl(data?.instagram || loadedProfile.instagram_url || "");
-      return;
-    }
-
-    if (loadedProfile.account_type === "organizer") {
-      const { data } = await supabase
-        .from("organizers")
-        .select("name,city,description")
-        .eq("id", loadedProfile.entity_id)
-        .maybeSingle();
-
-      setEntityName(data?.name || loadedProfile.organizer_name || "");
-      setCity(data?.city || loadedProfile.city || "");
-      setEntityDescription(data?.description || "");
-      setInstagramUrl(loadedProfile.instagram_url || "");
-      return;
-    }
-
-    if (loadedProfile.account_type === "venue") {
-      const { data } = await supabase
-        .from("venues")
-        .select("name,city,description,instagram")
-        .eq("id", loadedProfile.entity_id)
-        .maybeSingle();
-
-      setEntityName(data?.name || loadedProfile.venue_name || "");
-      setCity(data?.city || loadedProfile.city || "");
-      setEntityDescription(data?.description || "");
-      setInstagramUrl(data?.instagram || loadedProfile.instagram_url || "");
-      return;
-    }
-
-    setEntityName(loadedProfile.display_name || "");
-    setEntityDescription("");
-  }
-
   async function loadProfile() {
     setLoading(true);
-    setMessage("");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setUserId("");
-      setEmail("");
-      setIsAdmin(false);
-      setProfile(null);
-      setClaims([]);
-      setSubmissions([]);
-      setTickets([]);
-      setLoading(false);
-      return;
-    }
-
+    const [profileResponse, adminResponse] = await Promise.all([
+      supabase.from("profiles").select("id,display_name,account_type,account_status,artist_name,organizer_name,venue_name,city,instagram_url,entity_id,entity_slug,preferred_cities,preferred_categories").eq("id", user.id).maybeSingle(),
+      supabase.from("app_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
+    ]);
+    const nextProfile = profileResponse.data as ProfileRow | null;
     setUserId(user.id);
     setEmail(user.email || "");
+    setIsAdmin(Boolean(adminResponse.data));
+    setProfile(nextProfile);
+    setDisplayName(nextProfile?.display_name || "");
+    setCity(nextProfile?.city || "");
+    setInstagram(nextProfile?.instagram_url || "");
+    setPreferredCities(nextProfile?.preferred_cities || []);
+    setPreferredCategories(nextProfile?.preferred_categories || []);
 
-    const { data: adminData } = await supabase
-      .from("app_admins")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const accountType = nextProfile?.account_type || "community";
+    const fallbackName = accountType === "artist" ? nextProfile?.artist_name : accountType === "organizer" ? nextProfile?.organizer_name : accountType === "venue" ? nextProfile?.venue_name : nextProfile?.display_name;
+    setEntityName(fallbackName || "");
+    setDescription("");
 
-    setIsAdmin(Boolean(adminData));
-
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profileError) {
-      setMessage(profileError.message);
-      setProfile(null);
-      setLoading(false);
-      return;
+    if (nextProfile?.entity_id && accountType !== "community") {
+      const table = accountType === "artist" ? "artists" : accountType === "organizer" ? "organizers" : "venues";
+      const entityResponse = await supabase.from(table).select("name,city,description").eq("id", nextProfile.entity_id).maybeSingle();
+      if (entityResponse.data) {
+        setEntityName(entityResponse.data.name || fallbackName || "");
+        setCity(entityResponse.data.city || nextProfile.city || "");
+        setDescription(entityResponse.data.description || "");
+      }
     }
-
-    const loadedProfile = (profileData || null) as ProfileRow | null;
-
-    setProfile(loadedProfile);
-    setDisplayName(loadedProfile?.display_name || "");
-    setCity(loadedProfile?.city || "");
-    setInstagramUrl(loadedProfile?.instagram_url || "");
-    setPreferredCities(loadedProfile?.preferred_cities || []);
-    setPreferredCategories(loadedProfile?.preferred_categories || []);
-
-    await loadPublicEntity(loadedProfile);
-
-    const { data: claimData } = await supabase
-      .from("profile_claims")
-      .select(
-        "id,user_id,account_type,display_name,entity_name,city,instagram_url,status,entity_id,entity_slug,review_note,reviewed_at,created_at"
-      )
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    setClaims((claimData || []) as ProfileClaimRow[]);
-
-    const submissionQuery = supabase
-      .from("event_submissions")
-      .select("id,title,status,event_date,city,created_at")
-      .order("created_at", { ascending: false })
-      .limit(6);
-
-    const { data: submissionData } = user.email
-      ? await submissionQuery.or(`submitted_by.eq.${user.id},submitted_by.eq.${user.email}`)
-      : await submissionQuery.eq("submitted_by", user.id);
-
-    setSubmissions((submissionData || []) as SubmissionRow[]);
-
-    const { data: ticketData } = await supabase
-      .from("ticket_reservations")
-      .select("id,event_id,quantity,status,check_in_code,created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(6);
-
-    setTickets((ticketData || []) as TicketRow[]);
-
     setLoading(false);
   }
 
   useEffect(() => {
-    loadProfile();
+    const timer = window.setTimeout(() => { void loadProfile(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function saveProfile() {
-    setMessage("");
-
-    if (!userId) {
-      setMessage("Tens de entrar para guardar o perfil.");
-      return;
-    }
-
-    const finalDisplayName = displayName.trim() || entityName.trim() || null;
-    const finalEntityName = hasPublicEntity ? entityName.trim() : null;
-
-    if (hasPublicEntity && !finalEntityName) {
-      setMessage("Mete o nome público da entidade.");
-      return;
-    }
-
+    if (!userId) return;
     setSaving(true);
-
+    setMessage("");
+    const type = profile?.account_type || "community";
     const { error } = await supabase.rpc("update_my_public_profile", {
-      p_display_name: finalDisplayName,
-      p_entity_name: finalEntityName,
+      p_display_name: displayName.trim() || entityName.trim() || null,
+      p_entity_name: type === "community" ? null : entityName.trim() || null,
       p_city: city.trim() || null,
-      p_instagram_url: instagramUrl.trim() || null,
-      p_description: entityDescription.trim() || null,
+      p_instagram_url: instagram.trim() || null,
+      p_description: type === "community" ? null : description.trim() || null,
       p_preferred_cities: preferredCities,
       p_preferred_categories: preferredCategories,
     });
-
     setSaving(false);
-
-    if (error) {
-      setMessage(`Erro ao guardar: ${error.message}`);
-      return;
-    }
-
+    if (error) { setMessage(`Não foi possível guardar: ${error.message}`); return; }
     setMessage("Perfil atualizado.");
+    setEditing(false);
     await loadProfile();
-    setEditingProfile(false);
   }
 
   async function signOut() {
@@ -398,519 +133,64 @@ export function ProfileClient() {
     window.location.href = "/";
   }
 
-  if (loading) {
-    return (
-      <section className="mx-auto max-w-md px-5 py-8 text-[#f2f1ec] lg:max-w-7xl lg:px-10 lg:py-12">
-        <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-          <p className="text-zinc-500">A carregar perfil...</p>
-        </div>
-      </section>
+  if (loading) return <LoadingSkeleton rows={5} />;
+  if (!userId) return <div className="mx-auto max-w-lg py-16 text-center"><h1 className="text-4xl font-black">Entra na tua conta.</h1><p className="mt-3 text-sm text-zinc-500">Guarda eventos, segue a rede e consulta os teus bilhetes.</p><div className="mt-6 flex justify-center gap-3"><Link href="/login" className="rounded-full bg-[#f2f1ec] px-6 py-3 text-sm font-black text-black">Entrar</Link><Link href="/registar" className="rounded-full border border-zinc-700 px-6 py-3 text-sm font-bold">Criar conta</Link></div></div>;
+
+  const accountType = profile?.account_type || "community";
+  const approved = profile?.account_status === "approved";
+  const entityPath = publicPath(accountType, profile?.entity_slug || null);
+  const title = entityName || displayName || email.split("@")[0] || "Perfil";
+  const activityItems: SettingsListItem[] = profileActivityNavigation.map((item) => ({ ...item, description: item.href === "/guardados" ? "Eventos que queres voltar a ver" : "Artistas, espaços e organizadores" }));
+  const purchaseItems: SettingsListItem[] = profilePurchaseNavigation.map((item) => ({ ...item, description: item.href === "/bilhetes" ? "Carteira e códigos de entrada" : "Loja e compras" }));
+  const creatorItems: SettingsListItem[] = [];
+  if (approved && accountType === "organizer") {
+    creatorItems.push(
+      { href: "/submeter", label: "Submeter evento", description: "Publicar é gratuito", icon: "plus" },
+      { href: "/organizador", label: "Área do organizador", description: "Eventos, destaques, loja e perfil", icon: "organizer" },
     );
   }
-
-  if (!userId) {
-    return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
-        <section className="mx-auto max-w-md lg:max-w-5xl">
-          <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-            <p className="text-xs uppercase tracking-[0.35em] text-red-700">
-              Perfil
-            </p>
-
-            <h1 className="mt-4 text-5xl font-black leading-none lg:text-7xl">
-              Entra na tua conta.
-            </h1>
-
-            <p className="mt-5 text-base leading-relaxed text-zinc-400">
-              Guarda eventos, reserva bilhetes, acompanha submissões e gere a
-              tua presença na rede Paranoid.
-            </p>
-
-            <div className="mt-8 grid gap-3 lg:grid-cols-2">
-              <Link
-                href="/login"
-                className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-              >
-                Entrar
-              </Link>
-
-              <Link
-                href="/registar"
-                className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-              >
-                Criar conta
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-  return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
-      <section className="mx-auto max-w-md lg:max-w-7xl">
-        <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
-          <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-              Perfil
-            </p>
-
-            <h1 className="break-words text-5xl font-black leading-none tracking-tight lg:text-8xl">
-              {profileTitle}
-            </h1>
-          </div>
-
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
-            <p className="text-sm font-bold uppercase tracking-wide text-zinc-600">
-              Conta de login
-            </p>
-
-            <p className="mt-2 break-words text-lg font-black">{email}</p>
-
-            <p className="mt-4 text-sm text-zinc-500">
-              Nome público:{" "}
-              <span className="font-bold text-zinc-300">{profileTitle}</span>
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setEditingProfile((current) => !current)}
-              className="mt-5 w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-black uppercase tracking-wide text-zinc-300"
-            >
-              {editingProfile ? "Fechar edição" : "Editar perfil"}
-            </button>
-
-            <button
-              type="button"
-              onClick={signOut}
-              className="mt-3 w-full rounded-full border border-red-900 bg-red-950/20 px-5 py-4 text-sm font-black uppercase tracking-wide text-red-300"
-            >
-              Terminar sessão
-            </button>
-          </div>
-        </section>
-
-        <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[340px_1fr] lg:items-start">
-          <aside className="space-y-6 lg:sticky lg:top-28">
-            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Tipo de conta
-              </p>
-
-              <h2 className="mt-3 text-4xl font-black leading-none">
-                {accountTypeLabel(accountType)}
-              </h2>
-
-              <p className="mt-4 text-sm leading-relaxed text-zinc-400">
-                {accountTypeDescription(accountType)}
-              </p>
-
-              <div
-                className={`mt-5 inline-flex rounded-full border px-4 py-2 text-xs font-black uppercase ${statusClasses(
-                  accountStatus
-                )}`}
-              >
-                {statusLabel(accountStatus)}
-              </div>
-
-              {accountStatus === "approved" && publicPath && (
-                <Link
-                  href={publicPath}
-                  className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-                >
-                  Ver perfil público
-                </Link>
-              )}
-
-              {accountStatus === "approved" && accountType === "organizer" && (
-                <Link
-                  href="/organizador"
-                  className="mt-3 block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                >
-                  Painel organizador
-                </Link>
-              )}
-            </section>
-
-            <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Atalhos
-              </p>
-
-              <div className="mt-5 grid gap-3">
-                <Link
-                  href="/submeter"
-                  className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-                >
-                  Submeter evento
-                </Link>
-
-                <Link
-                  href="/guardados"
-                  className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                >
-                  Eventos guardados
-                </Link>
-
-                <Link
-                  href="/bilhetes"
-                  className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                >
-                  Os meus bilhetes
-                </Link>
-
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-300"
-                  >
-                    Painel admin
-                  </Link>
-                )}
-
-                <button
-                  type="button"
-                  onClick={signOut}
-                  className="rounded-full border border-red-900 bg-red-950/20 px-5 py-4 text-center text-sm font-black uppercase tracking-wide text-red-300"
-                >
-                  Terminar sessão
-                </button>
-              </div>
-            </section>
-          </aside>
-
-          <section className="space-y-6">
-            {editingProfile && (
-              <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Editar perfil
-                </p>
-
-                <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                  Identidade pública.
-                </h2>
-
-                <div className="mt-8 grid gap-5 lg:grid-cols-2">
-                  {hasPublicEntity ? (
-                    <div className="lg:col-span-2">
-                      <label className="mb-2 block text-sm font-bold text-zinc-300">
-                        Nome da entidade
-                      </label>
-
-                      <input
-                        value={entityName}
-                        onChange={(event) => setEntityName(event.target.value)}
-                        placeholder="Ex: Paranoid Crew"
-                        className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                      />
-                    </div>
-                  ) : (
-                    <div className="lg:col-span-2">
-                      <label className="mb-2 block text-sm font-bold text-zinc-300">
-                        Nome público
-                      </label>
-
-                      <input
-                        value={displayName}
-                        onChange={(event) => setDisplayName(event.target.value)}
-                        placeholder="Nome público"
-                        className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="mb-2 block text-sm font-bold text-zinc-300">
-                      Cidade
-                    </label>
-
-                    <input
-                      value={city}
-                      onChange={(event) => setCity(event.target.value)}
-                      placeholder="Cidade"
-                      className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-bold text-zinc-300">
-                      Instagram
-                    </label>
-
-                    <input
-                      value={instagramUrl}
-                      onChange={(event) => setInstagramUrl(event.target.value)}
-                      placeholder="instagram.com/..."
-                      className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                    />
-                  </div>
-
-                  {hasPublicEntity && (
-                    <div className="lg:col-span-2">
-                      <label className="mb-2 block text-sm font-bold text-zinc-300">
-                        Descrição pública
-                      </label>
-
-                      <textarea
-                        value={entityDescription}
-                        onChange={(event) =>
-                          setEntityDescription(event.target.value)
-                        }
-                        placeholder="Descrição curta da entidade..."
-                        rows={5}
-                        className="w-full resize-none rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={saveProfile}
-                  disabled={saving}
-                  className="mt-8 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-                >
-                  {saving ? "A guardar..." : "Guardar perfil"}
-                </button>
-
-                {message && (
-                  <p className="mt-5 text-center text-sm font-bold text-zinc-400">
-                    {message}
-                  </p>
-                )}
-              </section>
-            )}
-
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Preferências
-              </p>
-
-              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                O que queres ver.
-              </h2>
-
-              <div className="mt-8">
-                <p className="mb-3 text-sm font-bold text-zinc-300">Cidades</p>
-
-                <div className="flex flex-wrap gap-2">
-                  {cities.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() =>
-                        setPreferredCities((current) =>
-                          toggleArrayValue(current, item)
-                        )
-                      }
-                      className={`rounded-full border px-4 py-2 text-sm font-bold ${
-                        preferredCities.includes(item)
-                          ? "border-[#f2f1ec] bg-[#f2f1ec] text-black"
-                          : "border-zinc-800 text-zinc-400"
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <p className="mb-3 text-sm font-bold text-zinc-300">
-                  Categorias
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() =>
-                        setPreferredCategories((current) =>
-                          toggleArrayValue(current, item)
-                        )
-                      }
-                      className={`rounded-full border px-4 py-2 text-sm font-bold ${
-                        preferredCategories.includes(item)
-                          ? "border-[#f2f1ec] bg-[#f2f1ec] text-black"
-                          : "border-zinc-800 text-zinc-400"
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={saveProfile}
-                disabled={saving}
-                className="mt-8 w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-black text-zinc-300 disabled:opacity-50"
-              >
-                {saving ? "A guardar..." : "Guardar preferências"}
-              </button>
-
-              {!editingProfile && message && (
-                <p className="mt-5 text-center text-sm font-bold text-zinc-400">
-                  {message}
-                </p>
-              )}
-            </section>
-
-            <section className="grid gap-6 lg:grid-cols-3">
-              <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Submissões
-                </p>
-
-                <p className="mt-4 text-5xl font-black">
-                  {submissions.length}
-                </p>
-
-                <p className="mt-2 text-sm text-zinc-500">
-                  {pendingSubmissions.length} pendente
-                  {pendingSubmissions.length === 1 ? "" : "s"} ·{" "}
-                  {approvedSubmissions.length} aprovada
-                  {approvedSubmissions.length === 1 ? "" : "s"}
-                </p>
-              </article>
-
-              <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Bilhetes
-                </p>
-
-                <p className="mt-4 text-5xl font-black">
-                  {activeTickets.length}
-                </p>
-
-                <p className="mt-2 text-sm text-zinc-500">
-                  Reservas ativas na tua carteira.
-                </p>
-              </article>
-
-              <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Estado
-                </p>
-
-                <p className="mt-4 text-5xl font-black">
-                  {statusLabel(accountStatus)}
-                </p>
-
-                <p className="mt-2 text-sm text-zinc-500">
-                  {accountTypeLabel(accountType)}
-                </p>
-              </article>
-            </section>
-
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                    Últimas submissões
-                  </p>
-
-                  <h2 className="mt-3 text-4xl font-black leading-none">
-                    O que enviaste.
-                  </h2>
-                </div>
-
-                <Link
-                  href="/submeter"
-                  className="hidden rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold text-zinc-300 lg:inline-block"
-                >
-                  Submeter
-                </Link>
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                {submissions.length === 0 && (
-                  <EmptyCard text="Ainda não submeteste eventos com esta conta." />
-                )}
-
-                {submissions.map((submission) => (
-                  <article
-                    key={submission.id}
-                    className="rounded-[1.5rem] border border-zinc-800 bg-black p-4"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-lg font-black">
-                          {submission.title}
-                        </h3>
-
-                        <p className="mt-1 text-sm text-zinc-500">
-                          {formatDate(submission.event_date)} ·{" "}
-                          {submission.city || "Sem cidade"}
-                        </p>
-                      </div>
-
-                      <span
-                        className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClasses(
-                          submission.status
-                        )}`}
-                      >
-                        {statusLabel(submission.status)}
-                      </span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            {claims.length > 0 && (
-              <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                  Pedidos de perfil
-                </p>
-
-                <h2 className="mt-3 text-4xl font-black leading-none">
-                  Aprovação.
-                </h2>
-
-                <div className="mt-6 grid gap-3">
-                  {claims.map((claim) => (
-                    <article
-                      key={claim.id}
-                      className="rounded-[1.5rem] border border-zinc-800 bg-black p-4"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-black">
-                            {claim.entity_name}
-                          </h3>
-
-                          <p className="mt-1 text-sm text-zinc-500">
-                            {accountTypeLabel(claim.account_type)} ·{" "}
-                            {formatDate(claim.created_at)}
-                          </p>
-
-                          {claim.review_note && (
-                            <p className="mt-2 text-sm text-red-300">
-                              {claim.review_note}
-                            </p>
-                          )}
-                        </div>
-
-                        <span
-                          className={`rounded-full border px-3 py-1 text-xs font-black uppercase ${statusClasses(
-                            claim.status
-                          )}`}
-                        >
-                          {statusLabel(claim.status)}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            )}
-          </section>
-        </section>
-      </section>
-    </main>
-  );
+  if (approved && entityPath) creatorItems.push({ href: entityPath, label: "Ver perfil público", icon: accountType === "artist" ? "artist" : accountType === "venue" ? "venue" : "organizer" });
+
+  return <div>
+    <header className="flex items-center gap-4 border-b border-zinc-900 pb-6">
+      <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full border border-red-950 bg-red-950/25 text-xl font-black text-red-500">{title.charAt(0).toUpperCase()}</div>
+      <div className="min-w-0 flex-1"><h1 className="truncate text-3xl font-black">{title}</h1><p className="truncate text-sm text-zinc-600">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
+      <button type="button" onClick={() => setEditing((value) => !value)} className="hidden rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold sm:block">Editar perfil</button>
+    </header>
+
+    {editing && <section className="border-b border-zinc-900 py-7">
+      <SectionHeader title="Editar perfil" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={accountType === "community" ? "Nome" : "Nome público"} value={accountType === "community" ? displayName : entityName} onChange={accountType === "community" ? setDisplayName : setEntityName} />
+        <Field label="Localização preferida" value={city} onChange={setCity} />
+        <Field label="Instagram" value={instagram} onChange={setInstagram} />
+        {accountType !== "community" && <label className="sm:col-span-2"><span className="mb-2 block text-xs font-bold text-zinc-500">Descrição pública</span><textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} className="w-full resize-none rounded border border-zinc-800 bg-black px-4 py-3 outline-none focus:border-red-800" /></label>}
+        <PreferencePicker label="Cidades" values={cities} selected={preferredCities} onToggle={(value) => setPreferredCities((current) => toggle(current, value))} />
+        <PreferencePicker label="Categorias" values={categories} selected={preferredCategories} onToggle={(value) => setPreferredCategories((current) => toggle(current, value))} />
+      </div>
+      {message && <p className="mt-4 text-sm text-zinc-400">{message}</p>}
+      <div className="mt-5 flex gap-3"><button type="button" onClick={saveProfile} disabled={saving} className="rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black disabled:opacity-50">{saving ? "A guardar..." : "Guardar"}</button><button type="button" onClick={() => setEditing(false)} className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold">Cancelar</button></div>
+    </section>}
+
+    <div className="grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">
+      <ProfileSection title="A minha atividade" items={activityItems} />
+      <ProfileSection title="A minha conta" items={[{ label: "Dados e preferências", description: "Nome, localização e categorias", icon: "settings", onClick: () => setEditing(true) }, { label: "Terminar sessão", icon: "logout", tone: "danger", onClick: signOut }]} />
+      <ProfileSection title="Bilhetes e compras" items={purchaseItems} />
+      {creatorItems.length > 0 && <ProfileSection title="Criar e gerir" items={creatorItems} />}
+      {approved && accountType === "organizer" && <ProfileSection title="Visibilidade e parcerias" items={[{ href: "/organizador/destaques", label: "Destaques e Frequency", icon: "visibility" }, { href: "/patrocinar", label: "Parcerias Paranoid", icon: "organizer" }]} />}
+      {isAdmin && <ProfileSection title="Administração" items={[{ href: "/admin", label: "Painel administrativo", description: "Conteúdo, utilizadores, comercial e loja", icon: "admin" }]} />}
+    </div>
+  </div>;
+}
+
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return <label><span className="mb-2 block text-xs font-bold text-zinc-500">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded border border-zinc-800 bg-black px-4 py-3 outline-none focus:border-red-800" /></label>;
+}
+
+function PreferencePicker({ label, values, selected, onToggle }: { label: string; values: string[]; selected: string[]; onToggle: (value: string) => void }) {
+  return <fieldset className="sm:col-span-2"><legend className="mb-2 text-xs font-bold text-zinc-500">{label}</legend><div className="flex flex-wrap gap-2">{values.map((value) => <button key={value} type="button" onClick={() => onToggle(value)} className={`rounded-full border px-3 py-2 text-xs font-bold ${selected.includes(value) ? "border-zinc-100 bg-zinc-100 text-black" : "border-zinc-800 text-zinc-500"}`}>{value}</button>)}</div></fieldset>;
+}
+
+function ProfileSection({ title, items }: { title: string; items: SettingsListItem[] }) {
+  return <section><SectionHeader title={title} /><SettingsList items={items} /></section>;
 }

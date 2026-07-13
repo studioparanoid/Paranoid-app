@@ -8,9 +8,10 @@ type SaveEventButtonProps = {
   event?: {
     id: string;
   };
+  compact?: boolean;
 };
 
-export function SaveEventButton({ eventId, event }: SaveEventButtonProps) {
+export function SaveEventButton({ eventId, event, compact = false }: SaveEventButtonProps) {
   const resolvedEventId = eventId || event?.id || "";
 
   const [saved, setSaved] = useState(false);
@@ -124,16 +125,17 @@ export function SaveEventButton({ eventId, event }: SaveEventButtonProps) {
       type="button"
       onClick={toggleSaved}
       disabled={loading}
-      className={`rounded-full px-5 py-3 text-sm font-black disabled:opacity-50 ${
+      aria-label={saved ? "Remover dos guardados" : "Guardar evento"}
+      className={`rounded-full font-black disabled:opacity-50 ${compact ? "px-3 py-2 text-xs" : "px-5 py-3 text-sm"} ${
         saved
           ? "border border-red-900 bg-red-950 text-red-300"
           : "bg-[#f2f1ec] text-black"
       }`}
     >
       {loading
-        ? "A verificar..."
+        ? compact ? "..." : "A verificar..."
         : saved
-          ? "Guardado"
+          ? compact ? "Guardado" : "Guardado"
           : loggedIn
             ? "Guardar na conta"
             : "Guardar"}

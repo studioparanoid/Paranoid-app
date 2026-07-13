@@ -26,3 +26,16 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* The map owns the viewport between the app header and mobile navigation. */
+.map-screen {
+  height: calc(100dvh - 4rem);
+  min-height: 32rem;
+  margin-bottom: calc(-4.75rem - env(safe-area-inset-bottom));
+}
+
+@media (min-width: 1024px) {
+  .map-screen {
+    min-height: 38rem;
+    margin-bottom: 0;
+  }
+}

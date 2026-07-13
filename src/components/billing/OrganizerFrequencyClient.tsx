@@ -108,7 +108,11 @@ export function OrganizerFrequencyClient() {
   }
 
   useEffect(() => {
-    loadFrequency();
+    const timeoutId = window.setTimeout(() => {
+      loadFrequency();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   async function createOrganizerPayment(productCode: string) {
@@ -145,7 +149,7 @@ export function OrganizerFrequencyClient() {
     await loadFrequency();
   }
 
-  async function useCredit(eventId: string) {
+  async function handleUseCredit(eventId: string) {
     setBusy(true);
     setMessage("");
     const token = await getToken();
@@ -312,7 +316,7 @@ export function OrganizerFrequencyClient() {
                 type="button"
                 onClick={(clickEvent) => {
                   clickEvent.preventDefault();
-                  useCredit(event.id);
+                  handleUseCredit(event.id);
                 }}
                 disabled={busy || remainingCredits <= 0}
                 className="mt-4 rounded-full border border-red-900 px-4 py-3 text-sm font-black text-red-200 disabled:border-zinc-900 disabled:text-zinc-700"

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   formatMoney,
@@ -163,12 +164,12 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         {added && (
           <div className="grid gap-3 rounded-2xl border border-green-900 bg-green-950/30 p-4">
             <p className="font-bold text-green-300">Produto adicionado.</p>
-            <a
+            <Link
               href="/loja/carrinho"
               className="rounded-full border border-green-800 px-4 py-3 text-center text-sm font-black text-green-200"
             >
               Ver carrinho
-            </a>
+            </Link>
           </div>
         )}
       </div>

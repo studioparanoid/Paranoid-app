@@ -43,7 +43,7 @@ export function ShopClient({ products }: ShopClientProps) {
 
   return (
     <div className="space-y-7">
-      <section className="sticky top-0 z-10 -mx-5 border-b border-zinc-900 bg-[#0b0b0b]/95 px-5 py-4 backdrop-blur lg:static lg:mx-0 lg:border lg:bg-zinc-950 lg:p-4">
+      <section className="sticky top-16 z-20 -mx-5 border-y border-zinc-900 bg-[#0b0b0b]/95 px-5 py-4 backdrop-blur lg:mx-0 lg:rounded lg:border lg:p-4">
         <div className="grid gap-3 md:grid-cols-3">
           <input
             value={query}

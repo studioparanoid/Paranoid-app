@@ -8,6 +8,9 @@ export const EVENT_FEATURE_PACK_ENTITLEMENT_TYPE = "event_feature_pack_active";
 export const EVENT_FEATURE_DAYS = 7;
 export const EVENT_FEATURE_PACK_CREDITS = 3;
 
+const CREDIT_PACK_SELECT =
+  "id,organizer_id,user_id,payment_id,total_credits,remaining_credits,status,starts_at,expires_at,created_at,updated_at";
+
 function addDays(date: Date, days: number) {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
@@ -80,7 +83,7 @@ export async function activateEventFeaturePack(payment: BillingPayment) {
       starts_at: now.toISOString(),
       expires_at: expiresAt,
     })
-    .select("*")
+    .select(CREDIT_PACK_SELECT)
     .single();
 
   if (error || !data) {
@@ -101,7 +104,7 @@ export async function activateEventFeaturePack(payment: BillingPayment) {
   return data;
 }
 
-export async function useEventHighlightCredit({
+export async function consumeEventHighlightCredit({
   organizerId,
   eventId,
   userId,
@@ -125,7 +128,7 @@ export async function useEventHighlightCredit({
 
   const { data: pack, error } = await supabase
     .from("event_highlight_credit_packs")
-    .select("*")
+    .select(CREDIT_PACK_SELECT)
     .eq("organizer_id", organizerId)
     .eq("status", "active")
     .gt("expires_at", now.toISOString())
@@ -185,7 +188,7 @@ export async function getActiveEventHighlightCreditPacks(organizerId: string) {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("event_highlight_credit_packs")
-    .select("*")
+    .select(CREDIT_PACK_SELECT)
     .eq("organizer_id", organizerId)
     .eq("status", "active")
     .gt("expires_at", now)

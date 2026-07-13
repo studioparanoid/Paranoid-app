@@ -528,7 +528,8 @@ export async function getActiveShopProducts() {
         "id,seller_id,name,slug,description,base_price_cents,commission_rate,commission_cents,final_price_cents,ownership_model,partner_payout_type,partner_payout_cents,partner_payout_rate,production_cost_cents,vat_rate,price_includes_vat,official_merch,contract_required,category,stock_quantity,status,weight_grams,shop_sellers(display_name,slug),shop_product_images(image_url,sort_order),shop_product_variants(name,value,stock_quantity)"
       )
       .eq("status", "active")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(60);
 
     if (error || !data || data.length === 0) {
       return fallbackShopProducts;
@@ -541,7 +542,22 @@ export async function getActiveShopProducts() {
 }
 
 export async function getShopProductBySlug(slug: string) {
-  const products = await getActiveShopProducts();
+  try {
+    const { data, error } = await supabase
+      .from("shop_products")
+      .select(
+        "id,seller_id,name,slug,description,base_price_cents,commission_rate,commission_cents,final_price_cents,ownership_model,partner_payout_type,partner_payout_cents,partner_payout_rate,production_cost_cents,vat_rate,price_includes_vat,official_merch,contract_required,category,stock_quantity,status,weight_grams,shop_sellers(display_name,slug),shop_product_images(image_url,sort_order),shop_product_variants(name,value,stock_quantity)"
+      )
+      .eq("status", "active")
+      .eq("slug", slug)
+      .maybeSingle();
 
-  return products.find((product) => product.slug === slug) || null;
+    if (!error && data) {
+      return mapProductRow(data as unknown as ProductRow);
+    }
+  } catch {
+    // Fall back to seeded products when the public shop tables are unavailable.
+  }
+
+  return fallbackShopProducts.find((product) => product.slug === slug) || null;
 }

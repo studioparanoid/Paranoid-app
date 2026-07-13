@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { useEventHighlightCredit } from "@/lib/billing/highlights";
+import { consumeEventHighlightCredit } from "@/lib/billing/highlights";
 import { getRequiredSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getShopApiUser } from "@/lib/shop/api-auth";
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
     }
 
-    const result = await useEventHighlightCredit({
+    const result = await consumeEventHighlightCredit({
       organizerId: body.organizerId,
       eventId: body.eventId,
       userId: user.id,

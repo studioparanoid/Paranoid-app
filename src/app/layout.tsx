@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { BottomNav } from "@/components/BottomNav";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { DesktopHeader } from "@/components/DesktopHeader";
 import { PwaRegister } from "@/components/PwaRegister";
 
@@ -56,8 +56,8 @@ export default function RootLayout({
       <body className="min-h-full bg-[#0b0b0b]">
         <PwaRegister />
         <DesktopHeader />
-        <div className="pb-20 lg:pb-0">{children}</div>
-        <BottomNav />
+        <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
+        <MobileBottomNav />
       </body>
     </html>
   );

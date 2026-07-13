@@ -35,6 +35,9 @@ type BillingPaymentRow = {
   paid_at: string | null;
 };
 
+const BILLING_PAYMENT_SELECT =
+  "id,user_id,product_code,related_type,related_id,amount_cents,vat_cents,total_cents,provider,provider_reference,status,metadata,created_at,paid_at";
+
 function mapPayment(row: BillingPaymentRow): BillingPayment {
   return {
     id: row.id,
@@ -101,7 +104,7 @@ export async function createBillingPayment(
       status: "pending",
       metadata: draft.metadata || {},
     })
-    .select("*")
+    .select(BILLING_PAYMENT_SELECT)
     .single();
 
   if (error || !data) {
@@ -121,7 +124,7 @@ export async function getBillingPayments(status?: string | null) {
   const supabase = getRequiredSupabaseAdminClient();
   let query = supabase
     .from("billing_payments")
-    .select("*")
+    .select(BILLING_PAYMENT_SELECT)
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -142,7 +145,7 @@ export async function getBillingPayment(id: string) {
   const supabase = getRequiredSupabaseAdminClient();
   const { data, error } = await supabase
     .from("billing_payments")
-    .select("*")
+    .select(BILLING_PAYMENT_SELECT)
     .eq("id", id)
     .single();
 
@@ -181,7 +184,7 @@ export async function updateBillingPaymentStatus(
     .from("billing_payments")
     .update(updatePayload)
     .eq("id", id)
-    .select("*")
+    .select(BILLING_PAYMENT_SELECT)
     .single();
 
   if (error || !data) {
