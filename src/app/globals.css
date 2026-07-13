@@ -33,6 +33,12 @@ body {
   margin-bottom: calc(-4.75rem - env(safe-area-inset-bottom));
 }
 
+@media (max-width: 1023px) {
+  .paranoid-map .maplibregl-ctrl-bottom-right {
+    bottom: calc(20rem + env(safe-area-inset-bottom));
+  }
+}
+
 @media (min-width: 1024px) {
   .map-screen {
     min-height: 38rem;

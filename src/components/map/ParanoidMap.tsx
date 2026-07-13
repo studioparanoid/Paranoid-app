@@ -1,5 +1,11 @@
 "use client";
 
+import maplibregl, {
+  type GeoJSONSource,
+  type Map as MapLibreMap,
+  type Marker,
+} from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export type ParanoidMapUserLocation = {
@@ -28,110 +34,15 @@ type ParanoidMapProps = {
   userLocation: ParanoidMapUserLocation | null;
   selectedEventId: string | null;
   radiusKm: number | null;
-  mapboxToken?: string;
   onSelectEvent: (event: ParanoidMapEvent) => void;
 };
 
 const PORTUGAL_CENTER: [number, number] = [-8.0, 39.68];
 const WORLD_START_CENTER: [number, number] = [-28, 37];
-const MAPBOX_GL_SCRIPT_ID = "paranoid-mapbox-gl-js";
-const MAPBOX_GL_CSS_ID = "paranoid-mapbox-gl-css";
-const MAPBOX_GL_VERSION = "v3.10.0";
-
-const PUBLIC_SATELLITE_STYLE = {
-  version: 8,
-  sources: {
-    satellite: {
-      type: "raster",
-      tiles: [
-        "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      ],
-      tileSize: 256,
-      attribution:
-        "Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community",
-    },
-    labels: {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-      attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-    },
-  },
-  layers: [
-    {
-      id: "background",
-      type: "background",
-      paint: {
-        "background-color": "#050505",
-      },
-    },
-    {
-      id: "satellite",
-      type: "raster",
-      source: "satellite",
-      paint: {
-        "raster-saturation": 0.1,
-        "raster-contrast": 0.08,
-      },
-    },
-    {
-      id: "labels",
-      type: "raster",
-      source: "labels",
-      paint: {
-        "raster-opacity": 0.92,
-      },
-    },
-  ],
-};
-
-type MapboxGlApi = {
-  accessToken: string;
-  Map: new (options: Record<string, unknown>) => MapboxMap;
-  Marker: new (options?: Record<string, unknown>) => MapboxMarker;
-  LngLatBounds: new () => MapboxBounds;
-  AttributionControl: new (options?: Record<string, unknown>) => unknown;
-  NavigationControl: new (options?: Record<string, unknown>) => unknown;
-};
-
-type MapboxMap = {
-  addControl: (control: unknown, position?: string) => void;
-  remove: () => void;
-  resize: () => void;
-  flyTo: (options: Record<string, unknown>) => void;
-  fitBounds: (bounds: MapboxBounds, options?: Record<string, unknown>) => void;
-  easeTo: (options: Record<string, unknown>) => void;
-  getZoom: () => number;
-  on: (event: string, handler: () => void) => void;
-  isStyleLoaded: () => boolean;
-  setProjection: (projection: string | Record<string, unknown>) => void;
-  setFog: (fog: Record<string, unknown>) => void;
-  addSource: (id: string, source: Record<string, unknown>) => void;
-  getSource: (id: string) => MapboxGeoJsonSource | undefined;
-  removeSource: (id: string) => void;
-  addLayer: (layer: Record<string, unknown>) => void;
-  getLayer: (id: string) => unknown;
-  removeLayer: (id: string) => void;
-};
-
-type MapboxMarker = {
-  setLngLat: (coordinates: [number, number]) => MapboxMarker;
-  addTo: (map: MapboxMap) => MapboxMarker;
-  remove: () => void;
-};
-
-type MapboxBounds = {
-  extend: (coordinates: [number, number]) => MapboxBounds;
-  isEmpty: () => boolean;
-};
-
-type MapboxGeoJsonSource = {
-  setData: (data: GeoJSONFeatureCollection) => void;
-};
+// MapLibre renders OpenFreeMap's public Dark style using OpenMapTiles and
+// OpenStreetMap data. Attribution is kept visible, no API key is required,
+// and the public OpenFreeMap instance has no availability SLA.
+const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 
 type GeoJSONFeatureCollection = {
   type: "FeatureCollection";
@@ -146,67 +57,6 @@ type GeoJSONFeature = {
     coordinates: number[][][];
   };
 };
-
-declare global {
-  interface Window {
-    mapboxgl?: MapboxGlApi;
-    paranoidMapboxGlPromise?: Promise<MapboxGlApi>;
-  }
-}
-
-function loadMapboxGl() {
-  if (window.mapboxgl) {
-    return Promise.resolve(window.mapboxgl);
-  }
-
-  if (window.paranoidMapboxGlPromise) {
-    return window.paranoidMapboxGlPromise;
-  }
-
-  window.paranoidMapboxGlPromise = new Promise((resolve, reject) => {
-    if (!document.getElementById(MAPBOX_GL_CSS_ID)) {
-      const link = document.createElement("link");
-      link.id = MAPBOX_GL_CSS_ID;
-      link.rel = "stylesheet";
-      link.href = `https://api.mapbox.com/mapbox-gl-js/${MAPBOX_GL_VERSION}/mapbox-gl.css`;
-      document.head.appendChild(link);
-    }
-
-    const existingScript = document.getElementById(
-      MAPBOX_GL_SCRIPT_ID
-    ) as HTMLScriptElement | null;
-
-    if (existingScript) {
-      existingScript.addEventListener("load", () => {
-        if (window.mapboxgl) {
-          resolve(window.mapboxgl);
-        } else {
-          reject(new Error("Mapbox GL did not load."));
-        }
-      });
-      existingScript.addEventListener("error", () => {
-        reject(new Error("Mapbox GL failed to load."));
-      });
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = MAPBOX_GL_SCRIPT_ID;
-    script.src = `https://api.mapbox.com/mapbox-gl-js/${MAPBOX_GL_VERSION}/mapbox-gl.js`;
-    script.async = true;
-    script.onload = () => {
-      if (window.mapboxgl) {
-        resolve(window.mapboxgl);
-      } else {
-        reject(new Error("Mapbox GL did not load."));
-      }
-    };
-    script.onerror = () => reject(new Error("Mapbox GL failed to load."));
-    document.head.appendChild(script);
-  });
-
-  return window.paranoidMapboxGlPromise;
-}
 
 function buildCircleFeature(
   center: [number, number],
@@ -259,7 +109,7 @@ function buildCircleFeature(
   };
 }
 
-function resizeMapSoon(map: MapboxMap) {
+function resizeMapSoon(map: MapLibreMap) {
   window.requestAnimationFrame(() => map.resize());
   window.setTimeout(() => map.resize(), 120);
   window.setTimeout(() => map.resize(), 450);
@@ -271,16 +121,15 @@ export function ParanoidMap({
   userLocation,
   selectedEventId,
   radiusKm,
-  mapboxToken,
   onSelectEvent,
 }: ParanoidMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapboxMap | null>(null);
-  const mapboxRef = useRef<MapboxGlApi | null>(null);
-  const markersRef = useRef<MapboxMarker[]>([]);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markersRef = useRef<Marker[]>([]);
   const introPlayedRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
   const [styleReady, setStyleReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) || null,
@@ -292,64 +141,64 @@ export function ParanoidMap({
       return;
     }
 
-    let cancelled = false;
+    let loadTimeout: number | null = null;
 
-    loadMapboxGl()
-      .then((mapboxgl) => {
-        if (cancelled || !containerRef.current || mapRef.current) {
-          return;
-        }
-
-        mapboxRef.current = mapboxgl;
-        mapboxgl.accessToken = mapboxToken || "";
-
-        const map = new mapboxgl.Map({
-          container: containerRef.current,
-          style: PUBLIC_SATELLITE_STYLE,
-          center: WORLD_START_CENTER,
-          zoom: 1.05,
-          pitch: 0,
-          bearing: 0,
-          projection: "globe",
-          attributionControl: false,
-        });
-
-        mapRef.current = map;
-
-        map.addControl(
-          new mapboxgl.NavigationControl({ showCompass: true }),
-          "top-right"
-        );
-        map.addControl(
-          new mapboxgl.AttributionControl({ compact: true }),
-          "bottom-right"
-        );
-        map.on("load", () => {
-          resizeMapSoon(map);
-          setMapReady(true);
-        });
-        map.on("style.load", () => {
-          map.setProjection("globe");
-          map.setFog({
-            color: "rgb(8, 12, 20)",
-            "high-color": "rgb(35, 65, 120)",
-            "horizon-blend": 0.08,
-            "space-color": "rgb(0, 0, 0)",
-            "star-intensity": 0.35,
-          });
-
-          resizeMapSoon(map);
-          setStyleReady(true);
-        });
-        resizeMapSoon(map);
-      })
-      .catch(() => {
-        mapRef.current = null;
-        setMapReady(false);
+    try {
+      const map = new maplibregl.Map({
+        container: containerRef.current,
+        style: OPENFREEMAP_STYLE_URL,
+        center: WORLD_START_CENTER,
+        zoom: 1.05,
+        pitch: 0,
+        bearing: 0,
+        attributionControl: false,
       });
 
+      mapRef.current = map;
+
+      map.addControl(
+        new maplibregl.NavigationControl({ showCompass: true }),
+        "top-right"
+      );
+      map.addControl(
+        new maplibregl.AttributionControl({ compact: true }),
+        "bottom-right"
+      );
+      map.on("load", () => {
+        if (loadTimeout !== null) {
+          window.clearTimeout(loadTimeout);
+          loadTimeout = null;
+        }
+        resizeMapSoon(map);
+        setMapError(false);
+        setMapReady(true);
+      });
+      map.on("style.load", () => {
+        map.setProjection({ type: "globe" });
+        resizeMapSoon(map);
+        setStyleReady(true);
+      });
+      map.on("error", (event) => {
+        console.warn("OpenFreeMap map error:", event.error);
+      });
+
+      loadTimeout = window.setTimeout(() => {
+        if (!map.isStyleLoaded()) {
+          setMapError(true);
+          setMapReady(false);
+        }
+      }, 12000);
+      resizeMapSoon(map);
+    } catch (error) {
+      console.warn("OpenFreeMap could not be initialized:", error);
+      mapRef.current = null;
+      loadTimeout = window.setTimeout(() => setMapError(true), 0);
+    }
+
     return () => {
-      cancelled = true;
+      if (loadTimeout !== null) {
+        window.clearTimeout(loadTimeout);
+      }
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
       mapRef.current?.remove();
@@ -358,7 +207,7 @@ export function ParanoidMap({
       setMapReady(false);
       setStyleReady(false);
     };
-  }, [mapboxToken]);
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -418,12 +267,6 @@ export function ParanoidMap({
     if (!map) {
       return;
     }
-    const mapboxgl = mapboxRef.current;
-
-    if (!mapboxgl) {
-      return;
-    }
-
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
@@ -441,7 +284,7 @@ export function ParanoidMap({
 
       markerElement.addEventListener("click", () => onSelectEvent(event));
 
-      const marker = new mapboxgl.Marker({ element: markerElement })
+      const marker = new maplibregl.Marker({ element: markerElement })
         .setLngLat([event.longitude, event.latitude])
         .addTo(map);
 
@@ -453,7 +296,7 @@ export function ParanoidMap({
       locationElement.className =
         "h-5 w-5 rounded-full border-2 border-black bg-[#f2f1ec] shadow-[0_0_0_8px_rgba(242,241,236,0.18)]";
 
-      const marker = new mapboxgl.Marker({ element: locationElement })
+      const marker = new maplibregl.Marker({ element: locationElement })
         .setLngLat([userLocation.longitude, userLocation.latitude])
         .addTo(map);
 
@@ -465,13 +308,12 @@ export function ParanoidMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    const mapboxgl = mapboxRef.current;
 
-    if (!map || !mapboxgl || !userLocation || radiusKm === null) {
+    if (!map || !mapReady || !userLocation || radiusKm === null) {
       return;
     }
 
-    const bounds = new mapboxgl.LngLatBounds();
+    const bounds = new maplibregl.LngLatBounds();
     bounds.extend([userLocation.longitude, userLocation.latitude]);
 
     events.forEach((event) => {
@@ -483,7 +325,7 @@ export function ParanoidMap({
       maxZoom: events.length > 0 ? 14.5 : 15.5,
       duration: 700,
     });
-  }, [events, radiusKm, userLocation]);
+  }, [events, mapReady, radiusKm, userLocation]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -513,7 +355,7 @@ export function ParanoidMap({
       [userLocation.longitude, userLocation.latitude],
       radiusKm
     );
-    const source = map.getSource(sourceId);
+    const source = map.getSource(sourceId) as GeoJSONSource | undefined;
 
     if (source) {
       source.setData(data);
@@ -556,10 +398,8 @@ export function ParanoidMap({
       return;
     }
 
-    const mapboxgl = mapboxRef.current;
-
-    if (userLocation && mapboxgl) {
-      const bounds = new mapboxgl.LngLatBounds();
+    if (userLocation) {
+      const bounds = new maplibregl.LngLatBounds();
       bounds.extend([userLocation.longitude, userLocation.latitude]);
       bounds.extend([selectedEvent.longitude, selectedEvent.latitude]);
 
@@ -578,7 +418,21 @@ export function ParanoidMap({
       bearing: -12,
       duration: 850,
     });
-  }, [selectedEvent]);
+  }, [selectedEvent, userLocation]);
 
-  return <div ref={containerRef} className="h-full min-h-[520px] w-full" />;
+  return (
+    <div className="paranoid-map relative h-full min-h-[520px] w-full bg-black">
+      <div ref={containerRef} className="h-full min-h-[520px] w-full" />
+      {!mapReady && !mapError ? (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black text-sm font-bold text-zinc-500">
+          A carregar mapa...
+        </div>
+      ) : null}
+      {mapError ? (
+        <div className="absolute inset-0 grid place-items-center bg-black px-6 text-center text-sm font-bold text-zinc-400">
+          Não foi possível carregar o mapa. Tenta novamente.
+        </div>
+      ) : null}
+    </div>
+  );
 }

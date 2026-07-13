@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ALL_CATEGORIES,
@@ -18,12 +19,27 @@ import {
   getCanonicalDistrict,
   getCanonicalMunicipality,
 } from "@/lib/portugalLocations";
-import {
-  ParanoidMap,
-  type ParanoidMapEvent,
-  type ParanoidMapUserLocation,
+import type {
+  ParanoidMapEvent,
+  ParanoidMapUserLocation,
 } from "@/components/map/ParanoidMap";
 import { supabase } from "@/lib/supabase/public";
+
+const ParanoidMap = dynamic(
+  () =>
+    import("@/components/map/ParanoidMap").then(
+      (module) => module.ParanoidMap
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-label="A carregar mapa"
+        className="h-full min-h-[520px] w-full bg-black"
+      />
+    ),
+  }
+);
 
 type RadiusFilter = `${number}` | "all";
 
@@ -43,7 +59,6 @@ type MapDateFilter = EventDateFilter | "date";
 
 const LOCATION_RADIUS_BUFFER_KM = 0.75;
 const SAVED_MANUAL_LOCATION_KEY = "paranoid.map.manualLocation";
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 type VenueRow = {
   id: string;
@@ -982,7 +997,6 @@ export default function MapPage() {
           userLocation={userLocation}
           selectedEventId={hasAppliedFilters ? selectedEvent?.id || null : null}
           radiusKm={radiusFilter === "all" ? null : Number(radiusFilter)}
-          mapboxToken={MAPBOX_TOKEN}
           onSelectEvent={handleSelectMapEvent}
         />
       </section>
