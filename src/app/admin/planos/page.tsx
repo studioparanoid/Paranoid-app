@@ -28,6 +28,7 @@ export default function AdminPlansPage() {
 
         <AdminBillingPaymentsClient
           relatedType="organizer"
+          productCodes={["organizer_paranoid_frequency"]}
           title="Pagamentos de planos"
         />
 

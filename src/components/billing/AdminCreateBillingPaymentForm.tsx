@@ -7,12 +7,14 @@ type AdminCreateBillingPaymentFormProps = {
   productCode: string;
   relatedType: "event" | "organizer" | "sponsorship";
   idLabel: string;
+  allowEmptyRelatedId?: boolean;
 };
 
 export function AdminCreateBillingPaymentForm({
   productCode,
   relatedType,
   idLabel,
+  allowEmptyRelatedId = false,
 }: AdminCreateBillingPaymentFormProps) {
   const [relatedId, setRelatedId] = useState("");
   const [message, setMessage] = useState("");
@@ -37,7 +39,7 @@ export function AdminCreateBillingPaymentForm({
       body: JSON.stringify({
         productCode,
         relatedType,
-        relatedId,
+        relatedId: relatedId.trim() || null,
         provider: "mock",
       }),
     });
@@ -65,7 +67,7 @@ export function AdminCreateBillingPaymentForm({
         <button
           type="button"
           onClick={createPayment}
-          disabled={!relatedId.trim()}
+          disabled={!allowEmptyRelatedId && !relatedId.trim()}
           className="rounded-full bg-[#f2f1ec] px-5 py-3 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
         >
           Criar pagamento

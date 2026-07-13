@@ -9,11 +9,13 @@ const statusFilters = ["all", "pending", "paid", "failed", "cancelled"];
 
 type AdminBillingPaymentsClientProps = {
   relatedType?: string;
+  productCodes?: string[];
   title?: string;
 };
 
 export function AdminBillingPaymentsClient({
   relatedType,
+  productCodes,
   title = "Pagamentos",
 }: AdminBillingPaymentsClientProps) {
   const [payments, setPayments] = useState<BillingPayment[]>([]);
@@ -61,11 +63,22 @@ export function AdminBillingPaymentsClient({
 
   const visiblePayments = useMemo(() => {
     if (!relatedType) {
-      return payments;
+      return productCodes?.length
+        ? payments.filter((payment) =>
+            payment.productCode ? productCodes.includes(payment.productCode) : false
+          )
+        : payments;
     }
 
-    return payments.filter((payment) => payment.relatedType === relatedType);
-  }, [payments, relatedType]);
+    return payments.filter((payment) => {
+      const matchesType = payment.relatedType === relatedType;
+      const matchesProduct =
+        !productCodes?.length ||
+        (payment.productCode ? productCodes.includes(payment.productCode) : false);
+
+      return matchesType && matchesProduct;
+    });
+  }, [payments, productCodes, relatedType]);
 
   async function updatePayment(paymentId: string, action: "confirm" | "cancel" | "failed") {
     const token = await getToken();

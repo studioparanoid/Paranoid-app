@@ -34,6 +34,7 @@ type EventRow = {
   address: string | null;
   postal_code: string | null;
   venue_name: string | null;
+  organizer_id: string | null;
   organizer_name: string | null;
   display_date: string | null;
   display_time: string | null;
@@ -46,6 +47,7 @@ type EventRow = {
   description: string | null;
   image_url: string | null;
   featured: boolean | null;
+  frequencyActive?: boolean;
   ticket_mode: string | null;
   ticket_price: string | null;
 };
@@ -105,6 +107,13 @@ function eventDateValue(event: EventRow) {
 }
 
 function sortEvents(first: EventRow, second: EventRow) {
+  const firstPriority = first.featured ? 2 : first.frequencyActive ? 1 : 0;
+  const secondPriority = second.featured ? 2 : second.frequencyActive ? 1 : 0;
+
+  if (firstPriority !== secondPriority) {
+    return secondPriority - firstPriority;
+  }
+
   const firstDate = eventDateValue(first);
   const secondDate = eventDateValue(second);
 
@@ -167,23 +176,40 @@ export default function AgendaPage() {
     setLoading(true);
     setMessage("");
 
-    const { data, error } = await supabase
+    const [eventsResponse, frequencyResponse] = await Promise.all([
+      supabase
       .from("events")
       .select(
-        "id,slug,title,status,city,municipality,district,address,postal_code,venue_name,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price"
+        "id,slug,title,status,city,municipality,district,address,postal_code,venue_name,organizer_id,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price"
       )
       .eq("status", "published")
       .order("start_at", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }),
+      fetch("/api/billing/frequency/active-organizers").catch(() => null),
+    ]);
 
-    if (error) {
-      setMessage(error.message);
+    if (eventsResponse.error) {
+      setMessage(eventsResponse.error.message);
       setEvents([]);
       setLoading(false);
       return;
     }
 
-    setEvents((data || []) as EventRow[]);
+    const frequencyPayload = frequencyResponse?.ok
+      ? await frequencyResponse.json().catch(() => ({ organizerIds: [] }))
+      : { organizerIds: [] };
+    const frequencyOrganizerIds = new Set<string>(
+      frequencyPayload.organizerIds || []
+    );
+
+    setEvents(
+      ((eventsResponse.data || []) as EventRow[]).map((event) => ({
+        ...event,
+        frequencyActive: Boolean(
+          event.organizer_id && frequencyOrganizerIds.has(event.organizer_id)
+        ),
+      }))
+    );
     setLoading(false);
   }
 

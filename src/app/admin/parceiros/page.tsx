@@ -1,4 +1,5 @@
 import { AdminCreateBillingPaymentForm } from "@/components/billing/AdminCreateBillingPaymentForm";
+import { AdminBillingPaymentsClient } from "@/components/billing/AdminBillingPaymentsClient";
 import { AdminSponsorshipsClient } from "@/components/billing/AdminSponsorshipsClient";
 
 export default function AdminPartnersPage() {
@@ -21,19 +22,27 @@ export default function AdminPartnersPage() {
           <AdminCreateBillingPaymentForm
             productCode="paranoid_signal"
             relatedType="sponsorship"
-            idLabel="ID do parceiro ou marca"
+            idLabel="ID opcional"
+            allowEmptyRelatedId
           />
           <AdminCreateBillingPaymentForm
             productCode="paranoid_noise"
             relatedType="sponsorship"
-            idLabel="ID do parceiro ou marca"
+            idLabel="ID opcional"
+            allowEmptyRelatedId
           />
           <AdminCreateBillingPaymentForm
             productCode="paranoid_headliner"
             relatedType="sponsorship"
-            idLabel="ID do parceiro ou marca"
+            idLabel="ID opcional"
+            allowEmptyRelatedId
           />
         </div>
+
+        <AdminBillingPaymentsClient
+          relatedType="sponsorship"
+          title="Pagamentos de parceiros"
+        />
 
         <AdminSponsorshipsClient />
       </section>

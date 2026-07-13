@@ -30,7 +30,10 @@ export default function AdminHighlightsPage() {
           />
         </div>
 
-        <AdminBillingPaymentsClient relatedType="event" title="Pagamentos de destaque" />
+        <AdminBillingPaymentsClient
+          productCodes={["event_feature_basic", "event_feature_pack_3"]}
+          title="Pagamentos de destaque"
+        />
       </section>
     </main>
   );

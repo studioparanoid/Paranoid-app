@@ -1,5 +1,7 @@
 import { getActiveSponsorshipCampaigns } from "@/lib/billing/sponsorships";
 
+export const dynamic = "force-dynamic";
+
 function productLabel(code: string) {
   if (code === "paranoid_signal") {
     return "Paranoid Signal";
