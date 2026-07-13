@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -8,7 +9,13 @@ import { IconButton } from "@/components/ui/Button";
 import { useDialogBehavior } from "@/hooks/useDialogBehavior";
 import { supabase } from "@/lib/supabase/public";
 
-type SearchResult = { id: string; label: string; meta: string; href: string };
+type SearchResult = {
+  id: string;
+  label: string;
+  meta: string;
+  href: string;
+  image?: string | null;
+};
 type SearchGroups = {
   events: SearchResult[];
   artists: SearchResult[];
@@ -56,11 +63,11 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
       setSearchError("");
       const pattern = `%${safeQuery}%`;
       const [events, artists, organizers, venues, products] = await Promise.all([
-        supabase.from("events").select("id,slug,title,city,venue_name").eq("status", "published").or(`title.ilike.${pattern},city.ilike.${pattern},venue_name.ilike.${pattern}`).limit(4),
+        supabase.from("events").select("id,slug,title,city,venue_name,display_date,start_at,image_url").eq("status", "published").or(`title.ilike.${pattern},city.ilike.${pattern},venue_name.ilike.${pattern}`).limit(4),
         supabase.from("artists").select("id,slug,name,city").or(`name.ilike.${pattern},city.ilike.${pattern}`).limit(4),
         supabase.from("organizers").select("id,slug,name,city").or(`name.ilike.${pattern},city.ilike.${pattern}`).limit(4),
         supabase.from("venues").select("id,slug,name,city").or(`name.ilike.${pattern},city.ilike.${pattern}`).limit(4),
-        supabase.from("shop_products").select("id,slug,name,category").eq("status", "active").or(`name.ilike.${pattern},category.ilike.${pattern}`).limit(4),
+        supabase.from("shop_products").select("id,slug,name,category,final_price_cents,shop_product_images(image_url,sort_order)").eq("status", "active").or(`name.ilike.${pattern},category.ilike.${pattern}`).limit(4),
       ]);
 
       if (cancelled) return;
@@ -69,11 +76,28 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
       if (failed) setSearchError("Não foi possível concluir a pesquisa.");
 
       setGroups({
-        events: (events.data || []).map((item) => ({ id: item.id, label: item.title, meta: [item.venue_name, item.city].filter(Boolean).join(" · "), href: `/eventos/${item.slug}` })),
+        events: (events.data || []).map((item) => ({
+          id: item.id,
+          label: item.title,
+          meta: [item.display_date || item.start_at, item.venue_name, item.city].filter(Boolean).join(" · "),
+          href: `/eventos/${item.slug}`,
+          image: item.image_url,
+        })),
         artists: (artists.data || []).map((item) => ({ id: item.id, label: item.name, meta: item.city || "Artista", href: `/artistas/${item.slug}` })),
         organizers: (organizers.data || []).map((item) => ({ id: item.id, label: item.name, meta: item.city || "Organizador", href: `/organizadores/${item.slug}` })),
         venues: (venues.data || []).map((item) => ({ id: item.id, label: item.name, meta: item.city || "Espaço", href: `/espacos/${item.slug}` })),
-        products: (products.data || []).map((item) => ({ id: item.id, label: item.name, meta: item.category || "Loja", href: `/loja/${item.slug}` })),
+        products: (products.data || []).map((item) => ({
+          id: item.id,
+          label: item.name,
+          meta: [
+            item.category || "Loja",
+            typeof item.final_price_cents === "number"
+              ? new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(item.final_price_cents / 100)
+              : null,
+          ].filter(Boolean).join(" · "),
+          href: `/loja/${item.slug}`,
+          image: [...(item.shop_product_images || [])].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))[0]?.image_url || null,
+        })),
       });
       setActiveIndex(-1);
       setLoading(false);
@@ -131,8 +155,11 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
               <section key={label}>
                 <h2 className="mb-2 text-xs font-black uppercase tracking-[0.25em] text-red-600">{label}</h2>
                 <div className="divide-y divide-zinc-900">
-                  {items.map((item) => { const resultIndex = flatResults.findIndex((result) => result.key === `${label}-${item.id}`); const active = resultIndex === activeIndex; return <Link id={`search-${label}-${item.id}`} role="option" aria-selected={active} key={item.id} href={item.href} onMouseEnter={() => setActiveIndex(resultIndex)} onFocus={() => setActiveIndex(resultIndex)} onClick={onClose} className={`interactive focus-ring flex min-h-14 items-center justify-between gap-4 rounded px-2 py-3 ${active ? "bg-zinc-900" : "hover:bg-zinc-950"}`}>
-                    <span className="min-w-0"><span className="block truncate font-bold">{item.label}</span><span className="block truncate text-xs text-zinc-500">{item.meta}</span></span>
+                  {items.map((item) => { const resultIndex = flatResults.findIndex((result) => result.key === `${label}-${item.id}`); const active = resultIndex === activeIndex; return <Link id={`search-${label}-${item.id}`} role="option" aria-selected={active} key={item.id} href={item.href} onMouseEnter={() => setActiveIndex(resultIndex)} onFocus={() => setActiveIndex(resultIndex)} onClick={onClose} className={`interactive focus-ring flex min-h-16 items-center gap-3 rounded px-2 py-2 ${active ? "bg-zinc-900" : "hover:bg-zinc-950"}`}>
+                    <span className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded bg-zinc-900 text-sm font-black text-zinc-600">
+                      {item.image ? <Image src={item.image} alt="" fill sizes="48px" unoptimized className="object-cover" /> : item.label.slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="min-w-0 flex-1"><span className="block truncate font-bold">{item.label}</span><span className="block truncate text-xs text-zinc-500">{item.meta}</span></span>
                     <AppIcon name="chevron" className="h-4 w-4 shrink-0 text-zinc-700" />
                   </Link>;})}
                 </div>

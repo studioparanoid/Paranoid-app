@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DateQuickFilters, type QuickDateValue } from "@/components/DateQuickFilters";
+import { CardGrid } from "@/components/CardGrid";
 import { EmptyState } from "@/components/EmptyState";
-import { EventCardCompact } from "@/components/EventCardCompact";
+import { EventCard } from "@/components/EventCard";
 import { FilterDrawer } from "@/components/FilterDrawer";
 import { EventCardSkeleton } from "@/components/LoadingSkeleton";
 import { PageHeader } from "@/components/PageHeader";
@@ -87,7 +88,7 @@ export default function AgendaPage() {
 
   function clearAdvanced() { setDistrict(ALL_DISTRICTS); setMunicipality(ALL_MUNICIPALITIES); setCategory(ALL_CATEGORIES); setPrice("all"); setOnlyFeatured(false); }
 
-  return <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 text-[#f2f1ec] sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-6xl">
+  return <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 pb-28 text-[#f2f1ec] sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-7xl">
     <PageHeader eyebrow="Agenda" title="Eventos" description="Encontra o que acontece por data, local e categoria." />
     <div className="sticky top-16 z-30 -mx-4 mt-5 border-y border-zinc-900 bg-[#0b0b0b]/96 px-4 py-4 backdrop-blur-xl sm:mx-0 sm:rounded sm:border sm:px-4">
       <div className="grid gap-3 lg:grid-cols-[1fr_360px_auto] lg:items-center">
@@ -100,7 +101,7 @@ export default function AgendaPage() {
 
     <div className="mt-6 flex items-center justify-between"><p className="text-xs font-bold text-zinc-600" aria-live="polite">{filtered.length} resultado{filtered.length === 1 ? "" : "s"}</p>{(search || activeAdvanced > 0) && <button type="button" onClick={() => { setSearch(""); clearAdvanced(); toast("Filtros limpos."); }} className="pressable focus-ring rounded text-xs font-bold text-zinc-500 underline underline-offset-4">Limpar filtros</button>}</div>
     {message && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-l-2 border-red-800 pl-4" role="alert"><p className="text-sm text-red-300">{message}</p><Button variant="secondary" size="sm" onClick={() => void loadEvents()}>Tentar novamente</Button></div>}
-    <div className="content-transition mt-3">{loading ? <EventCardSkeleton rows={6} /> : groups.length === 0 ? <EmptyState title="Não encontrámos eventos para estes filtros." actionLabel="Limpar filtros" actionHref="/agenda" /> : groups.map(([label, dayEvents]) => <section key={label} className="mt-8 first:mt-0"><h2 className="border-b border-zinc-800 pb-2 text-sm font-black capitalize">{label}</h2>{dayEvents.map((event) => <EventCardCompact key={event.id} event={{ id: event.id, slug: event.slug, title: event.title, date: compactDate(event), time: event.display_time, venue: event.venue_name, city: event.city, price: event.price || event.ticket_price, category: event.category, image: event.image_url, featured: event.featured }} />)}</section>)}</div>
+    <div className="content-transition mt-3">{loading ? <EventCardSkeleton rows={8} /> : groups.length === 0 ? <EmptyState title="Não encontrámos eventos para estes filtros." actionLabel="Limpar filtros" actionHref="/agenda" /> : groups.map(([label, dayEvents]) => <section key={label} className="mt-10 first:mt-0"><h2 className="mb-5 border-b border-zinc-800 pb-3 text-sm font-black capitalize text-zinc-300">{label}</h2><CardGrid>{dayEvents.map((event) => <EventCard key={event.id} event={{ id: event.id, slug: event.slug, title: event.title, date: compactDate(event), time: event.display_time, venue: event.venue_name, municipality: event.municipality, city: event.city, price: event.price || event.ticket_price, category: event.category, image: event.image_url, featured: event.featured }} />)}</CardGrid></section>)}</div>
 
     <FilterDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} footer={<div className="flex gap-3"><Button type="button" variant="secondary" onClick={clearAdvanced} className="flex-1">Limpar</Button><Button type="button" onClick={() => { setFiltersOpen(false); toast({ message: "Filtros aplicados.", tone: "success" }); }} className="flex-1">Aplicar</Button></div>}>
       <SelectField label="Distrito" value={district} onChange={(value) => { setDistrict(value); setMunicipality(ALL_MUNICIPALITIES); }} options={districtOptions} />

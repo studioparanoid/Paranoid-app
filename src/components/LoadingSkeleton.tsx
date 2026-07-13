@@ -3,11 +3,11 @@ export function LoadingSkeleton({ rows = 3 }: { rows?: number }) {
 }
 
 export function EventCardSkeleton({ rows = 4 }: { rows?: number }) {
-  return <div className="space-y-4" role="status" aria-label="A carregar eventos"><span className="sr-only">A carregar eventos...</span>{Array.from({ length: rows }).map((_, index) => <div key={index} className="grid grid-cols-[88px_1fr] gap-4 border-b border-zinc-900 py-4"><div className="skeleton-shimmer h-24 rounded" /><div className="space-y-3 py-1"><div className="skeleton-shimmer h-3 w-24 rounded" /><div className="skeleton-shimmer h-6 w-4/5 rounded" /><div className="skeleton-shimmer h-3 w-2/3 rounded" /></div></div>)}</div>;
+  return <div className="grid grid-cols-1 gap-x-4 gap-y-7 md:grid-cols-2 lg:grid-cols-4 lg:gap-x-5 lg:gap-y-9" role="status" aria-label="A carregar eventos"><span className="sr-only">A carregar eventos...</span>{Array.from({ length: rows }).map((_, index) => <div key={index} className="overflow-hidden rounded-lg border border-zinc-900"><div className="skeleton-shimmer aspect-[4/5]" /><div className="space-y-3 p-4"><div className="skeleton-shimmer h-5 w-4/5 rounded" /><div className="skeleton-shimmer h-3 w-2/3 rounded" /><div className="skeleton-shimmer h-3 w-1/2 rounded" /></div></div>)}</div>;
 }
 
 export function ProductCardSkeleton({ rows = 3 }: { rows?: number }) {
-  return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="A carregar produtos"><span className="sr-only">A carregar produtos...</span>{Array.from({ length: rows }).map((_, index) => <div key={index} className="overflow-hidden rounded-lg border border-zinc-900"><div className="skeleton-shimmer aspect-[4/5]" /><div className="space-y-3 p-4"><div className="skeleton-shimmer h-3 w-20 rounded" /><div className="skeleton-shimmer h-6 w-3/4 rounded" /></div></div>)}</div>;
+  return <div className="grid grid-cols-1 gap-x-4 gap-y-7 md:grid-cols-2 lg:grid-cols-4 lg:gap-x-5 lg:gap-y-9" role="status" aria-label="A carregar produtos"><span className="sr-only">A carregar produtos...</span>{Array.from({ length: rows }).map((_, index) => <div key={index} className="overflow-hidden rounded-lg border border-zinc-900"><div className="skeleton-shimmer aspect-[4/5]" /><div className="space-y-3 p-4"><div className="skeleton-shimmer h-3 w-20 rounded" /><div className="skeleton-shimmer h-6 w-3/4 rounded" /></div></div>)}</div>;
 }
 
 export function TicketSkeleton() {

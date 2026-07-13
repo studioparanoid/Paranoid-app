@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { CardGrid } from "@/components/CardGrid";
 import { EmptyState } from "@/components/EmptyState";
-import { EventCardCompact } from "@/components/EventCardCompact";
+import { EventCard } from "@/components/EventCard";
 import { EventCardSkeleton } from "@/components/LoadingSkeleton";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -88,7 +89,7 @@ export default function ForYouPage() {
   const visible = useMemo(() => tab === "followed" ? scored.filter((event) => event.followed) : tab === "nearby" ? scored.filter((event) => event.nearby) : scored.slice(0, 20), [scored, tab]);
   const hasSignals = follows.length > 0 || preferredCities.length > 0 || preferredCategories.length > 0;
 
-  return <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 text-[#f2f1ec] sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-6xl">
+  return <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 pb-28 text-[#f2f1ec] sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-7xl">
     <PageHeader eyebrow="Para ti" title="O teu feed" description={!userId ? "Eventos relevantes agora. Inicia sessão para personalizar." : undefined} />
     <SegmentedControl value={tab} options={feedTabs} onChange={setTab} label="Tipo de recomendações" className="mt-5 sm:max-w-md" />
 
@@ -96,6 +97,6 @@ export default function ForYouPage() {
     {userId && !hasSignals && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-y border-zinc-900 py-4"><p className="text-sm text-zinc-500">Segue artistas, espaços e organizadores para melhorares este feed.</p><Link href="/descobrir" className="rounded-full border border-zinc-700 px-4 py-2 text-xs font-black">Descobrir</Link></div>}
     {message && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-l-2 border-red-800 pl-4" role="alert"><p className="text-sm text-red-300">{message}</p><Button variant="secondary" size="sm" onClick={() => void loadFeed()}>Tentar novamente</Button></div>}
 
-    <section key={tab} className="content-transition mt-6">{loading ? <EventCardSkeleton rows={6} /> : visible.length === 0 ? <EmptyState title={tab === "followed" ? "Ainda não há eventos dos perfis que segues." : tab === "nearby" ? "Ainda não há eventos nas tuas localizações preferidas." : "Ainda não há recomendações."} description="Podes ajustar os teus interesses no perfil." actionLabel="Abrir perfil" actionHref="/perfil" /> : visible.map((event) => <EventCardCompact key={event.id} event={{ id: event.id, slug: event.slug, title: event.title, date: dateLabel(event), time: event.display_time, venue: event.venue_name, city: event.city, price: event.price, category: event.category, image: event.image_url, featured: event.featured, reason: event.reasons[0] || null }} />)}</section>
+    <section key={tab} className="content-transition mt-6">{loading ? <EventCardSkeleton rows={8} /> : visible.length === 0 ? <EmptyState title={tab === "followed" ? "Ainda não há eventos dos perfis que segues." : tab === "nearby" ? "Ainda não há eventos nas tuas localizações preferidas." : "Ainda não há recomendações."} description="Podes ajustar os teus interesses no perfil." actionLabel="Abrir perfil" actionHref="/perfil" /> : <CardGrid>{visible.map((event) => <EventCard key={event.id} event={{ id: event.id, slug: event.slug, title: event.title, date: dateLabel(event), time: event.display_time, venue: event.venue_name, city: event.city, price: event.price, category: event.category, image: event.image_url, featured: event.featured, reason: event.reasons[0] || null }} />)}</CardGrid>}</section>
   </section></main>;
 }

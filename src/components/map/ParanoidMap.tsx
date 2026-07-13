@@ -27,6 +27,8 @@ export type ParanoidMapEvent = {
   latitude: number;
   longitude: number;
   distanceKm: number | null;
+  featured?: boolean;
+  frequencyActive?: boolean;
 };
 
 type ParanoidMapProps = {
@@ -275,7 +277,13 @@ export function ParanoidMap({
       markerElement.type = "button";
       markerElement.setAttribute("aria-label", event.title);
       markerElement.dataset.eventId = event.id;
-      markerElement.className = "map-event-marker";
+      markerElement.dataset.priority = event.featured ? "3" : event.frequencyActive ? "2" : "1";
+      markerElement.className = [
+        "map-event-marker",
+        event.featured ? "map-event-marker--featured" : "",
+        !event.featured && event.frequencyActive ? "map-event-marker--frequency" : "",
+      ].filter(Boolean).join(" ");
+      markerElement.style.zIndex = markerElement.dataset.priority;
 
       markerElement.addEventListener("click", () => onSelectEvent(event));
 
@@ -305,8 +313,10 @@ export function ParanoidMap({
     markersRef.current.forEach((marker) => {
       const element = marker.getElement();
       if (!element.dataset.eventId) return;
-      element.classList.toggle("map-event-marker--selected", element.dataset.eventId === selectedEventId);
-      element.setAttribute("aria-pressed", String(element.dataset.eventId === selectedEventId));
+      const selected = element.dataset.eventId === selectedEventId;
+      element.classList.toggle("map-event-marker--selected", selected);
+      element.style.zIndex = selected ? "20" : element.dataset.priority || "1";
+      element.setAttribute("aria-pressed", String(selected));
     });
   }, [selectedEventId]);
 

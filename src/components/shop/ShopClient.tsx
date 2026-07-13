@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import {
-  formatMoney,
-  type ShopProduct,
-} from "@/lib/shop";
+import { CardGrid } from "@/components/CardGrid";
+import { ProductCard } from "@/components/shop/ProductCard";
+import { type ShopProduct } from "@/lib/shop";
 
 type ShopClientProps = {
   products: ShopProduct[];
@@ -74,47 +72,11 @@ export function ShopClient({ products }: ShopClientProps) {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <CardGrid>
         {filteredProducts.map((product) => (
-          <Link href={`/loja/${product.slug}`} key={product.id} className="focus-ring rounded-lg">
-            <article className="group card-hover overflow-hidden rounded-lg border border-zinc-900 bg-zinc-950 hover:border-red-900">
-              <div
-                className="interactive aspect-[4/5] bg-zinc-900 bg-cover bg-center group-hover:scale-[1.02]"
-                style={{
-                  backgroundImage: product.images[0]
-                    ? `url(${product.images[0]})`
-                    : "linear-gradient(135deg,#18181b,#450a0a)",
-                }}
-              />
-
-              <div className="space-y-3 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[0.65rem] font-black uppercase tracking-[0.3em] text-red-600">
-                      {product.category}
-                    </p>
-                    <h2 className="mt-2 text-xl font-black leading-tight">
-                      {product.name}
-                    </h2>
-                  </div>
-
-                  <p className="rounded-full bg-[#f2f1ec] px-3 py-1 text-sm font-black text-black">
-                    {formatMoney(product.finalPriceCents)}
-                  </p>
-                </div>
-
-                <p className="text-sm font-bold text-zinc-500">
-                  {product.sellerName}
-                </p>
-
-                {product.stockQuantity <= 0 && (
-                  <p className="text-sm font-black text-red-500">Esgotado</p>
-                )}
-              </div>
-            </article>
-          </Link>
+          <ProductCard product={product} key={product.id} />
         ))}
-      </section>
+      </CardGrid>
 
       {filteredProducts.length === 0 && (
         <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-400">

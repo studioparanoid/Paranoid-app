@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { CardGrid } from "@/components/CardGrid";
+import { EventCard } from "@/components/EventCard";
 import { supabase } from "@/lib/supabase/public";
 
 type VenueRow = {
@@ -53,56 +55,6 @@ function normalizeExternalUrl(value: string | null | undefined) {
   }
 
   return `https://${cleanValue}`;
-}
-
-function formatDate(value: string | null | undefined) {
-  if (!value) {
-    return "Data por definir";
-  }
-
-  const cleanValue = value.includes("T") ? value : `${value}T00:00:00`;
-  const date = new Date(cleanValue);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("pt-PT", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-  }).format(date);
-}
-
-function formatShortDate(value: string | null | undefined) {
-  if (!value) {
-    return "";
-  }
-
-  const cleanValue = value.includes("T") ? value : `${value}T00:00:00`;
-  const date = new Date(cleanValue);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("pt-PT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-}
-
-function ticketLabel(value: string | null | undefined) {
-  if (value === "internal") {
-    return "Bilheteira Paranoid";
-  }
-
-  if (value === "external") {
-    return "Bilhetes";
-  }
-
-  return null;
 }
 
 function eventDateValue(event: EventRow) {
@@ -514,111 +466,42 @@ export default function VenuePage() {
             </section>
           </aside>
 
-          <section className="space-y-5">
-            <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+          <section>
+            <div className="mb-6 border-b border-zinc-800 pb-5">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Eventos
               </p>
 
-              <h2 className="mt-3 text-5xl font-black leading-none lg:text-7xl">
-                O que acontece aqui.
+              <h2 className="mt-2 text-3xl font-black leading-none lg:text-4xl">
+                O que acontece aqui
               </h2>
             </div>
 
             {events.length === 0 && <EmptyEvents />}
 
-            {events.map((event) => {
-              const ticket = ticketLabel(event.ticket_mode);
-
-              return (
-                <article
-                  key={event.id}
-                  className="overflow-hidden rounded-[2.5rem] border border-zinc-800 bg-zinc-950"
-                >
-                  <div className="grid gap-0 lg:grid-cols-[220px_1fr]">
-                    <Link
-                      href={`/eventos/${event.slug}`}
-                      className="block min-h-56 bg-zinc-900 bg-cover bg-center lg:min-h-full"
-                      style={{
-                        backgroundImage: event.image_url
-                          ? `url(${event.image_url})`
-                          : "radial-gradient(circle at top, #3f0d0d, #111)",
-                      }}
-                      aria-label={event.title}
-                    />
-
-                    <div className="p-5 lg:p-6">
-                      <div className="flex flex-wrap gap-2">
-                        {event.featured && (
-                          <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-black uppercase text-red-300">
-                            Destaque
-                          </span>
-                        )}
-
-                        <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
-                          {event.category || "Evento"}
-                        </span>
-
-                        {ticket && (
-                          <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
-                            {ticket}
-                          </span>
-                        )}
-                      </div>
-
-                      <Link href={`/eventos/${event.slug}`}>
-                        <h3 className="mt-4 text-4xl font-black leading-none lg:text-5xl">
-                          {event.title}
-                        </h3>
-                      </Link>
-
-                      <div className="mt-4 grid gap-2 text-sm text-zinc-500 lg:grid-cols-2">
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Data
-                          </span>
-                          {event.display_date ||
-                            formatDate(event.start_at || event.start_date)}
-                          {event.is_multi_day && event.end_date
-                            ? ` — ${formatShortDate(event.end_date)}`
-                            : ""}
-                        </p>
-
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Hora
-                          </span>
-                          {event.display_time || "Hora por definir"}
-                        </p>
-
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Organizador
-                          </span>
-                          {event.organizer_name || "Sem organizador"}
-                        </p>
-
-                        <p>
-                          <span className="block text-xs font-black uppercase tracking-wide text-zinc-700">
-                            Preço
-                          </span>
-                          {event.price ||
-                            event.ticket_price ||
-                            "Preço por definir"}
-                        </p>
-                      </div>
-
-                      <Link
-                        href={`/eventos/${event.slug}`}
-                        className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-                      >
-                        Ver evento
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+            {events.length > 0 && (
+              <CardGrid>
+                {events.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={{
+                      id: event.id,
+                      slug: event.slug,
+                      title: event.title,
+                      date: event.display_date || event.start_at || event.start_date || "Data por definir",
+                      time: event.display_time,
+                      venue: event.venue_name,
+                      city: event.city,
+                      price: event.price || event.ticket_price,
+                      category: event.category,
+                      image: event.image_url,
+                      featured: Boolean(event.featured),
+                    }}
+                    showSave
+                  />
+                ))}
+              </CardGrid>
+            )}
           </section>
         </section>
       </section>

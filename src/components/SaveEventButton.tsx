@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
-import { LoadingButton } from "@/components/ui/Button";
+import { AppIcon } from "@/components/AppIcon";
+import { Button, LoadingButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
 type SaveEventButtonProps = {
@@ -132,18 +133,36 @@ export function SaveEventButton({ eventId, event, compact = false }: SaveEventBu
     setLoading(false);
   }
 
+  if (compact) {
+    return (
+      <Button
+        onClick={toggleSaved}
+        disabled={loading}
+        size="icon"
+        variant="ghost"
+        aria-label={saved ? "Remover dos guardados" : "Guardar evento"}
+        aria-pressed={saved}
+        aria-busy={loading}
+        title={saved ? "Remover dos guardados" : "Guardar evento"}
+        className={`border backdrop-blur-sm ${saved ? "border-red-500 bg-red-600 text-white hover:bg-red-500" : "border-white/20 bg-black/70 text-white hover:border-white/40 hover:bg-black/90"}`}
+      >
+        <AppIcon name="bookmark" className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
+      </Button>
+    );
+  }
+
   return (
     <LoadingButton
       onClick={toggleSaved}
       disabled={loading}
       loading={loading}
-      loadingText={compact ? "..." : "A guardar..."}
-      size={compact ? "sm" : "md"}
+      loadingText="A guardar..."
+      size="md"
       variant={saved ? "danger" : "primary"}
       aria-label={saved ? "Remover dos guardados" : "Guardar evento"}
     >
       {saved
-          ? compact ? "Guardado" : "Guardado"
+          ? "Guardado"
           : loggedIn
             ? "Guardar na conta"
             : "Guardar"}

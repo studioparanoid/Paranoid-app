@@ -38,14 +38,32 @@ body {
 }
 
 .map-event-marker {
+  position: relative;
+  display: block;
   width: 1rem;
   height: 1rem;
+  min-width: 1rem;
+  padding: 0;
   border: 2px solid #f2f1ec;
   border-radius: 999px;
   background: #dc2626;
+  opacity: 1;
+  appearance: none;
+  cursor: pointer;
+  pointer-events: auto;
   box-shadow: 0 0 0 6px rgb(220 38 38 / 0.2);
   animation: map-marker-enter var(--motion-normal) var(--ease-emphasized) both;
   transition: transform var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.map-event-marker--frequency {
+  border-color: #d4d4d8;
+  box-shadow: 0 0 0 5px rgb(220 38 38 / 0.22);
+}
+
+.map-event-marker--featured {
+  border-color: #fff;
+  box-shadow: 0 0 0 5px rgb(220 38 38 / 0.34), 0 4px 14px rgb(0 0 0 / 0.55);
 }
 
 .map-event-marker:hover,
@@ -56,9 +74,55 @@ body {
 .map-event-marker--selected,
 .map-event-marker--selected:hover,
 .map-event-marker--selected:focus-visible {
-  z-index: 2;
+  z-index: 20;
   transform: scale(1.42);
   box-shadow: 0 0 0 7px rgb(239 68 68 / 0.35), 0 0 22px rgb(239 68 68 / 0.72);
+}
+
+.home-hero::before {
+  position: absolute;
+  inset: 12% -8% auto auto;
+  width: min(38rem, 70vw);
+  height: 1px;
+  content: "";
+  background: #7f1d1d;
+  opacity: 0.55;
+  transform: rotate(-11deg);
+  transform-origin: right center;
+}
+
+.home-hero::after {
+  position: absolute;
+  right: 2%;
+  bottom: 22%;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  content: "";
+  background: #dc2626;
+  box-shadow: 0 0 0 7px rgb(220 38 38 / 0.12);
+}
+
+.interactive-card {
+  transition: transform var(--motion-normal) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .interactive-card:hover {
+    transform: translateY(-3px);
+  }
+}
+
+.interactive-card:active {
+  transform: scale(0.99);
+}
+
+.event-card-fallback {
+  background-color: #101010;
+  background-image:
+    linear-gradient(135deg, transparent 44%, rgb(127 29 29 / 0.28) 45%, rgb(127 29 29 / 0.28) 46%, transparent 47%),
+    linear-gradient(45deg, transparent 48%, rgb(255 255 255 / 0.035) 49%, rgb(255 255 255 / 0.035) 50%, transparent 51%);
+  background-size: 3.5rem 3.5rem, 2.25rem 2.25rem;
 }
 
 @keyframes map-marker-enter {

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -405,50 +406,66 @@ export default function EventPage() {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[3rem] border border-zinc-800 bg-zinc-950">
-          <div
-            className="min-h-[420px] bg-zinc-900 bg-cover bg-center lg:min-h-[560px]"
-            style={{
-              backgroundImage: event.image_url
-                ? `linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.9)), url(${event.image_url})`
-                : "radial-gradient(circle at top, #4a0f0f, #0b0b0b 70%)",
-            }}
-          >
-            <div className="flex min-h-[420px] flex-col justify-end p-6 lg:min-h-[560px] lg:p-10">
-              <div className="flex flex-wrap gap-2">
+        <section className="grid overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+          <div className="relative aspect-[4/5] overflow-hidden bg-zinc-900 lg:min-h-[580px] lg:aspect-auto">
+            {event.image_url ? (
+              <Image
+                src={event.image_url}
+                alt={event.title}
+                fill
+                priority
+                sizes="(max-width: 1023px) 100vw, 58vw"
+                unoptimized
+                className="object-cover"
+              />
+            ) : (
+              <div className="event-card-fallback absolute inset-0" aria-hidden="true" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/55" aria-hidden="true" />
+            <div className="absolute inset-x-0 top-0 z-10 flex flex-wrap gap-2 p-4 sm:p-6">
                 {event.featured && (
-                  <span className="rounded-full border border-red-900 bg-red-950/30 px-3 py-1 text-xs font-black uppercase text-red-300">
+                  <span className="rounded border border-red-500/60 bg-red-950/90 px-3 py-1.5 text-xs font-black uppercase text-red-100">
                     Destaque
                   </span>
                 )}
 
-                <span className="rounded-full border border-zinc-700 bg-black/50 px-3 py-1 text-xs font-black uppercase text-zinc-300">
+                <span className="rounded border border-zinc-600 bg-black/75 px-3 py-1.5 text-xs font-black uppercase text-zinc-200">
                   {event.category || "Evento"}
                 </span>
 
                 {ticketBadgeText && (
-                  <span className="rounded-full border border-green-900 bg-green-950/30 px-3 py-1 text-xs font-black uppercase text-green-400">
+                  <span className="rounded border border-zinc-600 bg-black/75 px-3 py-1.5 text-xs font-black uppercase text-zinc-200">
                     {ticketBadgeText}
                   </span>
                 )}
 
                 {isSaved && (
-                  <span className="rounded-full border border-yellow-900 bg-yellow-950/30 px-3 py-1 text-xs font-black uppercase text-yellow-500">
+                  <span className="rounded border border-red-500/60 bg-red-950/90 px-3 py-1.5 text-xs font-black uppercase text-red-100">
                     Guardado
                   </span>
                 )}
-              </div>
-
-              <h1 className="mt-5 max-w-5xl text-6xl font-black leading-none tracking-tight lg:text-9xl">
-                {event.title}
-              </h1>
             </div>
+          </div>
+
+          <div className="flex flex-col justify-end p-6 sm:p-8 lg:p-10">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">
+              {event.display_date || formatDate(dateValue)}
+            </p>
+            <h1 className="mt-4 break-words text-4xl font-black leading-[0.96] sm:text-5xl lg:text-6xl">
+              {event.title}
+            </h1>
+            <p className="mt-6 text-base font-bold text-zinc-400">
+              {[event.display_time, event.venue_name, event.city].filter(Boolean).join(" · ")}
+            </p>
+            <p className="mt-2 text-sm text-zinc-600">
+              {event.price || event.ticket_price || "Preço por definir"}
+            </p>
           </div>
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px] lg:items-start">
           <section className="space-y-6">
-            <article className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+            <article className="rounded-lg border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Informação
               </p>
@@ -502,13 +519,13 @@ export default function EventPage() {
               </div>
             </article>
 
-            <article className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+            <article className="rounded-lg border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Rede
               </p>
 
               <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
+                <div className="rounded-lg border border-zinc-800 bg-black p-5">
                   <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
                     Espaço
                   </p>
@@ -527,7 +544,7 @@ export default function EventPage() {
                   )}
                 </div>
 
-                <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
+                <div className="rounded-lg border border-zinc-800 bg-black p-5">
                   <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
                     Organizador
                   </p>
@@ -548,7 +565,7 @@ export default function EventPage() {
               </div>
 
               {artists.length > 0 && (
-                <div className="mt-5 rounded-[2rem] border border-zinc-800 bg-black p-5">
+                <div className="mt-5 rounded-lg border border-zinc-800 bg-black p-5">
                   <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
                     Artistas
                   </p>
@@ -568,31 +585,25 @@ export default function EventPage() {
               )}
             </article>
 
-            <article className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+            {event.description ? <article className="rounded-lg border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Descrição
               </p>
 
-              {event.description ? (
-                <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300 lg:text-lg">
-                  {event.description}
-                </p>
-              ) : (
-                <p className="mt-5 text-zinc-500">
-                  Ainda não há descrição para este evento.
-                </p>
-              )}
-            </article>
+              <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300 lg:text-lg">
+                {event.description}
+              </p>
+            </article> : null}
           </section>
 
           <aside className="space-y-6 lg:sticky lg:top-28">
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
+            <section className="rounded-lg border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Ação
               </p>
 
-              <h2 className="mt-3 text-4xl font-black leading-none">
-                Entra no ruído.
+              <h2 className="mt-3 text-2xl font-black leading-none">
+                Entra no ruído
               </h2>
 
               <div className="mt-6 grid gap-3">
@@ -666,35 +677,6 @@ export default function EventPage() {
               )}
             </section>
 
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Resumo
-              </p>
-
-              <div className="mt-5 space-y-4 text-sm text-zinc-400">
-                <p>
-                  <span className="block text-xs font-black uppercase tracking-wide text-zinc-600">
-                    Evento
-                  </span>
-                  {event.title}
-                </p>
-
-                <p>
-                  <span className="block text-xs font-black uppercase tracking-wide text-zinc-600">
-                    Local
-                  </span>
-                  {event.venue_name || "Sem espaço"} ·{" "}
-                  {event.city || "Sem cidade"}
-                </p>
-
-                <p>
-                  <span className="block text-xs font-black uppercase tracking-wide text-zinc-600">
-                    Categoria
-                  </span>
-                  {event.category || "Evento"}
-                </p>
-              </div>
-            </section>
           </aside>
         </section>
       </section>

@@ -619,12 +619,14 @@ export default function MapPage() {
         latitude: event.finalLatitude as number,
         longitude: event.finalLongitude as number,
         distanceKm: event.distanceKm,
+        featured: Boolean(event.featured),
+        frequencyActive: Boolean(event.frequencyActive),
       }));
   }, [filteredEvents]);
 
-  const visiblePinEvents = useMemo(() => {
-    return hasAppliedFilters ? pinEvents : [];
-  }, [hasAppliedFilters, pinEvents]);
+  // Markers stay visible while the initial filter panel is open. Applying the
+  // filters controls the selected event card, not whether valid events exist.
+  const visiblePinEvents = pinEvents;
 
   const selectedEvent = useMemo(() => {
     if (!hasAppliedFilters) {
@@ -997,7 +999,7 @@ export default function MapPage() {
       )}
 
       <section
-        className={`fixed inset-x-3 bottom-[calc(3.95rem+env(safe-area-inset-bottom))] z-[60] rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3`}
+        className={`fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[60] rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3`}
       >
         {controlsCollapsed && (
           <button
