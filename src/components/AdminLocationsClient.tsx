@@ -379,7 +379,8 @@ export function AdminLocationsClient() {
   }
 
   useEffect(() => {
-    loadData();
+    const timer = window.setTimeout(() => { void loadData(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function selectItem(item: EditableItem) {

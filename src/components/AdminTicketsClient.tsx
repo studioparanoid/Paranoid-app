@@ -155,21 +155,12 @@ export function AdminTicketsClient() {
     (reservation) => reservation.status === "checked_in"
   );
 
-  const cancelledReservations = reservations.filter(
-    (reservation) => reservation.status === "cancelled"
-  );
-
   const totalReservedTickets = reservedReservations.reduce(
     (sum, reservation) => sum + Number(reservation.quantity || 0),
     0
   );
 
   const totalCheckedInTickets = checkedInReservations.reduce(
-    (sum, reservation) => sum + Number(reservation.quantity || 0),
-    0
-  );
-
-  const totalTickets = reservations.reduce(
     (sum, reservation) => sum + Number(reservation.quantity || 0),
     0
   );
@@ -258,7 +249,8 @@ export function AdminTicketsClient() {
   }
 
   useEffect(() => {
-    loadData();
+    const timer = window.setTimeout(() => { void loadData(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function updateReservationStatus({

@@ -288,7 +288,8 @@ export default function VenuePage() {
   }
 
   useEffect(() => {
-    loadVenue();
+    const timer = window.setTimeout(() => { void loadVenue(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [slug]);
 
   async function toggleFollow() {

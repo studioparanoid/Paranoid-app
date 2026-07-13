@@ -112,7 +112,8 @@ export function TicketReservationClient({
   }
 
   useEffect(() => {
-    loadReservationData();
+    const timer = window.setTimeout(() => { void loadReservationData(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [event.id]);
 
   async function createReservation() {

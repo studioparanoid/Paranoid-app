@@ -114,7 +114,8 @@ export function AdminNetworkClient() {
   }
 
   useEffect(() => {
-    loadNetwork();
+    const timer = window.setTimeout(() => { void loadNetwork(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function createArtist() {

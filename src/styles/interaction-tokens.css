@@ -1,0 +1,174 @@
+:root {
+  --motion-instant: 80ms;
+  --motion-fast: 140ms;
+  --motion-normal: 200ms;
+  --motion-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --focus-color: #dc2626;
+}
+
+.interactive,
+.pressable,
+.card-hover,
+.focus-ring,
+button,
+a,
+input,
+select,
+textarea {
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.interactive,
+.pressable,
+button,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.interactive,
+.pressable {
+  transition-property: color, background-color, border-color, opacity, transform;
+}
+
+.pressable:active,
+button:not(:disabled):active,
+[role="button"]:active {
+  transform: scale(0.98);
+  transition-duration: var(--motion-instant);
+}
+
+.card-hover {
+  transition-property: color, background-color, border-color, opacity, transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-hover:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.focus-ring:focus-visible,
+:where(button, a, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 3px;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.subtle-enter,
+.route-transition {
+  animation: paranoid-subtle-enter var(--motion-normal) var(--ease-enter) both;
+}
+
+.fade-in {
+  animation: paranoid-fade-in var(--motion-normal) var(--ease-enter) both;
+}
+
+.slide-up {
+  animation: paranoid-slide-up var(--motion-slow) var(--ease-emphasized) both;
+}
+
+.scale-in {
+  animation: paranoid-scale-in var(--motion-normal) var(--ease-enter) both;
+}
+
+.content-transition {
+  animation: paranoid-fade-in var(--motion-normal) var(--ease-enter) both;
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: #151515;
+}
+
+.skeleton-shimmer::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.055) 48%, transparent 76%);
+  transform: translateX(-100%);
+  animation: paranoid-shimmer 1.35s linear infinite;
+}
+
+.ui-overlay {
+  background: rgb(0 0 0 / 0.76);
+  animation: paranoid-fade-in var(--motion-normal) var(--ease-enter) both;
+}
+
+.ui-dialog {
+  animation: paranoid-scale-in var(--motion-normal) var(--ease-enter) both;
+}
+
+.ui-sheet {
+  animation: paranoid-slide-up var(--motion-slow) var(--ease-emphasized) both;
+}
+
+.ui-toast {
+  animation: paranoid-toast-in var(--motion-normal) var(--ease-emphasized) both;
+}
+
+.ui-toast[data-leaving="true"] {
+  animation: paranoid-toast-out var(--motion-fast) var(--ease-exit) both;
+}
+
+@keyframes paranoid-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes paranoid-subtle-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes paranoid-slide-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes paranoid-scale-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes paranoid-toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes paranoid-toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(6px); }
+}
+
+@keyframes paranoid-shimmer {
+  to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+
+  .pressable:active,
+  button:not(:disabled):active,
+  [role="button"]:active,
+  .card-hover:hover {
+    transform: none;
+  }
+}

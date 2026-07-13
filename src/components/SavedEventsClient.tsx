@@ -140,7 +140,10 @@ function SavedEventCard({
 }
 
 export function SavedEventsClient({ events = [] }: SavedEventsClientProps) {
-  const safeEvents = Array.isArray(events) ? events : [];
+  const safeEvents = useMemo(
+    () => (Array.isArray(events) ? events : []),
+    [events]
+  );
 
   const [loading, setLoading] = useState(true);
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);

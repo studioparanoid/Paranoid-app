@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   formatMoney,
@@ -8,20 +7,24 @@ import {
   type ShopCartItem,
 } from "@/lib/shop";
 import { readShopCart, writeShopCart } from "@/lib/shop/cart";
+import { Button, LinkButton } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 export function CartClient() {
   const [items, setItems] = useState<ShopCartItem[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
-    setItems(readShopCart());
-
     function syncCart() {
       setItems(readShopCart());
     }
 
+    const timer = window.setTimeout(syncCart, 0);
+
     window.addEventListener("paranoid-shop-cart-updated", syncCart);
 
     return () => {
+      window.clearTimeout(timer);
       window.removeEventListener("paranoid-shop-cart-updated", syncCart);
     };
   }, []);
@@ -42,24 +45,37 @@ export function CartClient() {
   }
 
   function removeItem(productId: string, variant: string | undefined) {
+    const removedIndex = items.findIndex((item) => item.productId === productId && item.variant === variant);
+    const removedItem = removedIndex >= 0 ? items[removedIndex] : null;
     const nextItems = items.filter(
       (item) => !(item.productId === productId && item.variant === variant)
     );
 
     writeShopCart(nextItems);
     setItems(nextItems);
+    if (removedItem) {
+      toast({
+        message: "Produto removido.",
+        action: {
+          label: "Desfazer",
+          onClick: () => {
+            const restored = [...nextItems];
+            restored.splice(removedIndex, 0, removedItem);
+            writeShopCart(restored);
+            setItems(restored);
+          },
+        },
+      });
+    }
   }
 
   if (items.length === 0) {
     return (
-      <section className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-6">
+      <section className="subtle-enter rounded-lg border border-zinc-900 bg-zinc-950 p-6">
         <p className="text-zinc-400">O carrinho ainda está vazio.</p>
-        <Link
-          href="/loja"
-          className="mt-5 inline-block rounded-full bg-[#f2f1ec] px-5 py-3 font-black text-black"
-        >
+        <LinkButton href="/loja" className="mt-5">
           Ver loja
-        </Link>
+        </LinkButton>
       </section>
     );
   }
@@ -70,7 +86,7 @@ export function CartClient() {
         {items.map((item) => (
           <article
             key={`${item.productId}-${item.variant || "default"}`}
-            className="grid grid-cols-[5rem_1fr] gap-4 rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-3"
+            className="subtle-enter grid grid-cols-[5rem_1fr] gap-4 rounded-lg border border-zinc-900 bg-zinc-950 p-3"
           >
             <div
               className="aspect-square rounded-2xl bg-zinc-900 bg-cover bg-center"
@@ -100,35 +116,39 @@ export function CartClient() {
 
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    aria-label={`Diminuir quantidade de ${item.name}`}
                     onClick={() =>
                       updateQuantity(item.productId, item.variant, item.quantity - 1)
                     }
-                    className="h-10 w-10 rounded-full border border-zinc-800 font-black"
+                    className="h-10 w-10"
                   >
                     -
-                  </button>
+                  </Button>
                   <span className="w-8 text-center font-black">{item.quantity}</span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    aria-label={`Aumentar quantidade de ${item.name}`}
                     disabled={item.quantity >= item.stockQuantity}
                     onClick={() =>
                       updateQuantity(item.productId, item.variant, item.quantity + 1)
                     }
-                    className="h-10 w-10 rounded-full border border-zinc-800 font-black disabled:text-zinc-700"
+                    className="h-10 w-10 disabled:text-zinc-700"
                   >
                     +
-                  </button>
+                  </Button>
                 </div>
 
-                <button
-                  type="button"
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={() => removeItem(item.productId, item.variant)}
-                  className="rounded-full border border-red-950 px-4 py-2 text-xs font-black text-red-400"
                 >
                   Remover
-                </button>
+                </Button>
 
                 {item.quantity >= item.stockQuantity && (
                   <p className="w-full text-xs font-bold text-red-400">
@@ -141,7 +161,7 @@ export function CartClient() {
         ))}
       </div>
 
-      <aside className="h-fit rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
+      <aside className="h-fit rounded-lg border border-zinc-900 bg-zinc-950 p-5">
         <h2 className="text-2xl font-black">Resumo</h2>
         <div className="mt-5 space-y-3 text-sm">
           <p className="flex justify-between text-zinc-400">
@@ -161,12 +181,9 @@ export function CartClient() {
           </p>
         </div>
 
-        <Link
-          href="/loja/checkout"
-          className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center font-black text-black"
-        >
+        <LinkButton href="/loja/checkout" size="lg" className="mt-5 flex w-full">
           Finalizar compra
-        </Link>
+        </LinkButton>
       </aside>
     </section>
   );

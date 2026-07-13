@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 import { type EventSubmission } from "@/lib/submissions";
+import { Button, LoadingButton } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 
 type LocationSource = "manual" | "geocoded" | "venue" | null;
 
@@ -495,13 +498,11 @@ export function AdminSubmissionActions({
 }: AdminSubmissionActionsProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | null>(null);
+  const { toast } = useToast();
 
   async function rejectSubmission() {
     setMessage("");
-
-    if (!confirm("Rejeitar esta submissão?")) {
-      return;
-    }
 
     setLoading(true);
 
@@ -514,10 +515,13 @@ export function AdminSubmissionActions({
 
     if (error) {
       setMessage(`Erro ao rejeitar: ${error.message}`);
+      toast({ message: "Não foi possível rejeitar a submissão.", tone: "error" });
       return;
     }
 
-    window.location.reload();
+    setConfirmAction(null);
+    toast({ message: "Submissão rejeitada.", tone: "success" });
+    window.setTimeout(() => window.location.reload(), 240);
   }
 
   async function approveSubmission() {
@@ -525,10 +529,6 @@ export function AdminSubmissionActions({
 
     if (!submission.event_date) {
       setMessage("A submissão não tem data.");
-      return;
-    }
-
-    if (!confirm("Aprovar e publicar este evento?")) {
       return;
     }
 
@@ -636,7 +636,9 @@ export function AdminSubmissionActions({
       }
 
       setLoading(false);
-      window.location.reload();
+      setConfirmAction(null);
+      toast({ message: "Evento aprovado e publicado.", tone: "success" });
+      window.setTimeout(() => window.location.reload(), 240);
     } catch (error) {
       setLoading(false);
       setMessage(
@@ -644,29 +646,29 @@ export function AdminSubmissionActions({
           error instanceof Error ? error.message : "erro desconhecido"
         }`
       );
+      toast({ message: "Não foi possível aprovar a submissão.", tone: "error" });
     }
   }
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={approveSubmission}
+        <LoadingButton
+          onClick={() => setConfirmAction("approve")}
           disabled={loading || submission.status !== "pending"}
-          className="rounded-full bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black disabled:opacity-50"
+          loading={loading && confirmAction === "approve"}
+          loadingText="A aprovar..."
         >
-          {loading ? "..." : "Aprovar"}
-        </button>
+          Aprovar
+        </LoadingButton>
 
-        <button
-          type="button"
-          onClick={rejectSubmission}
+        <Button
+          onClick={() => setConfirmAction("reject")}
           disabled={loading || submission.status !== "pending"}
-          className="rounded-full border border-red-900 px-4 py-3 text-sm font-bold text-red-400 disabled:opacity-50"
+          variant="danger"
         >
           Rejeitar
-        </button>
+        </Button>
       </div>
 
       {submission.ticket_mode && submission.ticket_mode !== "none" && (
@@ -695,10 +697,12 @@ export function AdminSubmissionActions({
       )}
 
       {message && (
-        <p className="text-center text-xs font-bold text-zinc-500">
+        <p className="text-center text-xs font-bold text-zinc-500" role="alert">
           {message}
         </p>
       )}
+      <ConfirmDialog open={confirmAction === "approve"} onClose={() => !loading && setConfirmAction(null)} onConfirm={() => void approveSubmission()} title="Aprovar e publicar?" description="O evento fica imediatamente visível na Agenda." confirmLabel="Aprovar evento" loading={loading} />
+      <ConfirmDialog open={confirmAction === "reject"} onClose={() => !loading && setConfirmAction(null)} onConfirm={() => void rejectSubmission()} title="Rejeitar esta submissão?" description="A submissão fica marcada como rejeitada." confirmLabel="Rejeitar" loading={loading} danger />
     </div>
   );
 }

@@ -11,6 +11,8 @@ import {
   readShopCart,
   saveLastShopOrder,
 } from "@/lib/shop/cart";
+import { LoadingButton } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 export function CheckoutClient() {
   const [items, setItems] = useState<ShopCartItem[]>([]);
@@ -24,9 +26,11 @@ export function CheckoutClient() {
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    setItems(readShopCart());
+    const timer = window.setTimeout(() => setItems(readShopCart()), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const totals = useMemo(() => getCartTotals(items), [items]);
@@ -36,28 +40,38 @@ export function CheckoutClient() {
     setMessage("");
     setLoading(true);
 
-    const response = await fetch("/api/shop/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        buyerName,
-        buyerEmail,
-        buyerPhone,
-        shippingAddress,
-        postalCode,
-        city,
-        country,
-        notes,
-        items,
-      }),
-    });
-    const payload = await response.json();
+    let response: Response;
+    let payload: { error?: string; checkoutUrl?: string; order?: { id?: string }; paymentReference?: string };
+    try {
+      response = await fetch("/api/shop/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyerName,
+          buyerEmail,
+          buyerPhone,
+          shippingAddress,
+          postalCode,
+          city,
+          country,
+          notes,
+          items,
+        }),
+      });
+      payload = await response.json();
+    } catch {
+      setLoading(false);
+      setMessage("Não foi possível ligar ao checkout. Tenta novamente.");
+      toast({ message: "Erro de rede. Tenta novamente.", tone: "error" });
+      return;
+    }
 
     setLoading(false);
 
     if (!response.ok) {
       const error = payload.error || "Não foi possível preparar o pagamento.";
       setMessage(error);
+      toast({ message: "Não foi possível preparar a encomenda.", tone: "error" });
       window.location.href = `/loja/checkout/erro?reason=${encodeURIComponent(error)}`;
       return;
     }
@@ -78,8 +92,10 @@ export function CheckoutClient() {
     <section className="grid gap-6 lg:grid-cols-[1fr_22rem]">
       <form
         onSubmit={submitOrder}
-        className="space-y-4 rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5"
+        aria-busy={loading}
+        className="space-y-4 rounded-lg border border-zinc-900 bg-zinc-950 p-5"
       >
+        <div className="flex items-center gap-3 border-b border-zinc-900 pb-4 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-600" aria-label="Progresso do checkout"><span className="text-red-400">1. Dados</span><span aria-hidden="true">→</span><span>2. Pagamento</span></div>
         <label className="block space-y-2">
           <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
             Nome
@@ -179,22 +195,25 @@ export function CheckoutClient() {
           />
         </label>
 
-        <button
+        <LoadingButton
           type="submit"
           disabled={loading || items.length === 0}
-          className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
+          loading={loading}
+          loadingText="A preparar..."
+          size="lg"
+          className="w-full"
         >
-          {loading ? "A preparar..." : "Pagar encomenda"}
-        </button>
+          Pagar encomenda
+        </LoadingButton>
 
         {message && (
-          <p className="rounded-2xl border border-red-900 bg-red-950/40 p-4 font-bold text-red-100">
+          <p className="subtle-enter rounded-lg border border-red-900 bg-red-950/40 p-4 font-bold text-red-100" role="alert">
             {message}
           </p>
         )}
       </form>
 
-      <aside className="h-fit rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
+      <aside className="h-fit rounded-lg border border-zinc-900 bg-zinc-950 p-5">
         <h2 className="text-2xl font-black">Encomenda</h2>
         <div className="mt-5 space-y-3">
           {items.map((item) => (

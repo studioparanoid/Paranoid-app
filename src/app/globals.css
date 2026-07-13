@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../styles/interaction-tokens.css";
 
 :root {
   --background: #ffffff;
@@ -25,6 +26,44 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+html {
+  background: #0b0b0b;
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.map-event-marker {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #f2f1ec;
+  border-radius: 999px;
+  background: #dc2626;
+  box-shadow: 0 0 0 6px rgb(220 38 38 / 0.2);
+  animation: map-marker-enter var(--motion-normal) var(--ease-emphasized) both;
+  transition: transform var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.map-event-marker:hover,
+.map-event-marker:focus-visible {
+  transform: scale(1.2);
+}
+
+.map-event-marker--selected,
+.map-event-marker--selected:hover,
+.map-event-marker--selected:focus-visible {
+  z-index: 2;
+  transform: scale(1.42);
+  box-shadow: 0 0 0 7px rgb(239 68 68 / 0.35), 0 0 22px rgb(239 68 68 / 0.72);
+}
+
+@keyframes map-marker-enter {
+  from { opacity: 0; transform: scale(0.65); }
+  to { opacity: 1; transform: scale(1); }
 }
 /* The map owns the viewport between the app header and mobile navigation. */
 .map-screen {

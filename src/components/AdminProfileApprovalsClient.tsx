@@ -162,7 +162,8 @@ export function AdminProfileApprovalsClient() {
   }
 
   useEffect(() => {
-    loadClaims();
+    const timer = window.setTimeout(() => { void loadClaims(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function approveClaim(claim: ProfileClaimRow) {

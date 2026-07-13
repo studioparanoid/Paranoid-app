@@ -158,7 +158,8 @@ export function AdminSubmissionEditClient({
   }
 
   useEffect(() => {
-    loadSubmission();
+    const timer = window.setTimeout(() => { void loadSubmission(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [resolvedSubmissionId]);
 
   function handleCategoryChange(value: string) {

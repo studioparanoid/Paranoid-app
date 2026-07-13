@@ -544,7 +544,8 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
   }
 
   useEffect(() => {
-    loadEvent();
+    const timer = window.setTimeout(() => { void loadEvent(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [eventId]);
 
   function handleCategoryChange(value: string) {

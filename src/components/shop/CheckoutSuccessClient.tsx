@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { LinkButton } from "@/components/ui/Button";
 import {
   formatMoney,
   getOrderStatusLabel,
@@ -14,11 +14,12 @@ export function CheckoutSuccessClient() {
   const [order, setOrder] = useState<ShopOrder | null>(null);
 
   useEffect(() => {
-    setOrder(readLastShopOrder() as ShopOrder | null);
+    const timer = window.setTimeout(() => setOrder(readLastShopOrder() as ShopOrder | null), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (
-    <section className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-6">
+    <section className="subtle-enter rounded-lg border border-zinc-900 bg-zinc-950 p-6">
       <p className="text-xs font-black uppercase tracking-[0.35em] text-green-400">
         Encomenda recebida
       </p>
@@ -50,13 +51,9 @@ export function CheckoutSuccessClient() {
         </div>
       )}
 
-      <Link
-        href="/loja"
-        className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-5 py-3 font-black text-black"
-      >
+      <LinkButton href="/loja" className="mt-6">
         Voltar à loja
-      </Link>
+      </LinkButton>
     </section>
   );
 }
-

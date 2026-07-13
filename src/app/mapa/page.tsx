@@ -23,6 +23,7 @@ import type {
   ParanoidMapEvent,
   ParanoidMapUserLocation,
 } from "@/components/map/ParanoidMap";
+import { MapLoadingState } from "@/components/LoadingSkeleton";
 import { supabase } from "@/lib/supabase/public";
 
 const ParanoidMap = dynamic(
@@ -431,7 +432,7 @@ export default function MapPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [savedManualLocation, setSavedManualLocation] =
+  const [, setSavedManualLocation] =
     useState<SavedManualLocation | null>(null);
   const [manualLocationQuery, setManualLocationQuery] = useState("");
 
@@ -714,7 +715,8 @@ export default function MapPage() {
   }
 
   useEffect(() => {
-    loadMapData();
+    const timer = window.setTimeout(() => { void loadMapData(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -753,36 +755,25 @@ export default function MapPage() {
   }, [hasAppliedFilters, locating]);
 
   useEffect(() => {
-    if (locating) {
-      setControlsCollapsed(false);
-    }
-  }, [locating]);
-
-  useEffect(() => {
-    try {
-      const rawValue = window.localStorage.getItem(SAVED_MANUAL_LOCATION_KEY);
-
-      if (!rawValue) {
-        return;
+    const timer = window.setTimeout(() => {
+      try {
+        const rawValue = window.localStorage.getItem(SAVED_MANUAL_LOCATION_KEY);
+        if (!rawValue) return;
+        const parsed = JSON.parse(rawValue) as SavedManualLocation;
+        if (typeof parsed.latitude === "number" && typeof parsed.longitude === "number" && parsed.source === "manual") {
+          setSavedManualLocation(parsed);
+        }
+      } catch {
+        window.localStorage.removeItem(SAVED_MANUAL_LOCATION_KEY);
       }
-
-      const parsed = JSON.parse(rawValue) as SavedManualLocation;
-
-      if (
-        typeof parsed.latitude === "number" &&
-        typeof parsed.longitude === "number" &&
-        parsed.source === "manual"
-      ) {
-        setSavedManualLocation(parsed);
-      }
-    } catch {
-      window.localStorage.removeItem(SAVED_MANUAL_LOCATION_KEY);
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (hasAppliedFilters && !selectedEventId && filteredEvents.length > 0) {
-      setSelectedEventId(filteredEvents[0].id);
+      const timer = window.setTimeout(() => setSelectedEventId(filteredEvents[0].id), 0);
+      return () => window.clearTimeout(timer);
     }
   }, [filteredEvents, hasAppliedFilters, selectedEventId]);
 
@@ -792,23 +783,6 @@ export default function MapPage() {
       SAVED_MANUAL_LOCATION_KEY,
       JSON.stringify(location)
     );
-  }
-
-  function useSavedManualLocation(nextRadius: RadiusFilter = "50") {
-    if (!savedManualLocation) {
-      return;
-    }
-
-    setUserLocation(savedManualLocation);
-    setManualLocationQuery(savedManualLocation.label || savedManualLocation.query);
-    setRadiusFilter(nextRadius === "all" ? "50" : nextRadius);
-    setDistrictFilter(ALL_DISTRICTS);
-    setMunicipalityFilter(ALL_MUNICIPALITIES);
-    setCityFilter(ALL_CITIES);
-    setMessage("");
-    setHasAppliedFilters(true);
-    setControlsCollapsed(true);
-    setEventCardOpen(true);
   }
 
   function handleRadiusChange(value: RadiusFilter) {
@@ -825,14 +799,14 @@ export default function MapPage() {
 
   function handleApplyFilters() {
     if (manualLocationQuery.trim()) {
-      useManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
+      applyManualLocation(radiusFilter === "all" ? "50" : radiusFilter);
       return;
     }
 
     applyFiltersWithoutLocation();
   }
 
-  async function useManualLocation(nextRadius: RadiusFilter = "50") {
+  async function applyManualLocation(nextRadius: RadiusFilter = "50") {
     const cleanQuery = manualLocationQuery.trim();
 
     if (!cleanQuery) {
@@ -917,6 +891,7 @@ export default function MapPage() {
       return;
     }
 
+    setControlsCollapsed(false);
     setLocating(true);
     setMessage("");
 
@@ -981,10 +956,8 @@ export default function MapPage() {
 
   if (loading) {
     return (
-      <main className="map-screen grid place-items-center bg-black px-5 pb-24 text-[#f2f1ec] lg:pb-0">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5">
-          <p className="text-sm font-bold text-zinc-500">A carregar radar...</p>
-        </div>
+      <main className="map-screen bg-black pb-24 text-[#f2f1ec] lg:pb-0">
+        <MapLoadingState />
       </main>
     );
   }
@@ -1097,7 +1070,7 @@ export default function MapPage() {
                 disabled={locating}
                 className="hidden rounded-xl border border-red-500/60 bg-red-950/35 px-4 py-3 text-sm font-black text-red-100 disabled:cursor-wait disabled:opacity-70 lg:block"
               >
-                {locating ? "A localizar..." : "Localização"}
+                {locating ? "A localizar..." : userLocation?.source === "browser" ? "Localizado" : "Localização"}
               </button>
 
               <div className="hidden grid-cols-[auto_1fr_auto_auto] items-center gap-3 lg:grid">
@@ -1197,7 +1170,7 @@ export default function MapPage() {
             disabled={locating}
             className="mt-2 w-full rounded-xl border border-red-500/60 bg-red-950/35 px-4 py-2.5 text-sm font-black text-red-100 disabled:cursor-wait disabled:opacity-70 lg:hidden"
           >
-            {locating ? "A localizar..." : "Usar localização atual"}
+            {locating ? "A localizar..." : userLocation?.source === "browser" ? "Localizado" : "Usar localização atual"}
           </button>
 
           <div className="mt-2 grid gap-2 lg:hidden">
@@ -1262,9 +1235,10 @@ export default function MapPage() {
       </section>
 
       <aside
-        className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/72 shadow-2xl shadow-black/50 backdrop-blur-xl lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
+        aria-label="Evento selecionado"
+        className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/82 shadow-2xl shadow-black/50 backdrop-blur-md lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
           hasAppliedFilters && controlsCollapsed && eventCardOpen
-            ? "block"
+            ? "slide-up block"
             : "hidden lg:flex"
         }`}
       >
@@ -1275,7 +1249,7 @@ export default function MapPage() {
                 type="button"
                 onClick={() => selectRelativeEvent(-1)}
                 aria-label="Evento anterior"
-                className="grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-[#f2f1ec] lg:hidden"
+                className="pressable focus-ring grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-[#f2f1ec] lg:hidden"
               >
                 ‹
               </button>
@@ -1319,7 +1293,7 @@ export default function MapPage() {
                 type="button"
                 onClick={() => selectRelativeEvent(1)}
                 aria-label="Próximo evento"
-                className="grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-[#f2f1ec] lg:hidden"
+                className="pressable focus-ring grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/40 text-lg font-black text-[#f2f1ec] lg:hidden"
               >
                 ›
               </button>
@@ -1328,7 +1302,7 @@ export default function MapPage() {
             <div className="mt-2.5 flex gap-2">
               <Link
                 href={`/eventos/${selectedEvent.slug}`}
-                className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-2 text-center text-xs font-black text-black"
+                className="pressable focus-ring flex-1 rounded-full bg-[#f2f1ec] px-4 py-2 text-center text-xs font-black text-black"
               >
                 Ver evento
               </Link>
@@ -1336,7 +1310,7 @@ export default function MapPage() {
                 href={selectedMapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-black text-zinc-100"
+                className="pressable focus-ring rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-black text-zinc-100"
               >
                 Rota
               </a>
@@ -1344,7 +1318,7 @@ export default function MapPage() {
                 type="button"
                 onClick={() => setEventCardOpen(false)}
                 aria-label="Fechar evento"
-                className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/30 text-sm font-black text-zinc-100"
+                className="pressable focus-ring grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/30 text-sm font-black text-zinc-100"
               >
                 ×
               </button>

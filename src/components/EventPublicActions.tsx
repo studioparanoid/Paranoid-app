@@ -110,9 +110,6 @@ export function EventPublicActions({
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const savedEvents = getLocalSavedEvents();
-    setSaved(savedEvents.includes(eventId));
-
     async function loadDbSavedState() {
       const {
         data: { user },
@@ -134,7 +131,12 @@ export function EventPublicActions({
       }
     }
 
-    loadDbSavedState();
+    const timer = window.setTimeout(() => {
+      const savedEvents = getLocalSavedEvents();
+      setSaved(savedEvents.includes(eventId));
+      void loadDbSavedState();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [eventId]);
 
   async function toggleSaved() {

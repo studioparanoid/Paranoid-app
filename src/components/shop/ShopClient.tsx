@@ -76,10 +76,10 @@ export function ShopClient({ products }: ShopClientProps) {
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredProducts.map((product) => (
-          <Link href={`/loja/${product.slug}`} key={product.id}>
-            <article className="group overflow-hidden rounded-[1.5rem] border border-zinc-900 bg-zinc-950 transition hover:border-red-900">
+          <Link href={`/loja/${product.slug}`} key={product.id} className="focus-ring rounded-lg">
+            <article className="group card-hover overflow-hidden rounded-lg border border-zinc-900 bg-zinc-950 hover:border-red-900">
               <div
-                className="aspect-[4/5] bg-zinc-900 bg-cover bg-center"
+                className="interactive aspect-[4/5] bg-zinc-900 bg-cover bg-center group-hover:scale-[1.02]"
                 style={{
                   backgroundImage: product.images[0]
                     ? `url(${product.images[0]})`

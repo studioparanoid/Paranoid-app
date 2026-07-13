@@ -8,5 +8,6 @@ const options: Array<{ value: QuickDateValue; label: string }> = [
 ];
 
 export function DateQuickFilters({ value, onChange }: { value: QuickDateValue; onChange: (value: QuickDateValue) => void }) {
-  return <div className="grid grid-cols-4 rounded border border-zinc-800 bg-black p-1" aria-label="Filtro de data">{options.map((option) => <button key={option.value} type="button" onClick={() => onChange(option.value)} aria-pressed={value === option.value} className={`min-h-10 rounded px-2 text-xs font-black transition ${value === option.value ? "bg-[#f2f1ec] text-black" : "text-zinc-500 hover:text-zinc-200"}`}>{option.label}</button>)}</div>;
+  return <SegmentedControl value={value} options={options} onChange={onChange} label="Filtro de data" />;
 }
+import { SegmentedControl } from "@/components/ui/SegmentedControl";

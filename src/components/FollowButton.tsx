@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
+import { LoadingButton } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 type TargetType = "artist" | "venue" | "organizer";
 
@@ -26,6 +28,7 @@ export function FollowButton({ targetId, targetType }: FollowButtonProps) {
   const [following, setFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     async function checkFollow() {
@@ -73,12 +76,15 @@ export function FollowButton({ targetId, targetType }: FollowButtonProps) {
 
     setLoading(true);
     setMessage("");
+    const wasFollowing = following;
+    setFollowing(!wasFollowing);
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
+      setFollowing(wasFollowing);
       window.location.href = "/login";
       return;
     }
@@ -92,12 +98,15 @@ export function FollowButton({ targetId, targetType }: FollowButtonProps) {
         .eq("target_id", targetId);
 
       if (error) {
+        setFollowing(wasFollowing);
         setMessage("Não consegui remover.");
+        toast({ message: "Não foi possível deixar de seguir.", tone: "error" });
         setLoading(false);
         return;
       }
 
       setFollowing(false);
+      toast({ message: "Deixaste de seguir.", tone: "success" });
       setLoading(false);
       return;
     }
@@ -115,12 +124,15 @@ export function FollowButton({ targetId, targetType }: FollowButtonProps) {
     );
 
     if (error) {
+      setFollowing(wasFollowing);
       setMessage("Não consegui seguir.");
+      toast({ message: "Não foi possível seguir.", tone: "error" });
       setLoading(false);
       return;
     }
 
     setFollowing(true);
+    toast({ message: "Agora estás a seguir.", tone: "success" });
     setLoading(false);
   }
 
@@ -130,22 +142,17 @@ export function FollowButton({ targetId, targetType }: FollowButtonProps) {
 
   return (
     <div>
-      <button
-        type="button"
+      <LoadingButton
         onClick={toggleFollow}
         disabled={loading}
-        className={`rounded-full px-5 py-3 text-sm font-black disabled:opacity-50 ${
-          following
-            ? "border border-red-900 bg-red-950 text-red-300"
-            : "bg-[#f2f1ec] text-black"
-        }`}
+        loading={loading}
+        loadingText="A atualizar..."
+        variant={following ? "danger" : "primary"}
       >
-        {loading
-          ? "A verificar..."
-          : following
+        {following
             ? followingLabels[targetType]
             : followLabels[targetType]}
-      </button>
+      </LoadingButton>
 
       {message && (
         <p className="mt-2 text-xs font-bold text-red-500">{message}</p>

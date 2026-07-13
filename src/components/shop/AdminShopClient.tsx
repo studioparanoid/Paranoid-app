@@ -9,6 +9,9 @@ import {
   type ShopOrder,
 } from "@/lib/shop";
 import { supabase } from "@/lib/supabase/public";
+import { AdminListSkeleton } from "@/components/LoadingSkeleton";
+import { Button, LoadingButton } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 const filters = [
   ["all", "Todas"],
@@ -29,6 +32,8 @@ export function AdminShopClient() {
   const [shipping, setShipping] = useState("3.99");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [busyAction, setBusyAction] = useState("");
+  const { toast } = useToast();
 
   async function loadOrders() {
     setLoading(true);
@@ -59,7 +64,8 @@ export function AdminShopClient() {
   }
 
   useEffect(() => {
-    loadOrders();
+    const timer = window.setTimeout(() => { void loadOrders(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const filteredOrders = useMemo(() => {
@@ -87,6 +93,9 @@ export function AdminShopClient() {
     status: string,
     fiscalDocumentStatus?: string
   ) {
+    const actionKey = `${orderId}-${status}-${fiscalDocumentStatus || ""}`;
+    if (busyAction) return;
+    setBusyAction(actionKey);
     setMessage("");
     const {
       data: { session },
@@ -94,6 +103,8 @@ export function AdminShopClient() {
 
     if (!session) {
       setMessage("Tens de iniciar sessão.");
+      setBusyAction("");
+      toast({ message: "Tens de iniciar sessão.", tone: "error" });
       return;
     }
 
@@ -109,10 +120,14 @@ export function AdminShopClient() {
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
       setMessage(payload.error || "Não consegui atualizar a encomenda.");
+      setBusyAction("");
+      toast({ message: "Não foi possível atualizar a encomenda.", tone: "error" });
       return;
     }
 
     await loadOrders();
+    setBusyAction("");
+    toast({ message: "Encomenda atualizada.", tone: "success" });
   }
 
   return (
@@ -124,7 +139,8 @@ export function AdminShopClient() {
               type="button"
               key={value}
               onClick={() => setFilter(value)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-black ${
+              aria-pressed={filter === value}
+              className={`pressable focus-ring shrink-0 rounded-full px-4 py-2 text-sm font-black ${
                 filter === value
                   ? "bg-[#f2f1ec] text-black"
                   : "border border-zinc-800 text-zinc-400"
@@ -141,7 +157,7 @@ export function AdminShopClient() {
           </p>
         )}
 
-        {loading && <p className="text-zinc-500">A carregar encomendas...</p>}
+        {loading && <AdminListSkeleton />}
 
         {!loading && filteredOrders.length === 0 && (
           <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-500">
@@ -216,65 +232,84 @@ export function AdminShopClient() {
             )}
 
             <div className="mt-5 grid gap-2 sm:grid-cols-4">
-              <button
-                type="button"
+              <LoadingButton
                 onClick={() => updateStatus(order.id, "paid")}
-                className="rounded-full border border-green-900 px-4 py-3 text-sm font-black text-green-300"
+                loading={busyAction === `${order.id}-paid-`}
+                loadingText="A confirmar..."
+                disabled={Boolean(busyAction)}
+                variant="secondary"
+                size="sm"
+                className="border-green-900 text-green-300"
               >
                 Marcar pago
-              </button>
-              <button
-                type="button"
+              </LoadingButton>
+              <LoadingButton
                 onClick={() => updateStatus(order.id, "awaiting_shipment")}
-                className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300"
+                loading={busyAction === `${order.id}-awaiting_shipment-`}
+                loadingText="A atualizar..."
+                disabled={Boolean(busyAction)}
+                variant="secondary"
+                size="sm"
               >
                 A preparar
-              </button>
-              <button
-                type="button"
+              </LoadingButton>
+              <LoadingButton
                 onClick={() => updateStatus(order.id, "completed")}
-                className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300"
+                loading={busyAction === `${order.id}-completed-`}
+                loadingText="A concluir..."
+                disabled={Boolean(busyAction)}
+                variant="secondary"
+                size="sm"
               >
                 Concluir
-              </button>
-              <button
-                type="button"
+              </LoadingButton>
+              <LoadingButton
                 onClick={() => updateStatus(order.id, "payout_paid")}
+                loading={busyAction === `${order.id}-payout_paid-`}
+                loadingText="A atualizar..."
+                variant="secondary"
+                size="sm"
                 disabled={
+                  Boolean(busyAction) ||
                   order.payouts.length === 0 ||
                   order.payouts.some(
                     (payout) => payout.fiscalDocumentStatus !== "approved"
                   )
                 }
-                className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300 disabled:cursor-not-allowed disabled:text-zinc-700"
+                className="disabled:text-zinc-700"
               >
                 Payout pago
-              </button>
+              </LoadingButton>
             </div>
 
             {order.payouts.length > 0 && (
               <div className="mt-3 grid gap-2 sm:grid-cols-4">
                 {["requested", "received", "approved", "rejected"].map(
                   (status) => (
-                    <button
-                      type="button"
+                    <Button
                       key={status}
                       onClick={() =>
                         updateStatus(order.id, "payout_fiscal_document", status)
                       }
-                      className="rounded-full border border-zinc-800 px-4 py-3 text-xs font-black text-zinc-400"
+                      disabled={Boolean(busyAction)}
+                      variant="secondary"
+                      size="sm"
                     >
                       Doc. {status}
-                    </button>
+                    </Button>
                   )
                 )}
-                <button
-                  type="button"
+                <LoadingButton
                   onClick={() => updateStatus(order.id, "approve_seller_payment")}
-                  className="rounded-full border border-green-900 px-4 py-3 text-xs font-black text-green-300 sm:col-span-4"
+                  loading={busyAction === `${order.id}-approve_seller_payment-`}
+                  loadingText="A validar..."
+                  disabled={Boolean(busyAction)}
+                  variant="secondary"
+                  size="sm"
+                  className="border-green-900 text-green-300 sm:col-span-4"
                 >
                   Validar fiscal + contrato do parceiro
-                </button>
+                </LoadingButton>
               </div>
             )}
           </article>

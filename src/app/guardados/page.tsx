@@ -266,7 +266,8 @@ export default function SavedEventsPage() {
   }
 
   useEffect(() => {
-    loadSavedEvents();
+    const timer = window.setTimeout(() => { void loadSavedEvents(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function removeSavedEvent(eventId: string) {

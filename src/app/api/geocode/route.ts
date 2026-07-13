@@ -151,7 +151,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
   }
 
-  const venue = cleanText(body.venue);
   const manualQuery = cleanText(body.query);
   const address = cleanText(body.address);
   const postalCode = cleanText(body.postal_code);

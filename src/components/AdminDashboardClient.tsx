@@ -6,6 +6,8 @@ import { AdminEventActions } from "@/components/AdminEventActions";
 import { AdminSubmissionActions } from "@/components/AdminSubmissionActions";
 import { supabase } from "@/lib/supabase/public";
 import { type EventSubmission } from "@/lib/submissions";
+import { AdminListSkeleton } from "@/components/LoadingSkeleton";
+import { Button } from "@/components/ui/Button";
 
 type AdminEventRow = {
   id: string;
@@ -264,13 +266,14 @@ export function AdminDashboardClient() {
   }
 
   useEffect(() => {
-    loadDashboard();
+    const timer = window.setTimeout(() => { void loadDashboard(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   if (loading) {
     return (
-      <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar admin...</p>
+      <section className="mt-8 rounded-lg border border-zinc-800 bg-zinc-950 p-6">
+        <AdminListSkeleton />
       </section>
     );
   }
@@ -360,13 +363,9 @@ export function AdminDashboardClient() {
               Rede cultural
             </Link>
 
-            <button
-              type="button"
-              onClick={loadDashboard}
-              className="rounded-full border border-zinc-800 px-5 py-4 text-sm font-bold text-zinc-500"
-            >
+            <Button variant="secondary" onClick={() => void loadDashboard()}>
               Atualizar
-            </button>
+            </Button>
           </div>
 
           {message && (

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import * as QRCode from "qrcode";
 
@@ -43,19 +44,22 @@ export function TicketQrCode({ value, label = "Código de entrada" }: TicketQrCo
   }, [value]);
 
   return (
-    <div className="rounded-[2rem] border border-zinc-800 bg-[#f2f1ec] p-4 text-black">
+    <div className="scale-in rounded-lg border border-zinc-800 bg-[#f2f1ec] p-4 text-black">
       <p className="text-center text-xs font-black uppercase tracking-[0.25em] text-zinc-700">
         {label}
       </p>
 
       {qrCodeUrl ? (
-        <img
+        <Image
           src={qrCodeUrl}
           alt={`QR code ${value}`}
+          width={224}
+          height={224}
+          unoptimized
           className="mx-auto mt-4 h-56 w-56 rounded-2xl"
         />
       ) : (
-        <div className="mt-4 flex h-56 items-center justify-center rounded-2xl border border-zinc-300">
+        <div className="skeleton-shimmer mt-4 flex h-56 items-center justify-center rounded-2xl border border-zinc-300">
           <p className="text-sm font-black text-zinc-500">QR indisponível</p>
         </div>
       )}

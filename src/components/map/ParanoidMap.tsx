@@ -274,13 +274,8 @@ export function ParanoidMap({
       const markerElement = document.createElement("button");
       markerElement.type = "button";
       markerElement.setAttribute("aria-label", event.title);
-      markerElement.className =
-        "h-4 w-4 rounded-full border-2 border-[#f2f1ec] bg-red-600 shadow-[0_0_0_6px_rgba(220,38,38,0.2)] transition-transform hover:scale-125";
-
-      if (event.id === selectedEventId) {
-        markerElement.className =
-          "h-6 w-6 scale-110 rounded-full border-[3px] border-white bg-red-600 shadow-[0_0_0_10px_rgba(239,68,68,0.38),0_0_30px_rgba(239,68,68,0.9)]";
-      }
+      markerElement.dataset.eventId = event.id;
+      markerElement.className = "map-event-marker";
 
       markerElement.addEventListener("click", () => onSelectEvent(event));
 
@@ -304,7 +299,16 @@ export function ParanoidMap({
     }
 
     map.resize();
-  }, [events, mapReady, onSelectEvent, selectedEventId, userLocation]);
+  }, [events, mapReady, onSelectEvent, userLocation]);
+
+  useEffect(() => {
+    markersRef.current.forEach((marker) => {
+      const element = marker.getElement();
+      if (!element.dataset.eventId) return;
+      element.classList.toggle("map-event-marker--selected", element.dataset.eventId === selectedEventId);
+      element.setAttribute("aria-pressed", String(element.dataset.eventId === selectedEventId));
+    });
+  }, [selectedEventId]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -9,6 +9,8 @@ import {
   type ShopOrder,
 } from "@/lib/shop";
 import { supabase } from "@/lib/supabase/public";
+import { Button, LoadingButton } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 type SellerProduct = {
   id: string;
@@ -47,6 +49,8 @@ export function OrganizerShopClient() {
     {}
   );
   const [message, setMessage] = useState("");
+  const [busyAction, setBusyAction] = useState("");
+  const { toast } = useToast();
   const price = calculateShopPrice(Math.round(Number(basePrice || "0") * 100));
 
   async function loadOrders() {
@@ -107,14 +111,18 @@ export function OrganizerShopClient() {
   }
 
   useEffect(() => {
-    loadOrders();
-    loadProducts();
+    const timer = window.setTimeout(() => {
+      void loadOrders();
+      void loadProducts();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function saveFiscalProfile() {
-    if (!sellerProfile) {
+    if (!sellerProfile || busyAction) {
       return;
     }
+    setBusyAction("fiscal");
 
     const { error } = await supabase
       .from("shop_sellers")
@@ -136,6 +144,8 @@ export function OrganizerShopClient() {
         : "Dados fiscais guardados para validação."
     );
     await loadProducts();
+    setBusyAction("");
+    toast(error ? { message: "Não foi possível guardar os dados fiscais.", tone: "error" } : { message: "Dados fiscais guardados.", tone: "success" });
   }
 
   const payoutTotal = useMemo(() => {
@@ -148,6 +158,8 @@ export function OrganizerShopClient() {
   }, [orders]);
 
   async function markShipped(orderId: string) {
+    if (busyAction) return;
+    setBusyAction(`ship-${orderId}`);
     setMessage("");
     const {
       data: { session },
@@ -155,6 +167,8 @@ export function OrganizerShopClient() {
 
     if (!session) {
       setMessage("Tens de iniciar sessão.");
+      setBusyAction("");
+      toast({ message: "Tens de iniciar sessão.", tone: "error" });
       return;
     }
 
@@ -173,11 +187,15 @@ export function OrganizerShopClient() {
 
     if (!response.ok) {
       setMessage("Não consegui marcar como enviado.");
+      setBusyAction("");
+      toast({ message: "Não foi possível marcar como enviado.", tone: "error" });
       return;
     }
 
     await loadOrders();
     setMessage("Encomenda marcada como enviada.");
+    setBusyAction("");
+    toast({ message: "Encomenda marcada como enviada.", tone: "success" });
   }
 
   return (
@@ -285,13 +303,15 @@ export function OrganizerShopClient() {
               </span>
             </div>
 
-            <button
-              type="button"
+            <LoadingButton
               onClick={saveFiscalProfile}
-              className="mt-5 rounded-full bg-[#f2f1ec] px-5 py-3 font-black text-black"
+              loading={busyAction === "fiscal"}
+              loadingText="A guardar..."
+              disabled={Boolean(busyAction)}
+              className="mt-5"
             >
               Guardar dados fiscais
-            </button>
+            </LoadingButton>
           </div>
         )}
 
@@ -332,12 +352,11 @@ export function OrganizerShopClient() {
               />
             </label>
 
-            <button
-              type="button"
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 font-black text-black"
+            <Button
+              onClick={() => toast("A submissão de produtos ainda está em preparação.")}
             >
               Guardar como pendente
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -441,13 +460,15 @@ export function OrganizerShopClient() {
                   placeholder="Código de tracking"
                   className="rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
                 />
-                <button
-                  type="button"
+                <LoadingButton
                   onClick={() => markShipped(order.id)}
-                  className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300"
+                  loading={busyAction === `ship-${order.id}`}
+                  loadingText="A enviar..."
+                  disabled={Boolean(busyAction)}
+                  variant="secondary"
                 >
                   Marcar como enviado
-                </button>
+                </LoadingButton>
               </div>
             </article>
           ))}

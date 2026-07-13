@@ -302,7 +302,8 @@ export default function ArtistPage() {
   }
 
   useEffect(() => {
-    loadArtist();
+    const timer = window.setTimeout(() => { void loadArtist(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [slug]);
 
   async function toggleFollow() {

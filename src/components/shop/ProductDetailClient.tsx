@@ -8,6 +8,8 @@ import {
   type ShopProduct,
 } from "@/lib/shop";
 import { readShopCart, writeShopCart } from "@/lib/shop/cart";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 type ProductDetailClientProps = {
   product: ShopProduct;
@@ -21,6 +23,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
       : ""
   );
   const [added, setAdded] = useState(false);
+  const { toast } = useToast();
 
   const canBuy = product.stockQuantity > 0 && product.status === "active";
   const variantOptions = useMemo(
@@ -63,6 +66,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
     if (existingIndex >= 0) {
       if (cart[existingIndex].quantity >= product.stockQuantity) {
         setAdded(true);
+        toast({ message: "Já atingiste o stock disponível.", tone: "error" });
         return;
       }
 
@@ -76,13 +80,14 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
     writeShopCart(cart);
     setAdded(true);
+    toast({ message: "Adicionado ao carrinho.", tone: "success" });
   }
 
   return (
     <section className="grid gap-7 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
       <div className="space-y-3">
         <div
-          className="aspect-square rounded-[1.5rem] border border-zinc-900 bg-zinc-950 bg-cover bg-center"
+          className="interactive aspect-square rounded-lg border border-zinc-900 bg-zinc-950 bg-cover bg-center"
           style={{
             backgroundImage: selectedImage
               ? `url(${selectedImage})`
@@ -97,7 +102,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                 type="button"
                 key={image}
                 onClick={() => setSelectedImage(image)}
-                className="h-20 w-20 shrink-0 rounded-2xl border border-zinc-800 bg-cover bg-center"
+                aria-pressed={selectedImage === image}
+                className={`pressable focus-ring h-20 w-20 shrink-0 rounded border bg-cover bg-center ${selectedImage === image ? "border-red-700" : "border-zinc-800"}`}
                 style={{ backgroundImage: `url(${image})` }}
                 aria-label="Ver imagem"
               />
@@ -106,7 +112,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         )}
       </div>
 
-      <div className="space-y-6 rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 lg:p-7">
+      <div className="space-y-6 rounded-lg border border-zinc-900 bg-zinc-950 p-5 lg:p-7">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.35em] text-red-600">
             {product.category}
@@ -152,21 +158,23 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           </span>
         </div>
 
-        <button
-          type="button"
+        <div className="sticky bottom-[calc(5.4rem+env(safe-area-inset-bottom))] z-10 -mx-2 bg-zinc-950/95 p-2 lg:static lg:mx-0 lg:bg-transparent lg:p-0">
+        <Button
           onClick={addToCart}
           disabled={!canBuy}
-          className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-base font-black text-black disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+          size="lg"
+          className="w-full"
         >
           {canBuy ? "Adicionar ao carrinho" : "Indisponível"}
-        </button>
+        </Button>
+        </div>
 
         {added && (
-          <div className="grid gap-3 rounded-2xl border border-green-900 bg-green-950/30 p-4">
+          <div className="subtle-enter grid gap-3 rounded-lg border border-green-900 bg-green-950/30 p-4">
             <p className="font-bold text-green-300">Produto adicionado.</p>
             <Link
               href="/loja/carrinho"
-              className="rounded-full border border-green-800 px-4 py-3 text-center text-sm font-black text-green-200"
+              className="pressable focus-ring rounded-full border border-green-800 px-4 py-3 text-center text-sm font-black text-green-200"
             >
               Ver carrinho
             </Link>

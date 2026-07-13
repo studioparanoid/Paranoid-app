@@ -285,7 +285,8 @@ export default function OrganizerPage() {
   }
 
   useEffect(() => {
-    loadOrganizer();
+    const timer = window.setTimeout(() => { void loadOrganizer(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [slug]);
 
   async function toggleFollow() {

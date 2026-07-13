@@ -319,7 +319,8 @@ export default function EventPage() {
   }
 
   useEffect(() => {
-    loadEvent();
+    const timer = window.setTimeout(() => { void loadEvent(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [slug]);
 
   async function toggleSavedEvent() {

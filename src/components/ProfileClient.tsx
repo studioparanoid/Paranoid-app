@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SettingsList, type SettingsListItem } from "@/components/SettingsList";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Button, LinkButton, LoadingButton } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import { profileActivityNavigation, profilePurchaseNavigation } from "@/config/navigation";
 import { supabase } from "@/lib/supabase/public";
 
@@ -51,6 +52,7 @@ function accountTypeLabel(type: AccountType) {
 export function ProfileClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState("");
   const [userId, setUserId] = useState("");
@@ -64,6 +66,7 @@ export function ProfileClient() {
   const [instagram, setInstagram] = useState("");
   const [preferredCities, setPreferredCities] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
+  const { toast } = useToast();
 
   async function loadProfile() {
     setLoading(true);
@@ -122,19 +125,31 @@ export function ProfileClient() {
       p_preferred_categories: preferredCategories,
     });
     setSaving(false);
-    if (error) { setMessage(`Não foi possível guardar: ${error.message}`); return; }
+    if (error) {
+      setMessage(`Não foi possível guardar: ${error.message}`);
+      toast({ message: "Não foi possível guardar o perfil.", tone: "error" });
+      return;
+    }
     setMessage("Perfil atualizado.");
+    toast({ message: "Perfil atualizado.", tone: "success" });
     setEditing(false);
     await loadProfile();
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    if (signingOut) return;
+    setSigningOut(true);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setSigningOut(false);
+      toast({ message: "Não foi possível terminar a sessão.", tone: "error" });
+      return;
+    }
     window.location.href = "/";
   }
 
   if (loading) return <LoadingSkeleton rows={5} />;
-  if (!userId) return <div className="mx-auto max-w-lg py-16 text-center"><h1 className="text-4xl font-black">Entra na tua conta.</h1><p className="mt-3 text-sm text-zinc-500">Guarda eventos, segue a rede e consulta os teus bilhetes.</p><div className="mt-6 flex justify-center gap-3"><Link href="/login" className="rounded-full bg-[#f2f1ec] px-6 py-3 text-sm font-black text-black">Entrar</Link><Link href="/registar" className="rounded-full border border-zinc-700 px-6 py-3 text-sm font-bold">Criar conta</Link></div></div>;
+  if (!userId) return <div className="mx-auto max-w-lg py-16 text-center"><h1 className="text-4xl font-black">Entra na tua conta.</h1><p className="mt-3 text-sm text-zinc-500">Guarda eventos, segue a rede e consulta os teus bilhetes.</p><div className="mt-6 flex justify-center gap-3"><LinkButton href="/login">Entrar</LinkButton><LinkButton href="/registar" variant="secondary">Criar conta</LinkButton></div></div>;
 
   const accountType = profile?.account_type || "community";
   const approved = profile?.account_status === "approved";
@@ -155,10 +170,10 @@ export function ProfileClient() {
     <header className="flex items-center gap-4 border-b border-zinc-900 pb-6">
       <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full border border-red-950 bg-red-950/25 text-xl font-black text-red-500">{title.charAt(0).toUpperCase()}</div>
       <div className="min-w-0 flex-1"><h1 className="truncate text-3xl font-black">{title}</h1><p className="truncate text-sm text-zinc-600">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
-      <button type="button" onClick={() => setEditing((value) => !value)} className="hidden rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold sm:block">Editar perfil</button>
+      <Button type="button" variant="secondary" size="sm" onClick={() => setEditing((value) => !value)} aria-expanded={editing} className="hidden sm:inline-flex">Editar perfil</Button>
     </header>
 
-    {editing && <section className="border-b border-zinc-900 py-7">
+    {editing && <section className="slide-up border-b border-zinc-900 py-7">
       <SectionHeader title="Editar perfil" />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={accountType === "community" ? "Nome" : "Nome público"} value={accountType === "community" ? displayName : entityName} onChange={accountType === "community" ? setDisplayName : setEntityName} />
@@ -168,13 +183,13 @@ export function ProfileClient() {
         <PreferencePicker label="Cidades" values={cities} selected={preferredCities} onToggle={(value) => setPreferredCities((current) => toggle(current, value))} />
         <PreferencePicker label="Categorias" values={categories} selected={preferredCategories} onToggle={(value) => setPreferredCategories((current) => toggle(current, value))} />
       </div>
-      {message && <p className="mt-4 text-sm text-zinc-400">{message}</p>}
-      <div className="mt-5 flex gap-3"><button type="button" onClick={saveProfile} disabled={saving} className="rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black disabled:opacity-50">{saving ? "A guardar..." : "Guardar"}</button><button type="button" onClick={() => setEditing(false)} className="rounded-full border border-zinc-700 px-5 py-3 text-sm font-bold">Cancelar</button></div>
+      {message && <p className="mt-4 text-sm text-zinc-400" role="status">{message}</p>}
+      <div className="mt-5 flex gap-3"><LoadingButton type="button" onClick={saveProfile} loading={saving} loadingText="A guardar...">Guardar</LoadingButton><Button type="button" variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button></div>
     </section>}
 
     <div className="grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">
       <ProfileSection title="A minha atividade" items={activityItems} />
-      <ProfileSection title="A minha conta" items={[{ label: "Dados e preferências", description: "Nome, localização e categorias", icon: "settings", onClick: () => setEditing(true) }, { label: "Terminar sessão", icon: "logout", tone: "danger", onClick: signOut }]} />
+      <ProfileSection title="A minha conta" items={[{ label: "Dados e preferências", description: "Nome, localização e categorias", icon: "settings", onClick: () => setEditing(true) }, { label: signingOut ? "A terminar sessão..." : "Terminar sessão", icon: "logout", tone: "danger", onClick: signOut }]} />
       <ProfileSection title="Bilhetes e compras" items={purchaseItems} />
       {creatorItems.length > 0 && <ProfileSection title="Criar e gerir" items={creatorItems} />}
       {approved && accountType === "organizer" && <ProfileSection title="Visibilidade e parcerias" items={[{ href: "/organizador/destaques", label: "Destaques e Frequency", icon: "visibility" }, { href: "/patrocinar", label: "Parcerias Paranoid", icon: "organizer" }]} />}
@@ -188,7 +203,7 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 function PreferencePicker({ label, values, selected, onToggle }: { label: string; values: string[]; selected: string[]; onToggle: (value: string) => void }) {
-  return <fieldset className="sm:col-span-2"><legend className="mb-2 text-xs font-bold text-zinc-500">{label}</legend><div className="flex flex-wrap gap-2">{values.map((value) => <button key={value} type="button" onClick={() => onToggle(value)} className={`rounded-full border px-3 py-2 text-xs font-bold ${selected.includes(value) ? "border-zinc-100 bg-zinc-100 text-black" : "border-zinc-800 text-zinc-500"}`}>{value}</button>)}</div></fieldset>;
+  return <fieldset className="sm:col-span-2"><legend className="mb-2 text-xs font-bold text-zinc-500">{label}</legend><div className="flex flex-wrap gap-2">{values.map((value) => <button key={value} type="button" onClick={() => onToggle(value)} aria-pressed={selected.includes(value)} className={`pressable focus-ring rounded-full border px-3 py-2 text-xs font-bold ${selected.includes(value) ? "border-zinc-100 bg-zinc-100 text-black" : "border-zinc-800 text-zinc-500 hover:border-zinc-600"}`}>{value}</button>)}</div></fieldset>;
 }
 
 function ProfileSection({ title, items }: { title: string; items: SettingsListItem[] }) {

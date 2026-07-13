@@ -305,7 +305,8 @@ export function OrganizerTicketsClient() {
   }
 
   useEffect(() => {
-    loadAccount();
+    const timer = window.setTimeout(() => { void loadAccount(); }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function handleSelectOrganizer(organizerId: string) {

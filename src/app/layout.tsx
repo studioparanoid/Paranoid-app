@@ -3,6 +3,7 @@ import "./globals.css";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { DesktopHeader } from "@/components/DesktopHeader";
 import { PwaRegister } from "@/components/PwaRegister";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
   title: "Paranoid — Agenda Cultural Alternativa",
@@ -55,9 +56,11 @@ export default function RootLayout({
     <html lang="pt" className="h-full antialiased">
       <body className="min-h-full bg-[#0b0b0b]">
         <PwaRegister />
-        <DesktopHeader />
-        <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
-        <MobileBottomNav />
+        <ToastProvider>
+          <DesktopHeader />
+          <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
+          <MobileBottomNav />
+        </ToastProvider>
       </body>
     </html>
   );

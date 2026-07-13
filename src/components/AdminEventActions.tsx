@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/public";
+import { Button, LinkButton, LoadingButton } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 
 type AdminEventActionsProps = {
   event?: {
@@ -33,6 +35,8 @@ export function AdminEventActions({
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const { toast } = useToast();
 
   async function updateEventStatus(nextStatus: "published" | "archived") {
     setMessage("");
@@ -57,15 +61,19 @@ export function AdminEventActions({
 
     if (error) {
       setMessage(`Erro: ${error.message}`);
+      toast({ message: "Não foi possível atualizar o evento.", tone: "error" });
       return;
     }
 
     if (data?.status !== nextStatus) {
       setMessage("A operação não confirmou o novo estado.");
+      toast({ message: "O novo estado não foi confirmado.", tone: "error" });
       return;
     }
 
-    window.location.reload();
+    setConfirmArchive(false);
+    toast({ message: nextStatus === "archived" ? "Evento arquivado." : "Evento republicado.", tone: "success" });
+    window.setTimeout(() => window.location.reload(), 240);
   }
 
   async function toggleFeatured() {
@@ -89,10 +97,12 @@ export function AdminEventActions({
 
     if (error) {
       setMessage(`Erro: ${error.message}`);
+      toast({ message: "Não foi possível atualizar o destaque.", tone: "error" });
       return;
     }
 
-    window.location.reload();
+    toast({ message: resolvedFeatured ? "Destaque removido." : "Evento destacado.", tone: "success" });
+    window.setTimeout(() => window.location.reload(), 240);
   }
 
   if (!resolvedEventId) {
@@ -106,61 +116,56 @@ export function AdminEventActions({
   return (
     <div className="space-y-3">
       <div className="grid gap-2">
-        <Link
-          href={`/admin/eventos/${resolvedSlug || resolvedEventId}`}
-          className="rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
-        >
+        <LinkButton href={`/admin/eventos/${resolvedSlug || resolvedEventId}`} variant="secondary">
           Editar
-        </Link>
+        </LinkButton>
 
         {resolvedMode === "published" && resolvedSlug && (
-          <Link
-            href={`/eventos/${resolvedSlug}`}
-            className="rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
-          >
+          <LinkButton href={`/eventos/${resolvedSlug}`} variant="secondary">
             Ver público
-          </Link>
+          </LinkButton>
         )}
 
         {resolvedMode === "published" && (
           <>
-            <button
-              type="button"
+            <LoadingButton
               onClick={toggleFeatured}
               disabled={loading}
-              className="rounded-full border border-red-900 px-4 py-3 text-sm font-bold text-red-400 disabled:opacity-50"
+              loading={loading}
+              loadingText="A atualizar..."
+              variant="danger"
             >
               {resolvedFeatured ? "Remover destaque" : "Destacar"}
-            </button>
+            </LoadingButton>
 
-            <button
-              type="button"
-              onClick={() => updateEventStatus("archived")}
+            <Button
+              onClick={() => setConfirmArchive(true)}
               disabled={loading}
-              className="rounded-full border border-zinc-800 px-4 py-3 text-sm font-bold text-zinc-500 disabled:opacity-50"
+              variant="secondary"
             >
               Arquivar / despublicar
-            </button>
+            </Button>
           </>
         )}
 
         {resolvedMode === "archived" && (
-          <button
-            type="button"
+          <LoadingButton
             onClick={() => updateEventStatus("published")}
             disabled={loading}
-            className="rounded-full bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black disabled:opacity-50"
+            loading={loading}
+            loadingText="A republicar..."
           >
             Republicar
-          </button>
+          </LoadingButton>
         )}
       </div>
 
       {message && (
-        <p className="text-center text-xs font-bold text-zinc-500">
+        <p className="text-center text-xs font-bold text-zinc-500" role="alert">
           {message}
         </p>
       )}
+      <ConfirmDialog open={confirmArchive} onClose={() => !loading && setConfirmArchive(false)} onConfirm={() => void updateEventStatus("archived")} title="Arquivar este evento?" description="O evento deixa de aparecer publicamente até ser republicado." confirmLabel="Arquivar" loading={loading} danger />
     </div>
   );
 }

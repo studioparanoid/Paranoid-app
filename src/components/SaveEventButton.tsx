@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
+import { LoadingButton } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 type SaveEventButtonProps = {
   eventId?: string;
@@ -17,6 +19,7 @@ export function SaveEventButton({ eventId, event, compact = false }: SaveEventBu
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     async function checkSavedState() {
@@ -66,6 +69,8 @@ export function SaveEventButton({ eventId, event, compact = false }: SaveEventBu
     }
 
     setLoading(true);
+    const wasSaved = saved;
+    setSaved(!wasSaved);
 
     const {
       data: { user },
@@ -84,6 +89,7 @@ export function SaveEventButton({ eventId, event, compact = false }: SaveEventBu
       setSaved(nextSavedEvents.includes(resolvedEventId));
       setLoggedIn(false);
       setLoading(false);
+      toast({ message: wasSaved ? "Removido dos guardados." : "Evento guardado.", tone: "success" });
       return;
     }
 
@@ -98,8 +104,11 @@ export function SaveEventButton({ eventId, event, compact = false }: SaveEventBu
 
       if (error) {
         console.error(error);
+        setSaved(wasSaved);
+        toast({ message: "Não foi possível atualizar os guardados.", tone: "error" });
       } else {
         setSaved(false);
+        toast({ message: "Removido dos guardados.", tone: "success" });
       }
 
       setLoading(false);
@@ -113,32 +122,31 @@ export function SaveEventButton({ eventId, event, compact = false }: SaveEventBu
 
     if (error) {
       console.error(error);
+      setSaved(wasSaved);
+      toast({ message: "Não foi possível guardar o evento.", tone: "error" });
     } else {
       setSaved(true);
+      toast({ message: "Evento guardado.", tone: "success" });
     }
 
     setLoading(false);
   }
 
   return (
-    <button
-      type="button"
+    <LoadingButton
       onClick={toggleSaved}
       disabled={loading}
+      loading={loading}
+      loadingText={compact ? "..." : "A guardar..."}
+      size={compact ? "sm" : "md"}
+      variant={saved ? "danger" : "primary"}
       aria-label={saved ? "Remover dos guardados" : "Guardar evento"}
-      className={`rounded-full font-black disabled:opacity-50 ${compact ? "px-3 py-2 text-xs" : "px-5 py-3 text-sm"} ${
-        saved
-          ? "border border-red-900 bg-red-950 text-red-300"
-          : "bg-[#f2f1ec] text-black"
-      }`}
     >
-      {loading
-        ? compact ? "..." : "A verificar..."
-        : saved
+      {saved
           ? compact ? "Guardado" : "Guardado"
           : loggedIn
             ? "Guardar na conta"
             : "Guardar"}
-    </button>
+    </LoadingButton>
   );
 }
