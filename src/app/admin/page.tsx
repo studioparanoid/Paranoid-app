@@ -48,7 +48,13 @@ export default function AdminPage() {
               "/admin/planos",
               "Planos",
               "Packs organizador",
-              "Wall Rip e Paranoid Crew.",
+              "Frequency e visibilidade.",
+            ],
+            [
+              "/admin/parceiros",
+              "Parceiros",
+              "Signal, Noise e Headliner",
+              "Campanhas e estatuto fundador.",
             ],
           ].map(([href, eyebrow, title, description]) => (
             <Link

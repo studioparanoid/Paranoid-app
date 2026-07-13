@@ -158,6 +158,16 @@ export async function updateBillingPaymentStatus(
   status: BillingPaymentStatus
 ) {
   const supabase = getRequiredSupabaseAdminClient();
+  const currentPayment = await getBillingPayment(id);
+
+  if (!currentPayment) {
+    throw new Error("Pagamento não encontrado.");
+  }
+
+  if (currentPayment.status === status) {
+    return currentPayment;
+  }
+
   const updatePayload: Record<string, string | null> = {
     status,
     updated_at: new Date().toISOString(),
@@ -180,7 +190,7 @@ export async function updateBillingPaymentStatus(
 
   const payment = mapPayment(data as BillingPaymentRow);
 
-  if (status === "paid") {
+  if (status === "paid" && currentPayment.status !== "paid") {
     await activateBillingEntitlement(payment);
   }
 

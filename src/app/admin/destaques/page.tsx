@@ -13,15 +13,22 @@ export default function AdminHighlightsPage() {
         </h1>
 
         <div className="mb-5 rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-sm text-zinc-400">
-          Pagamentos de destaque ficam pendentes até serem confirmados. Quando
-          marcados como pagos, o evento recebe destaque durante 7 dias.
+          Pagamentos de destaque ficam pendentes até serem confirmados. O
+          destaque individual ativa 7 dias; o pack cria 3 créditos.
         </div>
 
-        <AdminCreateBillingPaymentForm
-          productCode="event_feature_basic"
-          relatedType="event"
-          idLabel="ID do evento"
-        />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <AdminCreateBillingPaymentForm
+            productCode="event_feature_basic"
+            relatedType="event"
+            idLabel="ID do evento"
+          />
+          <AdminCreateBillingPaymentForm
+            productCode="event_feature_pack_3"
+            relatedType="organizer"
+            idLabel="ID do organizador"
+          />
+        </div>
 
         <AdminBillingPaymentsClient relatedType="event" title="Pagamentos de destaque" />
       </section>

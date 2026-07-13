@@ -37,6 +37,19 @@ export default function OrganizerPage() {
           </p>
         </Link>
 
+        <Link
+          href="/organizador/destaques"
+          className="mt-4 block rounded-[1.5rem] border border-red-950 bg-red-950/25 p-5 transition hover:border-red-800 lg:max-w-xl"
+        >
+          <p className="text-xs font-black uppercase tracking-[0.35em] text-red-500">
+            Frequency
+          </p>
+          <p className="mt-2 text-2xl font-black">Ativar visibilidade mensal</p>
+          <p className="mt-2 text-sm text-zinc-500">
+            49 € por 30 dias para reforçar os teus eventos na Paranoid.
+          </p>
+        </Link>
+
         <OrganizerDashboardClient />
       </section>
     </main>

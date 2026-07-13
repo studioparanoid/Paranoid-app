@@ -1,5 +1,6 @@
 import { AdminCreateBillingPaymentForm } from "@/components/billing/AdminCreateBillingPaymentForm";
 import { AdminBillingPaymentsClient } from "@/components/billing/AdminBillingPaymentsClient";
+import { AdminFrequencyPassesClient } from "@/components/billing/AdminFrequencyPassesClient";
 
 export default function AdminPlansPage() {
   return (
@@ -13,18 +14,13 @@ export default function AdminPlansPage() {
         </h1>
 
         <div className="mb-5 rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-sm text-zinc-400">
-          Wall Rip e Paranoid Crew continuam em modo mock. Ao marcar o pagamento
-          como pago, o pack fica ativo durante 1 mês.
+          A publicação de eventos é gratuita. Frequency reforça a visibilidade
+          durante 30 dias depois do pagamento confirmado.
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <AdminCreateBillingPaymentForm
-            productCode="organizer_pack_wall_rip"
-            relatedType="organizer"
-            idLabel="ID do organizador"
-          />
-          <AdminCreateBillingPaymentForm
-            productCode="organizer_pack_paranoid_crew"
+            productCode="organizer_paranoid_frequency"
             relatedType="organizer"
             idLabel="ID do organizador"
           />
@@ -34,6 +30,8 @@ export default function AdminPlansPage() {
           relatedType="organizer"
           title="Pagamentos de planos"
         />
+
+        <AdminFrequencyPassesClient />
       </section>
     </main>
   );

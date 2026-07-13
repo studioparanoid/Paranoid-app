@@ -189,6 +189,7 @@ export default function OrganizerPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followId, setFollowId] = useState("");
+  const [hasFrequency, setHasFrequency] = useState(false);
 
   async function loadOrganizer() {
     if (!slug) {
@@ -215,11 +216,21 @@ export default function OrganizerPage() {
 
     const loadedOrganizer = (organizerData || null) as OrganizerRow | null;
     setOrganizer(loadedOrganizer);
+    setHasFrequency(false);
 
     if (!loadedOrganizer) {
       setEvents([]);
       setLoading(false);
       return;
+    }
+
+    const frequencyResponse = await fetch(
+      `/api/billing/frequency/status?organizerId=${loadedOrganizer.id}`
+    ).catch(() => null);
+
+    if (frequencyResponse?.ok) {
+      const frequencyPayload = await frequencyResponse.json().catch(() => null);
+      setHasFrequency(Boolean(frequencyPayload?.active));
     }
 
     const baseSelect =
@@ -379,6 +390,12 @@ export default function OrganizerPage() {
               {organizer.pack && (
                 <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase tracking-wide text-zinc-400">
                   {organizer.pack}
+                </span>
+              )}
+
+              {hasFrequency && (
+                <span className="rounded-full border border-red-800 bg-red-950 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-200">
+                  Organizador Frequency
                 </span>
               )}
             </div>

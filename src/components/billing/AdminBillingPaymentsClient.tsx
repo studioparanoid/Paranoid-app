@@ -90,6 +90,7 @@ export function AdminBillingPaymentsClient({
     }
 
     await loadPayments();
+    setMessage("Pagamento atualizado.");
   }
 
   return (

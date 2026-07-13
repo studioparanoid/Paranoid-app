@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase/public";
 
 type AdminCreateBillingPaymentFormProps = {
   productCode: string;
-  relatedType: "event" | "organizer";
+  relatedType: "event" | "organizer" | "sponsorship";
   idLabel: string;
 };
 

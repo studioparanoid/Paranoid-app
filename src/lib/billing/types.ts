@@ -1,7 +1,10 @@
 export type BillingProductType =
   | "shop_order"
   | "event_feature"
+  | "event_feature_pack"
   | "organizer_pack"
+  | "organizer_visibility_pass"
+  | "sponsorship"
   | "subscription"
   | "service";
 
@@ -34,7 +37,13 @@ export type BillingPayment = {
 export type BillingPaymentDraft = {
   userId?: string | null;
   productCode: string;
-  relatedType: "shop_order" | "event" | "organizer" | "subscription" | "service";
+  relatedType:
+    | "shop_order"
+    | "event"
+    | "organizer"
+    | "sponsorship"
+    | "subscription"
+    | "service";
   relatedId?: string | null;
   amountCents?: number;
   provider?: BillingProvider;

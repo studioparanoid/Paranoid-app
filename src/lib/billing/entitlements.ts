@@ -2,8 +2,31 @@ import { getRequiredSupabaseAdminClient } from "@/lib/supabase/admin";
 import { addMonths } from "@/lib/billing/pricing";
 import { type BillingPayment } from "@/lib/billing/types";
 import { updateShopOrderStatus } from "@/lib/shop/orders";
+import {
+  activateOrganizerFrequencyPass,
+  FREQUENCY_ENTITLEMENT_TYPE,
+  FREQUENCY_PRODUCT_CODE,
+} from "@/lib/billing/frequency";
+import {
+  activateEventFeature,
+  activateEventFeaturePack,
+  EVENT_FEATURE_PACK_PRODUCT_CODE,
+  EVENT_FEATURE_PRODUCT_CODE,
+} from "@/lib/billing/highlights";
+import {
+  activateSponsorship,
+  isSponsorshipProduct,
+} from "@/lib/billing/sponsorships";
 
 function getEntitlementType(payment: BillingPayment) {
+  if (payment.productCode === FREQUENCY_PRODUCT_CODE) {
+    return FREQUENCY_ENTITLEMENT_TYPE;
+  }
+
+  if (payment.productCode === EVENT_FEATURE_PACK_PRODUCT_CODE) {
+    return "event_feature_pack_active";
+  }
+
   if (payment.relatedType === "shop_order") {
     return "shop_order_paid";
   }
@@ -23,6 +46,26 @@ function getEntitlementType(payment: BillingPayment) {
 }
 
 export async function activateBillingEntitlement(payment: BillingPayment) {
+  if (payment.productCode === EVENT_FEATURE_PRODUCT_CODE) {
+    await activateEventFeature(payment);
+    return;
+  }
+
+  if (payment.productCode === EVENT_FEATURE_PACK_PRODUCT_CODE) {
+    await activateEventFeaturePack(payment);
+    return;
+  }
+
+  if (payment.productCode === FREQUENCY_PRODUCT_CODE) {
+    await activateOrganizerFrequencyPass(payment);
+    return;
+  }
+
+  if (isSponsorshipProduct(payment.productCode)) {
+    await activateSponsorship(payment);
+    return;
+  }
+
   const supabase = getRequiredSupabaseAdminClient();
   const now = new Date();
   const entitlementType = getEntitlementType(payment);
