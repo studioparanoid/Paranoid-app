@@ -39,10 +39,10 @@ type ParanoidMapProps = {
 
 const PORTUGAL_CENTER: [number, number] = [-8.0, 39.68];
 const WORLD_START_CENTER: [number, number] = [-28, 37];
-// MapLibre renders OpenFreeMap's public Dark style using OpenMapTiles and
+// MapLibre renders OpenFreeMap's public Liberty style using OpenMapTiles and
 // OpenStreetMap data. Attribution is kept visible, no API key is required,
 // and the public OpenFreeMap instance has no availability SLA.
-const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
+const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 
 type GeoJSONFeatureCollection = {
   type: "FeatureCollection";
