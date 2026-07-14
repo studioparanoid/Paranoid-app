@@ -1,34 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { type FormEvent, useRef, useState } from "react";
+import { AuthFormCard } from "@/components/auth/AuthPageLayout";
 import { supabase } from "@/lib/supabase/public";
+
+const inputClassName =
+  "h-12 w-full rounded border border-zinc-800 bg-black px-4 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800";
 
 export function LoginClient() {
   const router = useRouter();
-
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  async function handleLogin() {
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setMessage("");
 
-    if (!email || !password) {
-      setMessage("Mete email e palavra-passe.");
+    if (!email.trim()) {
+      setMessage("Mete o email.");
+      emailRef.current?.focus();
+      return;
+    }
+
+    if (!password) {
+      setMessage("Mete a palavra-passe.");
+      passwordRef.current?.focus();
       return;
     }
 
     setLoading(true);
-
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
-
     setLoading(false);
 
     if (error) {
@@ -43,124 +53,102 @@ export function LoginClient() {
   async function handlePasswordReset() {
     setMessage("");
 
-    if (!email) {
+    if (!email.trim()) {
       setMessage("Mete o teu email para receberes o link de recuperação.");
+      emailRef.current?.focus();
       return;
     }
 
     setLoading(true);
-
     const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/login`
-        : undefined;
-
+      typeof window !== "undefined" ? `${window.location.origin}/login` : undefined;
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo,
     });
-
     setLoading(false);
 
-    if (error) {
-      setMessage(`Erro ao enviar recuperação: ${error.message}`);
-      return;
-    }
-
-    setMessage("Link de recuperação enviado para o email.");
+    setMessage(
+      error
+        ? `Erro ao enviar recuperação: ${error.message}`
+        : "Link de recuperação enviado para o email."
+    );
   }
 
   return (
-    <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-      <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-            Conta
-          </p>
-
-          <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-            Login.
-          </h2>
-
-          <p className="mt-4 text-sm leading-relaxed text-zinc-500">
-            Entra com o email usado na Paranoid. Depois podes gerir guardados,
-            preferências e submissões.
-          </p>
-        </div>
-
+    <AuthFormCard eyebrow="Login" title="Entrar">
+      <form onSubmit={handleLogin} noValidate>
         <div className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label htmlFor="login-email">
+            <span className="mb-2 block text-sm font-bold text-zinc-300">
               Email
-            </label>
-
+            </span>
             <input
+              ref={emailRef}
+              id="login-email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="nome@email.com"
               autoComplete="email"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              inputMode="email"
+              required
+              placeholder="nome@email.com"
+              className={inputClassName}
             />
-          </div>
+          </label>
 
-          <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label htmlFor="login-password">
+            <span className="mb-2 block text-sm font-bold text-zinc-300">
               Palavra-passe
-            </label>
-
+            </span>
             <input
+              ref={passwordRef}
+              id="login-password"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
               autoComplete="current-password"
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  handleLogin();
-                }
-              }}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              required
+              placeholder="A tua palavra-passe"
+              className={inputClassName}
             />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleLogin}
-            disabled={loading}
-            className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
-          >
-            {loading ? "A entrar..." : "Entrar"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handlePasswordReset}
-            disabled={loading}
-            className="w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
-          >
-            Recuperar palavra-passe
-          </button>
-
-          {message && (
-            <p className="rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-center text-sm font-bold text-zinc-400">
-              {message}
-            </p>
-          )}
-
-          <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
-            <p className="text-sm leading-relaxed text-zinc-500">
-              Ainda não tens conta?
-            </p>
-
-            <Link
-              href="/registar"
-              className="mt-4 block rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-400"
-            >
-              Criar conta
-            </Link>
-          </div>
+          </label>
         </div>
-      </div>
-    </section>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="pressable focus-ring mt-7 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:cursor-wait disabled:opacity-50"
+        >
+          {loading ? "A entrar..." : "Entrar"}
+        </button>
+
+        <button
+          type="button"
+          onClick={handlePasswordReset}
+          disabled={loading}
+          className="pressable focus-ring mt-3 w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
+        >
+          Recuperar palavra-passe
+        </button>
+
+        <p className="mt-4 text-center text-sm text-zinc-500">
+          Ainda não tens conta?{" "}
+          <Link href="/registar" className="font-black text-[#f2f1ec] underline underline-offset-4">
+            Criar conta
+          </Link>
+        </p>
+
+        {message && (
+          <p
+            id="login-message"
+            role="status"
+            aria-live="polite"
+            className="mt-5 rounded border border-zinc-800 bg-black px-4 py-3 text-center text-sm font-bold text-zinc-300"
+          >
+            {message}
+          </p>
+        )}
+      </form>
+    </AuthFormCard>
   );
 }

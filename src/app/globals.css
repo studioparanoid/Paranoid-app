@@ -138,7 +138,13 @@ body {
 
 @media (max-width: 1023px) {
   .paranoid-map .maplibregl-ctrl-bottom-right {
-    bottom: calc(20rem + env(safe-area-inset-bottom));
+    bottom: calc(4.75rem + env(safe-area-inset-bottom));
+    right: 0.125rem;
+    z-index: 75;
+  }
+
+  .paranoid-map .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+    margin: 0 0 0.2rem;
   }
 }
 

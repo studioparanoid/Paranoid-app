@@ -166,12 +166,25 @@ export function ParanoidMap({
         new maplibregl.AttributionControl({ compact: true }),
         "bottom-right"
       );
+
+      // MapLibre starts compact attribution expanded until the first map drag.
+      const collapseAttribution = () => {
+        const attribution =
+          containerRef.current?.querySelector<HTMLDetailsElement>(
+            ".maplibregl-ctrl-attrib"
+          );
+        attribution?.removeAttribute("open");
+        attribution?.classList.remove("maplibregl-compact-show");
+      };
+      collapseAttribution();
+      map.on("resize", collapseAttribution);
       map.on("load", () => {
         if (loadTimeout !== null) {
           window.clearTimeout(loadTimeout);
           loadTimeout = null;
         }
         resizeMapSoon(map);
+        collapseAttribution();
         setMapError(false);
         setMapReady(true);
       });

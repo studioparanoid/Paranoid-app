@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  normalizeGeocodingResult,
+  type GeocodingProviderAddress,
+} from "@/lib/location/normalizeGeocodingResult";
 
 export const dynamic = "force-dynamic";
 
@@ -12,22 +16,6 @@ type GeocodeRequestBody = {
   district?: string;
 };
 
-type NominatimAddress = {
-  house_number?: string;
-  road?: string;
-  neighbourhood?: string;
-  suburb?: string;
-  village?: string;
-  town?: string;
-  city?: string;
-  municipality?: string;
-  county?: string;
-  state?: string;
-  region?: string;
-  postcode?: string;
-  country?: string;
-};
-
 type NominatimResult = {
   lat: string;
   lon: string;
@@ -35,7 +23,7 @@ type NominatimResult = {
   type?: string;
   class?: string;
   importance?: number;
-  address?: NominatimAddress;
+  address?: GeocodingProviderAddress;
 };
 
 function cleanText(value: unknown) {
@@ -46,20 +34,13 @@ function cleanText(value: unknown) {
   return value.trim();
 }
 
-function firstCleanValue(values: Array<string | undefined>) {
-  for (const value of values) {
-    const cleanValue = cleanText(value);
-
-    if (cleanValue) {
-      return cleanValue;
-    }
-  }
-
-  return "";
-}
-
 function buildQuery(values: string[]) {
-  return [...values.filter(Boolean), "Portugal"].join(", ");
+  const cleanValues = values
+    .map((value) => cleanText(value))
+    .filter(Boolean)
+    .filter((value) => normalizeLookupText(value) !== "portugal");
+
+  return [...cleanValues, "Portugal"].join(", ");
 }
 
 function uniqueQueries(values: string[]) {
@@ -152,17 +133,25 @@ export async function POST(request: Request) {
   }
 
   const manualQuery = cleanText(body.query);
+  const venue = cleanText(body.venue);
   const address = cleanText(body.address);
   const postalCode = cleanText(body.postal_code);
   const city = cleanText(body.city);
   const municipality = cleanText(body.municipality);
   const district = cleanText(body.district);
 
-  if (!manualQuery && (!address || (!postalCode && !city && !municipality && !district))) {
+  if (
+    !manualQuery &&
+    !venue &&
+    !address &&
+    !postalCode &&
+    !city &&
+    !municipality &&
+    !district
+  ) {
     return NextResponse.json(
       {
-        error:
-          "Mete uma morada com código postal, localidade ou concelho para localizar.",
+        error: "Mete o nome do espaço, uma morada ou uma localidade.",
       },
       { status: 400 }
     );
@@ -170,17 +159,30 @@ export async function POST(request: Request) {
 
   const queries = manualQuery
     ? uniqueQueries([
-        buildQuery([manualQuery]),
+        buildQuery([
+          manualQuery,
+          postalCode,
+          city,
+          municipality,
+          district,
+        ]),
         buildQuery([manualQuery, postalCode]),
         buildQuery([manualQuery, municipality || city || district]),
-        buildQuery([manualQuery, "Leiria"]),
-        buildQuery([manualQuery, "Portugal"]),
+        buildQuery([manualQuery]),
       ])
     : uniqueQueries([
-        buildQuery([address, postalCode]),
-        buildQuery([address, postalCode, municipality, district]),
-        buildQuery([address, postalCode, city, municipality, district]),
+        buildQuery([
+          venue,
+          address,
+          postalCode,
+          city,
+          municipality,
+          district,
+        ]),
+        buildQuery([venue, city, municipality, district]),
         buildQuery([address, city, municipality, district]),
+        buildQuery([address, postalCode, municipality, district]),
+        buildQuery([venue, address, postalCode]),
         buildQuery([postalCode, city, municipality, district]),
       ]);
 
@@ -205,18 +207,35 @@ export async function POST(request: Request) {
     }
 
     if (!bestResult) {
-      const fallback = getFallbackLocation(manualQuery || address);
+      const fallback = getFallbackLocation(
+        manualQuery || [venue, address, city, municipality, district].filter(Boolean).join(" ")
+      );
 
       if (fallback) {
-        return NextResponse.json({
+        const normalized = normalizeGeocodingResult({
           latitude: fallback.latitude,
           longitude: fallback.longitude,
-          display_name: fallback.display_name,
+          displayName: fallback.display_name,
+          venueName: venue,
+          fallbackAddress: address,
+          fallbackPostalCode: postalCode,
+          fallbackCity: fallback.city,
+          fallbackMunicipality: fallback.municipality,
+          fallbackDistrict: fallback.district,
+        });
+
+        return NextResponse.json({
+          latitude: normalized.latitude,
+          longitude: normalized.longitude,
+          display_name: normalized.displayName,
           provider: "fallback",
-          city: fallback.city,
-          municipality: fallback.municipality,
-          district: fallback.district,
-          postal_code: postalCode,
+          venue_name: normalized.venueName,
+          address: normalized.address,
+          locality: normalized.locality,
+          city: normalized.city,
+          municipality: normalized.municipality,
+          district: normalized.district,
+          postal_code: normalized.postalCode,
         });
       }
 
@@ -249,40 +268,31 @@ export async function POST(request: Request) {
       );
     }
 
-    const resolvedCity = firstCleanValue([
-      bestResult.address?.city,
-      bestResult.address?.town,
-      bestResult.address?.village,
-      bestResult.address?.suburb,
-      city,
-    ]);
-
-    const resolvedMunicipality = firstCleanValue([
-      bestResult.address?.municipality,
-      bestResult.address?.county,
-      municipality,
-    ]);
-
-    const resolvedDistrict = firstCleanValue([
-      bestResult.address?.state,
-      bestResult.address?.region,
-      district,
-    ]);
-
-    const resolvedPostalCode = firstCleanValue([
-      postalCode,
-      bestResult.address?.postcode,
-    ]);
-
-    return NextResponse.json({
+    const normalized = normalizeGeocodingResult({
       latitude,
       longitude,
-      display_name: bestResult.display_name || usedQuery,
+      displayName: bestResult.display_name || usedQuery,
+      address: bestResult.address,
+      venueName: venue,
+      fallbackAddress: address,
+      fallbackPostalCode: postalCode,
+      fallbackCity: city,
+      fallbackMunicipality: municipality,
+      fallbackDistrict: district,
+    });
+
+    return NextResponse.json({
+      latitude: normalized.latitude,
+      longitude: normalized.longitude,
+      display_name: normalized.displayName,
       provider: "nominatim",
-      city: resolvedCity,
-      municipality: resolvedMunicipality,
-      district: resolvedDistrict,
-      postal_code: resolvedPostalCode,
+      venue_name: normalized.venueName,
+      address: normalized.address,
+      locality: normalized.locality,
+      city: normalized.city,
+      municipality: normalized.municipality,
+      district: normalized.district,
+      postal_code: normalized.postalCode,
     });
   } catch {
     return NextResponse.json(
