@@ -298,6 +298,11 @@ export function ParanoidMap({
       ].filter(Boolean).join(" ");
       markerElement.style.zIndex = markerElement.dataset.priority;
 
+      const markerVisual = document.createElement("span");
+      markerVisual.className = "map-event-marker__dot";
+      markerVisual.setAttribute("aria-hidden", "true");
+      markerElement.appendChild(markerVisual);
+
       markerElement.addEventListener("click", () => onSelectEvent(event));
 
       const marker = new maplibregl.Marker({ element: markerElement })
