@@ -972,14 +972,14 @@ export default function MapPage() {
 
   if (loading) {
     return (
-      <main className="map-screen bg-black pb-24 text-[#f2f1ec] lg:pb-0">
+      <main className="brand-surface map-screen bg-black pb-24 text-[#f2f1ec] lg:pb-0">
         <MapLoadingState />
       </main>
     );
   }
 
   return (
-    <main className="map-screen relative overflow-hidden bg-black text-[#f2f1ec]">
+    <main className="brand-surface map-screen relative overflow-hidden bg-black text-[#f2f1ec]">
       <section className="absolute inset-0 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
         <ParanoidMap
           events={visiblePinEvents}
