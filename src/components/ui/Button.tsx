@@ -9,10 +9,10 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "border border-[#f2f1ec] bg-[#f2f1ec] text-black hover:bg-white",
-  secondary: "border border-zinc-700 bg-transparent text-[#f2f1ec] hover:border-zinc-500 hover:bg-zinc-900",
+  primary: "border border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]",
+  secondary: "border border-[var(--border-strong)] bg-transparent text-[var(--foreground)] hover:border-[var(--foreground-muted)] hover:bg-[var(--surface-hover)]",
   danger: "border border-red-900 bg-red-950/35 text-red-200 hover:border-red-700 hover:bg-red-950/55",
-  ghost: "border border-transparent bg-transparent text-zinc-400 hover:bg-zinc-900 hover:text-white",
+  ghost: "border border-transparent bg-transparent text-[var(--foreground-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]",
 };
 
 const sizes: Record<ButtonSize, string> = {

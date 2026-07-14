@@ -3,6 +3,8 @@ import "./globals.css";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { DesktopHeader } from "@/components/DesktopHeader";
 import { PwaRegister } from "@/components/PwaRegister";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { ThemeScript } from "@/components/theme/ThemeScript";
 import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
@@ -40,8 +42,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0b0b",
-  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f0e8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0b0b" },
+  ],
+  colorScheme: "dark light",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -53,14 +58,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt" className="h-full antialiased">
-      <body className="min-h-full bg-[#0b0b0b]">
+    <html lang="pt" data-theme="dark" data-theme-preference="dark" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
+      <body className="min-h-full bg-[var(--background)] text-[var(--foreground)]">
         <PwaRegister />
-        <ToastProvider>
-          <DesktopHeader />
-          <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
-          <MobileBottomNav />
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <DesktopHeader />
+            <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
+            <MobileBottomNav />
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

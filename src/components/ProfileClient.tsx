@@ -5,6 +5,9 @@ import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SettingsList, type SettingsListItem } from "@/components/SettingsList";
 import { StatusBadge } from "@/components/StatusBadge";
+import { AppearanceSettings } from "@/components/theme/AppearanceSettings";
+import { themeLabel } from "@/components/theme/ThemeSelector";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import { Button, LinkButton, LoadingButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { profileActivityNavigation, profilePurchaseNavigation } from "@/config/navigation";
@@ -54,6 +57,7 @@ export function ProfileClient() {
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
@@ -67,6 +71,7 @@ export function ProfileClient() {
   const [preferredCities, setPreferredCities] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const { toast } = useToast();
+  const { preferredTheme } = useTheme();
 
   async function loadProfile() {
     setLoading(true);
@@ -167,6 +172,7 @@ export function ProfileClient() {
   if (approved && entityPath) creatorItems.push({ href: entityPath, label: "Ver perfil público", icon: accountType === "artist" ? "artist" : accountType === "venue" ? "venue" : "organizer" });
 
   return <div>
+    <AppearanceSettings open={appearanceOpen} onClose={() => setAppearanceOpen(false)} />
     <header className="flex items-center gap-4 border-b border-zinc-900 pb-6">
       <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full border border-red-950 bg-red-950/25 text-xl font-black text-red-500">{title.charAt(0).toUpperCase()}</div>
       <div className="min-w-0 flex-1"><h1 className="truncate text-3xl font-black">{title}</h1><p className="truncate text-sm text-zinc-600">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
@@ -189,7 +195,7 @@ export function ProfileClient() {
 
     <div className="grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">
       <ProfileSection title="A minha atividade" items={activityItems} />
-      <ProfileSection title="A minha conta" items={[{ label: "Dados e preferências", description: "Nome, localização e categorias", icon: "settings", onClick: () => setEditing(true) }, { label: signingOut ? "A terminar sessão..." : "Terminar sessão", icon: "logout", tone: "danger", onClick: signOut }]} />
+      <ProfileSection title="A minha conta" items={[{ label: "Dados e preferências", description: "Nome, localização e categorias", icon: "settings", onClick: () => setEditing(true) }, { label: "Aparência", description: `Tema atual: ${themeLabel(preferredTheme)}`, icon: "sun", onClick: () => setAppearanceOpen(true) }, { label: signingOut ? "A terminar sessão..." : "Terminar sessão", icon: "logout", tone: "danger", onClick: signOut }]} />
       <ProfileSection title="Bilhetes e compras" items={purchaseItems} />
       {creatorItems.length > 0 && <ProfileSection title="Criar e gerir" items={creatorItems} />}
       {approved && accountType === "organizer" && <ProfileSection title="Visibilidade e parcerias" items={[{ href: "/organizador/destaques", label: "Destaques e Frequency", icon: "visibility" }, { href: "/patrocinar", label: "Parcerias Paranoid", icon: "organizer" }]} />}

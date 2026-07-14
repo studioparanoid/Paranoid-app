@@ -15,7 +15,11 @@ export type NavigationIcon =
   | "visibility"
   | "admin"
   | "settings"
-  | "logout";
+  | "logout"
+  | "monitor"
+  | "moon"
+  | "sun"
+  | "check";
 
 export type NavigationItem = {
   href: string;

@@ -7,7 +7,7 @@
   --ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --focus-color: #dc2626;
+  --focus-color: var(--focus-ring, #dc2626);
 }
 
 .interactive,
@@ -88,20 +88,20 @@ button:disabled,
 .skeleton-shimmer {
   position: relative;
   overflow: hidden;
-  background: #151515;
+  background: var(--skeleton-background);
 }
 
 .skeleton-shimmer::after {
   position: absolute;
   inset: 0;
   content: "";
-  background: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.055) 48%, transparent 76%);
+  background: linear-gradient(100deg, transparent 20%, var(--skeleton-highlight) 48%, transparent 76%);
   transform: translateX(-100%);
   animation: paranoid-shimmer 1.35s linear infinite;
 }
 
 .ui-overlay {
-  background: rgb(0 0 0 / 0.76);
+  background: var(--overlay);
   animation: paranoid-fade-in var(--motion-normal) var(--ease-enter) both;
 }
 
