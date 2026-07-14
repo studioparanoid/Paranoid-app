@@ -234,6 +234,10 @@ function formatDistance(value: number | null) {
   return `${value.toFixed(1)} km`;
 }
 
+function radarLabel(count: number) {
+  return count === 1 ? "1 evento no radar." : `${count} eventos no radar.`;
+}
+
 function normalizeCoordinate(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") {
     return null;
@@ -389,30 +393,32 @@ function EventSummary({
     <button
       type="button"
       onClick={onSelect}
-      className={`w-full rounded-xl border px-3 py-3 text-left transition ${
+      data-map-event-card={event.id}
+      aria-pressed={selected}
+      className={`pressable focus-ring w-full rounded-xl border px-3 py-3 text-left transition ${
         selected
-          ? "border-red-500 bg-red-950/40"
-          : "border-white/10 bg-black/55 hover:border-white/25"
+          ? "border-red-500/70 bg-[#202020]"
+          : "border-white/10 bg-[#151515] hover:border-white/20 hover:bg-[#1c1c1c]"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400">
             {eventDisplayDate(event)}
           </p>
           <h3 className="mt-1 line-clamp-2 text-sm font-black leading-tight text-[#f2f1ec]">
-            {event.title}
+            {event.title || "Evento"}
           </h3>
         </div>
-        <span className="whitespace-nowrap rounded-full bg-white/10 px-2 py-1 text-[10px] font-black text-zinc-200">
+        <span className="whitespace-nowrap rounded-full border border-white/10 bg-zinc-800 px-2.5 py-1 text-[10px] font-black text-zinc-100">
           {formatDistance(event.distanceKm)}
         </span>
       </div>
 
       <p className="mt-2 truncate text-xs font-bold text-zinc-300">
-        {event.venue_name || event.venue?.name || "Sem espaco"}
+        {event.venue_name || event.venue?.name || "Sem espaço"}
       </p>
-      <p className="mt-1 truncate text-[10px] uppercase tracking-wide text-zinc-500">
+      <p className="mt-1 truncate text-[10px] font-bold uppercase tracking-wide text-zinc-500">
         {cityArea || getEventDistrict(event) || "Sem zona"}
       </p>
       {event.finalLatitude === null || event.finalLongitude === null ? (
@@ -629,16 +635,12 @@ export default function MapPage() {
   const visiblePinEvents = pinEvents;
 
   const selectedEvent = useMemo(() => {
-    if (!hasAppliedFilters) {
-      return null;
-    }
-
     return (
       filteredEvents.find((event) => event.id === selectedEventId) ||
       filteredEvents[0] ||
       null
     );
-  }, [filteredEvents, hasAppliedFilters, selectedEventId]);
+  }, [filteredEvents, selectedEventId]);
 
   const selectedMapsUrl = selectedEvent
     ? buildGoogleMapsUrl(
@@ -651,6 +653,18 @@ export default function MapPage() {
   const selectedEventIndex = selectedEvent
     ? filteredEvents.findIndex((event) => event.id === selectedEvent.id)
     : -1;
+
+  const currentRadarLabel = radarLabel(filteredEvents.length);
+
+  useEffect(() => {
+    if (!selectedEvent?.id || !eventCardOpen) {
+      return;
+    }
+
+    document
+      .querySelector<HTMLElement>(`[data-map-event-card="${selectedEvent.id}"]`)
+      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [eventCardOpen, selectedEvent?.id]);
 
   function selectRelativeEvent(direction: -1 | 1) {
     if (filteredEvents.length === 0) {
@@ -987,7 +1001,7 @@ export default function MapPage() {
             </h1>
           </div>
           <p className="rounded-full border border-white/10 bg-black/45 px-3 py-2 text-[11px] font-black text-zinc-100 backdrop-blur-md">
-            {hasAppliedFilters ? filteredEvents.length : 0}
+            {filteredEvents.length}
           </p>
         </div>
       </header>
@@ -1014,7 +1028,7 @@ export default function MapPage() {
               </span>
               <span className="block text-[10px] font-bold uppercase tracking-wide text-zinc-500">
                 {radiusFilter === "all" ? "Portugal" : `${radiusFilter} km`} ·{" "}
-                {hasAppliedFilters ? filteredEvents.length : 0} eventos
+                {filteredEvents.length} eventos
               </span>
             </span>
             <span className="rounded-full border border-red-500/50 px-3 py-2 text-xs font-black text-red-100">
@@ -1237,16 +1251,17 @@ export default function MapPage() {
       </section>
 
       <aside
-        aria-label="Evento selecionado"
-        className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-black/82 shadow-2xl shadow-black/50 backdrop-blur-md lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-none lg:w-[320px] lg:flex-col lg:pb-0 ${
+        aria-label="Eventos no radar"
+        className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 max-h-[38vh] overflow-hidden rounded-2xl border border-white/10 bg-[rgb(10_10_10_/_0.97)] shadow-2xl shadow-black/45 lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-[calc(100dvh-8rem)] lg:w-[380px] lg:flex-col lg:pb-0 xl:w-[400px] ${
           hasAppliedFilters && controlsCollapsed && eventCardOpen
             ? "slide-up block"
             : "hidden lg:flex"
         }`}
       >
-        {selectedEvent ? (
-          <div className="border-b border-white/10 p-2.5 lg:p-3">
-            <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
+        <div className="border-b border-white/10 px-3 pb-2.5 pt-2 lg:px-4 lg:pb-3 lg:pt-4">
+          <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/30 lg:hidden" aria-hidden="true" />
+          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
+            {selectedEvent ? (
               <button
                 type="button"
                 onClick={() => selectRelativeEvent(-1)}
@@ -1255,42 +1270,23 @@ export default function MapPage() {
               >
                 ‹
               </button>
+            ) : <span className="hidden lg:hidden" />}
 
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">
-                    {eventDisplayDate(selectedEvent)}
-                  </p>
-                  <p className="text-[10px] font-black text-zinc-500 lg:hidden">
-                    {selectedEventIndex + 1}/{filteredEvents.length}
-                  </p>
-                </div>
-                <h2 className="mt-1 line-clamp-1 text-base font-black leading-tight lg:line-clamp-2 lg:text-base">
-                  {selectedEvent.title}
-                </h2>
-                <p className="mt-1 truncate text-xs text-zinc-300">
-                  {selectedEvent.venue_name ||
-                    selectedEvent.venue?.name ||
-                    "Sem espaco"}{" "}
-                  ·{" "}
-                  {[getEventCity(selectedEvent), getEventMunicipality(selectedEvent)]
-                    .filter(Boolean)
-                    .join(" / ") ||
-                    getEventDistrict(selectedEvent) ||
-                    "Sem zona"}
+            <div className="min-w-0 text-center lg:text-left">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">
+                Radar
+              </p>
+              <p className="mt-0.5 text-base font-black leading-tight text-[#f2f1ec]" aria-live="polite">
+                {currentRadarLabel}
+              </p>
+              {selectedEvent && (
+                <p className="mt-0.5 text-[10px] font-black text-zinc-500 lg:hidden">
+                  {selectedEventIndex + 1}/{filteredEvents.length}
                 </p>
-                <div className="mt-1 flex items-center gap-2 text-xs">
-                  <span className="text-zinc-400">
-                    {selectedEvent.display_time || "Hora por definir"}
-                  </span>
-                  {selectedEvent.distanceKm !== null && (
-                    <span className="font-black text-green-300">
-                      {formatDistance(selectedEvent.distanceKm)}
-                    </span>
-                  )}
-                </div>
-              </div>
+              )}
+            </div>
 
+            {selectedEvent ? (
               <button
                 type="button"
                 onClick={() => selectRelativeEvent(1)}
@@ -1299,12 +1295,41 @@ export default function MapPage() {
               >
                 ›
               </button>
-            </div>
+            ) : <span className="hidden lg:hidden" />}
+          </div>
+        </div>
 
-            <div className="mt-2.5 flex gap-2">
+        <div className="paranoid-scrollbar relative flex-1 space-y-2 overflow-auto p-3 lg:block lg:p-4">
+          {filteredEvents.length === 0 ? (
+            <p className="rounded-xl border border-white/10 bg-[#151515] p-4 text-sm font-bold text-zinc-300" role="status" aria-live="polite">
+              Sem eventos no radar.
+            </p>
+          ) : (
+            <>
+              {filteredEvents.map((event) => (
+                <EventSummary
+                  key={event.id}
+                  event={event}
+                  selected={event.id === selectedEvent?.id}
+                  onSelect={() => {
+                    setSelectedEventId(event.id);
+                    setHasAppliedFilters(true);
+                    setControlsCollapsed(true);
+                    setEventCardOpen(true);
+                  }}
+                />
+              ))}
+              <div className="h-1" aria-hidden="true" />
+            </>
+          )}
+        </div>
+
+        {selectedEvent && (
+          <div className="border-t border-white/10 p-3 lg:p-4">
+            <div className="flex gap-2">
               <Link
                 href={`/eventos/${selectedEvent.slug}`}
-                className="pressable focus-ring flex-1 rounded-full bg-[#f2f1ec] px-4 py-2 text-center text-xs font-black text-black"
+                className="pressable focus-ring flex-1 rounded-full bg-red-600 px-4 py-2 text-center text-xs font-black text-white hover:bg-red-700"
               >
                 Ver evento
               </Link>
@@ -1312,42 +1337,21 @@ export default function MapPage() {
                 href={selectedMapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="pressable focus-ring rounded-full border border-white/15 bg-black/30 px-4 py-2 text-xs font-black text-zinc-100"
+                className="pressable focus-ring rounded-full border border-white/15 bg-transparent px-4 py-2 text-xs font-black text-zinc-100 hover:bg-[#1c1c1c]"
               >
                 Rota
               </a>
               <button
                 type="button"
                 onClick={() => setEventCardOpen(false)}
-                aria-label="Fechar evento"
-                className="pressable focus-ring grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/30 text-sm font-black text-zinc-100"
+                aria-label="Fechar lista de eventos"
+                className="pressable focus-ring grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-transparent text-sm font-black text-zinc-100 hover:bg-[#1c1c1c] lg:hidden"
               >
                 ×
               </button>
             </div>
           </div>
-        ) : (
-          <div className="p-4">
-            <p className="text-sm font-bold text-zinc-500">Sem eventos no radar.</p>
-          </div>
         )}
-
-        <div className="hidden flex-1 space-y-2 overflow-auto p-3 lg:block">
-          {filteredEvents.length === 0 ? (
-            <p className="rounded-2xl border border-zinc-900 p-4 text-sm font-bold text-zinc-500">
-              Muda o raio ou a categoria.
-            </p>
-          ) : (
-            filteredEvents.map((event) => (
-              <EventSummary
-                key={event.id}
-                event={event}
-                selected={event.id === selectedEvent?.id}
-                onSelect={() => setSelectedEventId(event.id)}
-              />
-            ))
-          )}
-        </div>
       </aside>
     </main>
   );

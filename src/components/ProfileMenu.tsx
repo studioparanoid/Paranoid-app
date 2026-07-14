@@ -78,9 +78,9 @@ export function ProfileMenu() {
     <IconButton label={profile ? "Abrir menu do perfil" : "Entrar ou criar conta"} variant="secondary" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="menu" aria-controls="profile-menu">
       <AppIcon name="profile" />
     </IconButton>
-    {open && <div ref={menuRef} id="profile-menu" role="menu" className="scale-in absolute right-0 top-12 z-50 w-72 rounded-lg border border-[var(--border)] bg-[var(--dropdown-background)] p-2 shadow-2xl shadow-black/30">
+    {open && <div ref={menuRef} id="profile-menu" role="menu" className="brand-surface scale-in absolute right-0 top-12 z-50 w-72 rounded-lg border border-[var(--brand-border)] bg-[var(--dropdown-background)] p-2 shadow-2xl shadow-black/40">
       {profile ? <>
-        <p className="truncate border-b border-[var(--border)] px-3 py-3 text-xs text-[var(--foreground-muted)]">{profile.email}</p>
+        <p className="truncate border-b border-[var(--brand-border)] px-3 py-3 text-xs text-[var(--brand-muted)]">{profile.email}</p>
         <MenuLink href="/perfil" label="Ver perfil" onSelect={() => setOpen(false)} />
         <MenuLink href="/guardados" label="Guardados" onSelect={() => setOpen(false)} />
         <MenuLink href="/bilhetes" label="Bilhetes" onSelect={() => setOpen(false)} />
@@ -92,8 +92,8 @@ export function ProfileMenu() {
         <MenuLink href="/login" label="Entrar" onSelect={() => setOpen(false)} />
         <MenuLink href="/registar" label="Criar conta" onSelect={() => setOpen(false)} />
       </>}
-      <div className="mt-2 border-t border-[var(--border)] pt-2">
-        <p className="px-3 pb-2 pt-1 text-[10px] font-black uppercase tracking-[0.24em] text-[var(--foreground-muted)]">Tema</p>
+      <div className="mt-2 border-t border-[var(--brand-border)] pt-2">
+        <p className="px-3 pb-2 pt-1 text-[10px] font-black uppercase tracking-[0.24em] text-[var(--brand-muted)]">Tema</p>
         <ThemeSelector compact />
       </div>
     </div>}
@@ -101,5 +101,5 @@ export function ProfileMenu() {
 }
 
 function MenuLink({ href, label, onSelect }: { href: string; label: string; onSelect: () => void }) {
-  return <Link href={href} role="menuitem" onClick={onSelect} className="interactive focus-ring block rounded px-3 py-3 text-sm font-bold text-[var(--foreground-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--foreground)]">{label}</Link>;
+  return <Link href={href} role="menuitem" onClick={onSelect} className="interactive focus-ring block rounded px-3 py-3 text-sm font-bold text-zinc-200 hover:bg-[var(--brand-surface-hover)] hover:text-white">{label}</Link>;
 }

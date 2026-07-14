@@ -33,6 +33,12 @@
   --skeleton-background: #151515;
   --skeleton-highlight: rgb(255 255 255 / 0.055);
   --focus-ring: #dc2626;
+  --brand-surface: #090909;
+  --brand-surface-elevated: #141414;
+  --brand-surface-hover: #1c1c1c;
+  --brand-foreground: #f7f5ef;
+  --brand-muted: #aaa69e;
+  --brand-border: rgb(255 255 255 / 0.1);
   --font-geist-sans: Arial, Helvetica, sans-serif;
   --font-geist-mono: "Courier New", Courier, monospace;
   color-scheme: dark;
@@ -59,13 +65,19 @@
   --input-border: #d7cdbf;
   --input-placeholder: #9a9085;
   --card-background: #fffaf2;
-  --header-background: rgb(244 240 232 / 0.96);
+  --header-background: rgb(9 9 9 / 0.96);
   --bottom-nav-background: rgb(255 250 242 / 0.97);
-  --dropdown-background: #fffaf2;
+  --dropdown-background: #111111;
   --modal-background: #fffaf2;
   --toast-background: rgb(27 24 22 / 0.96);
   --skeleton-background: #e4dbce;
   --skeleton-highlight: rgb(255 255 255 / 0.55);
+  --brand-surface: #090909;
+  --brand-surface-elevated: #141414;
+  --brand-surface-hover: #1c1c1c;
+  --brand-foreground: #f7f5ef;
+  --brand-muted: #aaa69e;
+  --brand-border: rgb(255 255 255 / 0.1);
   color-scheme: light;
 }
 
@@ -146,6 +158,12 @@ select:-webkit-autofill {
   background-color: var(--surface) !important;
 }
 
+[data-theme="light"] .brand-surface {
+  background-color: var(--brand-surface) !important;
+  color: var(--brand-foreground) !important;
+  border-color: var(--brand-border) !important;
+}
+
 [data-theme="light"] [class~="bg-zinc-100"] {
   background-color: var(--foreground) !important;
 }
@@ -216,6 +234,28 @@ select:-webkit-autofill {
 
 [data-theme="light"] .event-card-fallback {
   background-color: #eee6d8;
+}
+
+.paranoid-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}
+
+.paranoid-scrollbar::-webkit-scrollbar {
+  width: 0.45rem;
+}
+
+.paranoid-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.paranoid-scrollbar::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 999px;
+}
+
+.paranoid-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
 }
 
 .map-event-marker {

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export function AuthPageLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 pb-28 text-[#f2f1ec] sm:px-6 lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-[var(--background)] px-4 py-6 pb-28 text-[var(--foreground)] sm:px-6 lg:px-10 lg:py-12">
       <div className="mx-auto max-w-3xl space-y-5">{children}</div>
     </main>
   );
@@ -18,7 +18,7 @@ export function AuthFormCard({
   children: ReactNode;
 }) {
   return (
-    <section className="content-transition rounded-lg border border-zinc-800 bg-zinc-950 p-5 sm:p-7 lg:p-9">
+    <section className="content-transition rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 lg:p-9">
       <p className="text-xs font-black uppercase tracking-[0.32em] text-red-600">
         {eyebrow}
       </p>
@@ -40,12 +40,12 @@ export function AuthInfoCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-zinc-900 bg-zinc-950/55 p-5 sm:p-7">
-      <p className="text-[0.65rem] font-black uppercase tracking-[0.3em] text-red-600">
+    <section className="brand-surface rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-elevated)] p-5 sm:p-6">
+      <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-500">
         {eyebrow}
       </p>
-      <h2 className="mt-2 text-2xl font-black sm:text-3xl">{title}</h2>
-      <div className="mt-4 text-sm leading-relaxed text-zinc-400">
+      <h2 className="mt-2 text-2xl font-black text-[var(--brand-foreground)] sm:text-3xl">{title}</h2>
+      <div className="mt-3 text-sm leading-relaxed text-[var(--brand-muted)]">
         {children}
       </div>
     </section>
@@ -65,10 +65,10 @@ export function AuthNetworkOptions() {
         {networkOptions.map((option) => (
           <div
             key={option.title}
-            className="rounded border border-zinc-800 bg-black px-4 py-3"
+            className="rounded border border-[var(--brand-border)] bg-[var(--brand-surface)] px-4 py-3"
           >
-            <p className="font-black text-[#f2f1ec]">{option.title}</p>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+            <p className="font-black text-[var(--brand-foreground)]">{option.title}</p>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--brand-muted)]">
               {option.description}
             </p>
           </div>
