@@ -39,6 +39,17 @@
   --brand-foreground: #f7f5ef;
   --brand-muted: #aaa69e;
   --brand-border: rgb(255 255 255 / 0.1);
+  --dark-surface: #090909;
+  --dark-surface-elevated: #141414;
+  --dark-foreground: #f7f5ef;
+  --dark-muted: #aaa69e;
+  --dark-border: rgb(255 255 255 / 0.1);
+  --shadow-header: 0 2px 8px rgb(0 0 0 / 0.22);
+  --shadow-card: 0 8px 22px rgb(0 0 0 / 0.18);
+  --shadow-card-hover: 0 12px 28px rgb(0 0 0 / 0.24);
+  --shadow-floating: 0 8px 20px rgb(0 0 0 / 0.28);
+  --shadow-dropdown: 0 12px 30px rgb(0 0 0 / 0.32);
+  --shadow-map-panel: 0 14px 34px rgb(0 0 0 / 0.38);
   --font-geist-sans: Arial, Helvetica, sans-serif;
   --font-geist-mono: "Courier New", Courier, monospace;
   color-scheme: dark;
@@ -67,7 +78,7 @@
   --card-background: #fffaf2;
   --header-background: rgb(11 11 11 / 0.96);
   --bottom-nav-background: rgb(255 250 242 / 0.97);
-  --dropdown-background: #111111;
+  --dropdown-background: #fffaf2;
   --modal-background: #fffaf2;
   --toast-background: rgb(27 24 22 / 0.96);
   --skeleton-background: #e4dbce;
@@ -78,6 +89,17 @@
   --brand-foreground: #f7f5ef;
   --brand-muted: #aaa69e;
   --brand-border: rgb(255 255 255 / 0.1);
+  --dark-surface: #090909;
+  --dark-surface-elevated: #141414;
+  --dark-foreground: #f7f5ef;
+  --dark-muted: #aaa69e;
+  --dark-border: rgb(255 255 255 / 0.1);
+  --shadow-header: 0 3px 10px rgb(27 24 22 / 0.24);
+  --shadow-card: 0 8px 22px rgb(27 24 22 / 0.11);
+  --shadow-card-hover: 0 12px 28px rgb(27 24 22 / 0.17);
+  --shadow-floating: 0 8px 22px rgb(27 24 22 / 0.16);
+  --shadow-dropdown: 0 14px 32px rgb(27 24 22 / 0.2);
+  --shadow-map-panel: 0 14px 34px rgb(0 0 0 / 0.42);
   color-scheme: light;
 }
 
@@ -167,7 +189,40 @@ select:-webkit-autofill {
   --surface-hover: var(--brand-surface-hover);
   --border: var(--brand-border);
   --border-strong: #52525b;
+  --input-background: #050505;
+  --input-border: #27272a;
+  --input-placeholder: #71717a;
+  --dropdown-background: var(--dark-surface-elevated);
+  --modal-background: var(--dark-surface);
   color: var(--brand-foreground);
+}
+
+.app-header-shadow {
+  box-shadow: var(--shadow-header);
+}
+
+.bottom-nav-shadow {
+  box-shadow: 0 -3px 10px rgb(0 0 0 / 0.2);
+}
+
+[data-theme="light"] .bottom-nav-shadow {
+  box-shadow: 0 -3px 10px rgb(27 24 22 / 0.22);
+}
+
+.shadow-card {
+  box-shadow: var(--shadow-card);
+}
+
+.shadow-floating {
+  box-shadow: var(--shadow-floating);
+}
+
+.shadow-dropdown {
+  box-shadow: var(--shadow-dropdown);
+}
+
+.shadow-map-panel {
+  box-shadow: var(--shadow-map-panel);
 }
 
 [data-theme="light"] [class~="bg-zinc-100"] {
@@ -242,6 +297,7 @@ select:-webkit-autofill {
   background-color: #18181b !important;
 }
 
+[data-theme="light"] .brand-surface[class~="text-[#f2f1ec]"],
 [data-theme="light"] .brand-surface [class~="text-[#f2f1ec]"] {
   color: #f2f1ec !important;
 }
@@ -263,15 +319,15 @@ select:-webkit-autofill {
 }
 
 [data-theme="light"] .brand-surface [class~="text-zinc-500"] {
-  color: #71717a !important;
+  color: #a1a1aa !important;
 }
 
 [data-theme="light"] .brand-surface [class~="text-zinc-600"] {
-  color: #52525b !important;
+  color: #8b8b94 !important;
 }
 
 [data-theme="light"] .brand-surface [class~="text-zinc-700"] {
-  color: #3f3f46 !important;
+  color: #71717a !important;
 }
 
 [data-theme="light"] .brand-surface [class~="border-zinc-700"] {
@@ -327,6 +383,18 @@ select:-webkit-autofill {
 [data-theme="light"] [class~="bg-black/30"][class~="text-zinc-200"],
 [data-theme="light"] [class~="bg-black/20"][class~="text-zinc-200"] {
   color: #e4e4e7 !important;
+}
+
+.brand-surface [class~="text-zinc-500"] {
+  color: #a1a1aa !important;
+}
+
+.brand-surface [class~="text-zinc-600"] {
+  color: #8b8b94 !important;
+}
+
+.brand-surface [class~="text-zinc-700"] {
+  color: #71717a !important;
 }
 
 [data-theme="light"] .event-card-fallback {
@@ -413,7 +481,7 @@ select:-webkit-autofill {
 .map-event-marker--selected:hover .map-event-marker__dot,
 .map-event-marker--selected:focus-visible .map-event-marker__dot {
   transform: scale(1.42);
-  box-shadow: 0 0 0 7px rgb(239 68 68 / 0.35), 0 0 22px rgb(239 68 68 / 0.72);
+  box-shadow: 0 0 0 7px rgb(239 68 68 / 0.35), 0 5px 14px rgb(0 0 0 / 0.55);
 }
 
 .home-hero::before {
@@ -441,16 +509,34 @@ select:-webkit-autofill {
 }
 
 .interactive-card {
-  transition: transform var(--motion-normal) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--motion-normal) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .interactive-card:hover {
-    transform: translateY(-3px);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
   }
 }
 
 .interactive-card:active {
+  box-shadow: var(--shadow-card);
+  transform: scale(0.99);
+}
+
+.card-hover {
+  box-shadow: var(--shadow-card);
+  transition: transform var(--motion-normal) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.card-hover:active {
+  box-shadow: var(--shadow-card);
   transform: scale(0.99);
 }
 
@@ -477,7 +563,7 @@ select:-webkit-autofill {
 /* The map owns the viewport between the app header and mobile navigation. */
 .map-screen {
   height: calc(100dvh - 4rem);
-  min-height: 32rem;
+  min-height: 0;
   margin-bottom: calc(-4.75rem - env(safe-area-inset-bottom));
 }
 
@@ -495,7 +581,26 @@ select:-webkit-autofill {
 
 @media (min-width: 1024px) {
   .map-screen {
-    min-height: 38rem;
     margin-bottom: 0;
+  }
+
+  .paranoid-map .maplibregl-ctrl-top-right {
+    right: 420px;
+  }
+
+  .paranoid-map .maplibregl-ctrl-bottom-right {
+    right: auto;
+    left: 0;
+    z-index: 35;
+  }
+
+  .paranoid-map .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+    margin: 0;
+  }
+}
+
+@media (min-width: 1280px) {
+  .paranoid-map .maplibregl-ctrl-top-right {
+    right: 440px;
   }
 }

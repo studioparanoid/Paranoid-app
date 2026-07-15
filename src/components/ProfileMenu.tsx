@@ -78,7 +78,7 @@ export function ProfileMenu() {
     <IconButton label={profile ? "Abrir menu do perfil" : "Entrar ou criar conta"} variant="secondary" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="menu" aria-controls="profile-menu">
       <AppIcon name="profile" />
     </IconButton>
-    {open && <div ref={menuRef} id="profile-menu" role="menu" className="brand-surface scale-in absolute right-0 top-12 z-50 w-72 rounded-lg border border-[var(--brand-border)] bg-[var(--dropdown-background)] p-2 shadow-2xl shadow-black/40">
+    {open && <div ref={menuRef} id="profile-menu" role="menu" className="brand-surface shadow-dropdown scale-in absolute right-0 top-12 z-50 w-72 rounded-lg border border-[var(--brand-border)] bg-[var(--dropdown-background)] p-2">
       {profile ? <>
         <p className="truncate border-b border-[var(--brand-border)] px-3 py-3 text-xs text-[var(--brand-muted)]">{profile.email}</p>
         <MenuLink href="/perfil" label="Ver perfil" onSelect={() => setOpen(false)} />

@@ -5,7 +5,7 @@ import { MinimalFooter } from "@/components/home/MinimalFooter";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#080808] px-4 pb-24 text-[#f2f1ec] sm:px-6 lg:px-10 lg:pb-0">
+    <main className="brand-surface min-h-screen bg-[#080808] px-4 pb-24 text-[#f2f1ec] sm:px-6 lg:px-10 lg:pb-0">
       <div className="mx-auto max-w-7xl">
         <HomeHero />
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ProfileMenu } from "@/components/ProfileMenu";
@@ -9,11 +10,18 @@ import { isNavigationActive, mainNavigation } from "@/config/navigation";
 export function AppHeader() {
   const pathname = usePathname();
 
-  return <header className="brand-surface sticky top-0 z-50 border-b border-[var(--brand-border)] bg-[var(--header-background)] backdrop-blur-lg">
+  return <header className="brand-surface app-header-shadow sticky top-0 z-50 border-b border-[var(--brand-border)] bg-[var(--header-background)] backdrop-blur-lg">
     <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-10">
-      <Link href="/agenda" className="pressable focus-ring flex min-w-0 items-center gap-3 rounded" aria-label="Paranoid - Agenda">
-        <span className="interactive grid h-9 w-9 shrink-0 place-items-center rounded-full border border-red-900/60 bg-red-950/45 text-xs font-black text-red-500 group-active:scale-95">P</span>
-        <span className="hidden sm:block"><span className="block text-xs font-black uppercase tracking-[0.3em] text-[var(--brand-foreground)]">Paranoid</span><span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--brand-muted)]">Agenda cultural</span></span>
+      <Link href="/agenda" className="pressable focus-ring flex min-w-0 items-center rounded" aria-label="Paranoid Studio - Agenda">
+        <Image
+          src="/brand/paranoid-studio-logo-header.png"
+          width={838}
+          height={331}
+          alt="Paranoid Studio"
+          priority
+          sizes="(max-width: 639px) 106px, 147px"
+          className="h-[42px] w-auto shrink-0 object-contain sm:h-[58px]"
+        />
       </Link>
 
       <nav aria-label="Navegação principal" className="hidden items-center gap-1 lg:flex">

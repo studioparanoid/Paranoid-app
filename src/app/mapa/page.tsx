@@ -1026,7 +1026,7 @@ export default function MapPage() {
       )}
 
       <section
-        className={`fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[60] rounded-2xl border border-white/10 bg-black/70 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-1/2 lg:right-auto lg:top-auto lg:w-[min(760px,calc(100vw-420px))] lg:-translate-x-1/2 lg:p-3`}
+        className={`shadow-floating absolute inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 rounded-2xl border border-white/10 bg-black/70 px-3 py-3 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-6 lg:right-[438px] lg:top-auto lg:w-auto lg:translate-x-0 lg:p-3 xl:right-[458px]`}
       >
         {controlsCollapsed && (
           <button
@@ -1135,7 +1135,7 @@ export default function MapPage() {
                   </button>
 
                   {showCategoryPicker && (
-                    <div className="absolute bottom-14 right-0 z-50 grid max-h-72 min-w-56 gap-2 overflow-auto rounded-2xl border border-white/10 bg-black/90 p-3 shadow-2xl">
+                    <div className="shadow-dropdown absolute bottom-14 right-0 z-50 grid max-h-72 min-w-56 gap-2 overflow-auto rounded-2xl border border-white/10 bg-black/90 p-3">
                       {categoryOptions.map((category) => (
                         <button
                           key={category}
@@ -1236,7 +1236,7 @@ export default function MapPage() {
                 </button>
 
                 {showCategoryPicker && (
-                  <div className="absolute bottom-14 right-0 z-50 grid max-h-72 min-w-56 gap-2 overflow-auto rounded-2xl border border-zinc-800 bg-black p-3 shadow-2xl lg:bottom-auto lg:top-14">
+                  <div className="shadow-dropdown absolute bottom-14 right-0 z-50 grid max-h-72 min-w-56 gap-2 overflow-auto rounded-2xl border border-zinc-800 bg-black p-3 lg:bottom-auto lg:top-14">
                     {categoryOptions.map((category) => (
                       <button
                         key={category}
@@ -1265,7 +1265,7 @@ export default function MapPage() {
 
       <aside
         aria-label="Eventos no radar"
-        className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-[rgb(10_10_10_/_0.97)] shadow-2xl shadow-black/45 lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:w-[380px] lg:pb-0 xl:w-[400px] ${mobileSheetExpanded ? "max-h-[70vh]" : "max-h-[38vh]"} ${
+        className={`shadow-map-panel absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-[rgb(10_10_10_/_0.97)] lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:max-h-none lg:w-[380px] lg:pb-0 xl:w-[400px] ${mobileSheetExpanded ? "max-h-[70vh]" : "max-h-[38vh]"} ${
           hasAppliedFilters && controlsCollapsed && eventCardOpen
             ? "slide-up flex flex-col"
             : "hidden lg:flex"

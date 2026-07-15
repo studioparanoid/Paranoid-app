@@ -32,7 +32,7 @@ export function AccountCommunityCard() {
   const authenticated = state === "authenticated";
 
   return (
-    <section className="mt-5 grid gap-6 rounded-lg border border-zinc-900 bg-zinc-950/55 p-6 sm:grid-cols-[1fr_auto] sm:items-center sm:p-8 lg:p-10">
+    <section className="shadow-card mt-5 grid gap-6 rounded-lg border border-zinc-900 bg-zinc-950/55 p-6 sm:grid-cols-[1fr_auto] sm:items-center sm:p-8 lg:p-10">
       <div>
         <p className="text-[0.65rem] font-black uppercase tracking-[0.32em] text-red-500">
           {authenticated ? "A tua Paranoid" : "Comunidade · Organizador · Artista"}

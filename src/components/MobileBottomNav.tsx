@@ -8,7 +8,7 @@ import { isNavigationActive, mainNavigation } from "@/config/navigation";
 export function MobileBottomNav() {
   const pathname = usePathname();
 
-  return <nav aria-label="Navegação principal" className="brand-surface fixed inset-x-0 bottom-0 z-50 border-t border-[var(--brand-border)] bg-[var(--header-background)] px-2 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-lg lg:hidden">
+  return <nav aria-label="Navegação principal" className="brand-surface bottom-nav-shadow fixed inset-x-0 bottom-0 z-50 border-t border-[var(--brand-border)] bg-[var(--header-background)] px-2 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-lg lg:hidden">
     <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
       {mainNavigation.map((item) => {
         const active = isNavigationActive(pathname, item.href);

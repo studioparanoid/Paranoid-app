@@ -453,8 +453,8 @@ export function ParanoidMap({
   }, [selectedEvent, userLocation]);
 
   return (
-    <div className="paranoid-map relative h-full min-h-[520px] w-full bg-black">
-      <div ref={containerRef} className="h-full min-h-[520px] w-full" />
+    <div className="paranoid-map relative h-full min-h-0 w-full bg-black">
+      <div ref={containerRef} className="h-full min-h-0 w-full" />
       {!mapReady && !mapError ? (
         <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black text-sm font-bold text-zinc-500">
           A carregar mapa...
