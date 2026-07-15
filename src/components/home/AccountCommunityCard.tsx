@@ -1,35 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { LinkButton } from "@/components/ui/Button";
-import { supabase } from "@/lib/supabase/public";
-
-type AccountState = "loading" | "guest" | "authenticated";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export function AccountCommunityCard() {
-  const [state, setState] = useState<AccountState>("loading");
+  const { loading, user } = useAuth();
 
-  useEffect(() => {
-    let active = true;
-    void supabase.auth.getUser().then(({ data }) => {
-      if (active) setState(data.user ? "authenticated" : "guest");
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (active) setState(session?.user ? "authenticated" : "guest");
-    });
-
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
-
-  if (state === "loading") {
+  if (loading) {
     return <div className="skeleton-shimmer mt-5 h-52 rounded-lg sm:h-40" role="status" aria-label="A preparar a tua área" />;
   }
 
-  const authenticated = state === "authenticated";
+  const authenticated = Boolean(user);
 
   return (
     <section className="shadow-card mt-5 grid gap-6 rounded-lg border border-zinc-900 bg-zinc-950/55 p-6 sm:grid-cols-[1fr_auto] sm:items-center sm:p-8 lg:p-10">

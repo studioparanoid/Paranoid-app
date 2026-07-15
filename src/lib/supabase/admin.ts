@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase/public";
 
 const SERVICE_ROLE_ENV_NAMES = [
   "SUPABASE_SERVICE_ROLE_KEY",
@@ -51,7 +50,13 @@ export function getSupabaseAdminClient() {
   const serviceRoleKey = getServiceRoleKey();
 
   if (!url || !serviceRoleKey) {
-    return supabase;
+    const publishableKey = getServerEnvValue("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+    if (!url || !publishableKey) {
+      throw new Error("Configuração Supabase incompleta no servidor.");
+    }
+    return createClient(url, publishableKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
   }
 
   return createClient(url, serviceRoleKey.value, {

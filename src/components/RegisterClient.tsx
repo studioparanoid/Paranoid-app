@@ -43,6 +43,7 @@ export function RegisterClient() {
 
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
+  const [awaitingEmail, setAwaitingEmail] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("community");
   const [artistName, setArtistName] = useState("");
@@ -117,7 +118,7 @@ export function RegisterClient() {
       options: {
         emailRedirectTo:
           typeof window !== "undefined"
-            ? `${window.location.origin}/perfil`
+            ? `${window.location.origin}/auth/callback?next=${encodeURIComponent("/perfil?onboarding=1")}`
             : undefined,
         data: {
           display_name: displayName.trim(),
@@ -172,7 +173,7 @@ export function RegisterClient() {
           ? "Conta criada. A entrar..."
           : `Conta criada como ${accountTypeLabel(accountType)}. O perfil fica pendente até aprovação da Paranoid.`
       );
-      router.push("/perfil");
+      router.push("/perfil?onboarding=1");
       return;
     }
 
@@ -181,6 +182,14 @@ export function RegisterClient() {
         ? "Conta criada. Confirma o email para entrares."
         : `Conta criada como ${accountTypeLabel(accountType)}. Confirma o email. O perfil fica pendente até aprovação da Paranoid.`
     );
+    setAwaitingEmail(true);
+  }
+
+  if (awaitingEmail) {
+    return <AuthFormCard eyebrow="Registo" title="Confirma o teu email.">
+      <p className="text-sm leading-relaxed text-zinc-400">Enviámos uma ligação de confirmação para <strong className="text-zinc-200">{email.trim().toLowerCase()}</strong>. Depois da confirmação, continuas diretamente no Perfil para configurar a conta.</p>
+      <Link href="/login" className="focus-ring mt-6 inline-flex min-h-11 items-center rounded text-sm font-black text-red-400 hover:text-red-300">Voltar ao login</Link>
+    </AuthFormCard>;
   }
 
   return (

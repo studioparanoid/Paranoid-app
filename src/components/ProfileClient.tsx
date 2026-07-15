@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SettingsList, type SettingsListItem } from "@/components/SettingsList";
@@ -18,6 +19,7 @@ import { profileActivityNavigation, profilePurchaseNavigation } from "@/config/n
 import { removeProfileImage, uploadProfileImage } from "@/lib/profileImages";
 import { artistCategories, maxProfileDescriptionLength, organizerTypes } from "@/lib/profileOptions";
 import { supabase } from "@/lib/supabase/public";
+import { MfaSecurityPanel } from "@/components/auth/MfaSecurityPanel";
 
 type AccountType = "community" | "artist" | "organizer" | "venue";
 type ProfileRow = {
@@ -60,12 +62,14 @@ function accountTypeLabel(type: AccountType) {
 }
 
 export function ProfileClient() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [editing, setEditing] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [onboardingStep, setOnboardingStep] = useState<"profile" | "security" | null>(null);
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -144,7 +148,15 @@ export function ProfileClient() {
   }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void loadProfile(); }, 0);
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("onboarding") === "1") {
+        const step = params.get("step") === "security" ? "security" : "profile";
+        setOnboardingStep(step);
+        setEditing(step === "profile");
+      }
+      void loadProfile();
+    }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -200,7 +212,12 @@ export function ProfileClient() {
     if ((removeAvatar || avatarFile) && avatarUrl && avatarUrl !== nextAvatarUrl) await removeProfileImage(avatarUrl, userId);
     setMessage("Perfil atualizado.");
     toast({ message: "Perfil atualizado.", tone: "success" });
-    setEditing(false);
+    if (onboardingStep === "profile") {
+      setOnboardingStep("security");
+      router.replace("/perfil?onboarding=1&step=security", { scroll: false });
+    } else {
+      setEditing(false);
+    }
     await loadProfile();
   }
 
@@ -236,6 +253,14 @@ export function ProfileClient() {
 
   return <div>
     <AppearanceSettings open={appearanceOpen} onClose={() => setAppearanceOpen(false)} />
+    {onboardingStep && <div className="mb-6 border-b border-[var(--border)] pb-4" aria-label="Progresso da configuração">
+      <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-600">Configurar conta</p>
+      <div className="mt-2 flex items-center gap-2 text-sm font-bold">
+        <span className={onboardingStep === "profile" ? "text-[var(--foreground)]" : "text-emerald-500"}>Perfil</span>
+        <span aria-hidden="true" className="text-[var(--foreground-muted)]">→</span>
+        <span className={onboardingStep === "security" ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)]"}>Segurança</span>
+      </div>
+    </div>}
     <header className="flex items-center gap-4 border-b border-zinc-900 pb-6">
       <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border border-red-950 bg-red-950/25 text-xl font-black text-red-500">{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
       <div className="min-w-0 flex-1"><h1 className="truncate text-3xl font-black">{title}</h1><p className="truncate text-sm text-zinc-600">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
@@ -258,6 +283,17 @@ export function ProfileClient() {
       {message && <p className="mt-4 text-sm text-zinc-400" role="status">{message}</p>}
       <div className="mt-5 flex gap-3"><LoadingButton type="button" onClick={saveProfile} loading={saving} loadingText="A guardar...">Guardar</LoadingButton><Button type="button" variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button></div>
     </section>}
+
+    {(onboardingStep === "security" || !onboardingStep) && <div className="mt-8">
+      <MfaSecurityPanel
+        onboarding={onboardingStep === "security"}
+        onComplete={() => {
+          setOnboardingStep(null);
+          router.replace("/perfil", { scroll: false });
+          router.refresh();
+        }}
+      />
+    </div>}
 
     <div className="grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">
       <ProfileSection title="A minha atividade" items={activityItems} />

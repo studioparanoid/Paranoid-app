@@ -14,12 +14,16 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   useEffect(() => {
     async function checkSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (!session) {
+      if (!user) {
         router.push("/login");
+        return;
+      }
+
+      const { data: admin } = await supabase.from("app_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (!admin) {
+        router.push("/perfil");
         return;
       }
 

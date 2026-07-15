@@ -19,8 +19,8 @@ export function AppHeader() {
           height={323}
           alt="Paranoid Studio"
           priority
-          sizes="(max-width: 639px) 93px, 118px"
-          className="h-9 max-h-9 w-auto shrink-0 object-contain sm:h-[46px] sm:max-h-[46px]"
+          sizes="(max-width: 639px) 78px, 96px"
+          className="h-[30px] max-h-[30px] w-auto shrink-0 object-contain sm:h-9 sm:max-h-9"
         />
       </Link>
 

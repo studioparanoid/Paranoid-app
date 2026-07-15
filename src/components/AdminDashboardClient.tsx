@@ -1,689 +1,228 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AdminEventActions } from "@/components/AdminEventActions";
 import { AdminSubmissionActions } from "@/components/AdminSubmissionActions";
-import { supabase } from "@/lib/supabase/public";
-import { type EventSubmission } from "@/lib/submissions";
+import { AppIcon } from "@/components/AppIcon";
 import { AdminListSkeleton } from "@/components/LoadingSkeleton";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
+import type { EventSubmission } from "@/lib/submissions";
+import { supabase } from "@/lib/supabase/public";
 
-type AdminEventRow = {
+type AdminEvent = {
   id: string;
   slug: string;
   title: string;
   city: string | null;
   venue_name: string | null;
-  organizer_name: string | null;
   display_date: string | null;
   display_time: string | null;
-  category: string | null;
-  price: string | null;
   image_url: string | null;
   featured: boolean | null;
   status: string | null;
-  ticket_mode: string | null;
-  ticket_price: string | null;
-  ticket_capacity: number | null;
   created_at: string | null;
 };
 
-type ProfileClaimRow = {
+type ProfileClaim = {
   id: string;
   account_type: "artist" | "organizer" | "venue";
   entity_name: string;
-  city: string | null;
-  status: "pending" | "approved" | "rejected";
+  status: string;
   created_at: string;
 };
 
-type Counts = {
-  pendingSubmissions: number;
-  publishedEvents: number;
-  archivedEvents: number;
-  artists: number;
-  venues: number;
-  organizers: number;
-  pendingProfiles: number;
-};
+type Tab = "submissions" | "events";
 
-function formatDate(value: string | null | undefined) {
-  if (!value) {
-    return "Sem data";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("pt-PT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
+function relativeDate(value: string | null | undefined) {
+  if (!value) return "Sem data";
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return "Sem data";
+  const seconds = Math.round((time - Date.now()) / 1000);
+  const formatter = new Intl.RelativeTimeFormat("pt-PT", { numeric: "auto" });
+  if (Math.abs(seconds) < 60) return formatter.format(seconds, "second");
+  const minutes = Math.round(seconds / 60);
+  if (Math.abs(minutes) < 60) return formatter.format(minutes, "minute");
+  const hours = Math.round(minutes / 60);
+  if (Math.abs(hours) < 24) return formatter.format(hours, "hour");
+  return formatter.format(Math.round(hours / 24), "day");
 }
 
-function statusLabel(value: string | null | undefined) {
-  if (value === "archived") {
-    return "Arquivado";
-  }
-
-  if (value === "draft") {
-    return "Rascunho";
-  }
-
-  if (value === "rejected") {
-    return "Rejeitado";
-  }
-
-  if (value === "approved") {
-    return "Aprovado";
-  }
-
-  if (value === "pending") {
-    return "Pendente";
-  }
-
-  return "Publicado";
-}
-
-function ticketLabel(value: string | null | undefined) {
-  if (value === "internal") {
-    return "Bilheteira Paranoid";
-  }
-
-  if (value === "external") {
-    return "Bilheteira externa";
-  }
-
-  return "Sem bilhetes";
-}
-
-function claimTypeLabel(value: string) {
-  if (value === "artist") {
-    return "Artista";
-  }
-
-  if (value === "organizer") {
-    return "Organizador";
-  }
-
-  if (value === "venue") {
-    return "Espaço";
-  }
-
-  return value;
-}
-
-function EmptyCard({ text }: { text: string }) {
-  return (
-    <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-      <p className="text-sm text-zinc-500">{text}</p>
-    </div>
-  );
+function rowKey(kind: Tab, id: string) {
+  return `${kind}:${id}`;
 }
 
 export function AdminDashboardClient() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [acting, setActing] = useState(false);
   const [message, setMessage] = useState("");
-
-  const [pendingSubmissions, setPendingSubmissions] = useState<EventSubmission[]>(
-    []
-  );
-  const [publishedEvents, setPublishedEvents] = useState<AdminEventRow[]>([]);
-  const [archivedEvents, setArchivedEvents] = useState<AdminEventRow[]>([]);
-  const [pendingProfileClaims, setPendingProfileClaims] = useState<
-    ProfileClaimRow[]
-  >([]);
-
-  const [counts, setCounts] = useState<Counts>({
-    pendingSubmissions: 0,
-    publishedEvents: 0,
-    archivedEvents: 0,
-    artists: 0,
-    venues: 0,
-    organizers: 0,
-    pendingProfiles: 0,
-  });
-
-  const featuredEvents = useMemo(() => {
-    return publishedEvents.filter((event) => event.featured);
-  }, [publishedEvents]);
-
-  async function countRows(table: string, filters?: Record<string, string>) {
-    let query = supabase.from(table).select("id", {
-      count: "exact",
-      head: true,
-    });
-
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        query = query.eq(key, value);
-      });
-    }
-
-    const { count } = await query;
-    return count || 0;
-  }
+  const [submissions, setSubmissions] = useState<EventSubmission[]>([]);
+  const [events, setEvents] = useState<AdminEvent[]>([]);
+  const [claims, setClaims] = useState<ProfileClaim[]>([]);
+  const [tab, setTab] = useState<Tab>("submissions");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmBulk, setConfirmBulk] = useState(false);
 
   async function loadDashboard() {
     setLoading(true);
     setMessage("");
-
-    const [
-      pendingSubmissionsResponse,
-      publishedEventsResponse,
-      archivedEventsResponse,
-      pendingProfilesResponse,
-      pendingSubmissionsCount,
-      publishedEventsCount,
-      archivedEventsCount,
-      artistsCount,
-      venuesCount,
-      organizersCount,
-      pendingProfilesCount,
-    ] = await Promise.all([
-      supabase
-        .from("event_submissions")
-        .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(8),
-
-      supabase
-        .from("events")
-        .select(
-          "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,image_url,featured,status,ticket_mode,ticket_price,ticket_capacity,created_at"
-        )
-        .eq("status", "published")
-        .order("start_at", { ascending: true })
-        .limit(12),
-
-      supabase
-        .from("events")
-        .select(
-          "id,slug,title,city,venue_name,organizer_name,display_date,display_time,category,price,image_url,featured,status,ticket_mode,ticket_price,ticket_capacity,created_at"
-        )
-        .eq("status", "archived")
-        .order("created_at", { ascending: false })
-        .limit(6),
-
-      supabase
-        .from("profile_claims")
-        .select("id,account_type,entity_name,city,status,created_at")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(6),
-
-      countRows("event_submissions", { status: "pending" }),
-      countRows("events", { status: "published" }),
-      countRows("events", { status: "archived" }),
-      countRows("artists"),
-      countRows("venues"),
-      countRows("organizers"),
-      countRows("profile_claims", { status: "pending" }),
+    const [submissionResponse, eventResponse, claimResponse] = await Promise.all([
+      supabase.from("event_submissions").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(50),
+      supabase.from("events").select("id,slug,title,city,venue_name,display_date,display_time,image_url,featured,status,created_at").in("status", ["published", "archived"]).order("created_at", { ascending: false }).limit(50),
+      supabase.from("profile_claims").select("id,account_type,entity_name,status,created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(50),
     ]);
-
-    if (pendingSubmissionsResponse.error) {
-      setMessage(pendingSubmissionsResponse.error.message);
-    }
-
-    if (publishedEventsResponse.error) {
-      setMessage(publishedEventsResponse.error.message);
-    }
-
-    if (archivedEventsResponse.error) {
-      setMessage(archivedEventsResponse.error.message);
-    }
-
-    if (pendingProfilesResponse.error) {
-      setMessage(pendingProfilesResponse.error.message);
-    }
-
-    setPendingSubmissions(
-      (pendingSubmissionsResponse.data || []) as EventSubmission[]
-    );
-    setPublishedEvents((publishedEventsResponse.data || []) as AdminEventRow[]);
-    setArchivedEvents((archivedEventsResponse.data || []) as AdminEventRow[]);
-    setPendingProfileClaims(
-      (pendingProfilesResponse.data || []) as ProfileClaimRow[]
-    );
-
-    setCounts({
-      pendingSubmissions: pendingSubmissionsCount,
-      publishedEvents: publishedEventsCount,
-      archivedEvents: archivedEventsCount,
-      artists: artistsCount,
-      venues: venuesCount,
-      organizers: organizersCount,
-      pendingProfiles: pendingProfilesCount,
-    });
-
+    const error = submissionResponse.error || eventResponse.error || claimResponse.error;
+    if (error) setMessage("Não foi possível carregar toda a informação administrativa.");
+    setSubmissions((submissionResponse.data ?? []) as EventSubmission[]);
+    setEvents((eventResponse.data ?? []) as AdminEvent[]);
+    setClaims((claimResponse.data ?? []) as ProfileClaim[]);
     setLoading(false);
   }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void loadDashboard(); }, 0);
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      setTab(params.get("tab") === "events" ? "events" : "submissions");
+      setSearch(params.get("q") ?? "");
+      void loadDashboard();
+    }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
-  if (loading) {
-    return (
-      <section className="mt-8 rounded-lg border border-zinc-800 bg-zinc-950 p-6">
-        <AdminListSkeleton />
-      </section>
-    );
+  function updateListState(nextTab: Tab, nextSearch: string) {
+    setTab(nextTab);
+    setSearch(nextSearch);
+    setSelected(new Set());
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", nextTab);
+    if (nextSearch) params.set("q", nextSearch);
+    else params.delete("q");
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}#admin-lists`);
   }
 
-  return (
-    <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[340px_1fr] lg:items-start">
-      <aside className="space-y-6 lg:sticky lg:top-28">
-        <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-            Painel
-          </p>
+  const normalizedSearch = search.trim().toLocaleLowerCase("pt-PT");
+  const visibleSubmissions = useMemo(() => submissions.filter((item) => !normalizedSearch || `${item.title} ${item.organizer} ${item.city}`.toLocaleLowerCase("pt-PT").includes(normalizedSearch)), [normalizedSearch, submissions]);
+  const visibleEvents = useMemo(() => events.filter((item) => !normalizedSearch || `${item.title} ${item.city ?? ""} ${item.venue_name ?? ""}`.toLocaleLowerCase("pt-PT").includes(normalizedSearch)), [events, normalizedSearch]);
+  const visibleKeys = (tab === "submissions" ? visibleSubmissions : visibleEvents).map((item) => rowKey(tab, item.id));
+  const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every((key) => selected.has(key));
 
-          <h2 className="mt-3 text-4xl font-black leading-none">
-            Controlo geral.
-          </h2>
+  function toggle(key: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.5rem] border border-yellow-900 bg-yellow-950/20 p-4">
-              <p className="text-3xl font-black">{counts.pendingSubmissions}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-yellow-500">
-                Submissões
-              </p>
-            </div>
+  function toggleAll() {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) visibleKeys.forEach((key) => next.delete(key));
+      else visibleKeys.forEach((key) => next.add(key));
+      return next;
+    });
+  }
 
-            <div className="rounded-[1.5rem] border border-red-900 bg-red-950/20 p-4">
-              <p className="text-3xl font-black">{counts.pendingProfiles}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-red-400">
-                Perfis
-              </p>
-            </div>
+  async function runBulkAction() {
+    if (selected.size === 0 || acting) return;
+    setActing(true);
+    const ids = [...selected].map((key) => key.split(":")[1]);
+    const response = await fetch("/api/admin/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: tab, ids }),
+    });
+    const result = await response.json() as { updatedIds?: string[]; error?: string };
+    setActing(false);
+    setConfirmBulk(false);
+    if (!response.ok || result.error) {
+      toast({ message: "Não foi possível concluir a ação em massa.", tone: "error" });
+      return;
+    }
+    const updatedIds = result.updatedIds ?? [];
+    if (tab === "submissions") setSubmissions((current) => current.filter((item) => !updatedIds.includes(item.id)));
+    else setEvents((current) => current.map((item) => updatedIds.includes(item.id) ? { ...item, status: "archived" } : item));
+    setSelected(new Set());
+    toast({ message: tab === "submissions" ? `${updatedIds.length} submissões rejeitadas.` : `${updatedIds.length} eventos arquivados.`, tone: "success" });
+  }
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{counts.publishedEvents}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Eventos
-              </p>
-            </div>
+  if (loading) return <section className="mt-8 shadow-panel rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6"><AdminListSkeleton /></section>;
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{counts.artists}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Artistas
-              </p>
-            </div>
+  const approvalRows = [
+    { label: "Eventos pendentes", count: submissions.length, href: "/admin?tab=submissions#admin-lists" },
+    { label: "Artistas pendentes", count: claims.filter((item) => item.account_type === "artist").length, href: "/admin/perfis?type=artist" },
+    { label: "Organizadores pendentes", count: claims.filter((item) => item.account_type === "organizer").length, href: "/admin/perfis?type=organizer" },
+    { label: "Espaços pendentes", count: claims.filter((item) => item.account_type === "venue").length, href: "/admin/perfis?type=venue" },
+  ];
+  const activity = [
+    ...submissions.map((item) => ({ id: `s-${item.id}`, label: "Evento submetido", entity: item.title, date: item.created_at, href: `/admin/submissoes/${item.id}` })),
+    ...events.map((item) => ({ id: `e-${item.id}`, label: item.status === "archived" ? "Evento arquivado" : "Evento publicado", entity: item.title, date: item.created_at, href: `/admin/eventos/${item.id}` })),
+    ...claims.map((item) => ({ id: `p-${item.id}`, label: "Perfil submetido", entity: item.entity_name, date: item.created_at, href: "/admin/perfis" })),
+  ].sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()).slice(0, 8);
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{counts.venues}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Espaços
-              </p>
-            </div>
-
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-3xl font-black">{counts.organizers}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Organizadores
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            <Link
-              href="/admin/perfis"
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-            >
-              Aprovar perfis
-            </Link>
-
-            <Link
-              href="/admin/eventos/novo"
-              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-            >
-              Criar evento
-            </Link>
-
-            <Link
-              href="/admin/bilhetes"
-              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-            >
-              Admin bilhetes
-            </Link>
-
-            <Link
-              href="/admin/rede"
-              className="rounded-full border border-zinc-800 px-5 py-4 text-center text-sm font-bold text-zinc-500"
-            >
-              Rede cultural
-            </Link>
-
-            <Button variant="secondary" onClick={() => void loadDashboard()}>
-              Atualizar
-            </Button>
-          </div>
-
-          {message && (
-            <p className="mt-5 rounded-2xl border border-red-900 bg-red-950/20 p-4 text-sm text-red-300">
-              {message}
-            </p>
-          )}
-        </section>
-
-        <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-            Destaques
-          </p>
-
-          <p className="mt-4 text-5xl font-black">{featuredEvents.length}</p>
-
-          <p className="mt-2 text-sm text-zinc-500">
-            Eventos marcados como destaque.
-          </p>
-        </section>
-      </aside>
-
-      <section className="space-y-8">
-        <section className="rounded-[2.5rem] border border-red-950 bg-red-950/10 p-5 lg:p-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-red-500">
-                Aprovações de perfis
-              </p>
-
-              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                Artistas, organizadores e espaços.
-              </h2>
-            </div>
-
-            <Link
-              href="/admin/perfis"
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-            >
-              Ver pedidos
-            </Link>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            {pendingProfileClaims.length === 0 && (
-              <EmptyCard text="Não há perfis pendentes para aprovar." />
-            )}
-
-            {pendingProfileClaims.map((claim) => (
-              <article
-                key={claim.id}
-                className="rounded-[1.5rem] border border-red-950 bg-black p-4"
-              >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
-                      {claimTypeLabel(claim.account_type)}
-                    </p>
-
-                    <h3 className="mt-2 text-2xl font-black">
-                      {claim.entity_name}
-                    </h3>
-
-                    <p className="mt-1 text-sm text-zinc-500">
-                      {claim.city || "Sem cidade"} ·{" "}
-                      {formatDate(claim.created_at)}
-                    </p>
-                  </div>
-
-                  <Link
-                    href="/admin/perfis"
-                    className="rounded-full border border-zinc-700 px-5 py-3 text-center text-sm font-bold text-zinc-300"
-                  >
-                    Rever
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Submissões pendentes
-              </p>
-
-              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                Para aprovar.
-              </h2>
-            </div>
-
-            <Link
-              href="/submeter"
-              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-            >
-              Submeter evento
-            </Link>
-          </div>
-
-          <div className="mt-6 grid gap-4">
-            {pendingSubmissions.length === 0 && (
-              <EmptyCard text="Não há submissões pendentes." />
-            )}
-
-            {pendingSubmissions.map((submission) => (
-              <article
-                key={submission.id}
-                className="rounded-[2rem] border border-zinc-800 bg-black p-5"
-              >
-                <div className="grid gap-5 lg:grid-cols-[1fr_260px] lg:items-start">
-                  <div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full border border-yellow-900 bg-yellow-950/20 px-3 py-1 text-xs font-black uppercase text-yellow-500">
-                        Pendente
-                      </span>
-
-                      <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-bold uppercase text-zinc-500">
-                        {submission.category}
-                      </span>
-
-                      {submission.ticket_mode && submission.ticket_mode !== "none" && (
-                        <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-bold uppercase text-red-300">
-                          {ticketLabel(submission.ticket_mode)}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="mt-4 text-3xl font-black leading-none lg:text-4xl">
-                      {submission.title}
-                    </h3>
-
-                    <div className="mt-4 grid gap-1 text-sm text-zinc-500">
-                      <p>
-                        {submission.city} · {submission.venue}
-                      </p>
-
-                      <p>
-                        {formatDate(submission.event_date)} ·{" "}
-                        {submission.event_time || "Hora por definir"}
-                      </p>
-
-                      <p>Organizador: {submission.organizer}</p>
-
-                      {submission.artists_text && (
-                        <p>Artistas: {submission.artists_text}</p>
-                      )}
-
-                      {submission.ticket_mode === "internal" && (
-                        <p>
-                          Bilheteira Paranoid ·{" "}
-                          {submission.ticket_price || "Preço por definir"} ·{" "}
-                          {submission.ticket_capacity || "lotação indefinida"}
-                        </p>
-                      )}
-                    </div>
-
-                    {submission.description && (
-                      <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-zinc-400">
-                        {submission.description}
-                      </p>
-                    )}
-                  </div>
-
-                  <AdminSubmissionActions submission={submission} />
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-                Eventos publicados
-              </p>
-
-              <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-                No ar.
-              </h2>
-            </div>
-
-            <Link
-              href="/admin/eventos/novo"
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-            >
-              Criar evento
-            </Link>
-          </div>
-
-          <div className="mt-6 grid gap-4">
-            {publishedEvents.length === 0 && (
-              <EmptyCard text="Ainda não há eventos publicados." />
-            )}
-
-            {publishedEvents.map((event) => (
-              <article
-                key={event.id}
-                className="rounded-[2rem] border border-zinc-800 bg-black p-5"
-              >
-                <div className="grid gap-5 lg:grid-cols-[110px_1fr_260px] lg:items-start">
-                  <div
-                    className="h-28 rounded-[1.5rem] bg-zinc-900 bg-cover bg-center"
-                    style={{
-                      backgroundImage: event.image_url
-                        ? `url(${event.image_url})`
-                        : undefined,
-                    }}
-                  />
-
-                  <div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full border border-green-900 bg-green-950/20 px-3 py-1 text-xs font-black uppercase text-green-400">
-                        {statusLabel(event.status)}
-                      </span>
-
-                      {event.featured && (
-                        <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-black uppercase text-red-300">
-                          Destaque
-                        </span>
-                      )}
-
-                      {event.ticket_mode && event.ticket_mode !== "none" && (
-                        <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-bold uppercase text-zinc-400">
-                          {ticketLabel(event.ticket_mode)}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="mt-4 text-3xl font-black leading-none">
-                      {event.title}
-                    </h3>
-
-                    <div className="mt-3 space-y-1 text-sm text-zinc-500">
-                      <p>
-                        {event.city || "Sem cidade"} ·{" "}
-                        {event.venue_name || "Sem espaço"}
-                      </p>
-
-                      <p>
-                        {event.display_date || "Sem data"} ·{" "}
-                        {event.display_time || "Hora por definir"}
-                      </p>
-
-                      <p>
-                        {event.category || "Sem categoria"} ·{" "}
-                        {event.price || "Preço por definir"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <AdminEventActions
-                    event={{
-                      id: event.id,
-                      slug: event.slug,
-                      featured: event.featured,
-                      status: event.status,
-                    }}
-                    mode="published"
-                  />
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-            Arquivo
-          </p>
-
-          <h2 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
-            Fora da montra.
-          </h2>
-
-          <div className="mt-6 grid gap-4">
-            {archivedEvents.length === 0 && (
-              <EmptyCard text="Não há eventos arquivados." />
-            )}
-
-            {archivedEvents.map((event) => (
-              <article
-                key={event.id}
-                className="rounded-[2rem] border border-zinc-800 bg-black p-5 opacity-80"
-              >
-                <div className="grid gap-5 lg:grid-cols-[1fr_260px] lg:items-start">
-                  <div>
-                    <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-500">
-                      Arquivado
-                    </span>
-
-                    <h3 className="mt-4 text-3xl font-black leading-none">
-                      {event.title}
-                    </h3>
-
-                    <p className="mt-3 text-sm text-zinc-500">
-                      {event.display_date || "Sem data"} ·{" "}
-                      {event.city || "Sem cidade"}
-                    </p>
-                  </div>
-
-                  <AdminEventActions
-                    event={{
-                      id: event.id,
-                      slug: event.slug,
-                      featured: event.featured,
-                      status: event.status,
-                    }}
-                    mode="archived"
-                  />
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </section>
+  return <div className="mt-8">
+    <section className="grid gap-5 lg:grid-cols-2">
+      <article className="order-2 shadow-panel rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 lg:order-1 sm:p-6">
+        <p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">Atividade recente</p>
+        {activity.length === 0 ? <p className="mt-5 text-sm text-[var(--foreground-muted)]">Ainda não existe atividade recente.</p> : <ul className="mt-4 divide-y divide-[var(--border)]">{activity.map((item) => <li key={item.id}><Link href={item.href} className="interactive focus-ring flex min-h-14 items-center gap-3 rounded py-2 hover:bg-[var(--surface-hover)]"><AppIcon name="events" className="h-4 w-4 shrink-0 text-red-600" /><span className="min-w-0 flex-1"><span className="block text-sm font-bold">{item.label}</span><span className="block truncate text-xs text-[var(--foreground-muted)]">{item.entity}</span></span><time className="shrink-0 text-xs text-[var(--foreground-muted)]">{relativeDate(item.date)}</time></Link></li>)}</ul>}
+      </article>
+      <article className="order-1 shadow-panel rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 lg:order-2 sm:p-6">
+        <p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">Aprovações pendentes</p>
+        <ul className="mt-4 divide-y divide-[var(--border)]">{approvalRows.map((item) => <li key={item.label}><Link href={item.href} className="interactive focus-ring flex min-h-14 items-center gap-3 rounded py-2 hover:bg-[var(--surface-hover)]"><span className="min-w-0 flex-1 text-sm font-bold">{item.label}</span><strong className="text-xl">{item.count}</strong><AppIcon name="chevron" className="h-4 w-4 text-[var(--foreground-muted)]" /></Link></li>)}</ul>
+        <Link href="/admin/perfis" className="focus-ring mt-5 inline-flex min-h-11 items-center rounded text-sm font-black text-red-500 hover:text-red-400">Ver aprovações</Link>
+      </article>
     </section>
-  );
+
+    {message && <p className="mt-5 text-sm font-bold text-red-400" role="alert">{message}</p>}
+
+    <section id="admin-lists" className="mt-10 scroll-mt-24" aria-labelledby="admin-list-title">
+      <div className="flex flex-col gap-4 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div><p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">Conteúdo</p><h2 id="admin-list-title" className="mt-2 text-3xl font-black">Eventos e submissões</h2></div>
+        <label className="w-full sm:max-w-xs"><span className="sr-only">Pesquisar na lista</span><input value={search} onChange={(event) => updateListState(tab, event.target.value)} placeholder="Pesquisar" className="h-11 w-full rounded border px-4 text-sm outline-none" /></label>
+      </div>
+      <div className="mt-4 flex gap-2" role="tablist" aria-label="Tipo de conteúdo">
+        <Button role="tab" aria-selected={tab === "submissions"} variant={tab === "submissions" ? "primary" : "secondary"} onClick={() => updateListState("submissions", search)}>Submissões</Button>
+        <Button role="tab" aria-selected={tab === "events"} variant={tab === "events" ? "primary" : "secondary"} onClick={() => updateListState("events", search)}>Eventos</Button>
+      </div>
+
+      <div className="mt-5 flex min-h-12 flex-wrap items-center gap-3 border-y border-[var(--border)] py-2">
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-bold"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} aria-label="Selecionar todos os itens visíveis" className="h-5 w-5 accent-red-600" />Selecionar todos</label>
+        {selected.size > 0 && <><span className="text-sm font-black">{selected.size} selecionados</span><Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Limpar seleção</Button><Button size="sm" variant="danger" onClick={() => setConfirmBulk(true)}>{tab === "submissions" ? "Rejeitar" : "Arquivar"}</Button></>}
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        {tab === "submissions" ? visibleSubmissions.map((item) => {
+          const key = rowKey("submissions", item.id); const active = selected.has(key);
+          return <article key={item.id} role="link" tabIndex={0} aria-label={`Abrir submissão ${item.title}`} onClick={() => router.push(`/admin/submissoes/${item.id}`)} onKeyDown={(event) => { if (event.key === "Enter") router.push(`/admin/submissoes/${item.id}`); if (event.key === " " && event.target === event.currentTarget) { event.preventDefault(); toggle(key); } }} className={`interactive-card cursor-pointer rounded-lg border bg-[var(--surface)] p-4 ${active ? "border-red-600 ring-1 ring-red-600" : "border-[var(--border)]"}`}>
+            <div className="grid gap-4 md:grid-cols-[auto_1fr_250px] md:items-start">
+              <label className="flex min-h-11 items-center" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={active} onChange={() => toggle(key)} aria-label={`Selecionar submissão ${item.title}`} className="h-5 w-5 accent-red-600" /></label>
+              <div className="min-w-0"><h3 className="text-lg font-black">{item.title}</h3><p className="mt-1 text-sm text-[var(--foreground-muted)]">{item.organizer} · {item.city}</p><p className="mt-1 text-xs text-[var(--foreground-muted)]">{item.category} · {item.event_date || "Sem data"} · Pendente</p></div>
+              <div onClick={(event) => event.stopPropagation()}><AdminSubmissionActions submission={item} /></div>
+            </div>
+          </article>;
+        }) : visibleEvents.map((item) => {
+          const key = rowKey("events", item.id); const active = selected.has(key);
+          return <article key={item.id} role="link" tabIndex={0} aria-label={`Abrir evento ${item.title}`} onClick={() => router.push(`/admin/eventos/${item.id}`)} onKeyDown={(event) => { if (event.key === "Enter") router.push(`/admin/eventos/${item.id}`); if (event.key === " " && event.target === event.currentTarget) { event.preventDefault(); toggle(key); } }} className={`interactive-card cursor-pointer rounded-lg border bg-[var(--surface)] p-4 ${active ? "border-red-600 ring-1 ring-red-600" : "border-[var(--border)]"}`}>
+            <div className="grid gap-4 md:grid-cols-[auto_72px_1fr_250px] md:items-center">
+              <label className="flex min-h-11 items-center" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={active} onChange={() => toggle(key)} aria-label={`Selecionar evento ${item.title}`} className="h-5 w-5 accent-red-600" /></label>
+              <div className="h-16 rounded bg-[var(--surface-secondary)] bg-cover bg-center" style={item.image_url ? { backgroundImage: `url(${item.image_url})` } : undefined} />
+              <div className="min-w-0"><h3 className="text-lg font-black">{item.title}</h3><p className="mt-1 text-sm text-[var(--foreground-muted)]">{item.venue_name || "Sem espaço"} · {item.city || "Sem cidade"}</p><p className="mt-1 text-xs font-bold uppercase text-[var(--foreground-muted)]">{item.display_date || "Sem data"} · {item.status === "archived" ? "Arquivado" : "Publicado"}</p></div>
+              <div onClick={(event) => event.stopPropagation()}><AdminEventActions event={item} mode={item.status === "archived" ? "archived" : "published"} /></div>
+            </div>
+          </article>;
+        })}
+        {((tab === "submissions" && visibleSubmissions.length === 0) || (tab === "events" && visibleEvents.length === 0)) && <p className="rounded-lg border border-[var(--border)] p-6 text-sm text-[var(--foreground-muted)]">Não existem resultados nesta lista.</p>}
+      </div>
+    </section>
+
+    {selected.size > 0 && <div className="shadow-floating fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-40 flex min-h-14 items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 lg:hidden"><strong className="min-w-0 flex-1 text-sm">{selected.size} selecionados</strong><Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Limpar</Button><Button size="sm" variant="danger" onClick={() => setConfirmBulk(true)}>{tab === "submissions" ? "Rejeitar" : "Arquivar"}</Button></div>}
+    <ConfirmDialog open={confirmBulk} onClose={() => !acting && setConfirmBulk(false)} onConfirm={() => void runBulkAction()} title={tab === "submissions" ? `Rejeitar ${selected.size} submissões?` : `Arquivar ${selected.size} eventos?`} description={tab === "submissions" ? "As submissões selecionadas ficam marcadas como rejeitadas." : "Os eventos selecionados deixam de aparecer nas listas públicas."} confirmLabel={tab === "submissions" ? "Rejeitar submissões" : "Arquivar eventos"} loading={acting} danger />
+  </div>;
 }

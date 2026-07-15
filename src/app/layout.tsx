@@ -6,6 +6,7 @@ import { PwaRegister } from "@/components/PwaRegister";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeScript } from "@/components/theme/ThemeScript";
 import { ToastProvider } from "@/components/ui/Toast";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Paranoid — Agenda Cultural Alternativa",
@@ -65,11 +66,13 @@ export default function RootLayout({
       <body className="min-h-full bg-[var(--background)] text-[var(--foreground)]">
         <PwaRegister />
         <ThemeProvider>
-          <ToastProvider>
-            <DesktopHeader />
-            <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
-            <MobileBottomNav />
-          </ToastProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <DesktopHeader />
+              <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
+              <MobileBottomNav />
+            </ToastProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

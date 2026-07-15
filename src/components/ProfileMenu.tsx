@@ -7,6 +7,7 @@ import { ThemeSelector } from "@/components/theme/ThemeSelector";
 import { IconButton, LoadingButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { supabase } from "@/lib/supabase/public";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 type ProfileSummary = { email: string; isOrganizer: boolean; isAdmin: boolean } | null;
 
@@ -17,11 +18,11 @@ export function ProfileMenu() {
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { loading: authLoading, user } = useAuth();
 
   useEffect(() => {
     let active = true;
     async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!active || !user) return;
       const [profileResponse, adminResponse] = await Promise.all([
         supabase.from("profiles").select("account_type,account_status").eq("id", user.id).maybeSingle(),
@@ -34,9 +35,10 @@ export function ProfileMenu() {
         isAdmin: Boolean(adminResponse.data),
       });
     }
-    void loadProfile();
-    return () => { active = false; };
-  }, []);
+    if (!authLoading && user) void loadProfile();
+    const timer = !authLoading && !user ? window.setTimeout(() => setProfile(null), 0) : undefined;
+    return () => { active = false; if (timer) window.clearTimeout(timer); };
+  }, [authLoading, user]);
 
   useEffect(() => {
     function handlePointer(event: MouseEvent) {

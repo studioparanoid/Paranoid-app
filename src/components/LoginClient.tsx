@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { AuthFormCard } from "@/components/auth/AuthPageLayout";
 import { supabase } from "@/lib/supabase/public";
+import { safeInternalPath } from "@/lib/auth/redirects";
 
 const inputClassName =
   "h-12 w-full rounded border border-zinc-800 bg-black px-4 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800";
@@ -17,6 +18,15 @@ export function LoginClient() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (new URLSearchParams(window.location.search).get("error") === "callback") {
+        setMessage("A ligação de confirmação expirou ou já foi utilizada. Tenta entrar novamente.");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,11 +52,25 @@ export function LoginClient() {
     setLoading(false);
 
     if (error) {
-      setMessage(`Erro ao entrar: ${error.message}`);
+      setMessage(
+        error.code === "email_not_confirmed"
+          ? "Confirma o email antes de entrares."
+          : error.code === "invalid_credentials"
+            ? "Email ou palavra-passe incorretos."
+            : "Não foi possível entrar. Confirma a ligação e tenta novamente."
+      );
       return;
     }
 
-    router.push("/perfil");
+    const next = safeInternalPath(new URLSearchParams(window.location.search).get("next"));
+    const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (assurance?.currentLevel === "aal1" && assurance.nextLevel === "aal2") {
+      router.push(`/auth/mfa?next=${encodeURIComponent(next)}`);
+    } else if (assurance?.nextLevel !== "aal2") {
+      router.push(`/perfil?onboarding=1&step=security&next=${encodeURIComponent(next)}`);
+    } else {
+      router.push(next);
+    }
     router.refresh();
   }
 

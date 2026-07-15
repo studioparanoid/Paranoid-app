@@ -46,10 +46,15 @@
   --dark-muted: #aaa69e;
   --dark-border: rgb(255 255 255 / 0.1);
   --shadow-header: 0 2px 8px rgb(0 0 0 / 0.22);
+  --shadow-header-light: 0 3px 10px rgb(0 0 0 / 0.28);
   --shadow-card: 0 8px 22px rgb(0 0 0 / 0.18);
   --shadow-card-hover: 0 12px 28px rgb(0 0 0 / 0.24);
+  --shadow-panel: 0 10px 26px rgb(0 0 0 / 0.22);
   --shadow-floating: 0 8px 20px rgb(0 0 0 / 0.28);
   --shadow-dropdown: 0 12px 30px rgb(0 0 0 / 0.32);
+  --shadow-modal: 0 18px 42px rgb(0 0 0 / 0.38);
+  --shadow-button: 0 3px 8px rgb(0 0 0 / 0.24);
+  --shadow-focus: 0 0 0 3px rgb(220 38 38 / 0.2);
   --shadow-map-panel: 0 14px 34px rgb(0 0 0 / 0.38);
   --font-geist-sans: Arial, Helvetica, sans-serif;
   --font-geist-mono: "Courier New", Courier, monospace;
@@ -96,10 +101,15 @@
   --dark-muted: #aaa69e;
   --dark-border: rgb(255 255 255 / 0.1);
   --shadow-header: 0 3px 10px rgb(27 24 22 / 0.24);
+  --shadow-header-light: 0 3px 10px rgb(27 24 22 / 0.24);
   --shadow-card: 0 8px 22px rgb(27 24 22 / 0.11);
   --shadow-card-hover: 0 12px 28px rgb(27 24 22 / 0.17);
+  --shadow-panel: 0 10px 26px rgb(27 24 22 / 0.13);
   --shadow-floating: 0 8px 22px rgb(27 24 22 / 0.16);
   --shadow-dropdown: 0 14px 32px rgb(27 24 22 / 0.2);
+  --shadow-modal: 0 18px 42px rgb(27 24 22 / 0.24);
+  --shadow-button: 0 3px 8px rgb(27 24 22 / 0.16);
+  --shadow-focus: 0 0 0 3px rgb(185 28 28 / 0.16);
   --shadow-map-panel: 0 14px 34px rgb(0 0 0 / 0.42);
   color-scheme: light;
 }
@@ -212,6 +222,18 @@ select:-webkit-autofill {
 
 .shadow-card {
   box-shadow: var(--shadow-card);
+}
+
+.shadow-panel {
+  box-shadow: var(--shadow-panel);
+}
+
+.shadow-modal {
+  box-shadow: var(--shadow-modal);
+}
+
+.shadow-button {
+  box-shadow: var(--shadow-button);
 }
 
 .shadow-floating {

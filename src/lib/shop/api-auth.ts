@@ -1,5 +1,15 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { supabase } from "@/lib/supabase/public";
+
+function hasAal2(token: string) {
+  try {
+    const payload = token.split(".")[1];
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = Buffer.from(normalized, "base64").toString("utf8");
+    return (JSON.parse(decoded) as { aal?: string }).aal === "aal2";
+  } catch {
+    return false;
+  }
+}
 
 export async function getShopApiUser(request: Request) {
   const header = request.headers.get("authorization") || "";
@@ -9,9 +19,10 @@ export async function getShopApiUser(request: Request) {
     return null;
   }
 
-  const { data, error } = await supabase.auth.getUser(token);
+  const serverClient = getSupabaseAdminClient();
+  const { data, error } = await serverClient.auth.getUser(token);
 
-  if (error || !data.user) {
+  if (error || !data.user || !hasAal2(token)) {
     return null;
   }
 
@@ -28,4 +39,3 @@ export async function isShopAdminUser(userId: string) {
 
   return Boolean(data);
 }
-

@@ -1,6 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+// Backwards-compatible export. Every browser consumer now shares the same
+// cookie-backed client and auth subscription.
+export const supabase = createClient();

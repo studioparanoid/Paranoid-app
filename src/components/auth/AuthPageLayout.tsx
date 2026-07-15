@@ -18,7 +18,7 @@ export function AuthFormCard({
   children: ReactNode;
 }) {
   return (
-    <section className="content-transition rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 lg:p-9">
+    <section className="content-transition shadow-panel rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 lg:p-9">
       <p className="text-xs font-black uppercase tracking-[0.32em] text-red-600">
         {eyebrow}
       </p>
@@ -40,7 +40,7 @@ export function AuthInfoCard({
   children: ReactNode;
 }) {
   return (
-    <section className="brand-surface rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-elevated)] p-5 sm:p-6">
+    <section className="brand-surface shadow-card rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-elevated)] p-5 sm:p-6">
       <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-500">
         {eyebrow}
       </p>
