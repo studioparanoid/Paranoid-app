@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -15,6 +16,9 @@ type OrganizerRow = {
   description: string | null;
   pack: string | null;
   verified: boolean | null;
+  image_url: string | null;
+  organizer_type: string | null;
+  organizer_type_other: string | null;
 };
 
 type EventRow = {
@@ -154,7 +158,7 @@ export default function OrganizerPage() {
 
     const { data: organizerData, error: organizerError } = await supabase
       .from("organizers")
-      .select("id,slug,name,city,description,pack,verified")
+      .select("id,slug,name,city,description,pack,verified,image_url,organizer_type,organizer_type_other")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -329,6 +333,7 @@ export default function OrganizerPage() {
 
         <section className="grid gap-6 lg:grid-cols-[1fr_380px] lg:items-end">
           <div>
+            {organizer.image_url && <img src={organizer.image_url} alt={`Foto de ${organizer.name}`} className="mb-5 h-28 w-28 rounded-full object-cover" />}
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-300">
                 Organizador
@@ -345,6 +350,8 @@ export default function OrganizerPage() {
                   {organizer.pack}
                 </span>
               )}
+
+              {(organizer.organizer_type === "Outro" ? organizer.organizer_type_other : organizer.organizer_type) && <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase tracking-wide text-zinc-400">{organizer.organizer_type === "Outro" ? organizer.organizer_type_other : organizer.organizer_type}</span>}
 
               {hasFrequency && (
                 <span className="rounded-full border border-red-800 bg-red-950 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-200">
@@ -414,21 +421,14 @@ export default function OrganizerPage() {
 
         <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[380px_1fr] lg:items-start">
           <aside className="space-y-6 lg:sticky lg:top-28">
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
+            {organizer.description && <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Sobre
               </p>
 
-              {organizer.description ? (
-                <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300">
-                  {organizer.description}
-                </p>
-              ) : (
-                <p className="mt-5 text-base leading-relaxed text-zinc-500">
-                  Este organizador ainda não tem descrição pública.
-                </p>
-              )}
+              <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300">{organizer.description}</p>
             </section>
+            }
 
             <section className="grid grid-cols-2 gap-3">
               <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">

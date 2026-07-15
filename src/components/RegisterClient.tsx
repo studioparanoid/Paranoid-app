@@ -4,19 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
 import { AuthFormCard } from "@/components/auth/AuthPageLayout";
+import { CityCombobox, isKnownPortugueseMunicipality } from "@/components/profile/CityCombobox";
+import { GenreMultiSelect } from "@/components/profile/GenreMultiSelect";
+import { ProfileImageField } from "@/components/profile/ProfileImageField";
+import { uploadProfileImage } from "@/lib/profileImages";
+import { artistCategories, maxProfileDescriptionLength, organizerTypes } from "@/lib/profileOptions";
 import { supabase } from "@/lib/supabase/public";
 
 type AccountType = "community" | "artist" | "organizer" | "venue";
-
-const cities = [
-  "Pombal",
-  "Leiria",
-  "Coimbra",
-  "Figueira da Foz",
-  "Caldas da Rainha",
-  "Marinha Grande",
-  "Outra",
-];
 
 function normalizeExternalUrl(value: string) {
   const cleanValue = value.trim();
@@ -55,6 +50,13 @@ export function RegisterClient() {
   const [venueName, setVenueName] = useState("");
   const [city, setCity] = useState("Pombal");
   const [instagramUrl, setInstagramUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [organizerType, setOrganizerType] = useState("");
+  const [organizerTypeOther, setOrganizerTypeOther] = useState("");
+  const [artistCategory, setArtistCategory] = useState("");
+  const [artistCategoryOther, setArtistCategoryOther] = useState("");
+  const [musicGenres, setMusicGenres] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -97,6 +99,16 @@ export function RegisterClient() {
       return;
     }
 
+    if (!isKnownPortugueseMunicipality(city)) {
+      setMessage("Escolhe uma cidade/localidade da lista.");
+      return;
+    }
+
+    if (description.length > maxProfileDescriptionLength) {
+      setMessage(`A descrição não pode ultrapassar ${maxProfileDescriptionLength} caracteres.`);
+      return;
+    }
+
     setCreating(true);
 
     const { data, error } = await supabase.auth.signUp({
@@ -116,16 +128,43 @@ export function RegisterClient() {
           venue_name: accountType === "venue" ? venueName.trim() : null,
           city,
           instagram_url: normalizeExternalUrl(instagramUrl),
+          description: accountType === "community" ? null : description.trim() || null,
+          organizer_type: accountType === "organizer" ? organizerType || null : null,
+          organizer_type_other: accountType === "organizer" && organizerType === "Outro" ? organizerTypeOther.trim() || null : null,
+          artist_category: accountType === "artist" ? artistCategory || null : null,
+          artist_category_other: accountType === "artist" && artistCategory === "Outro" ? artistCategoryOther.trim() || null : null,
+          music_genres: accountType === "artist" && artistCategory === "Música" ? musicGenres : [],
         },
       },
     });
 
-    setCreating(false);
-
     if (error) {
-      setMessage(`Erro ao criar conta: ${error.message}`);
+      setCreating(false);
+      setMessage("Não foi possível criar a conta. Confirma os dados e tenta novamente.");
       return;
     }
+
+    if (data.session && data.user) {
+      let avatarUrl = "";
+      try {
+        if (profileImage) avatarUrl = await uploadProfileImage(data.user.id, profileImage);
+        const { error: profileError } = await supabase.rpc("update_my_extended_profile", {
+          p_avatar_url: avatarUrl || null,
+          p_city: city || null,
+          p_description: accountType === "community" ? null : description.trim() || null,
+          p_organizer_type: accountType === "organizer" ? organizerType || null : null,
+          p_organizer_type_other: accountType === "organizer" && organizerType === "Outro" ? organizerTypeOther.trim() || null : null,
+          p_artist_category: accountType === "artist" ? artistCategory || null : null,
+          p_artist_category_other: accountType === "artist" && artistCategory === "Outro" ? artistCategoryOther.trim() || null : null,
+          p_music_genres: accountType === "artist" && artistCategory === "Música" ? musicGenres : [],
+        });
+        if (profileError) setMessage("Conta criada. Completa os detalhes no perfil.");
+      } catch {
+        setMessage("Conta criada. A foto pode ser adicionada no perfil.");
+      }
+    }
+
+    setCreating(false);
 
     if (data.session) {
       setMessage(
@@ -148,6 +187,7 @@ export function RegisterClient() {
     <AuthFormCard eyebrow="Registo" title="Criar conta">
       <form onSubmit={createAccount} noValidate>
         <div className="grid gap-5 sm:grid-cols-2">
+          <ProfileImageField imageUrl="" onFile={setProfileImage} onRemove={() => setProfileImage(null)} disabled={creating} />
           <label className="sm:col-span-2" htmlFor="register-display-name">
             <span className="mb-2 block text-sm font-bold text-zinc-300">
               Nome público
@@ -219,21 +259,7 @@ export function RegisterClient() {
             </select>
           </label>
 
-          <label htmlFor="register-city">
-            <span className="mb-2 block text-sm font-bold text-zinc-300">
-              Cidade base
-            </span>
-            <select
-              id="register-city"
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              className={inputClassName}
-            >
-              {cities.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </label>
+          <CityCombobox label="Cidade base" value={city} onChange={setCity} required />
 
           {accountType !== "community" && (
             <label className="sm:col-span-2" htmlFor="register-entity-name">
@@ -265,6 +291,19 @@ export function RegisterClient() {
               />
             </label>
           )}
+
+          {accountType === "organizer" && <>
+            <label htmlFor="register-organizer-type"><span className="mb-2 block text-sm font-bold text-zinc-300">Tipo</span><select id="register-organizer-type" value={organizerType} onChange={(event) => setOrganizerType(event.target.value)} className={inputClassName}><option value="">Escolher tipo</option>{organizerTypes.map((value) => <option key={value}>{value}</option>)}</select></label>
+            {organizerType === "Outro" && <label htmlFor="register-organizer-type-other"><span className="mb-2 block text-sm font-bold text-zinc-300">Especificar tipo</span><input id="register-organizer-type-other" value={organizerTypeOther} onChange={(event) => setOrganizerTypeOther(event.target.value.slice(0, 60))} className={inputClassName} /></label>}
+          </>}
+
+          {accountType === "artist" && <>
+            <label htmlFor="register-artist-category"><span className="mb-2 block text-sm font-bold text-zinc-300">Categoria</span><select id="register-artist-category" value={artistCategory} onChange={(event) => { setArtistCategory(event.target.value); if (event.target.value !== "Música") setMusicGenres([]); }} className={inputClassName}><option value="">Escolher categoria</option>{artistCategories.map((value) => <option key={value}>{value}</option>)}</select></label>
+            {artistCategory === "Outro" && <label htmlFor="register-artist-category-other"><span className="mb-2 block text-sm font-bold text-zinc-300">Especificar categoria</span><input id="register-artist-category-other" value={artistCategoryOther} onChange={(event) => setArtistCategoryOther(event.target.value.slice(0, 60))} className={inputClassName} /></label>}
+            {artistCategory === "Música" && <GenreMultiSelect values={musicGenres} onChange={setMusicGenres} />}
+          </>}
+
+          {accountType !== "community" && <label className="sm:col-span-2" htmlFor="register-description"><span className="mb-2 flex justify-between gap-3 text-sm font-bold text-zinc-300"><span>Descrição</span><span className="text-xs text-zinc-600">{description.length}/{maxProfileDescriptionLength}</span></span><textarea id="register-description" value={description} maxLength={maxProfileDescriptionLength} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder={accountType === "artist" ? "Apresenta o projeto, influências e percurso." : accountType === "organizer" ? "Fala sobre o projeto, espaço ou eventos que organizas." : "Apresenta o espaço e a sua atividade."} className={`${inputClassName} h-auto min-h-32 py-3`} /></label>}
 
           <label className="sm:col-span-2" htmlFor="register-instagram">
             <span className="mb-2 block text-sm font-bold text-zinc-300">

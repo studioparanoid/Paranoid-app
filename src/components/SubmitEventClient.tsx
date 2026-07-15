@@ -5,10 +5,11 @@ import Link from "next/link";
 import {
   getCanonicalDistrict,
   getCanonicalMunicipality,
-  getMunicipalitiesForDistrict,
   portugalDistricts,
 } from "@/lib/portugalLocations";
+import { formatPortuguesePostalCode, isValidPortuguesePostalCode, normalizeDecimalValue, normalizePortuguesePostalCode } from "@/lib/inputFormatting";
 import { supabase } from "@/lib/supabase/public";
+import { CurrencyInput } from "@/components/ui/CurrencyInput";
 
 type TicketMode = "none" | "external" | "internal";
 
@@ -222,6 +223,7 @@ export function SubmitEventClient() {
   const [eventTime, setEventTime] = useState("");
 
   const [price, setPrice] = useState("");
+  const [isFree, setIsFree] = useState(false);
   const [artistsText, setArtistsText] = useState("");
   const [description, setDescription] = useState("");
 
@@ -234,10 +236,6 @@ export function SubmitEventClient() {
   const [ticketButtonLabel, setTicketButtonLabel] = useState("");
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-
-  const municipalityOptions = useMemo(() => {
-    return getMunicipalitiesForDistrict(district);
-  }, [district]);
 
   const canonicalDistrict = getCanonicalDistrict(district) || district;
   const canonicalMunicipality =
@@ -334,26 +332,6 @@ export function SubmitEventClient() {
     setGeocodeLabel("");
     setLocationState("idle");
     setLocationMessage("");
-  }
-
-  function handleDistrictChange(value: string) {
-    setDistrict(value);
-
-    if (municipality && !getCanonicalMunicipality(municipality, value)) {
-      setMunicipality("");
-    }
-
-    if (latitude !== null && longitude !== null) {
-      setLocationMessage("Zona atualizada manualmente.");
-    }
-  }
-
-  function handleMunicipalityChange(value: string) {
-    setMunicipality(value);
-
-    if (latitude !== null && longitude !== null) {
-      setLocationMessage("Zona atualizada manualmente.");
-    }
   }
 
   function clearLocation() {
@@ -549,6 +527,7 @@ export function SubmitEventClient() {
     setArtistsText("");
     setDescription("");
     setPrice("");
+    setIsFree(false);
     setEventDate("");
     setEndDate("");
     setEventTime("");
@@ -581,6 +560,11 @@ export function SubmitEventClient() {
     if (!address.trim() && !postalCode.trim() && !city.trim()) {
       setMessage("Mete a morada, o código postal ou a localidade do evento.");
       addressInputRef.current?.focus();
+      return;
+    }
+
+    if (postalCode && !isValidPortuguesePostalCode(postalCode)) {
+      setMessage("Introduz os 7 números do código postal.");
       return;
     }
 
@@ -712,7 +696,7 @@ export function SubmitEventClient() {
         district: finalDistrict,
         venue: venue.trim(),
         address: finalAddress,
-        postal_code: finalPostalCode.trim() || null,
+        postal_code: normalizePortuguesePostalCode(finalPostalCode) || finalPostalCode.trim() || null,
         latitude: finalLatitude,
         longitude: finalLongitude,
         location_source:
@@ -726,7 +710,7 @@ export function SubmitEventClient() {
         end_date: isMultiDay ? endDate : null,
         is_multi_day: isMultiDay,
         event_time: eventTime || null,
-        price: price.trim() || null,
+        price: isFree ? "Gratuito" : normalizeDecimalValue(price),
         description: description.trim() || null,
         image_url: imageUrl,
 
@@ -745,7 +729,7 @@ export function SubmitEventClient() {
           ticketMode === "external" ? normalizeExternalUrl(ticketUrl) : null,
         ticket_price:
           ticketMode === "internal" || ticketMode === "external"
-            ? ticketPrice.trim() || null
+            ? normalizeDecimalValue(ticketPrice)
             : null,
         ticket_capacity:
           ticketMode === "internal" && ticketCapacity.trim()
@@ -937,7 +921,7 @@ export function SubmitEventClient() {
             4. Localização
           </h2>
           <p className="mt-2 text-sm text-zinc-500">
-            Pesquisa pelo espaço, morada, código postal ou localidade. O distrito é opcional.
+            Pesquisa pela morada, código postal ou localidade. A zona é confirmada automaticamente.
           </p>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -961,10 +945,11 @@ export function SubmitEventClient() {
                 id="event-postal-code"
                 value={postalCode}
                 onChange={(event) => {
-                  setPostalCode(event.target.value);
+                  setPostalCode(formatPortuguesePostalCode(event.target.value));
                   clearGeocode();
                 }}
                 inputMode="numeric"
+                maxLength={8}
                 autoComplete="postal-code"
                 placeholder="0000-000"
                 className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800 focus:ring-2 focus:ring-red-950"
@@ -1047,33 +1032,6 @@ export function SubmitEventClient() {
             </div>
           )}
 
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <div>
-              <label htmlFor="event-district" className="mb-2 block text-sm font-bold text-zinc-300">Distrito</label>
-              <select
-                id="event-district"
-                value={district}
-                onChange={(event) => handleDistrictChange(event.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-800 focus:ring-2 focus:ring-red-950"
-              >
-                <option value="">Escolher distrito</option>
-                {portugalDistricts.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="event-municipality" className="mb-2 block text-sm font-bold text-zinc-300">Concelho</label>
-              <select
-                id="event-municipality"
-                value={municipality}
-                onChange={(event) => handleMunicipalityChange(event.target.value)}
-                disabled={!district}
-                className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50 focus:border-red-800 focus:ring-2 focus:ring-red-950"
-              >
-                <option value="">Escolher concelho</option>
-                {municipalityOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </div>
-          </div>
         </section>
 
         <section aria-labelledby="event-people" className="mt-8 border-t border-zinc-900 pt-7">
@@ -1112,13 +1070,8 @@ export function SubmitEventClient() {
           </h2>
           <div className="mt-5 max-w-sm">
             <label htmlFor="event-price" className="mb-2 block text-sm font-bold text-zinc-300">Preço geral</label>
-            <input
-              id="event-price"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              placeholder="5€ / Grátis / Donativo"
-              className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800 focus:ring-2 focus:ring-red-950"
-            />
+            {isFree ? <input id="event-price" value="Gratuito" disabled className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 font-bold text-zinc-400" /> : <CurrencyInput id="event-price" value={price} onChange={setPrice} placeholder="Ex: 12,50" className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800 focus:ring-2 focus:ring-red-950" />}
+            <label className="mt-3 flex min-h-11 cursor-pointer items-center gap-3 text-sm font-bold text-zinc-300"><input type="checkbox" checked={isFree} onChange={(event) => { setIsFree(event.target.checked); if (event.target.checked) setPrice(""); }} className="h-5 w-5 accent-red-600" />Evento gratuito</label>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {(["none", "external", "internal"] as TicketMode[]).map((mode) => (
@@ -1153,11 +1106,11 @@ export function SubmitEventClient() {
               )}
               <div>
                 <label htmlFor="event-ticket-price" className="mb-2 block text-sm font-bold text-zinc-300">Preço do bilhete</label>
-                <input
+                <CurrencyInput
                   id="event-ticket-price"
                   value={ticketPrice}
-                  onChange={(event) => setTicketPrice(event.target.value)}
-                  placeholder="Ex: 8€"
+                  onChange={setTicketPrice}
+                  placeholder="Ex: 8,00"
                   className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800 focus:ring-2 focus:ring-red-950"
                 />
               </div>

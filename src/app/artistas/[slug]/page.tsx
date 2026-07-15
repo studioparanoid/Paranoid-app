@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -16,6 +17,10 @@ type ArtistRow = {
   description: string | null;
   instagram: string | null;
   bandcamp: string | null;
+  image_url: string | null;
+  artist_category: string | null;
+  artist_category_other: string | null;
+  music_genres: string[] | null;
 };
 
 type EventArtistRow = {
@@ -183,7 +188,7 @@ export default function ArtistPage() {
 
     const { data: artistData, error: artistError } = await supabase
       .from("artists")
-      .select("id,slug,name,city,genres,description,instagram,bandcamp")
+      .select("id,slug,name,city,genres,description,instagram,bandcamp,image_url,artist_category,artist_category_other,music_genres")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -332,7 +337,8 @@ export default function ArtistPage() {
     return <NotFoundCard />;
   }
 
-  const genres = formatGenres(artist.genres);
+  const genres = artist.music_genres?.length ? artist.music_genres : formatGenres(artist.genres);
+  const artistCategory = artist.artist_category === "Outro" ? artist.artist_category_other : artist.artist_category;
   const featuredEvents = events.filter((event) => event.featured);
   const instagramUrl = normalizeExternalUrl(artist.instagram);
   const bandcampUrl = normalizeExternalUrl(artist.bandcamp);
@@ -349,6 +355,7 @@ export default function ArtistPage() {
 
         <section className="grid gap-6 lg:grid-cols-[1fr_380px] lg:items-end">
           <div>
+            {artist.image_url && <img src={artist.image_url} alt={`Foto de ${artist.name}`} className="mb-5 h-28 w-28 rounded-full object-cover" />}
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-300">
                 Artista
@@ -359,6 +366,8 @@ export default function ArtistPage() {
                   {artist.city}
                 </span>
               )}
+
+              {artistCategory && <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase tracking-wide text-zinc-400">{artistCategory}</span>}
 
               {genres.slice(0, 3).map((genre) => (
                 <span
@@ -453,20 +462,12 @@ export default function ArtistPage() {
 
         <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[380px_1fr] lg:items-start">
           <aside className="space-y-6 lg:sticky lg:top-28">
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
+            {artist.description && <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Sobre
               </p>
 
-              {artist.description ? (
-                <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300">
-                  {artist.description}
-                </p>
-              ) : (
-                <p className="mt-5 text-base leading-relaxed text-zinc-500">
-                  Este artista ainda não tem descrição pública.
-                </p>
-              )}
+              <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300">{artist.description}</p>
 
               <div className="mt-6 space-y-4 text-sm text-zinc-400">
                 <p>
@@ -483,7 +484,7 @@ export default function ArtistPage() {
                   {genres.length > 0 ? genres.join(", ") : "Sem géneros"}
                 </p>
               </div>
-            </section>
+            </section>}
 
             <section className="grid grid-cols-2 gap-3">
               <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">

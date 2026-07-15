@@ -38,7 +38,7 @@ export const mainNavigation: NavigationItem[] = [
 
 export const profileActivityNavigation: NavigationItem[] = [
   { href: "/guardados", label: "Guardados", icon: "bookmark" },
-  { href: "/descobrir", label: "Seguidos e descobrir", icon: "compass" },
+  { href: "/descobrir", label: "Rede Cultural", icon: "compass" },
 ];
 
 export const profilePurchaseNavigation: NavigationItem[] = [

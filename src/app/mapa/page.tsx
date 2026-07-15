@@ -456,6 +456,9 @@ export default function MapPage() {
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [eventCardOpen, setEventCardOpen] = useState(true);
+  const [mobileSheetExpanded, setMobileSheetExpanded] = useState(false);
+  const sheetDragStartY = useRef<number | null>(null);
+  const sheetWasDragged = useRef(false);
   const lastScrollY = useRef(0);
 
   const venueById = useMemo(() => {
@@ -677,6 +680,16 @@ export default function MapPage() {
 
     setSelectedEventId(filteredEvents[nextIndex].id);
     setEventCardOpen(true);
+  }
+
+  function finishSheetDrag(clientY: number) {
+    if (sheetDragStartY.current === null) return;
+    const distance = clientY - sheetDragStartY.current;
+    if (Math.abs(distance) >= 36) {
+      sheetWasDragged.current = true;
+      setMobileSheetExpanded(distance < 0);
+    }
+    sheetDragStartY.current = null;
   }
 
   async function loadMapData() {
@@ -1252,14 +1265,14 @@ export default function MapPage() {
 
       <aside
         aria-label="Eventos no radar"
-        className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 max-h-[38vh] overflow-hidden rounded-2xl border border-white/10 bg-[rgb(10_10_10_/_0.97)] shadow-2xl shadow-black/45 lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:flex lg:max-h-[calc(100dvh-8rem)] lg:w-[380px] lg:flex-col lg:pb-0 xl:w-[400px] ${
+        className={`absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-[rgb(10_10_10_/_0.97)] shadow-2xl shadow-black/45 lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:w-[380px] lg:pb-0 xl:w-[400px] ${mobileSheetExpanded ? "max-h-[70vh]" : "max-h-[38vh]"} ${
           hasAppliedFilters && controlsCollapsed && eventCardOpen
-            ? "slide-up block"
+            ? "slide-up flex flex-col"
             : "hidden lg:flex"
         }`}
       >
         <div className="border-b border-white/10 px-3 pb-2.5 pt-2 lg:px-4 lg:pb-3 lg:pt-4">
-          <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/30 lg:hidden" aria-hidden="true" />
+          <button type="button" aria-label={mobileSheetExpanded ? "Reduzir lista de eventos" : "Expandir lista de eventos"} onClick={() => { if (sheetWasDragged.current) { sheetWasDragged.current = false; return; } setMobileSheetExpanded((value) => !value); }} onPointerDown={(event) => { sheetWasDragged.current = false; sheetDragStartY.current = event.clientY; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerUp={(event) => finishSheetDrag(event.clientY)} onPointerCancel={() => { sheetDragStartY.current = null; }} className="mx-auto mb-2 block h-5 w-14 touch-none rounded-full lg:hidden"><span className="mx-auto block h-1 w-10 rounded-full bg-white/30" /></button>
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
             {selectedEvent ? (
               <button
@@ -1299,7 +1312,7 @@ export default function MapPage() {
           </div>
         </div>
 
-        <div className="paranoid-scrollbar relative flex-1 space-y-2 overflow-auto p-3 lg:block lg:p-4">
+        <div className="paranoid-scrollbar relative min-h-0 flex-1 touch-pan-y space-y-2 overflow-y-auto overscroll-y-contain p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:block lg:p-4">
           {filteredEvents.length === 0 ? (
             <p className="rounded-xl border border-white/10 bg-[#151515] p-4 text-sm font-bold text-zinc-300" role="status" aria-live="polite">
               Sem eventos no radar.

@@ -13,6 +13,7 @@ import {
 } from "@/lib/shop/cart";
 import { LoadingButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { formatPortuguesePostalCode, isValidPortuguesePostalCode, normalizePortuguesePostalCode } from "@/lib/inputFormatting";
 
 export function CheckoutClient() {
   const [items, setItems] = useState<ShopCartItem[]>([]);
@@ -38,6 +39,12 @@ export function CheckoutClient() {
   async function submitOrder(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+
+    if (!isValidPortuguesePostalCode(postalCode)) {
+      setMessage("Introduz os 7 números do código postal.");
+      return;
+    }
+
     setLoading(true);
 
     let response: Response;
@@ -51,7 +58,7 @@ export function CheckoutClient() {
           buyerEmail,
           buyerPhone,
           shippingAddress,
-          postalCode,
+          postalCode: normalizePortuguesePostalCode(postalCode),
           city,
           country,
           notes,
@@ -152,7 +159,11 @@ export function CheckoutClient() {
             </span>
             <input
               value={postalCode}
-              onChange={(event) => setPostalCode(event.target.value)}
+              onChange={(event) => setPostalCode(formatPortuguesePostalCode(event.target.value))}
+              inputMode="numeric"
+              autoComplete="postal-code"
+              maxLength={8}
+              placeholder="0000-000"
               required
               className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
             />

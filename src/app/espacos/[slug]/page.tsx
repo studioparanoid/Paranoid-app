@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -15,6 +16,7 @@ type VenueRow = {
   address: string | null;
   description: string | null;
   instagram: string | null;
+  image_url: string | null;
 };
 
 type EventRow = {
@@ -167,7 +169,7 @@ export default function VenuePage() {
 
     const { data: venueData, error: venueError } = await supabase
       .from("venues")
-      .select("id,slug,name,city,address,description,instagram")
+      .select("id,slug,name,city,address,description,instagram,image_url")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -333,6 +335,7 @@ export default function VenuePage() {
 
         <section className="grid gap-6 lg:grid-cols-[1fr_380px] lg:items-end">
           <div>
+            {venue.image_url && <img src={venue.image_url} alt={`Foto de ${venue.name}`} className="mb-5 h-28 w-28 rounded-full object-cover" />}
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full border border-red-900 bg-red-950/20 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-300">
                 Espaço
@@ -417,20 +420,12 @@ export default function VenuePage() {
 
         <section className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[380px_1fr] lg:items-start">
           <aside className="space-y-6 lg:sticky lg:top-28">
-            <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
+            {venue.description && <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
               <p className="text-xs uppercase tracking-[0.3em] text-red-700">
                 Sobre
               </p>
 
-              {venue.description ? (
-                <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300">
-                  {venue.description}
-                </p>
-              ) : (
-                <p className="mt-5 text-base leading-relaxed text-zinc-500">
-                  Este espaço ainda não tem descrição pública.
-                </p>
-              )}
+              <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300">{venue.description}</p>
 
               <div className="mt-6 space-y-4 text-sm text-zinc-400">
                 <p>
@@ -447,7 +442,7 @@ export default function VenuePage() {
                   {venue.address || "Sem morada"}
                 </p>
               </div>
-            </section>
+            </section>}
 
             <section className="grid grid-cols-2 gap-3">
               <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">

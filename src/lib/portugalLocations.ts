@@ -353,9 +353,19 @@ export const portugalMunicipalitiesByDistrict: Record<string, string[]> = {
   ],
 };
 
-export const portugalMunicipalities = Object.values(
-  portugalMunicipalitiesByDistrict
-).flat();
+const autonomousRegionMunicipalities = [
+  "Angra do Heroísmo", "Calheta", "Câmara de Lobos", "Corvo", "Funchal",
+  "Horta", "Lagoa", "Lajes das Flores", "Lajes do Pico", "Machico",
+  "Madalena", "Nordeste", "Ponta Delgada", "Ponta do Sol", "Porto Moniz",
+  "Porto Santo", "Povoação", "Praia da Vitória", "Ribeira Brava",
+  "Ribeira Grande", "Santa Cruz", "Santa Cruz da Graciosa",
+  "Santa Cruz das Flores", "Santana", "São Roque do Pico", "São Vicente",
+  "Velas", "Vila do Porto", "Vila Franca do Campo",
+];
+
+export const portugalMunicipalities = Array.from(
+  new Set([...Object.values(portugalMunicipalitiesByDistrict).flat(), ...autonomousRegionMunicipalities])
+).sort((a, b) => a.localeCompare(b, "pt-PT"));
 
 export function normalizeLocationText(value: string | null | undefined) {
   return String(value || "")
