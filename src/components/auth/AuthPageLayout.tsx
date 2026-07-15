@@ -61,11 +61,11 @@ const networkOptions = [
 export function AuthNetworkOptions() {
   return (
     <AuthInfoCard eyebrow="Rede" title="Entrar na rede">
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid divide-y divide-[var(--brand-border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {networkOptions.map((option) => (
           <div
             key={option.title}
-            className="rounded border border-[var(--brand-border)] bg-[var(--brand-surface)] px-4 py-3"
+            className="px-0 py-3 sm:px-4 sm:first:pl-0 sm:last:pr-0"
           >
             <p className="font-black text-[var(--brand-foreground)]">{option.title}</p>
             <p className="mt-1 text-xs leading-relaxed text-[var(--brand-muted)]">

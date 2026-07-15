@@ -10,17 +10,17 @@ import { isNavigationActive, mainNavigation } from "@/config/navigation";
 export function AppHeader() {
   const pathname = usePathname();
 
-  return <header className="brand-surface app-header-shadow sticky top-0 z-50 border-b border-[var(--brand-border)] bg-[var(--header-background)] backdrop-blur-lg">
+  return <header className="brand-surface app-header-shadow sticky top-0 z-50 border-b border-[var(--brand-border)] bg-black backdrop-blur-lg">
     <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-10">
       <Link href="/agenda" className="pressable focus-ring flex min-w-0 items-center rounded" aria-label="Paranoid Studio - Agenda">
         <Image
-          src="/brand/paranoid-studio-logo-header.png"
-          width={838}
-          height={331}
+          src="/brand/paranoid-studio-logo-header-transparent.png"
+          width={830}
+          height={323}
           alt="Paranoid Studio"
           priority
-          sizes="(max-width: 639px) 106px, 147px"
-          className="h-[42px] w-auto shrink-0 object-contain sm:h-[58px]"
+          sizes="(max-width: 639px) 93px, 118px"
+          className="h-9 max-h-9 w-auto shrink-0 object-contain sm:h-[46px] sm:max-h-[46px]"
         />
       </Link>
 

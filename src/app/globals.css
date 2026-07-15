@@ -39,6 +39,7 @@
   --brand-foreground: #f7f5ef;
   --brand-muted: #aaa69e;
   --brand-border: rgb(255 255 255 / 0.1);
+  --header-height: 4rem;
   --dark-surface: #090909;
   --dark-surface-elevated: #141414;
   --dark-foreground: #f7f5ef;
@@ -562,7 +563,7 @@ select:-webkit-autofill {
 
 /* The map owns the viewport between the app header and mobile navigation. */
 .map-screen {
-  height: calc(100dvh - 4rem);
+  height: calc(100dvh - var(--header-height));
   min-height: 0;
   margin-bottom: calc(-4.75rem - env(safe-area-inset-bottom));
 }

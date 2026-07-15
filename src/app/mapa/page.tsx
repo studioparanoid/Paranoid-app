@@ -395,7 +395,7 @@ function EventSummary({
       onClick={onSelect}
       data-map-event-card={event.id}
       aria-pressed={selected}
-      className={`pressable focus-ring w-full rounded-xl border px-3 py-3 text-left transition ${
+      className={`pressable focus-ring block w-full min-w-0 shrink-0 rounded-xl border px-3 py-3 text-left transition ${
         selected
           ? "border-red-500/70 bg-[#202020]"
           : "border-white/10 bg-[#151515] hover:border-white/20 hover:bg-[#1c1c1c]"
@@ -1026,7 +1026,7 @@ export default function MapPage() {
       )}
 
       <section
-        className={`shadow-floating absolute inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 rounded-2xl border border-white/10 bg-black/70 px-3 py-3 backdrop-blur-xl transition-transform lg:bottom-8 lg:left-6 lg:right-[438px] lg:top-auto lg:w-auto lg:translate-x-0 lg:p-3 xl:right-[458px]`}
+        className={`shadow-floating absolute inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 rounded-2xl border border-white/10 bg-black/70 px-3 py-3 backdrop-blur-xl transition-transform lg:bottom-6 lg:left-6 lg:right-[428px] lg:top-auto lg:w-auto lg:max-w-[680px] lg:translate-x-0 lg:p-3`}
       >
         {controlsCollapsed && (
           <button
@@ -1265,13 +1265,13 @@ export default function MapPage() {
 
       <aside
         aria-label="Eventos no radar"
-        className={`shadow-map-panel absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 overflow-hidden rounded-2xl border border-white/10 bg-[rgb(10_10_10_/_0.97)] lg:bottom-8 lg:left-auto lg:right-6 lg:top-24 lg:max-h-none lg:w-[380px] lg:pb-0 xl:w-[400px] ${mobileSheetExpanded ? "max-h-[70vh]" : "max-h-[38vh]"} ${
+        className={`shadow-map-panel absolute bottom-[calc(8.05rem+env(safe-area-inset-bottom))] left-3 right-3 z-40 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[rgb(10_10_10_/_0.97)] lg:bottom-6 lg:left-auto lg:right-6 lg:top-6 lg:max-h-[calc(100%-3rem)] lg:w-[380px] lg:max-w-[calc(100%-3rem)] lg:pb-0 ${mobileSheetExpanded ? "max-h-[70vh]" : "max-h-[38vh]"} ${
           hasAppliedFilters && controlsCollapsed && eventCardOpen
             ? "slide-up flex flex-col"
             : "hidden lg:flex"
         }`}
       >
-        <div className="border-b border-white/10 px-3 pb-2.5 pt-2 lg:px-4 lg:pb-3 lg:pt-4">
+        <div className="w-full shrink-0 border-b border-white/10 px-3 pb-2.5 pt-2 lg:px-4 lg:pb-3 lg:pt-3">
           <button type="button" aria-label={mobileSheetExpanded ? "Reduzir lista de eventos" : "Expandir lista de eventos"} onClick={() => { if (sheetWasDragged.current) { sheetWasDragged.current = false; return; } setMobileSheetExpanded((value) => !value); }} onPointerDown={(event) => { sheetWasDragged.current = false; sheetDragStartY.current = event.clientY; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerUp={(event) => finishSheetDrag(event.clientY)} onPointerCancel={() => { sheetDragStartY.current = null; }} className="mx-auto mb-2 block h-5 w-14 touch-none rounded-full lg:hidden"><span className="mx-auto block h-1 w-10 rounded-full bg-white/30" /></button>
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5">
             {selectedEvent ? (
@@ -1312,7 +1312,7 @@ export default function MapPage() {
           </div>
         </div>
 
-        <div className="paranoid-scrollbar relative min-h-0 flex-1 touch-pan-y space-y-2 overflow-y-auto overscroll-y-contain p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:block lg:p-4">
+        <div className="paranoid-scrollbar relative flex min-h-0 w-full flex-1 touch-pan-y flex-col gap-2 overflow-x-hidden overflow-y-auto overscroll-y-contain p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:p-4">
           {filteredEvents.length === 0 ? (
             <p className="rounded-xl border border-white/10 bg-[#151515] p-4 text-sm font-bold text-zinc-300" role="status" aria-live="polite">
               Sem eventos no radar.
@@ -1338,7 +1338,7 @@ export default function MapPage() {
         </div>
 
         {selectedEvent && (
-          <div className="border-t border-white/10 p-3 lg:p-4">
+          <div className="relative z-10 w-full shrink-0 border-t border-white/10 bg-black p-3 lg:p-4">
             <div className="flex gap-2">
               <Link
                 href={`/eventos/${selectedEvent.slug}`}
