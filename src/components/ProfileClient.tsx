@@ -69,7 +69,7 @@ export function ProfileClient() {
   const [editing, setEditing] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [onboardingStep, setOnboardingStep] = useState<"profile" | "security" | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<"profile" | null>(null);
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -151,9 +151,8 @@ export function ProfileClient() {
     const timer = window.setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
       if (params.get("onboarding") === "1") {
-        const step = params.get("step") === "security" ? "security" : "profile";
-        setOnboardingStep(step);
-        setEditing(step === "profile");
+        setOnboardingStep("profile");
+        setEditing(true);
       }
       void loadProfile();
     }, 0);
@@ -213,8 +212,10 @@ export function ProfileClient() {
     setMessage("Perfil atualizado.");
     toast({ message: "Perfil atualizado.", tone: "success" });
     if (onboardingStep === "profile") {
-      setOnboardingStep("security");
-      router.replace("/perfil?onboarding=1&step=security", { scroll: false });
+      setOnboardingStep(null);
+      setEditing(false);
+      router.replace("/perfil", { scroll: false });
+      toast({ message: "Conta configurada.", tone: "success" });
     } else {
       setEditing(false);
     }
@@ -255,11 +256,7 @@ export function ProfileClient() {
     <AppearanceSettings open={appearanceOpen} onClose={() => setAppearanceOpen(false)} />
     {onboardingStep && <div className="mb-6 border-b border-[var(--border)] pb-4" aria-label="Progresso da configuração">
       <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-600">Configurar conta</p>
-      <div className="mt-2 flex items-center gap-2 text-sm font-bold">
-        <span className={onboardingStep === "profile" ? "text-[var(--foreground)]" : "text-emerald-500"}>Perfil</span>
-        <span aria-hidden="true" className="text-[var(--foreground-muted)]">→</span>
-        <span className={onboardingStep === "security" ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)]"}>Segurança</span>
-      </div>
+      <p className="mt-2 text-sm font-bold text-[var(--foreground)]">Completa o perfil</p>
     </div>}
     <header className="flex items-center gap-4 border-b border-zinc-900 pb-6">
       <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border border-red-950 bg-red-950/25 text-xl font-black text-red-500">{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
@@ -284,15 +281,8 @@ export function ProfileClient() {
       <div className="mt-5 flex gap-3"><LoadingButton type="button" onClick={saveProfile} loading={saving} loadingText="A guardar...">Guardar</LoadingButton><Button type="button" variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button></div>
     </section>}
 
-    {(onboardingStep === "security" || !onboardingStep) && <div className="mt-8">
-      <MfaSecurityPanel
-        onboarding={onboardingStep === "security"}
-        onComplete={() => {
-          setOnboardingStep(null);
-          router.replace("/perfil", { scroll: false });
-          router.refresh();
-        }}
-      />
+    {!onboardingStep && <div className="mt-8">
+      <MfaSecurityPanel />
     </div>}
 
     <div className="grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">

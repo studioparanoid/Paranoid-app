@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { AuthFormCard } from "@/components/auth/AuthPageLayout";
+import { EmailOtpConfirmation, pendingSignupEmailKey } from "@/components/auth/EmailOtpConfirmation";
 import { CityCombobox, isKnownPortugueseMunicipality } from "@/components/profile/CityCombobox";
 import { GenreMultiSelect } from "@/components/profile/GenreMultiSelect";
 import { ProfileImageField } from "@/components/profile/ProfileImageField";
@@ -22,13 +23,6 @@ function normalizeExternalUrl(value: string) {
   }
 
   return `https://${cleanValue}`;
-}
-
-function accountTypeLabel(type: AccountType) {
-  if (type === "artist") return "Artista";
-  if (type === "organizer") return "Organizador";
-  if (type === "venue") return "Espaço";
-  return "Comunidade";
 }
 
 const inputClassName =
@@ -61,8 +55,44 @@ export function RegisterClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const pendingEmail = window.sessionStorage.getItem(pendingSignupEmailKey);
+      if (pendingEmail) {
+        setEmail(pendingEmail);
+        setAwaitingEmail(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  async function completeProfileAndContinue() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      try {
+        let avatarUrl = "";
+        if (profileImage) avatarUrl = await uploadProfileImage(user.id, profileImage);
+        await supabase.rpc("update_my_extended_profile", {
+          p_avatar_url: avatarUrl || null,
+          p_city: city || null,
+          p_description: accountType === "community" ? null : description.trim() || null,
+          p_organizer_type: accountType === "organizer" ? organizerType || null : null,
+          p_organizer_type_other: accountType === "organizer" && organizerType === "Outro" ? organizerTypeOther.trim() || null : null,
+          p_artist_category: accountType === "artist" ? artistCategory || null : null,
+          p_artist_category_other: accountType === "artist" && artistCategory === "Outro" ? artistCategoryOther.trim() || null : null,
+          p_music_genres: accountType === "artist" && artistCategory === "Música" ? musicGenres : [],
+        });
+      } catch {
+        // The remaining optional details can be completed safely in the profile.
+      }
+    }
+    router.replace("/perfil?onboarding=1");
+    router.refresh();
+  }
+
   async function createAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (creating) return;
     setMessage("");
 
     if (!displayName.trim()) {
@@ -145,50 +175,29 @@ export function RegisterClient() {
       return;
     }
 
-    if (data.session && data.user) {
-      let avatarUrl = "";
-      try {
-        if (profileImage) avatarUrl = await uploadProfileImage(data.user.id, profileImage);
-        const { error: profileError } = await supabase.rpc("update_my_extended_profile", {
-          p_avatar_url: avatarUrl || null,
-          p_city: city || null,
-          p_description: accountType === "community" ? null : description.trim() || null,
-          p_organizer_type: accountType === "organizer" ? organizerType || null : null,
-          p_organizer_type_other: accountType === "organizer" && organizerType === "Outro" ? organizerTypeOther.trim() || null : null,
-          p_artist_category: accountType === "artist" ? artistCategory || null : null,
-          p_artist_category_other: accountType === "artist" && artistCategory === "Outro" ? artistCategoryOther.trim() || null : null,
-          p_music_genres: accountType === "artist" && artistCategory === "Música" ? musicGenres : [],
-        });
-        if (profileError) setMessage("Conta criada. Completa os detalhes no perfil.");
-      } catch {
-        setMessage("Conta criada. A foto pode ser adicionada no perfil.");
-      }
-    }
-
     setCreating(false);
 
     if (data.session) {
-      setMessage(
-        accountType === "community"
-          ? "Conta criada. A entrar..."
-          : `Conta criada como ${accountTypeLabel(accountType)}. O perfil fica pendente até aprovação da Paranoid.`
-      );
-      router.push("/perfil?onboarding=1");
+      const profileResponse = await fetch("/api/auth/ensure-profile", { method: "POST" });
+      if (!profileResponse.ok) {
+        setMessage("Conta criada, mas não foi possível preparar o perfil. Tenta entrar novamente.");
+        return;
+      }
+      await completeProfileAndContinue();
       return;
     }
 
-    setMessage(
-      accountType === "community"
-        ? "Conta criada. Confirma o email para entrares."
-        : `Conta criada como ${accountTypeLabel(accountType)}. Confirma o email. O perfil fica pendente até aprovação da Paranoid.`
-    );
+    setMessage("Verifica o teu email para continuar.");
     setAwaitingEmail(true);
   }
 
   if (awaitingEmail) {
-    return <AuthFormCard eyebrow="Registo" title="Confirma o teu email.">
-      <p className="text-sm leading-relaxed text-zinc-400">Enviámos uma ligação de confirmação para <strong className="text-zinc-200">{email.trim().toLowerCase()}</strong>. Depois da confirmação, continuas diretamente no Perfil para configurar a conta.</p>
-      <Link href="/login" className="focus-ring mt-6 inline-flex min-h-11 items-center rounded text-sm font-black text-red-400 hover:text-red-300">Voltar ao login</Link>
+    return <AuthFormCard eyebrow="Registo" title="Confirma o teu email">
+      <EmailOtpConfirmation
+        email={email.trim().toLowerCase()}
+        onChangeEmail={() => setAwaitingEmail(false)}
+        onVerified={completeProfileAndContinue}
+      />
     </AuthFormCard>;
   }
 

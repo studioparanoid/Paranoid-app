@@ -973,6 +973,11 @@ export default function MapPage() {
     setEventCardOpen(true);
   }, []);
 
+  const handleEmptyMapClick = useCallback(() => {
+    setControlsCollapsed(true);
+    setShowCategoryPicker(false);
+  }, []);
+
   const dateQuickFilters: Array<{
     value: MapDateFilter;
     label: string;
@@ -1000,6 +1005,7 @@ export default function MapPage() {
           selectedEventId={hasAppliedFilters ? selectedEvent?.id || null : null}
           radiusKm={radiusFilter === "all" ? null : Number(radiusFilter)}
           onSelectEvent={handleSelectMapEvent}
+          onEmptyMapClick={handleEmptyMapClick}
         />
       </section>
 

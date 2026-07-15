@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabase/public";
 
 type Enrollment = { factorId: string; qrCode: string; secret: string };
 
-export function MfaSecurityPanel({ onboarding = false, onComplete }: { onboarding?: boolean; onComplete?: () => void }) {
+export function MfaSecurityPanel() {
   const [factors, setFactors] = useState<Factor[]>([]);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [code, setCode] = useState("");
@@ -69,8 +69,7 @@ export function MfaSecurityPanel({ onboarding = false, onComplete }: { onboardin
     setEnrollment(null);
     setCode("");
     await loadFactors();
-    toast({ message: onboarding ? "Conta configurada." : "Autenticação de dois fatores ativada.", tone: "success" });
-    onComplete?.();
+    toast({ message: "Autenticação de dois fatores ativada.", tone: "success" });
   }
 
   async function cancelEnrollment() {
@@ -83,7 +82,7 @@ export function MfaSecurityPanel({ onboarding = false, onComplete }: { onboardin
   }
 
   async function removeFactor(factorId: string) {
-    if (factors.length <= 1 || loading) return;
+    if (loading) return;
     setLoading(true);
     const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (assurance?.currentLevel !== "aal2") {
@@ -102,17 +101,17 @@ export function MfaSecurityPanel({ onboarding = false, onComplete }: { onboardin
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-600">Segurança</p>
-          <h2 id="security-title" className="mt-2 text-2xl font-black">Autenticação de dois fatores</h2>
-          <p className="mt-2 text-sm text-[var(--foreground-muted)]">{factors.length > 0 ? "Ativa" : "Obrigatória para ações protegidas da conta."}</p>
+          <h2 id="security-title" className="mt-2 text-2xl font-black">Aplicação autenticadora</h2>
+          <p className="mt-2 text-sm text-[var(--foreground-muted)]">{factors.length > 0 ? "Proteção adicional ativa." : "Adiciona proteção extra à tua conta quando quiseres."}</p>
         </div>
-        {!enrollment && <Button onClick={() => void startEnrollment()} disabled={loading}>{factors.length ? "Adicionar autenticador" : "Ativar"}</Button>}
+        {!enrollment && <Button onClick={() => void startEnrollment()} disabled={loading}>{factors.length ? "Adicionar autenticador" : "Ativar aplicação autenticadora"}</Button>}
       </div>
 
       {factors.length > 0 && <ul className="mt-5 divide-y divide-[var(--border)] border-y border-[var(--border)]">
         {factors.map((factor) => <li key={factor.id} className="flex min-h-14 items-center gap-3 py-2">
           <span className="min-w-0 flex-1 text-sm font-bold">{factor.friendly_name || "Aplicação autenticadora"}</span>
           <span className="text-xs font-bold text-emerald-500">Verificado</span>
-          <Button variant="ghost" size="sm" disabled={loading || factors.length <= 1} onClick={() => void removeFactor(factor.id)} aria-label={`Remover ${factor.friendly_name || "autenticador"}`}>Remover</Button>
+          <Button variant="ghost" size="sm" disabled={loading} onClick={() => void removeFactor(factor.id)} aria-label={`Remover ${factor.friendly_name || "autenticador"}`}>Remover</Button>
         </li>)}
       </ul>}
 

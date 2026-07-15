@@ -12,12 +12,13 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sessão necessária." }, { status: 401 });
 
-  const [{ data: assurance }, { data: admin }] = await Promise.all([
-    supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-    supabase.from("app_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
-  ]);
-  if (assurance?.currentLevel !== "aal2" || !admin) {
-    return NextResponse.json({ error: "Confirmação de segurança necessária." }, { status: 403 });
+  const { data: admin } = await supabase
+    .from("app_admins")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!admin) {
+    return NextResponse.json({ error: "Sem permissão para concluir esta ação." }, { status: 403 });
   }
 
   let payload: BulkPayload;

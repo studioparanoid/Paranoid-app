@@ -3,6 +3,7 @@
 import maplibregl, {
   type GeoJSONSource,
   type Map as MapLibreMap,
+  type MapMouseEvent,
   type Marker,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -37,6 +38,7 @@ type ParanoidMapProps = {
   selectedEventId: string | null;
   radiusKm: number | null;
   onSelectEvent: (event: ParanoidMapEvent) => void;
+  onEmptyMapClick: () => void;
 };
 
 const PORTUGAL_CENTER: [number, number] = [-8.0, 39.68];
@@ -124,6 +126,7 @@ export function ParanoidMap({
   selectedEventId,
   radiusKm,
   onSelectEvent,
+  onEmptyMapClick,
 }: ParanoidMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -254,6 +257,25 @@ export function ParanoidMap({
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!mapReady || !map) return;
+
+    const handleMapClick = (event: MapMouseEvent) => {
+      const target = event.originalEvent.target;
+      if (
+        target instanceof Element &&
+        target.closest(".map-event-marker, .maplibregl-marker, .maplibregl-popup, .maplibregl-ctrl")
+      ) {
+        return;
+      }
+      onEmptyMapClick();
+    };
+
+    map.on("click", handleMapClick);
+    return () => { map.off("click", handleMapClick); };
+  }, [mapReady, onEmptyMapClick]);
+
+  useEffect(() => {
+    const map = mapRef.current;
 
     if (!mapReady || !map || introPlayedRef.current) {
       return;
@@ -303,7 +325,10 @@ export function ParanoidMap({
       markerVisual.setAttribute("aria-hidden", "true");
       markerElement.appendChild(markerVisual);
 
-      markerElement.addEventListener("click", () => onSelectEvent(event));
+      markerElement.addEventListener("click", (clickEvent) => {
+        clickEvent.stopPropagation();
+        onSelectEvent(event);
+      });
 
       const marker = new maplibregl.Marker({ element: markerElement })
         .setLngLat([event.longitude, event.latitude])

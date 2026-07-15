@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { AuthFormCard } from "@/components/auth/AuthPageLayout";
+import { EmailOtpConfirmation, pendingSignupEmailKey } from "@/components/auth/EmailOtpConfirmation";
 import { supabase } from "@/lib/supabase/public";
 import { safeInternalPath } from "@/lib/auth/redirects";
 
@@ -18,11 +19,17 @@ export function LoginClient() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [pendingConfirmation, setPendingConfirmation] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (new URLSearchParams(window.location.search).get("error") === "callback") {
         setMessage("A ligação de confirmação expirou ou já foi utilizada. Tenta entrar novamente.");
+      }
+      const pendingEmail = window.sessionStorage.getItem(pendingSignupEmailKey);
+      if (pendingEmail) {
+        setEmail(pendingEmail);
+        setPendingConfirmation(true);
       }
     }, 0);
     return () => window.clearTimeout(timer);
@@ -30,6 +37,7 @@ export function LoginClient() {
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
     setMessage("");
 
     if (!email.trim()) {
@@ -45,17 +53,21 @@ export function LoginClient() {
     }
 
     setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: normalizedEmail,
       password,
     });
     setLoading(false);
 
     if (error) {
+      if (error.code === "email_not_confirmed") {
+        setEmail(normalizedEmail);
+        setPendingConfirmation(true);
+        return;
+      }
       setMessage(
-        error.code === "email_not_confirmed"
-          ? "Confirma o email antes de entrares."
-          : error.code === "invalid_credentials"
+        error.code === "invalid_credentials"
             ? "Email ou palavra-passe incorretos."
             : "Não foi possível entrar. Confirma a ligação e tenta novamente."
       );
@@ -66,8 +78,6 @@ export function LoginClient() {
     const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (assurance?.currentLevel === "aal1" && assurance.nextLevel === "aal2") {
       router.push(`/auth/mfa?next=${encodeURIComponent(next)}`);
-    } else if (assurance?.nextLevel !== "aal2") {
-      router.push(`/perfil?onboarding=1&step=security&next=${encodeURIComponent(next)}`);
     } else {
       router.push(next);
     }
@@ -86,15 +96,26 @@ export function LoginClient() {
     setLoading(true);
     const redirectTo =
       typeof window !== "undefined" ? `${window.location.origin}/login` : undefined;
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo,
     });
     setLoading(false);
 
-    setMessage(
-      error
-        ? `Erro ao enviar recuperação: ${error.message}`
-        : "Link de recuperação enviado para o email."
+    setMessage(error ? "Não foi possível enviar a recuperação agora." : "Se existir uma conta com este email, enviámos uma ligação de recuperação.");
+  }
+
+  if (pendingConfirmation) {
+    return (
+      <AuthFormCard eyebrow="Login" title="Confirma o teu email">
+        <EmailOtpConfirmation
+          email={email.trim().toLowerCase()}
+          onChangeEmail={() => setPendingConfirmation(false)}
+          onVerified={async () => {
+            router.replace("/perfil?onboarding=1");
+            router.refresh();
+          }}
+        />
+      </AuthFormCard>
     );
   }
 

@@ -33,25 +33,6 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  const currentPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
-  const profileNeedsSecurity = request.nextUrl.pathname === "/perfil" && request.nextUrl.searchParams.get("onboarding") !== "1";
-  const requiresMfa = isProtected(request.nextUrl.pathname) || profileNeedsSecurity;
-
-  if (requiresMfa && assurance?.currentLevel === "aal1" && assurance.nextLevel === "aal2") {
-    const url = new URL("/auth/mfa", request.url);
-    url.searchParams.set("next", currentPath);
-    return NextResponse.redirect(url);
-  }
-
-  if (requiresMfa && assurance?.nextLevel !== "aal2") {
-    const url = new URL("/perfil", request.url);
-    url.searchParams.set("onboarding", "1");
-    url.searchParams.set("step", "security");
-    url.searchParams.set("next", currentPath);
-    return NextResponse.redirect(url);
-  }
-
   return response;
 }
 

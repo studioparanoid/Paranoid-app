@@ -29,7 +29,8 @@ export function MfaChallengeClient() {
       }
       const factor = factors?.totp.find((item) => item.status === "verified");
       if (!factor) {
-        router.replace("/perfil?onboarding=1&step=security");
+        const next = safeInternalPath(new URLSearchParams(window.location.search).get("next"));
+        router.replace(next);
         return;
       }
       setFactorId(factor.id);
