@@ -116,7 +116,8 @@ function emptyResponse(description = "Ainda não tenho informação suficiente p
     results: [],
     actions: [
       { label: "Abrir Agenda", href: "/agenda", primary: true },
-      { label: "Ver no Mapa", href: "/mapa" },
+      { label: "Ver Mapa", href: "/mapa" },
+      { label: "Pesquisar eventos", href: "/agenda" },
     ],
   };
 }
@@ -167,6 +168,9 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
 
   if (intent === "lineup") {
     const terms = usefulQueryTerms(query).filter((term) => term !== "lineup" && term !== "programa");
+    if (terms.length === 0) {
+      return { intent, title: "Lineup", description: "De que festival queres ver a lineup?", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }] };
+    }
     const matches = sortEvents(upcoming.filter((event) => terms.length > 0 && terms.some((term) => eventSearchText(event).includes(term)))).slice(0, 3);
     if (!matches.length) return emptyResponse("Não encontrei um festival ou evento publicado que corresponda a esse pedido, nem dados de lineup que possa confirmar.", intent);
     return {
