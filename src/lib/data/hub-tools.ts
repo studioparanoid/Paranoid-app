@@ -98,9 +98,9 @@ export async function searchEvents(args: { query: string; limit?: number; city?:
   const structuredResponse = await structured;
   if (!structuredResponse.error) {
     const rows = (structuredResponse.data || []) as Array<Record<string, unknown>>;
-    return result(rows.map(mapEvent), rows, "organizer");
+    if (rows.length) return result(rows.map(mapEvent), rows, "organizer");
   }
-  if (!canFallback(structuredResponse.error)) throwQueryError(structuredResponse.error);
+  if (structuredResponse.error && !canFallback(structuredResponse.error)) throwQueryError(structuredResponse.error);
 
   let legacy = supabase
     .from("events")

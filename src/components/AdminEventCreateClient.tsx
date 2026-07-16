@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 import { findExistingEntity } from "@/lib/data/find-existing-entity";
+import { LocationMapPicker, LocationSuggestions } from "@/components/location/LocationSearch";
+import type { LocationResult } from "@/lib/location/types";
 
 const categories = [
   "Concertos",
@@ -69,6 +71,8 @@ type GeocodeResult = {
   municipality?: string;
   district?: string;
   postal_code?: string;
+  address?: string;
+  locality?: string;
 };
 
 type VenueRow = {
@@ -649,8 +653,8 @@ export function AdminEventCreateClient() {
   async function handleFindLocation() {
     setMessage("");
 
-    if (!address.trim()) {
-      setMessage("Mete a morada para localizar.");
+    if (![venue, address, postalCode, city, municipality, district].some((value) => value.trim())) {
+      setMessage("Mete o espaço, uma morada ou uma localidade para pesquisar.");
       return null;
     }
 
@@ -666,25 +670,7 @@ export function AdminEventCreateClient() {
         district,
       });
 
-      setLatitude(result.latitude);
-      setLongitude(result.longitude);
-      setGeocodeLabel(result.display_name);
-
-      if (result.city && !city.trim()) {
-        setCity(result.city);
-      }
-
-      if (result.municipality && !municipality.trim()) {
-        setMunicipality(result.municipality);
-      }
-
-      if (result.district && !district.trim()) {
-        setDistrict(result.district);
-      }
-
-      if (result.postal_code && !postalCode.trim()) {
-        setPostalCode(result.postal_code);
-      }
+      applyLocationResult(result);
 
       setMessage("Localização encontrada automaticamente.");
       setGeocoding(false);
@@ -703,6 +689,17 @@ export function AdminEventCreateClient() {
 
       return null;
     }
+  }
+
+  function applyLocationResult(result: LocationResult) {
+    setLatitude(result.latitude);
+    setLongitude(result.longitude);
+    setGeocodeLabel(result.display_name);
+    if (result.address) setAddress(result.address);
+    if (result.locality || result.city) setCity(result.locality || result.city || "");
+    if (result.municipality) setMunicipality(result.municipality);
+    if (result.district) setDistrict(result.district);
+    if (result.postal_code) setPostalCode(result.postal_code);
   }
 
   function resetForm() {
@@ -746,11 +743,6 @@ export function AdminEventCreateClient() {
       return;
     }
 
-    if (!address.trim()) {
-      setMessage("Mete a morada do espaço/evento para o mapa funcionar.");
-      return;
-    }
-
     if (isMultiDay && !endDate) {
       setMessage("Mete a data de fim do festival/evento.");
       return;
@@ -783,47 +775,19 @@ export function AdminEventCreateClient() {
       let finalPostalCode = postalCode;
 
       if (finalLatitude === null || finalLongitude === null) {
-        const result = await geocodeAddress({
-          venue,
-          address,
-          postalCode,
-          city,
-          municipality,
-          district,
-        });
-
-        finalLatitude = result.latitude;
-        finalLongitude = result.longitude;
-        finalGeocodeLabel = result.display_name;
-        finalCity = city.trim() || result.city || "";
-        finalMunicipality =
-          municipality.trim() || result.municipality || municipality;
-        finalDistrict = district.trim() || result.district || "";
-        finalPostalCode = postalCode.trim() || result.postal_code || "";
-
-        setLatitude(result.latitude);
-        setLongitude(result.longitude);
-        setGeocodeLabel(result.display_name);
-
-        if (!city.trim() && finalCity) {
-          setCity(finalCity);
+        try {
+          const result = await geocodeAddress({ venue, address, postalCode, city, municipality, district });
+          finalLatitude = result.latitude;
+          finalLongitude = result.longitude;
+          finalGeocodeLabel = result.display_name;
+          finalCity = city.trim() || result.city || "";
+          finalMunicipality = municipality.trim() || result.municipality || municipality;
+          finalDistrict = district.trim() || result.district || "";
+          finalPostalCode = postalCode.trim() || result.postal_code || "";
+          applyLocationResult(result);
+        } catch {
+          setMessage("A pesquisa automática falhou. O evento será guardado com os dados manuais e poderá ser localizado mais tarde.");
         }
-
-        if (!municipality.trim() && finalMunicipality) {
-          setMunicipality(finalMunicipality);
-        }
-
-        if (!district.trim() && finalDistrict) {
-          setDistrict(finalDistrict);
-        }
-      }
-
-      if (!finalCity || !finalMunicipality || !finalDistrict) {
-        setMessage(
-          "Localização encontrada, mas faltou localidade, concelho ou distrito. Preenche esses campos para avançar."
-        );
-        setSaving(false);
-        return;
       }
 
       const location: LocationPayload = {
@@ -1044,10 +1008,10 @@ export function AdminEventCreateClient() {
             placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
             className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
           />
+          <LocationSuggestions query={venue} context={{ city, municipality, district, postal_code: postalCode }} onSelect={applyLocationResult} />
 
           <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-            O nome do espaço é independente da morada e não é usado para
-            encontrar coordenadas.
+            Pesquisa pelo nome do espaço ou completa a morada abaixo.
           </p>
         </div>
 
@@ -1090,6 +1054,7 @@ export function AdminEventCreateClient() {
                 placeholder="Rua, número, espaço..."
                 className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
               />
+              <LocationSuggestions query={address} context={{ venue, city, municipality, district, postal_code: postalCode }} onSelect={applyLocationResult} />
             </div>
 
             <div>
@@ -1160,10 +1125,12 @@ export function AdminEventCreateClient() {
             </div>
           )}
 
-          <p className="mt-4 text-xs leading-relaxed text-zinc-600">
-            Geocoding por OpenStreetMap/Nominatim. Sem autocomplete. Sem
-            coordenadas manuais para o cliente.
-          </p>
+          <details className="mt-5 border-t border-zinc-800 pt-4">
+            <summary className="cursor-pointer text-sm font-black text-zinc-300">Escolher ponto no mapa</summary>
+            <div className="mt-4"><LocationMapPicker latitude={latitude} longitude={longitude} onSelect={applyLocationResult} /></div>
+          </details>
+
+          <p className="mt-4 text-xs leading-relaxed text-zinc-600">Pesquisa e mapa por OpenStreetMap/Nominatim. Se falhar, continua com preenchimento manual.</p>
         </div>
 
         <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">

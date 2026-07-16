@@ -6,6 +6,16 @@ export type HubAction = {
   primary?: boolean;
 };
 
+export type HubConversationContext = {
+  eventId?: string;
+  eventSlug?: string;
+  eventTitle?: string;
+  city?: string;
+  avoidTerms?: string[];
+  preferredGenres?: string[];
+  budgetMax?: number;
+};
+
 export type HubEventResult = {
   id: string;
   slug: string;
@@ -31,6 +41,7 @@ export type HubResponse = {
     href?: string;
   }>;
   actions: HubAction[];
+  context?: HubConversationContext;
 };
 
 export type HubHistoryItem = {

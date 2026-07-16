@@ -1,4 +1,5 @@
-import type { HubEventResult, HubIntent, HubResponse } from "@/lib/hub/types";
+import type { HubConversationContext, HubEventResult, HubIntent, HubResponse } from "@/lib/hub/types";
+import { extractBudget, getHubPersonalityResponse, getMusicMeaning } from "./hub-personality.js";
 
 export type HubEventRecord = {
   id: string;
@@ -22,6 +23,7 @@ export type HubEventRecord = {
 type HubRouterContext = {
   authenticated: boolean;
   profileCity: string | null;
+  conversation?: HubConversationContext;
   now?: Date;
 };
 
@@ -125,6 +127,8 @@ function emptyResponse(description = "Ainda não tenho informação suficiente p
 export function buildHubResponse(value: string, events: HubEventRecord[], context: HubRouterContext): HubResponse {
   const query = normalizeHubText(value);
   const intent = classifyHubQuery(query);
+  const personalityResponse = getHubPersonalityResponse(value, context.conversation);
+  if (personalityResponse) return personalityResponse;
 
   if (intent === "tickets") {
     return {
@@ -145,12 +149,14 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
   }
 
   if (intent === "dining") {
-    return emptyResponse("A Paranoid ainda não tem uma base de dados verificada de restaurantes ou horários. Não vou inventar uma recomendação.", intent);
+    const budget = context.conversation?.budgetMax;
+    const budgetLabel = budget == null ? "" : ` até ${budget.toFixed(budget % 1 === 0 ? 0 : 2)} €`;
+    return { intent, title: context.conversation?.city ? `Comer em ${context.conversation.city}${budgetLabel}` : budget == null ? "Primeiro, onde estás?" : `Jantar até ${budgetLabel.trim().replace(/^até\s+/, "")}`, description: context.conversation?.city ? "Diz-me se procuras comida na cidade ou dentro de um evento." : "Diz-me a cidade ou o evento. Sem isso estaria só a atirar nomes ao ar.", results: [], actions: [{ label: "Abrir mapa", href: "/mapa" }], context: context.conversation };
   }
 
   const now = context.now || new Date();
   const today = dateKey(now);
-  const requestedCity = findRequestedCity(query, events, intent === "nearby" ? context.profileCity : null);
+  const requestedCity = findRequestedCity(query, events, intent === "nearby" ? context.profileCity || context.conversation?.city || null : context.conversation?.city || null);
   const upcoming = sortEvents(events.filter((event) => {
     const date = eventDate(event);
     return !date || dateKey(date) >= today;
@@ -184,17 +190,20 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
 
   if (intent === "agenda" || intent === "nearby") {
     const todayRequested = query.includes("hoje") || query.includes("agora");
-    const budgetMatch = query.match(/(?:menos de|ate)\s+(\d+(?:[.,]\d+)?)/);
-    const budget = budgetMatch ? Number(budgetMatch[1].replace(",", ".")) : null;
-    const terms = usefulQueryTerms(query).filter((term) => normalizeHubText(requestedCity || "") !== term);
+    const budget = extractBudget(query) ?? context.conversation?.budgetMax ?? null;
+    const musicMeaning = getMusicMeaning(query);
+    const terms = (musicMeaning.length ? musicMeaning : usefulQueryTerms(query)).filter((term) => normalizeHubText(requestedCity || "") !== term);
+    const avoidedTerms = context.conversation?.avoidTerms || [];
     let matches = upcoming.filter((event) => {
+      const searchText = eventSearchText(event);
       if (todayRequested && eventDate(event) && dateKey(eventDate(event)!) !== today) return false;
-      if (requestedCity && !eventSearchText(event).includes(normalizeHubText(requestedCity))) return false;
+      if (requestedCity && !searchText.includes(normalizeHubText(requestedCity))) return false;
+      if (avoidedTerms.some((term) => searchText.includes(normalizeHubText(term)))) return false;
       if (budget !== null) {
         const price = priceNumber(event);
         if (price === null || price > budget) return false;
       }
-      return terms.length === 0 || terms.some((term) => eventSearchText(event).includes(term));
+      return terms.length === 0 || terms.some((term) => searchText.includes(term));
     });
     matches = sortEvents(matches).slice(0, 4);
     if (!matches.length) return emptyResponse("Não encontrei eventos publicados que correspondam a esse pedido.", intent);
@@ -202,9 +211,10 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
     return {
       intent,
       title: `${matches.length} ${matches.length === 1 ? "resultado" : "resultados"} ${scope}`.trim(),
-      description: "Resultados baseados na Agenda publicada pela Paranoid.",
+      description: musicMeaning.length ? "Li ‘pesada’ como metal, hardcore, punk, doom e rock. Estes são os resultados publicados." : "Resultados baseados na Agenda publicada pela Paranoid.",
       results: matches.map(toResult),
       actions: [{ label: "Abrir Agenda", href: "/agenda", primary: true }, { label: "Ver no Mapa", href: "/mapa" }],
+      context: musicMeaning.length ? { ...context.conversation, preferredGenres: musicMeaning } : context.conversation,
     };
   }
 

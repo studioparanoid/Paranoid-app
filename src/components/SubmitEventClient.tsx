@@ -10,6 +10,8 @@ import {
 import { formatPortuguesePostalCode, isValidPortuguesePostalCode, normalizeDecimalValue, normalizePortuguesePostalCode } from "@/lib/inputFormatting";
 import { supabase } from "@/lib/supabase/public";
 import { CurrencyInput } from "@/components/ui/CurrencyInput";
+import { LocationMapPicker, LocationSuggestions } from "@/components/location/LocationSearch";
+import type { LocationResult } from "@/lib/location/types";
 
 type TicketMode = "none" | "external" | "internal";
 
@@ -646,39 +648,11 @@ export function SubmitEventClient() {
         } catch {
           setLocationState("error");
           setLocationMessage(
-            "Não conseguimos localizar esta morada. Revê os dados e tenta novamente."
+            "Não conseguimos localizar automaticamente. Os dados manuais serão guardados sem coordenadas."
           );
-          setMessage("Confirma a localização do evento.");
-          addressInputRef.current?.focus();
-          return;
         } finally {
           setGeocoding(false);
         }
-      }
-
-      if (
-        finalLatitude === null ||
-        finalLongitude === null ||
-        !Number.isFinite(finalLatitude) ||
-        !Number.isFinite(finalLongitude) ||
-        finalLatitude < -90 ||
-        finalLatitude > 90 ||
-        finalLongitude < -180 ||
-        finalLongitude > 180
-      ) {
-        setMessage("Confirma a localização do evento.");
-        addressInputRef.current?.focus();
-        return;
-      }
-
-      if (!finalDistrict) {
-        setMessage("Não conseguimos identificar o distrito. Escolhe-o manualmente.");
-        return;
-      }
-
-      if (!finalMunicipality) {
-        setMessage("Não conseguimos identificar o concelho. Escolhe-o manualmente.");
-        return;
       }
 
       if (!finalCity && !finalAddress) {
@@ -814,6 +788,7 @@ export function SubmitEventClient() {
                 required
                 className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800 focus:ring-2 focus:ring-red-950"
               />
+              <LocationSuggestions query={venue} context={{ city, municipality, district, postal_code: postalCode }} onSelect={(result: LocationResult) => applyGeocodingResult(result)} />
             </div>
             <div>
               <label htmlFor="event-category" className="mb-2 block text-sm font-bold text-zinc-300">
@@ -843,6 +818,7 @@ export function SubmitEventClient() {
                 required
                 className="w-full rounded-lg border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800 focus:ring-2 focus:ring-red-950"
               />
+              <LocationSuggestions query={address} context={{ venue, city, municipality, district, postal_code: postalCode }} onSelect={(result: LocationResult) => applyGeocodingResult(result)} />
             </div>
           </div>
         </section>
@@ -989,6 +965,11 @@ export function SubmitEventClient() {
               </p>
             )}
           </div>
+
+          <details className="mt-4 border-t border-zinc-900 pt-4">
+            <summary className="cursor-pointer text-sm font-black text-zinc-300">Escolher ponto no mapa</summary>
+            <div className="mt-4"><LocationMapPicker latitude={latitude} longitude={longitude} onSelect={(result) => applyGeocodingResult(result)} /></div>
+          </details>
 
           {geocodeLabel && latitude !== null && longitude !== null && (
             <div className="mt-4 rounded-lg border border-green-900/70 bg-green-950/20 p-4">

@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
 
 type GeocodeRequestBody = {
   query?: string;
+  suggest?: boolean;
+  latitude?: number;
+  longitude?: number;
   venue?: string;
   address?: string;
   postal_code?: string;
@@ -99,11 +102,11 @@ function pickBestResult(results: NominatimResult[]) {
   );
 }
 
-async function searchNominatim(query: string) {
+async function searchNominatim(query: string, limit = 5) {
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("q", query);
-  url.searchParams.set("limit", "5");
+  url.searchParams.set("limit", String(Math.min(Math.max(limit, 1), 8)));
   url.searchParams.set("countrycodes", "pt");
   url.searchParams.set("addressdetails", "1");
 
@@ -123,6 +126,25 @@ async function searchNominatim(query: string) {
   return (await response.json()) as NominatimResult[];
 }
 
+async function reverseNominatim(latitude: number, longitude: number) {
+  const url = new URL("https://nominatim.openstreetmap.org/reverse");
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("lat", String(latitude));
+  url.searchParams.set("lon", String(longitude));
+  url.searchParams.set("addressdetails", "1");
+  const response = await fetch(url.toString(), { headers: { "User-Agent": "ParanoidApp/1.0 (https://paranoid.pt)", "Accept-Language": "pt-PT,pt;q=0.9,en;q=0.7" }, cache: "no-store" });
+  if (!response.ok) throw new Error("O serviço de localização não respondeu bem.");
+  return await response.json() as NominatimResult;
+}
+
+function normalizedPayload(result: NominatimResult, fallbacks: { venue: string; address: string; postalCode: string; city: string; municipality: string; district: string }) {
+  const latitude = Number(result.lat);
+  const longitude = Number(result.lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  const normalized = normalizeGeocodingResult({ latitude, longitude, displayName: result.display_name || "Localização selecionada", address: result.address, venueName: fallbacks.venue, fallbackAddress: fallbacks.address, fallbackPostalCode: fallbacks.postalCode, fallbackCity: fallbacks.city, fallbackMunicipality: fallbacks.municipality, fallbackDistrict: fallbacks.district });
+  return { latitude: normalized.latitude, longitude: normalized.longitude, display_name: normalized.displayName, provider: "nominatim", venue_name: normalized.venueName, address: normalized.address, locality: normalized.locality, city: normalized.city, municipality: normalized.municipality, district: normalized.district, postal_code: normalized.postalCode };
+}
+
 export async function POST(request: Request) {
   let body: GeocodeRequestBody;
 
@@ -139,6 +161,20 @@ export async function POST(request: Request) {
   const city = cleanText(body.city);
   const municipality = cleanText(body.municipality);
   const district = cleanText(body.district);
+  const fallbacks = { venue, address, postalCode, city, municipality, district };
+
+  if (Number.isFinite(body.latitude) && Number.isFinite(body.longitude)) {
+    const latitude = Number(body.latitude);
+    const longitude = Number(body.longitude);
+    if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return NextResponse.json({ error: "Coordenadas inválidas." }, { status: 400 });
+    try {
+      const reverse = await reverseNominatim(latitude, longitude);
+      const payload = normalizedPayload({ ...reverse, lat: String(latitude), lon: String(longitude) }, fallbacks);
+      return payload ? NextResponse.json(payload) : NextResponse.json({ error: "A localização selecionada veio inválida." }, { status: 502 });
+    } catch {
+      return NextResponse.json({ latitude, longitude, display_name: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`, provider: "map", venue_name: venue, address, locality: city, city, municipality, district, postal_code: postalCode });
+    }
+  }
 
   if (
     !manualQuery &&
@@ -185,6 +221,15 @@ export async function POST(request: Request) {
         buildQuery([venue, address, postalCode]),
         buildQuery([postalCode, city, municipality, district]),
       ]);
+
+  if (body.suggest) {
+    try {
+      const results = await searchNominatim(queries[0], 6);
+      return NextResponse.json({ results: results.map((result) => normalizedPayload(result, fallbacks)).filter(Boolean) });
+    } catch {
+      return NextResponse.json({ error: "Não consegui procurar sugestões agora. Podes continuar manualmente." }, { status: 502 });
+    }
+  }
 
   try {
     let bestResult: NominatimResult | undefined;

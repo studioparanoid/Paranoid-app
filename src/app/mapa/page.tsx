@@ -91,6 +91,8 @@ type EventRow = {
   organizer_name: string | null;
   display_date: string | null;
   display_time: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
   start_at: string | null;
   start_date: string | null;
   end_date: string | null;
@@ -161,7 +163,19 @@ function formatShortDate(value: string | null | undefined) {
 }
 
 function eventDateValue(event: EventRow) {
-  return event.start_at || event.start_date || event.display_date || "";
+  return event.starts_at || event.start_at || event.start_date || event.display_date || "";
+}
+
+function lisbonDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Lisbon", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+
+function startOfLisbonDayIso(date = new Date()) {
+  const day = lisbonDateKey(date);
+  const [year, month, value] = day.split("-").map(Number);
+  const probe = new Date(Date.UTC(year, month - 1, value, 0));
+  const representedHour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Lisbon", hour: "2-digit", hourCycle: "h23" }).format(probe));
+  return new Date(probe.getTime() - representedHour * 60 * 60 * 1000).toISOString();
 }
 
 function dateKey(value: string | null | undefined) {
@@ -184,8 +198,8 @@ function eventMatchesCustomDate(event: EventRow, customDate: string) {
     return true;
   }
 
-  const startKey = dateKey(event.start_at || event.start_date || event.display_date);
-  const endKey = dateKey(event.end_date);
+  const startKey = dateKey(event.starts_at || event.start_at || event.start_date || event.display_date);
+  const endKey = dateKey(event.ends_at || event.end_date);
 
   if (!startKey) {
     return false;
@@ -450,6 +464,7 @@ export default function MapPage() {
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
   const [dateFilter, setDateFilter] = useState<MapDateFilter>("all");
   const [customDateFilter, setCustomDateFilter] = useState("");
+  const [includePastEvents, setIncludePastEvents] = useState(false);
   const priceFilter: EventPriceFilter = "all";
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [controlsCollapsed, setControlsCollapsed] = useState(false);
@@ -692,20 +707,43 @@ export default function MapPage() {
     sheetDragStartY.current = null;
   }
 
-  async function loadMapData() {
+  const loadMapData = useCallback(async () => {
     setLoading(true);
     setMessage("");
 
-    const [eventsResponse, venuesResponse, frequencyResponse] = await Promise.all([
-      supabase
+    const nowIso = new Date().toISOString();
+    const today = lisbonDateKey();
+    const todayStartIso = startOfLisbonDayIso();
+    let structuredEventsQuery = supabase
+      .from("events")
+      .select("id,slug,title,status,publication_status,visibility,city,municipality,district,address,postal_code,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,starts_at,ends_at,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price,latitude,longitude")
+      .eq("publication_status", "published")
+      .eq("visibility", "public")
+      .order("starts_at", { ascending: true, nullsFirst: false })
+      .limit(300);
+    if (!includePastEvents) {
+      structuredEventsQuery = structuredEventsQuery.or(`ends_at.gte.${nowIso},and(ends_at.is.null,starts_at.gte.${todayStartIso}),and(starts_at.is.null,end_date.gte.${today}),and(starts_at.is.null,end_date.is.null,start_date.gte.${today})`);
+    }
+    const structuredEventsResponse = await structuredEventsQuery;
+    let eventsData = structuredEventsResponse.data as unknown as EventRow[] | null;
+    let eventsError = structuredEventsResponse.error;
+
+    if (eventsError?.code && ["42703", "PGRST204", "PGRST205"].includes(eventsError.code)) {
+      let legacyEventsQuery = supabase
         .from("events")
-        .select(
-          "id,slug,title,status,city,municipality,district,address,postal_code,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price,latitude,longitude"
-        )
+        .select("id,slug,title,status,city,municipality,district,address,postal_code,venue_id,venue_name,organizer_id,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price,latitude,longitude")
         .eq("status", "published")
         .order("start_at", { ascending: true, nullsFirst: false })
-        .limit(300),
+        .limit(300);
+      if (!includePastEvents) {
+        legacyEventsQuery = legacyEventsQuery.or(`end_date.gte.${today},and(end_date.is.null,start_at.gte.${todayStartIso}),and(end_date.is.null,start_at.is.null,start_date.gte.${today})`);
+      }
+      const legacyEventsResponse = await legacyEventsQuery;
+      eventsData = legacyEventsResponse.data as EventRow[] | null;
+      eventsError = legacyEventsResponse.error;
+    }
 
+    const [venuesResponse, frequencyResponse] = await Promise.all([
       supabase
         .from("venues")
         .select(
@@ -716,8 +754,8 @@ export default function MapPage() {
       fetch("/api/billing/frequency/active-organizers").catch(() => null),
     ]);
 
-    if (eventsResponse.error) {
-      setMessage(eventsResponse.error.message);
+    if (eventsError) {
+      setMessage(eventsError.message);
     }
 
     if (venuesResponse.error) {
@@ -732,7 +770,7 @@ export default function MapPage() {
     );
 
     setEvents(
-      ((eventsResponse.data || []) as EventRow[]).map((event) => ({
+      (eventsData || []).map((event) => ({
         ...event,
         frequencyActive: Boolean(
           event.organizer_id && frequencyOrganizerIds.has(event.organizer_id)
@@ -741,12 +779,12 @@ export default function MapPage() {
     );
     setVenues((venuesResponse.data || []) as VenueRow[]);
     setLoading(false);
-  }
+  }, [includePastEvents]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void loadMapData(); }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [loadMapData]);
 
   useEffect(() => {
     lastScrollY.current = window.scrollY;
@@ -1186,6 +1224,11 @@ export default function MapPage() {
               </button>
             ))}
           </div>
+
+          <label className="mt-2 flex min-h-10 cursor-pointer items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/45 px-3 text-xs font-bold text-zinc-300">
+            <span>Mostrar eventos passados</span>
+            <input type="checkbox" checked={includePastEvents} onChange={(event) => setIncludePastEvents(event.target.checked)} className="h-4 w-4 accent-red-700" />
+          </label>
 
           {dateFilter === "date" && (
             <input

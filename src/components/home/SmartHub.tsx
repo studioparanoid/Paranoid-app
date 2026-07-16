@@ -7,12 +7,13 @@ import type { HubHistoryItem, HubResponse } from "@/lib/hub/types";
 
 const historyKey = "paranoid.hub-history";
 const suggestions = [
-  "O que há hoje perto de mim?",
-  "Onde está a noite?",
+  "Hoje perto de mim",
   "Tenho fome",
+  "Onde está a noite?",
   "Concertos",
+  "Mapa",
+  "Bilhetes",
   "Lineup",
-  "Os meus bilhetes",
 ];
 
 function readHistory() {
@@ -77,10 +78,11 @@ export function SmartHub() {
     setQuery(cleanQuery);
 
     try {
+      const context = history.reduce((current, item) => ({ ...current, ...(item.response.context || {}) }), {});
       const response = await fetch("/api/hub", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query: cleanQuery }),
+        body: JSON.stringify({ query: cleanQuery, context }),
       });
       const payload = await response.json().catch(() => ({})) as HubResponse & { error?: string };
       if (!response.ok) throw new Error(payload.error || "Não foi possível responder agora.");
@@ -156,7 +158,7 @@ export function SmartHub() {
           <div ref={conversationEndRef} aria-hidden="true" />
         </div>
 
-        <form onSubmit={submit} className="border-t border-[var(--border)] py-4" aria-busy={loading}>
+        <form onSubmit={submit} className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-10 border-t border-[var(--border)] bg-[var(--background)] py-4 lg:bottom-0" aria-busy={loading}>
           <label htmlFor="paranoid-hub-query" className="sr-only">Pergunta à Paranoid</label>
           <div className="shadow-panel flex items-end gap-2 rounded-lg border border-[var(--border-strong)] bg-[var(--surface)] p-2 transition-[border-color,box-shadow] duration-200 focus-within:border-red-700">
             <textarea
@@ -169,7 +171,8 @@ export function SmartHub() {
               placeholder="Pergunta o que fazer, onde ir ou o que está a acontecer…"
               autoComplete="off"
               enterKeyHint="send"
-              className="max-h-28 min-h-12 min-w-0 flex-1 resize-none bg-transparent px-3 py-3 text-base font-bold leading-relaxed text-[var(--foreground)] outline-none placeholder:font-medium placeholder:text-[var(--foreground-muted)]"
+              onFocus={() => window.setTimeout(() => inputRef.current?.scrollIntoView({ block: "center" }), 120)}
+              className="max-h-28 min-h-12 min-w-0 flex-1 scroll-mb-[40vh] resize-none bg-transparent px-3 py-3 text-base font-bold leading-relaxed text-[var(--foreground)] outline-none placeholder:font-medium placeholder:text-[var(--foreground-muted)]"
             />
             <button type="submit" disabled={loading || !query.trim()} aria-label={loading ? "A procurar" : "Enviar pergunta"} className="pressable focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--foreground)] text-[var(--background)] disabled:cursor-wait disabled:opacity-45">
               {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" aria-hidden="true" /> : <AppIcon name="send" className="h-4 w-4" />}
