@@ -18,7 +18,8 @@ function cleanContext(value: unknown): HubConversationContext {
   const list = (key: string) => Array.isArray(input[key]) ? input[key].filter((item): item is string => typeof item === "string").map((item) => item.slice(0, 40)).slice(0, 10) : undefined;
   const rawBudget = typeof input.budgetMax === "number" ? input.budgetMax : undefined;
   const pendingQuestion = input.pendingQuestion === "city" || input.pendingQuestion === "nightStyle" ? input.pendingQuestion : input.pendingQuestion === null ? null : undefined;
-  return { eventId: text("eventId", 36), eventSlug: text("eventSlug", 160), eventTitle: text("eventTitle", 160), city: text("city", 100), nightStyle: text("nightStyle", 80), pendingQuestion, avoidTerms: list("avoidTerms"), preferredGenres: list("preferredGenres"), budgetMax: rawBudget != null && Number.isFinite(rawBudget) && rawBudget >= 0 && rawBudget <= 10000 ? rawBudget : undefined };
+  const pendingIntent = input.pendingIntent === "agenda" || input.pendingIntent === "nearby" || input.pendingIntent === "dining" ? input.pendingIntent : input.pendingIntent === null ? null : undefined;
+  return { eventId: text("eventId", 36), eventSlug: text("eventSlug", 160), eventTitle: text("eventTitle", 160), city: text("city", 100), nightStyle: text("nightStyle", 80), pendingQuestion, pendingIntent, avoidTerms: list("avoidTerms"), preferredGenres: list("preferredGenres"), budgetMax: rawBudget != null && Number.isFinite(rawBudget) && rawBudget >= 0 && rawBudget <= 10000 ? rawBudget : undefined };
 }
 
 async function resolveHubRequest(query: string, conversationContext: HubConversationContext) {

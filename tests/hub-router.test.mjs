@@ -32,6 +32,21 @@ test("local fallback asks for location before suggesting food", () => {
   assert.deepEqual(response?.results, []);
 });
 
+test("Hub keeps a thirst request until the user provides a city", () => {
+  const request = getHubPersonalityResponse("Estou cheio de sede");
+  assert.equal(request?.intent, "dining");
+  assert.equal(request?.title, "Onde estás?");
+  assert.equal(request?.context?.pendingQuestion, "city");
+  assert.equal(request?.context?.pendingIntent, "dining");
+
+  const city = getHubPersonalityResponse("Pombal", request?.context);
+  assert.equal(city?.intent, "dining");
+  assert.equal(city?.context?.city, "Pombal");
+  assert.equal(city?.context?.pendingQuestion, null);
+  assert.equal(city?.context?.pendingIntent, null);
+  assert.match(city?.description || "", /confirmado por perto/);
+});
+
 test("local fallback interprets a heavy night without inventing events", () => {
   const response = getHubPersonalityResponse("Quero uma noite pesada");
   assert.equal(response?.title, "Perfeito.");

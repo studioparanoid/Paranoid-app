@@ -49,7 +49,7 @@ function isHubResponse(value: unknown): value is HubResponse {
 function thinkingLabel(value: string) {
   const query = value.toLocaleLowerCase("pt-PT");
   if (/toca|programa|lineup|seguir/.test(query)) return "A consultar programação";
-  if (/fome|comer|jantar|almoçar|restaurante/.test(query)) return "A verificar restaurantes";
+  if (/fome|sede|comer|jantar|almoçar|restaurante|bar/.test(query)) return "A verificar espaços";
   if (/mapa|onde fica|como chegar/.test(query)) return "A situar-te";
   if (/evento|concerto|festival|noite|sair|agenda/.test(query)) return "A procurar eventos";
   return "A pensar";
@@ -60,7 +60,13 @@ function resizeInput(input: HTMLTextAreaElement) {
   input.style.height = `${Math.min(input.scrollHeight, 128)}px`;
 }
 
-export function SmartHub() {
+type SmartHubProps = {
+  discoveryMode?: boolean;
+  discoveryFeed?: ReactNode;
+  onHistoryChange?: (history: HubHistoryItem[]) => void;
+};
+
+export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange }: SmartHubProps = {}) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
@@ -68,9 +74,13 @@ export function SmartHub() {
   const [history, setHistory] = useState<HubHistoryItem[]>([]);
   const [pendingQuery, setPendingQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [historyRestored, setHistoryRestored] = useState(false);
 
   useEffect(() => {
-    const restoreTimer = window.setTimeout(() => setHistory(readHistory()), 0);
+    const restoreTimer = window.setTimeout(() => {
+      setHistory(readHistory());
+      setHistoryRestored(true);
+    }, 0);
     const focusHub = () => {
       inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       inputRef.current?.focus({ preventScroll: true });
@@ -85,6 +95,10 @@ export function SmartHub() {
       window.removeEventListener("paranoid:focus-hub", focusHub);
     };
   }, []);
+
+  useEffect(() => {
+    if (historyRestored) onHistoryChange?.(history);
+  }, [history, historyRestored, onHistoryChange]);
 
   useEffect(() => {
     if (history.length === 0 && !loading) return;
@@ -182,12 +196,14 @@ export function SmartHub() {
     inputRef.current?.focus();
   }
 
+  const visibleHistory = discoveryMode ? history.slice(-3) : history;
+
   return (
     <section className="mx-auto flex h-full w-full max-w-[52rem] flex-col" aria-labelledby="hub-title">
       <header className="flex shrink-0 items-center justify-between gap-4 py-4 sm:py-5">
         <div>
-          <h1 id="hub-title" className="text-xl font-black sm:text-2xl">Paranoid Hub</h1>
-          <p className="mt-0.5 text-xs text-[var(--foreground-muted)]">O centro da tua noite.</p>
+          <h1 id="hub-title" className="text-xl font-black sm:text-2xl">{discoveryMode ? "Paranoid" : "Paranoid Hub"}</h1>
+          <p className="mt-0.5 text-xs text-[var(--foreground-muted)]">{discoveryMode ? "Diz-me o que procuras." : "O centro da tua noite."}</p>
         </div>
         {history.length > 0 && (
           <button type="button" onClick={clearHistory} className="pressable focus-ring inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-xs font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
@@ -199,7 +215,7 @@ export function SmartHub() {
 
       <div className="paranoid-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-5 sm:px-2 sm:py-8" aria-live="polite">
         {history.length === 0 && !loading && (
-          <div className="hub-message-enter max-w-2xl pt-[clamp(2rem,10vh,6rem)]">
+          <div className={`hub-message-enter max-w-2xl ${discoveryMode ? "pt-3 sm:pt-5" : "pt-[clamp(2rem,10vh,6rem)]"}`}>
             <ParanoidMessage><p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p></ParanoidMessage>
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 pl-4" aria-label="Sugestões rápidas">
               {suggestions.map((suggestion) => (
@@ -211,11 +227,12 @@ export function SmartHub() {
           </div>
         )}
 
-        <div className="space-y-8 sm:space-y-10">
-          {history.map((item) => <HubExchange key={item.id} item={item} />)}
+        <div className={discoveryMode ? "space-y-6 sm:space-y-8" : "space-y-8 sm:space-y-10"}>
+          {visibleHistory.map((item) => <HubExchange key={item.id} item={item} />)}
           {pendingQuery && <PendingHubExchange query={pendingQuery} />}
         </div>
         <div ref={conversationEndRef} className="h-1" aria-hidden="true" />
+        {discoveryMode && discoveryFeed && <div className="mt-10 sm:mt-12">{discoveryFeed}</div>}
       </div>
 
       <form onSubmit={submit} className="shrink-0 bg-[var(--background)] pb-3 pt-2 sm:pb-5" aria-busy={loading}>
@@ -228,7 +245,7 @@ export function SmartHub() {
             value={query}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder="Diz-me o que tens em mente"
+            placeholder={discoveryMode ? "O que procuras?" : "Diz-me o que tens em mente"}
             autoComplete="off"
             enterKeyHint="send"
             className="max-h-32 min-h-10 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent py-2 text-base leading-6 text-[var(--foreground)] outline-none placeholder:text-[var(--foreground-muted)]"

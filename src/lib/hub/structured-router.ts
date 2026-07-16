@@ -62,16 +62,16 @@ export async function tryStructuredHubResponse(query: string, context: HubConver
   if (locationStatement) {
     const found = await findEvent(query);
     if (found.event) {
-      return { intent: "agenda", title: "Boa.", description: `Fico com ${found.event.title}. O que precisas?`, results: [], actions: [{ label: "Ver evento", href: `/eventos/${found.event.slug}`, primary: true }], context: { ...context, eventId: found.event.id, eventSlug: found.event.slug, eventTitle: found.event.title, city: found.event.city || context.city, pendingQuestion: null } };
+      return { intent: "agenda", title: "Boa.", description: `Fico com ${found.event.title}. O que precisas?`, results: [], actions: [{ label: "Ver evento", href: `/eventos/${found.event.slug}`, primary: true }], context: { ...context, eventId: found.event.id, eventSlug: found.event.slug, eventTitle: found.event.title, city: found.event.city || context.city, pendingQuestion: null, pendingIntent: null } };
     }
     const originalLocation = query.trim().match(/^estou\s+(?:no|na|num|numa|em)\s+(.+)$/i);
     const place = (originalLocation?.[1] || locationStatement[2]).trim();
     if (/^(?:festival|evento|concerto)$/i.test(place)) return needsEvent("Diz-me o nome e continuo daqui.");
     if (locationStatement[1] !== "em") {
-      return { intent: "agenda", title: "Boa.", description: `Fico com ${place}. O que precisas?`, results: [], actions: [], context: { ...context, eventTitle: place, pendingQuestion: null } };
+      return { intent: "agenda", title: "Boa.", description: `Fico com ${place}. O que precisas?`, results: [], actions: [], context: { ...context, eventTitle: place, pendingQuestion: null, pendingIntent: null } };
     }
     const city = place.replace(/\b(portugal|cidade)\b/g, "").trim();
-    return { intent: "nearby", title: "Boa.", description: `Fico com ${city}. Queres concertos, bares, DJs ou algo mais calmo?`, results: [], actions: [], context: { ...context, city, pendingQuestion: "nightStyle" } };
+    return { intent: "nearby", title: "Boa.", description: `Fico com ${city}. Queres concertos, bares, DJs ou algo mais calmo?`, results: [], actions: [], context: { ...context, city, pendingQuestion: "nightStyle", pendingIntent: null } };
   }
   const asksProgram = /\b(lineup|programa|programacao|toca|tocam|palco|sobrepoem|seguir|seguinte)\b/.test(normalized);
   const asksFood = /\b(comer|vegan|vegetariano|cozinha|bar|happy hour)\b/.test(normalized);

@@ -53,13 +53,23 @@ export function getHubPersonalityResponse(value, context = {}) {
   const answer = cleanAnswer(value);
 
   if (context.pendingQuestion === "city" && answer.length > 1) {
+    if (context.pendingIntent === "dining") {
+      return {
+        intent: "dining",
+        title: "Boa.",
+        description: `Fico com ${answer}. Vou mostrar-te o que ainda está confirmado por perto.`,
+        results: [],
+        actions: [],
+        context: { ...context, city: answer, pendingQuestion: null, pendingIntent: null },
+      };
+    }
     return {
       intent: "nearby",
       title: "Boa.",
       description: `Fico com ${answer}. Queres concertos, bares, DJs ou algo mais calmo?`,
       results: [],
       actions: [],
-      context: { ...context, city: answer, pendingQuestion: "nightStyle" },
+      context: { ...context, city: answer, pendingQuestion: "nightStyle", pendingIntent: null },
     };
   }
 
@@ -76,6 +86,7 @@ export function getHubPersonalityResponse(value, context = {}) {
         nightStyle: answer,
         preferredGenres: preferredGenres.length ? preferredGenres : context.preferredGenres,
         pendingQuestion: null,
+        pendingIntent: null,
       },
     };
   }
@@ -87,7 +98,7 @@ export function getHubPersonalityResponse(value, context = {}) {
       description: context.city ? `Fico com ${context.city}. Queres concertos, bares, DJs ou algo mais calmo?` : "Em que cidade estás?",
       results: [],
       actions: [],
-      context: { ...context, pendingQuestion: context.city ? "nightStyle" : "city" },
+      context: { ...context, pendingQuestion: context.city ? "nightStyle" : "city", pendingIntent: context.city ? null : "agenda" },
     };
   }
 
@@ -107,6 +118,17 @@ export function getHubPersonalityResponse(value, context = {}) {
     return { intent: "shop", title: "Vamos à loja", description: "", results: [], actions: [{ label: "Abrir Loja", href: "/loja", primary: true }], context };
   }
 
+  if (/\b(?:tenho|estou\s+(?:cheio|cheia)\s+de|estou\s+com|muita)\s+sede\b|\bcom sede\b/.test(command)) {
+    return {
+      intent: "dining",
+      title: context.city ? "Boa." : "Onde estás?",
+      description: context.city ? `Estás em ${context.city}. Posso mostrar-te o que ainda está ativo por perto.` : "",
+      results: [],
+      actions: [],
+      context: context.city ? { ...context, pendingIntent: null } : { ...context, pendingQuestion: "city", pendingIntent: "dining" },
+    };
+  }
+
   if (command === "tenho fome") {
     return {
       intent: "dining",
@@ -114,7 +136,7 @@ export function getHubPersonalityResponse(value, context = {}) {
       description: context.city ? `Estás em ${context.city}. Queres comer antes de sair ou já estás num evento?` : context.eventTitle ? `Estás em ${context.eventTitle}. O que te apetece comer?` : "",
       results: [],
       actions: [],
-      context: context.city || context.eventTitle ? context : { ...context, pendingQuestion: "city" },
+      context: context.city || context.eventTitle ? { ...context, pendingIntent: null } : { ...context, pendingQuestion: "city", pendingIntent: "dining" },
     };
   }
 
@@ -136,7 +158,7 @@ export function getHubPersonalityResponse(value, context = {}) {
       description: context.city ? `😄\n\nMas se preferires comida a sério, estás em ${context.city}.` : "😄\n\nMas se preferires comida a sério, diz-me onde estás.",
       results: [],
       actions: [],
-      context,
+      context: context.city ? context : { ...context, pendingQuestion: "city", pendingIntent: "dining" },
     };
   }
 

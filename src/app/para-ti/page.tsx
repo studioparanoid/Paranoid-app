@@ -9,6 +9,7 @@ import { EventCardSkeleton } from "@/components/LoadingSkeleton";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { DiscoveryStandalonePage } from "@/components/discovery/DiscoveryStandalonePage";
 import { supabase } from "@/lib/supabase/public";
 
 type ProfileRow = { preferred_cities: string[] | null; preferred_categories: string[] | null };
@@ -32,6 +33,11 @@ function dateTime(event: EventRow) { const value = dateValue(event); if (!value)
 function dateLabel(event: EventRow) { if (event.display_date) return event.display_date; const value = dateValue(event); if (!value) return "Data por definir"; const date = new Date(value.includes("T") ? value : `${value}T00:00:00`); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("pt-PT", { day: "2-digit", month: "short" }).format(date); }
 
 export default function ForYouPage() {
+  if (process.env.NEXT_PUBLIC_DISCOVERY_FEED_ENABLED === "true") return <DiscoveryStandalonePage />;
+  return <LegacyForYouPage />;
+}
+
+function LegacyForYouPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [userId, setUserId] = useState("");

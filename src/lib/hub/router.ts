@@ -32,7 +32,7 @@ const mapTerms = ["mapa", "onde fica", "como chegar", "direcao", "direcoes", "lo
 const nearbyTerms = ["perto de mim", "a minha volta", "por aqui", "proximo evento", "proximos de mim"];
 const ticketTerms = ["bilhete", "bilhetes", "meus bilhetes", "carteira"];
 const shopTerms = ["loja", "merch", "t-shirt", "tshirt", "camisola", "comprar merch"];
-const diningTerms = ["tenho fome", "comer", "restaurante", "jantar", "almocar", "petiscar", "beber um copo", "bar aberto"];
+const diningTerms = ["tenho fome", "tenho sede", "cheio de sede", "cheia de sede", "com sede", "comer", "restaurante", "jantar", "almocar", "petiscar", "beber um copo", "bar aberto"];
 const ignoredSearchTerms = new Set(["agenda", "evento", "eventos", "concertos", "concerto", "festival", "festivais", "quero", "ver", "mostra", "mostrar", "encontra", "encontrar", "gastar", "menos", "ate", "euro", "euros", "que", "ha", "hoje", "agora", "onde", "esta", "estao", "acontecer", "acontecendo", "perto", "mim", "em", "no", "na", "nos", "nas", "de", "do", "da", "dos", "das", "um", "uma", "o", "a", "e"]);
 
 export function normalizeHubText(value: string) {
@@ -153,7 +153,7 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
       description: context.conversation?.city ? `Estás em ${context.conversation.city}${budgetLabel}. Queres comer antes de sair ou já estás num evento?` : "",
       results: [],
       actions: [],
-      context: context.conversation?.city ? context.conversation : { ...context.conversation, pendingQuestion: "city" },
+      context: context.conversation?.city ? { ...context.conversation, pendingIntent: null } : { ...context.conversation, pendingQuestion: "city", pendingIntent: "dining" },
     };
   }
 
@@ -172,7 +172,7 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
       description: "",
       results: [],
       actions: [],
-      context: { ...context.conversation, pendingQuestion: "city" },
+      context: { ...context.conversation, pendingQuestion: "city", pendingIntent: "nearby" },
     };
   }
 

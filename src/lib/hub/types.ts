@@ -13,6 +13,7 @@ export type HubConversationContext = {
   city?: string;
   nightStyle?: string;
   pendingQuestion?: "city" | "nightStyle" | null;
+  pendingIntent?: "agenda" | "nearby" | "dining" | null;
   avoidTerms?: string[];
   preferredGenres?: string[];
   budgetMax?: number;
