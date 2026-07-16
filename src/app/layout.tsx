@@ -69,7 +69,7 @@ export default function RootLayout({
           <AuthProvider>
             <ToastProvider>
               <DesktopHeader />
-              <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
+              <div className="pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
               <MobileBottomNav />
             </ToastProvider>
           </AuthProvider>

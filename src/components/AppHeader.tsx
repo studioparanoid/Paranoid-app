@@ -12,7 +12,7 @@ export function AppHeader() {
 
   return <header className="brand-surface app-header-shadow sticky top-0 z-50 border-b border-[var(--brand-border)] bg-black backdrop-blur-lg">
     <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-10">
-      <Link href="/agenda" className="pressable focus-ring flex min-w-0 items-center rounded" aria-label="Paranoid Studio - Agenda">
+      <Link href="/" className="pressable focus-ring flex min-w-0 items-center rounded" aria-label="Paranoid Studio - Centro">
         <Image
           src="/brand/paranoid-studio-logo-header-transparent.png"
           width={830}

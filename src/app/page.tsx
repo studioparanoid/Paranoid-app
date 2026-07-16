@@ -1,15 +1,15 @@
 import { AccountCommunityCard } from "@/components/home/AccountCommunityCard";
-import { HomeHero } from "@/components/home/HomeHero";
 import { HomeNavigationCard } from "@/components/home/HomeNavigationCard";
 import { MinimalFooter } from "@/components/home/MinimalFooter";
+import { SmartHub } from "@/components/home/SmartHub";
 
 export default function HomePage() {
   return (
-    <main className="brand-surface min-h-screen bg-[#080808] px-4 pb-24 text-[#f2f1ec] sm:px-6 lg:px-10 lg:pb-0">
+    <main className="min-h-screen bg-[var(--background)] px-4 pb-24 text-[var(--foreground)] sm:px-6 lg:px-10 lg:pb-0">
       <div className="mx-auto max-w-7xl">
-        <HomeHero />
+        <SmartHub />
 
-        <section aria-label="Explorar a Paranoid" className="grid gap-4 md:grid-cols-2 lg:gap-6">
+        <section aria-label="Explorar a Paranoid" className="brand-surface grid gap-4 border-t border-[var(--border)] pt-8 md:grid-cols-2 lg:gap-6">
           <HomeNavigationCard
             href="/agenda"
             image="/images/home-agenda.webp"

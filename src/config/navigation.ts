@@ -36,6 +36,13 @@ export const mainNavigation: NavigationItem[] = [
   { href: "/loja", label: "Loja", icon: "store" },
 ];
 
+export const mobileNavigation: NavigationItem[] = [
+  { href: "/agenda", label: "Agenda", icon: "calendar" },
+  { href: "/mapa", label: "Mapa", icon: "map" },
+  { href: "/bilhetes", label: "Bilhetes", icon: "ticket" },
+  { href: "/loja", label: "Loja", icon: "store" },
+];
+
 export const profileActivityNavigation: NavigationItem[] = [
   { href: "/guardados", label: "Guardados", icon: "bookmark" },
   { href: "/descobrir", label: "Rede Cultural", icon: "compass" },
