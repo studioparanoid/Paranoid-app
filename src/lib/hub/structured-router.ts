@@ -51,26 +51,27 @@ function timeLabel(value: string) {
 }
 
 function needsEvent(description: string): HubResponse {
-  return { intent: "lineup", title: "Preciso do evento", description, results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }] };
+  return { intent: "lineup", title: "De que evento estás a falar?", description, results: [], actions: [] };
 }
 
 export async function tryStructuredHubResponse(query: string, context: HubConversationContext = {}): Promise<HubResponse | null> {
   const normalized = normalizeHubText(query);
   const personalityResponse = getHubPersonalityResponse(query, context);
   if (personalityResponse) return personalityResponse;
-  const locationStatement = normalized.match(/^estou\s+(no|na|em)\s+(.+)$/);
+  const locationStatement = normalized.match(/^estou\s+(no|na|num|numa|em)\s+(.+)$/);
   if (locationStatement) {
     const found = await findEvent(query);
     if (found.event) {
-      return { intent: "agenda", title: `Estás no ${found.event.title}`, description: "Fica como contexto desta conversa. Agora podes perguntar pela lineup, comida, serviços ou pelo que está a acontecer.", results: [], actions: [{ label: "Ver evento", href: `/eventos/${found.event.slug}`, primary: true }, { label: "Ver lineup", href: `/eventos/${found.event.slug}` }], context: { ...context, eventId: found.event.id, eventSlug: found.event.slug, eventTitle: found.event.title, city: found.event.city || context.city } };
+      return { intent: "agenda", title: "Boa.", description: `Fico com ${found.event.title}. O que precisas?`, results: [], actions: [{ label: "Ver evento", href: `/eventos/${found.event.slug}`, primary: true }], context: { ...context, eventId: found.event.id, eventSlug: found.event.slug, eventTitle: found.event.title, city: found.event.city || context.city, pendingQuestion: null } };
     }
-    const originalLocation = query.trim().match(/^estou\s+(?:no|na|em)\s+(.+)$/i);
+    const originalLocation = query.trim().match(/^estou\s+(?:no|na|num|numa|em)\s+(.+)$/i);
     const place = (originalLocation?.[1] || locationStatement[2]).trim();
+    if (/^(?:festival|evento|concerto)$/i.test(place)) return needsEvent("Diz-me o nome e continuo daqui.");
     if (locationStatement[1] !== "em") {
-      return { intent: "agenda", title: `Fico com ${place} como contexto`, description: "Podes perguntar pelo programa. Se ainda não estiver confirmado, digo-te sem inventar.", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }], context: { ...context, eventTitle: place } };
+      return { intent: "agenda", title: "Boa.", description: `Fico com ${place}. O que precisas?`, results: [], actions: [], context: { ...context, eventTitle: place, pendingQuestion: null } };
     }
     const city = place.replace(/\b(portugal|cidade)\b/g, "").trim();
-    return { intent: "nearby", title: `Estás em ${city}`, description: "Certo. O que procuras por aí?", results: [], actions: [{ label: "Hoje perto de mim", href: "/agenda" }, { label: "Abrir mapa", href: "/mapa" }], context: { ...context, city } };
+    return { intent: "nearby", title: "Boa.", description: `Fico com ${city}. Queres concertos, bares, DJs ou algo mais calmo?`, results: [], actions: [], context: { ...context, city, pendingQuestion: "nightStyle" } };
   }
   const asksProgram = /\b(lineup|programa|programacao|toca|tocam|palco|sobrepoem|seguir|seguinte)\b/.test(normalized);
   const asksFood = /\b(comer|vegan|vegetariano|cozinha|bar|happy hour)\b/.test(normalized);
@@ -87,9 +88,9 @@ export async function tryStructuredHubResponse(query: string, context: HubConver
       return { intent: "lineup", title: context.eventTitle, description: "Ainda não tenho o programa confirmado desse evento.", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }], context };
     }
     if (normalized === "lineup" || normalized === "programa" || normalized === "programacao") {
-      return { intent: "lineup", title: "Lineup", description: "De que festival queres ver a lineup?", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }] };
+      return needsEvent("Diz-me o nome do festival.");
     }
-    return needsEvent(ambiguous ? "Encontrei mais do que um evento possível. Escreve o nome completo." : "Diz-me em que evento ou festival estás.");
+    return needsEvent(ambiguous ? "Encontrei mais do que um. Escreve o nome completo." : "Diz-me o nome e continuo daqui.");
   }
 
   const eventHref = `/eventos/${event.slug}`;
@@ -129,7 +130,7 @@ export async function tryStructuredHubResponse(query: string, context: HubConver
         meta: [timeLabel(item.actualStartAt || item.scheduledStartAt), item.zoneName, item.status === "delayed" ? `${item.delayMinutes} min de atraso` : null].filter(Boolean).join(" · "),
         href: eventHref,
       })),
-      actions: [{ label: "Ver evento", href: eventHref, primary: true }, { label: "Abrir mapa", href: "/mapa" }, { label: "Bilhetes", href: eventHref }],
+      actions: [{ label: "Ver evento", href: eventHref, primary: true }, { label: "Abrir mapa", href: "/mapa" }],
       context: nextContext,
     };
   }

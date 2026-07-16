@@ -27,7 +27,7 @@ type HubRouterContext = {
   now?: Date;
 };
 
-const agendaTerms = ["agenda", "evento", "eventos", "concert", "festival", "festa", "noite", "acontecer", "hoje", "agora", "metal", "musica", "dj"];
+const agendaTerms = ["agenda", "evento", "eventos", "concert", "festival", "festa", "noite", "sair", "acontecer", "hoje", "agora", "metal", "musica", "dj"];
 const mapTerms = ["mapa", "onde fica", "como chegar", "direcao", "direcoes", "localizacao"];
 const nearbyTerms = ["perto de mim", "a minha volta", "por aqui", "proximo evento", "proximos de mim"];
 const ticketTerms = ["bilhete", "bilhetes", "meus bilhetes", "carteira"];
@@ -110,17 +110,13 @@ function usefulQueryTerms(query: string) {
   return query.split(" ").filter((term) => term.length > 2 && !ignoredSearchTerms.has(term) && !/^\d+$/.test(term));
 }
 
-function emptyResponse(description = "Ainda não tenho informação suficiente para responder a isso.", intent: HubIntent = "unknown"): HubResponse {
+function emptyResponse(description = "Queres encontrar um evento, comer qualquer coisa ou saber o que está a acontecer agora?", intent: HubIntent = "unknown"): HubResponse {
   return {
     intent,
-    title: "Ainda não consigo fechar essa resposta",
+    title: "Não apanhei bem o que procuras.",
     description,
     results: [],
-    actions: [
-      { label: "Abrir Agenda", href: "/agenda", primary: true },
-      { label: "Ver Mapa", href: "/mapa" },
-      { label: "Pesquisar eventos", href: "/agenda" },
-    ],
+    actions: [],
   };
 }
 
@@ -141,17 +137,24 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
   }
 
   if (intent === "shop") {
-    return { intent, title: "Loja Paranoid", description: "Merch, edições e produtos independentes disponíveis na loja.", results: [], actions: [{ label: "Abrir Loja", href: "/loja", primary: true }] };
+    return { intent, title: "Vamos à loja.", description: "Merch, edições e produtos independentes.", results: [], actions: [{ label: "Abrir Loja", href: "/loja", primary: true }] };
   }
 
   if (intent === "map") {
-    return { intent, title: "Encontra no mapa", description: "Abre o mapa para veres eventos e localizações com dados publicados pela Paranoid.", results: [], actions: [{ label: "Abrir Mapa", href: "/mapa", primary: true }, { label: "Abrir Agenda", href: "/agenda" }] };
+    return { intent, title: "Vamos ao mapa.", description: "Mostro-te os eventos e locais publicados.", results: [], actions: [{ label: "Abrir Mapa", href: "/mapa", primary: true }] };
   }
 
   if (intent === "dining") {
     const budget = context.conversation?.budgetMax;
     const budgetLabel = budget == null ? "" : ` até ${budget.toFixed(budget % 1 === 0 ? 0 : 2)} €`;
-    return { intent, title: context.conversation?.city ? `Comer em ${context.conversation.city}${budgetLabel}` : budget == null ? "Primeiro, onde estás?" : `Jantar até ${budgetLabel.trim().replace(/^até\s+/, "")}`, description: context.conversation?.city ? "Diz-me se procuras comida na cidade ou dentro de um evento." : "Diz-me a cidade ou o evento. Sem isso estaria só a atirar nomes ao ar.", results: [], actions: [{ label: "Abrir mapa", href: "/mapa" }], context: context.conversation };
+    return {
+      intent,
+      title: context.conversation?.city ? "Boa." : "Onde estás?",
+      description: context.conversation?.city ? `Estás em ${context.conversation.city}${budgetLabel}. Queres comer antes de sair ou já estás num evento?` : "",
+      results: [],
+      actions: [],
+      context: context.conversation?.city ? context.conversation : { ...context.conversation, pendingQuestion: "city" },
+    };
   }
 
   const now = context.now || new Date();
@@ -165,24 +168,25 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
   if (intent === "nearby" && !requestedCity) {
     return {
       intent,
-      title: "Preciso de uma zona",
-      description: "Escreve uma cidade no pedido ou abre o mapa. A localização não é pedida automaticamente.",
+      title: "Em que cidade estás?",
+      description: "",
       results: [],
-      actions: [{ label: "Abrir Mapa", href: "/mapa", primary: true }, { label: "Ver Agenda", href: "/agenda" }],
+      actions: [],
+      context: { ...context.conversation, pendingQuestion: "city" },
     };
   }
 
   if (intent === "lineup") {
     const terms = usefulQueryTerms(query).filter((term) => term !== "lineup" && term !== "programa");
     if (terms.length === 0) {
-      return { intent, title: "Lineup", description: "De que festival queres ver a lineup?", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }] };
+      return { intent, title: "De que festival estás a falar?", description: "Diz-me o nome e continuo daqui.", results: [], actions: [] };
     }
     const matches = sortEvents(upcoming.filter((event) => terms.length > 0 && terms.some((term) => eventSearchText(event).includes(term)))).slice(0, 3);
-    if (!matches.length) return emptyResponse("Não encontrei um festival ou evento publicado que corresponda a esse pedido, nem dados de lineup que possa confirmar.", intent);
+    if (!matches.length) return emptyResponse("Não encontrei um evento publicado com esse nome. Queres tentar o nome completo?", intent);
     return {
       intent,
-      title: matches.length === 1 ? "Encontrei este evento" : "Eventos que podem corresponder",
-      description: "Ainda não existe uma lineup estruturada no hub. Consulta a página do evento para veres a informação publicada.",
+      title: matches.length === 1 ? "Encontrei este evento." : "Encontrei estes eventos.",
+      description: "Abre o evento para veres o programa publicado.",
       results: matches.map(toResult),
       actions: [{ label: "Abrir Agenda", href: "/agenda" }],
     };
@@ -206,12 +210,14 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
       return terms.length === 0 || terms.some((term) => searchText.includes(term));
     });
     matches = sortEvents(matches).slice(0, 4);
-    if (!matches.length) return emptyResponse("Não encontrei eventos publicados que correspondam a esse pedido.", intent);
-    const scope = [todayRequested ? "hoje" : "próximos", requestedCity ? `em ${requestedCity}` : ""].filter(Boolean).join(" ");
+    if (!matches.length) return emptyResponse("Por agora, não encontrei nada publicado com esse filtro. Queres mudar a cidade, a data ou o género?", intent);
+    const countLabel = ["zero", "uma", "duas", "três", "quatro"][matches.length];
+    const cityLabel = requestedCity ? ` em ${requestedCity}` : "";
+    const dateLabel = todayRequested || requestedCity ? "" : " para os próximos dias";
     return {
       intent,
-      title: `${matches.length} ${matches.length === 1 ? "resultado" : "resultados"} ${scope}`.trim(),
-      description: musicMeaning.length ? "Li ‘pesada’ como metal, hardcore, punk, doom e rock. Estes são os resultados publicados." : "Resultados baseados na Agenda publicada pela Paranoid.",
+      title: `${todayRequested ? "Hoje tenho" : "Tenho"} ${countLabel} ${matches.length === 1 ? "sugestão" : "sugestões"}${cityLabel}${dateLabel}.`,
+      description: musicMeaning.length ? "Fiquei por metal, hardcore, punk, doom e rock." : "É isto que está publicado neste momento.",
       results: matches.map(toResult),
       actions: [{ label: "Abrir Agenda", href: "/agenda", primary: true }, { label: "Ver no Mapa", href: "/mapa" }],
       context: musicMeaning.length ? { ...context.conversation, preferredGenres: musicMeaning } : context.conversation,

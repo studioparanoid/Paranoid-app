@@ -17,6 +17,17 @@ function normalize(value) {
 }
 
 /** @param {string} value */
+function cleanAnswer(value) {
+  return value.trim().replace(/[.!?]+$/, "").trim().slice(0, 100);
+}
+
+/** @param {string} value */
+function genreFromAnswer(value) {
+  const genres = ["metal", "doom", "sludge", "hardcore", "punk", "rock", "jazz", "techno", "house", "hip hop", "rap", "indie", "pop"];
+  return genres.filter((genre) => normalize(value).includes(genre));
+}
+
+/** @param {string} value */
 export function extractBudget(value) {
   const query = normalize(value);
   const match = query.match(/(?:tenho|orcamento(?: de)?|posso gastar|ate|menos de)\s+(\d+(?:[.,]\d+)?)\s*(?:€|euros?)?/);
@@ -39,6 +50,46 @@ export function getMusicMeaning(value) {
 export function getHubPersonalityResponse(value, context = {}) {
   const query = normalize(value);
   const command = query.replace(/[.,]/g, "").trim();
+  const answer = cleanAnswer(value);
+
+  if (context.pendingQuestion === "city" && answer.length > 1) {
+    return {
+      intent: "nearby",
+      title: "Boa.",
+      description: `Fico com ${answer}. Queres concertos, bares, DJs ou algo mais calmo?`,
+      results: [],
+      actions: [],
+      context: { ...context, city: answer, pendingQuestion: "nightStyle" },
+    };
+  }
+
+  if (context.pendingQuestion === "nightStyle" && answer.length > 1) {
+    const preferredGenres = genreFromAnswer(answer);
+    return {
+      intent: "agenda",
+      title: "Perfeito.",
+      description: `${answer}${context.city ? ` em ${context.city}` : ""}. Queres ver o que está publicado hoje?`,
+      results: [],
+      actions: [{ label: "Ver hoje", href: "/agenda", primary: true }],
+      context: {
+        ...context,
+        nightStyle: answer,
+        preferredGenres: preferredGenres.length ? preferredGenres : context.preferredGenres,
+        pendingQuestion: null,
+      },
+    };
+  }
+
+  if (/\b(?:quero|vou)\s+sair\b/.test(query)) {
+    return {
+      intent: "nearby",
+      title: "Boa.",
+      description: context.city ? `Fico com ${context.city}. Queres concertos, bares, DJs ou algo mais calmo?` : "Em que cidade estás?",
+      results: [],
+      actions: [],
+      context: { ...context, pendingQuestion: context.city ? "nightStyle" : "city" },
+    };
+  }
 
   if (command === "agenda") {
     return { intent: "agenda", title: "Abro-te a agenda", description: "", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda", primary: true }], context };
@@ -59,32 +110,32 @@ export function getHubPersonalityResponse(value, context = {}) {
   if (command === "tenho fome") {
     return {
       intent: "dining",
-      title: context.city || context.eventTitle ? "Vamos encontrar comida a sério" : "Diz-me onde estás para procurar opções perto de ti",
-      description: context.city ? `Posso procurar em ${context.city} sem inventar locais.` : context.eventTitle ? `Posso procurar opções confirmadas em ${context.eventTitle}.` : "",
+      title: context.city || context.eventTitle ? "Boa." : "Onde estás?",
+      description: context.city ? `Estás em ${context.city}. Queres comer antes de sair ou já estás num evento?` : context.eventTitle ? `Estás em ${context.eventTitle}. O que te apetece comer?` : "",
       results: [],
-      actions: [{ label: "Abrir mapa", href: "/mapa" }],
-      context,
+      actions: [],
+      context: context.city || context.eventTitle ? context : { ...context, pendingQuestion: "city" },
     };
   }
 
   if (/\bnoite\s+(?:bem\s+)?pesada\b|\bsom\s+pesado\b|\bmusica\s+pesada\b/.test(command)) {
     return {
       intent: "agenda",
-      title: "Pesada musicalmente?",
-      description: "Posso procurar metal, doom, sludge, hardcore, punk e rock.",
+      title: "Perfeito.",
+      description: `${context.city ? `Metal, doom, hardcore, punk e rock em ${context.city}.` : "Metal, doom, hardcore, punk e rock."} Queres ver o que está publicado?`,
       results: [],
       actions: [{ label: "Abrir Agenda", href: "/agenda", primary: true }],
-      context: { ...context, preferredGenres: ["metal", "doom", "sludge", "hardcore", "punk", "rock"] },
+      context: { ...context, nightStyle: "música pesada", preferredGenres: ["metal", "doom", "sludge", "hardcore", "punk", "rock"] },
     };
   }
 
   if (/comer pedras|beber terra|comer terra/.test(query)) {
     return {
       intent: "dining",
-      title: "Para isso qualquer descampado serve",
-      description: context.city ? `Para comida a sério, posso procurar em ${context.city}.` : "Para comida a sério, diz-me onde estás.",
+      title: "Isso vai dar cabo dos dentes.",
+      description: context.city ? `😄\n\nMas se preferires comida a sério, estás em ${context.city}.` : "😄\n\nMas se preferires comida a sério, diz-me onde estás.",
       results: [],
-      actions: [{ label: "Abrir mapa", href: "/mapa", primary: true }],
+      actions: [],
       context,
     };
   }
@@ -93,10 +144,10 @@ export function getHubPersonalityResponse(value, context = {}) {
     const avoided = query.replace(/^.*nao quero ouvir\s+/, "").trim().slice(0, 40);
     return {
       intent: "agenda",
-      title: `Está bem, ${avoided || "isso"} fica de fora`,
-      description: context.city ? `Agora diz-me quando queres sair em ${context.city}.` : "Em que cidade queres procurar?",
+      title: "Feito.",
+      description: `${avoided || "Isso"} fica de fora.${context.city ? ` O que te apetece ouvir em ${context.city}?` : " Em que cidade queres procurar?"}`,
       results: [],
-      actions: [{ label: "Ver agenda", href: "/agenda" }],
+      actions: [],
       context: { ...context, avoidTerms: [...(context.avoidTerms || []), avoided].filter(Boolean) },
     };
   }
@@ -106,10 +157,10 @@ export function getHubPersonalityResponse(value, context = {}) {
   if (isBudgetStatement) {
     return {
       intent: "unknown",
-      title: `${budget.toFixed(budget % 1 === 0 ? 0 : 2)} € de margem`,
-      description: "Fica como teto para esta conversa. O que queres fazer com esse orçamento?",
+      title: `Ficam ${budget.toFixed(budget % 1 === 0 ? 0 : 2)} € como teto.`,
+      description: "Queres jantar, beber qualquer coisa ou guardar parte para um concerto?",
       results: [],
-      actions: [{ label: "Tenho fome", href: "/?focus=hub" }, { label: "Ver eventos", href: "/agenda" }],
+      actions: [],
       context: { ...context, budgetMax: budget },
     };
   }

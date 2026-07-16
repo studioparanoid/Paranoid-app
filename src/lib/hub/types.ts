@@ -11,6 +11,8 @@ export type HubConversationContext = {
   eventSlug?: string;
   eventTitle?: string;
   city?: string;
+  nightStyle?: string;
+  pendingQuestion?: "city" | "nightStyle" | null;
   avoidTerms?: string[];
   preferredGenres?: string[];
   budgetMax?: number;
