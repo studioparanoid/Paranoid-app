@@ -210,6 +210,22 @@ function HubExchange({ item }: { item: HubHistoryItem }) {
           </ul>
         )}
 
+        {item.response.details && item.response.details.length > 0 && (
+          <ul className="mt-4 divide-y divide-[var(--border)] border-y border-[var(--border)]">
+            {item.response.details.map((detail) => (
+              <li key={detail.id} className="py-3">
+                {detail.href ? (
+                  <Link href={detail.href} className="focus-ring block rounded text-[var(--foreground)] hover:text-red-600">
+                    <strong>{detail.title}</strong>{detail.meta ? ` · ${detail.meta}` : ""}
+                  </Link>
+                ) : (
+                  <p className="text-[var(--foreground)]"><strong>{detail.title}</strong>{detail.meta ? ` · ${detail.meta}` : ""}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
         <div className="mt-4 flex flex-wrap gap-2">
           {item.response.actions.map((action) => (
             <Link key={`${action.href}-${action.label}`} href={action.href} className={`pressable focus-ring inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-xs font-black ${action.primary ? "bg-[var(--foreground)] text-[var(--background)]" : "border border-[var(--border-strong)] text-[var(--foreground)]"}`}>

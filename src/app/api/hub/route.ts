@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { buildHubResponse, classifyHubQuery, type HubEventRecord } from "@/lib/hub/router";
 import { createClient } from "@/lib/supabase/server";
+import { tryStructuredHubResponse } from "@/lib/hub/structured-router";
 
 type HubPayload = { query?: unknown };
 
@@ -22,6 +23,8 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const intent = classifyHubQuery(query);
+  const structuredResponse = await tryStructuredHubResponse(query);
+  if (structuredResponse) return NextResponse.json(structuredResponse);
   let profileCity: string | null = null;
 
   if (intent === "nearby" && user) {

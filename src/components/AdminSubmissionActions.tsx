@@ -6,6 +6,7 @@ import { type EventSubmission } from "@/lib/submissions";
 import { Button, LoadingButton } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { findExistingEntity } from "@/lib/data/find-existing-entity";
 
 type LocationSource = "manual" | "geocoded" | "venue" | null;
 
@@ -261,17 +262,7 @@ async function findOrCreateVenue(
 
   const slug = slugify(cleanName);
 
-  const { data: existingVenue, error: existingError } = await supabase
-    .from("venues")
-    .select(
-      "id,slug,name,city,municipality,address,postal_code,district,latitude,longitude,location_source"
-    )
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
+  const existingVenue = await findExistingEntity("venues", slug, cleanName, city, "id,slug,name,city,municipality,address,postal_code,district,latitude,longitude,location_source");
 
   if (existingVenue) {
     const venue = existingVenue as VenueRow;
@@ -341,6 +332,8 @@ async function findOrCreateVenue(
       location_source: location.location_source,
       description: null,
       instagram: null,
+      verified: false,
+      status: "provisional",
     })
     .select(
       "id,slug,name,city,municipality,address,postal_code,district,latitude,longitude,location_source"
@@ -374,15 +367,7 @@ async function findOrCreateOrganizer(name: string, city: string) {
 
   const slug = slugify(cleanName);
 
-  const { data: existingOrganizer, error: existingError } = await supabase
-    .from("organizers")
-    .select("id,slug,name")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
+  const existingOrganizer = await findExistingEntity("organizers", slug, cleanName, city);
 
   if (existingOrganizer) {
     return (existingOrganizer as OrganizerRow).id;
@@ -397,6 +382,7 @@ async function findOrCreateOrganizer(name: string, city: string) {
       description: null,
       pack: null,
       verified: false,
+      status: "provisional",
     })
     .select("id,slug,name")
     .single();
@@ -417,15 +403,7 @@ async function findOrCreateArtist(name: string, city: string) {
 
   const slug = slugify(cleanName);
 
-  const { data: existingArtist, error: existingError } = await supabase
-    .from("artists")
-    .select("id,slug,name")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
+  const existingArtist = await findExistingEntity("artists", slug, cleanName, city);
 
   if (existingArtist) {
     return (existingArtist as ArtistRow).id;
@@ -441,6 +419,8 @@ async function findOrCreateArtist(name: string, city: string) {
       description: null,
       instagram: null,
       bandcamp: null,
+      verified: false,
+      status: "provisional",
     })
     .select("id,slug,name")
     .single();

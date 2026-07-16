@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
+import { StructuredEventSections } from "@/components/events/StructuredEventSections";
 
 type EventRow = {
   id: string;
@@ -594,6 +595,8 @@ export default function EventPage() {
                 {event.description}
               </p>
             </article> : null}
+
+            <StructuredEventSections eventId={event.id} />
           </section>
 
           <aside className="space-y-6 lg:sticky lg:top-28">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
+import { findExistingEntity } from "@/lib/data/find-existing-entity";
 
 const categories = [
   "Concertos",
@@ -222,15 +223,7 @@ async function findOrCreateVenue(name: string, city: string) {
 
   const slug = slugify(cleanName);
 
-  const { data: existingVenue, error: existingError } = await supabase
-    .from("venues")
-    .select("id,slug,name")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
+  const existingVenue = await findExistingEntity("venues", slug, cleanName, city);
 
   if (existingVenue) {
     return (existingVenue as VenueRow).id;
@@ -245,6 +238,8 @@ async function findOrCreateVenue(name: string, city: string) {
       address: null,
       description: null,
       instagram: null,
+      verified: false,
+      status: "provisional",
     })
     .select("id,slug,name")
     .single();
@@ -265,15 +260,7 @@ async function findOrCreateArtist(name: string, city: string) {
 
   const slug = slugify(cleanName);
 
-  const { data: existingArtist, error: existingError } = await supabase
-    .from("artists")
-    .select("id,slug,name")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(existingError.message);
-  }
+  const existingArtist = await findExistingEntity("artists", slug, cleanName, city);
 
   if (existingArtist) {
     return (existingArtist as ArtistRow).id;
@@ -289,6 +276,8 @@ async function findOrCreateArtist(name: string, city: string) {
       description: null,
       instagram: null,
       bandcamp: null,
+      verified: false,
+      status: "provisional",
     })
     .select("id,slug,name")
     .single();
@@ -1097,7 +1086,7 @@ export function OrganizerEventEditClient({
         </div>
       </div>
 
-      <div className="mt-8 grid gap-3 lg:grid-cols-[1fr_0.35fr_0.35fr]">
+      <div className="mt-8 grid gap-3 lg:grid-cols-[1fr_0.35fr_0.35fr_0.35fr]">
         <button
           type="button"
           onClick={saveEvent}
@@ -1115,6 +1104,13 @@ export function OrganizerEventEditClient({
             Ver público
           </Link>
         )}
+
+        <Link
+          href={`/organizador/eventos/${loadedEvent.id}/programa`}
+          className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+        >
+          Programa e lineup
+        </Link>
 
         <Link
           href="/organizador"

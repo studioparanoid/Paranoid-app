@@ -24,6 +24,12 @@ export type HubResponse = {
   title: string;
   description: string;
   results: HubEventResult[];
+  details?: Array<{
+    id: string;
+    title: string;
+    meta: string | null;
+    href?: string;
+  }>;
   actions: HubAction[];
 };
 

@@ -66,6 +66,7 @@ export const adminNavigation = [
     items: [
       { href: "/admin", label: "Eventos e submissões", icon: "events" },
       { href: "/admin/rede", label: "Artistas, organizadores e espaços", icon: "compass" },
+      { href: "/admin/qualidade-dados", label: "Qualidade de dados", icon: "check" },
     ],
   },
   {
