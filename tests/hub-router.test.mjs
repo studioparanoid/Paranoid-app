@@ -1,12 +1,41 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildHubResponse } from "../src/lib/hub/router.ts";
+import { getHubPersonalityResponse } from "../src/lib/hub/hub-personality.js";
+import { HubTimeoutError, withHubTimeout } from "../src/lib/hub/timeout.ts";
 
 test("Hub answers absurd food requests with personality and no invented results", () => {
   const response = buildHubResponse("Quero comer pedras e beber terra", [], { authenticated: false, profileCity: null });
   assert.equal(response.title, "Para isso qualquer descampado serve");
   assert.deepEqual(response.results, []);
-  assert.match(response.description, /cidade ou evento/);
+  assert.match(response.description, /diz-me onde estás/);
+});
+
+test("local fallbacks resolve simple public commands without data", () => {
+  const cases = [
+    ["Agenda", "Abro-te a agenda", "/agenda"],
+    ["Abrir mapa", "Vamos ver o que está perto de ti", "/mapa"],
+    ["Bilhetes", "Aqui tens os teus bilhetes", "/bilhetes"],
+    ["Loja", "Vamos à loja", "/loja"],
+  ];
+  for (const [query, title, href] of cases) {
+    const response = getHubPersonalityResponse(query);
+    assert.equal(response?.title, title);
+    assert.equal(response?.actions[0]?.href, href);
+  }
+});
+
+test("local fallback asks for location before suggesting food", () => {
+  const response = getHubPersonalityResponse("Tenho fome");
+  assert.equal(response?.title, "Diz-me onde estás para procurar opções perto de ti");
+  assert.deepEqual(response?.results, []);
+});
+
+test("local fallback interprets a heavy night without inventing events", () => {
+  const response = getHubPersonalityResponse("Quero uma noite pesada");
+  assert.equal(response?.title, "Pesada musicalmente?");
+  assert.match(response?.description || "", /metal, doom, sludge, hardcore, punk e rock/);
+  assert.deepEqual(response?.results, []);
 });
 
 test("Hub remembers an avoided genre only in conversation context", () => {
@@ -17,7 +46,7 @@ test("Hub remembers an avoided genre only in conversation context", () => {
 
 test("Hub asks for location instead of inventing dining results", () => {
   const response = buildHubResponse("Tenho fome", [], { authenticated: false, profileCity: null });
-  assert.equal(response.title, "Primeiro, onde estás?");
+  assert.equal(response.title, "Diz-me onde estás para procurar opções perto de ti");
   assert.deepEqual(response.results, []);
 });
 
@@ -30,7 +59,7 @@ test("Hub keeps a stated budget in session context and uses it for dining", () =
   assert.equal(diningResponse.context?.budgetMax, 20);
 });
 
-test("Hub interprets a heavy night as music genres", () => {
+test("Hub keeps the heavy-night meaning in conversation context", () => {
   const event = {
     id: "event-1", slug: "doom-night", title: "Doom Night", city: "Porto", municipality: "Porto",
     venue_name: "Amplificador", display_date: "Hoje", display_time: "22:00", start_at: "2099-07-16T21:00:00Z",
@@ -38,7 +67,19 @@ test("Hub interprets a heavy night as music genres", () => {
     image_url: null, featured: false,
   };
   const response = buildHubResponse("Quero uma noite pesada", [event], { authenticated: false, profileCity: null, now: new Date("2099-07-16T12:00:00Z") });
-  assert.equal(response.results[0]?.id, "event-1");
-  assert.deepEqual(response.context?.preferredGenres, ["metal", "hardcore", "punk", "doom", "rock"]);
-  assert.match(response.description, /metal, hardcore, punk, doom e rock/);
+  assert.deepEqual(response.results, []);
+  assert.deepEqual(response.context?.preferredGenres, ["metal", "doom", "sludge", "hardcore", "punk", "rock"]);
+});
+
+test("unknown questions always receive a local response contract", () => {
+  const response = buildHubResponse("Explica-me o silêncio", [], { authenticated: false, profileCity: null });
+  assert.equal(response.intent, "unknown");
+  assert.equal(response.results.length, 0);
+  assert.ok(response.title.length > 0);
+  assert.ok(response.description.length > 0);
+});
+
+test("Hub timeout rejects and does not wait for the unfinished operation", async () => {
+  const operation = new Promise(() => {});
+  await assert.rejects(() => withHubTimeout(operation, 5), HubTimeoutError);
 });

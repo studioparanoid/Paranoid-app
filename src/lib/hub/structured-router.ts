@@ -58,13 +58,18 @@ export async function tryStructuredHubResponse(query: string, context: HubConver
   const normalized = normalizeHubText(query);
   const personalityResponse = getHubPersonalityResponse(query, context);
   if (personalityResponse) return personalityResponse;
-  const locationStatement = normalized.match(/^estou\s+(?:no|na|em)\s+(.+)$/);
+  const locationStatement = normalized.match(/^estou\s+(no|na|em)\s+(.+)$/);
   if (locationStatement) {
     const found = await findEvent(query);
     if (found.event) {
       return { intent: "agenda", title: `Estás no ${found.event.title}`, description: "Fica como contexto desta conversa. Agora podes perguntar pela lineup, comida, serviços ou pelo que está a acontecer.", results: [], actions: [{ label: "Ver evento", href: `/eventos/${found.event.slug}`, primary: true }, { label: "Ver lineup", href: `/eventos/${found.event.slug}` }], context: { ...context, eventId: found.event.id, eventSlug: found.event.slug, eventTitle: found.event.title, city: found.event.city || context.city } };
     }
-    const city = locationStatement[1].trim().replace(/\b(portugal|cidade)\b/g, "").trim();
+    const originalLocation = query.trim().match(/^estou\s+(?:no|na|em)\s+(.+)$/i);
+    const place = (originalLocation?.[1] || locationStatement[2]).trim();
+    if (locationStatement[1] !== "em") {
+      return { intent: "agenda", title: `Fico com ${place} como contexto`, description: "Podes perguntar pelo programa. Se ainda não estiver confirmado, digo-te sem inventar.", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }], context: { ...context, eventTitle: place } };
+    }
+    const city = place.replace(/\b(portugal|cidade)\b/g, "").trim();
     return { intent: "nearby", title: `Estás em ${city}`, description: "Certo. O que procuras por aí?", results: [], actions: [{ label: "Hoje perto de mim", href: "/agenda" }, { label: "Abrir mapa", href: "/mapa" }], context: { ...context, city } };
   }
   const asksProgram = /\b(lineup|programa|programacao|toca|tocam|palco|sobrepoem|seguir|seguinte)\b/.test(normalized);
@@ -78,6 +83,9 @@ export async function tryStructuredHubResponse(query: string, context: HubConver
   const { event, ambiguous } = await findEvent(query, context);
   if (!event) {
     if (asksFood && !context.eventId) return null;
+    if (asksProgram && context.eventTitle) {
+      return { intent: "lineup", title: context.eventTitle, description: "Ainda não tenho o programa confirmado desse evento.", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }], context };
+    }
     if (normalized === "lineup" || normalized === "programa" || normalized === "programacao") {
       return { intent: "lineup", title: "Lineup", description: "De que festival queres ver a lineup?", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda" }] };
     }

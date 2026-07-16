@@ -6,6 +6,9 @@ import { AppIcon } from "@/components/AppIcon";
 import type { HubHistoryItem, HubResponse } from "@/lib/hub/types";
 
 const historyKey = "paranoid.hub-history";
+const requestTimeoutMs = 10_000;
+const genericErrorMessage = "O Hub falhou a responder. Tenta novamente.";
+const timeoutErrorMessage = "Demorei demasiado a obter a informação. Tenta novamente.";
 const suggestions = [
   "Hoje perto de mim",
   "Tenho fome",
@@ -35,14 +38,28 @@ function readHistory() {
   }
 }
 
+function persistHistory(history: HubHistoryItem[]) {
+  try {
+    window.sessionStorage.setItem(historyKey, JSON.stringify(history));
+  } catch (storageError) {
+    if (process.env.NODE_ENV === "development") console.warn("[hub] Não foi possível guardar a conversa na sessão.", storageError);
+  }
+}
+
+function isHubResponse(value: unknown): value is HubResponse {
+  if (!value || typeof value !== "object") return false;
+  const response = value as Partial<HubResponse>;
+  return typeof response.title === "string" && typeof response.description === "string" && Array.isArray(response.results) && Array.isArray(response.actions);
+}
+
 export function SmartHub() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
   const [query, setQuery] = useState("");
   const [history, setHistory] = useState<HubHistoryItem[]>([]);
+  const [pendingQuery, setPendingQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => setHistory(readHistory()), 0);
@@ -62,20 +79,30 @@ export function SmartHub() {
   }, []);
 
   useEffect(() => {
-    if (history.length === 0 && !loading && !error) return;
+    if (history.length === 0 && !loading) return;
     const frame = window.requestAnimationFrame(() => {
       conversationEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [error, history, loading]);
+  }, [history, loading, pendingQuery]);
+
+  function appendHistory(item: HubHistoryItem) {
+    setHistory((current) => {
+      const next = [...current, item].slice(-3);
+      persistHistory(next);
+      return next;
+    });
+  }
 
   async function runQuery(value: string) {
     const cleanQuery = value.trim();
     if (!cleanQuery || busyRef.current) return;
     busyRef.current = true;
     setLoading(true);
-    setError("");
-    setQuery(cleanQuery);
+    setPendingQuery(cleanQuery);
+    setQuery("");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), requestTimeoutMs);
 
     try {
       const context = history.reduce((current, item) => ({ ...current, ...(item.response.context || {}) }), {});
@@ -83,25 +110,37 @@ export function SmartHub() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ query: cleanQuery, context }),
+        signal: controller.signal,
       });
-      const payload = await response.json().catch(() => ({})) as HubResponse & { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Não foi possível responder agora.");
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(response.status === 504 ? timeoutErrorMessage : genericErrorMessage);
+      if (!isHubResponse(payload)) throw new Error(genericErrorMessage);
       const item: HubHistoryItem = {
         id: crypto.randomUUID(),
         query: cleanQuery,
         response: payload,
       };
-      setHistory((current) => {
-        const next = [...current, item].slice(-3);
-        window.sessionStorage.setItem(historyKey, JSON.stringify(next));
-        return next;
-      });
-      setQuery("");
+      appendHistory(item);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Não foi possível responder agora.");
+      const timedOut = requestError instanceof DOMException && requestError.name === "AbortError" || requestError instanceof Error && requestError.message === timeoutErrorMessage;
+      if (process.env.NODE_ENV === "development") console.error("[hub] Falha no pedido", requestError);
+      appendHistory({
+        id: crypto.randomUUID(),
+        query: cleanQuery,
+        response: {
+          intent: "unknown",
+          title: timedOut ? "Demorei demasiado a obter a informação" : "O Hub falhou a responder",
+          description: "Tenta novamente.",
+          results: [],
+          actions: [],
+          context: history.reduce((current, item) => ({ ...current, ...(item.response.context || {}) }), {}),
+        },
+      });
     } finally {
+      window.clearTimeout(timeout);
       busyRef.current = false;
       setLoading(false);
+      setPendingQuery("");
       window.requestAnimationFrame(() => inputRef.current?.focus());
     }
   }
@@ -119,9 +158,12 @@ export function SmartHub() {
   }
 
   function clearHistory() {
-    window.sessionStorage.removeItem(historyKey);
+    try {
+      window.sessionStorage.removeItem(historyKey);
+    } catch (storageError) {
+      if (process.env.NODE_ENV === "development") console.warn("[hub] Não foi possível limpar a conversa guardada.", storageError);
+    }
     setHistory([]);
-    setError("");
     inputRef.current?.focus();
   }
 
@@ -152,8 +194,7 @@ export function SmartHub() {
 
           <div className="space-y-7">
             {history.map((item) => <HubExchange key={item.id} item={item} />)}
-            {loading && <ParanoidMessage><span className="inline-flex items-center gap-2 text-[var(--foreground-muted)]"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" aria-hidden="true" />A procurar...</span></ParanoidMessage>}
-            {error && <ParanoidMessage><span className="text-red-600">{error}</span></ParanoidMessage>}
+            {pendingQuery && <PendingHubExchange query={pendingQuery} />}
           </div>
           <div ref={conversationEndRef} aria-hidden="true" />
         </div>
@@ -191,14 +232,21 @@ function ParanoidMessage({ children }: { children: ReactNode }) {
   </div>;
 }
 
+function UserMessage({ query }: { query: string }) {
+  return <div className="flex justify-end"><p className="max-w-[82%] rounded-lg bg-[var(--surface-secondary)] px-4 py-2.5 text-sm font-bold leading-relaxed text-[var(--foreground)] sm:max-w-[70%]">{query}</p></div>;
+}
+
+function PendingHubExchange({ query }: { query: string }) {
+  return <article className="content-transition space-y-4" aria-label={`Pergunta: ${query}`}><UserMessage query={query} /><ParanoidMessage><span className="inline-flex items-center gap-2 text-[var(--foreground-muted)]"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" aria-hidden="true" />A procurar...</span></ParanoidMessage></article>;
+}
+
 function HubExchange({ item }: { item: HubHistoryItem }) {
+  const titleSuffix = /[.!?]$/.test(item.response.title) ? "" : ".";
   return (
     <article className="content-transition space-y-4" aria-label={`Pergunta: ${item.query}`}>
-      <div className="flex justify-end">
-        <p className="max-w-[82%] rounded-lg bg-[var(--surface-secondary)] px-4 py-2.5 text-sm font-bold leading-relaxed text-[var(--foreground)] sm:max-w-[70%]">{item.query}</p>
-      </div>
+      <UserMessage query={item.query} />
       <ParanoidMessage>
-        <p><strong className="font-black text-[var(--foreground)]">{item.response.title}.</strong> {item.response.description}</p>
+        <p><strong className="font-black text-[var(--foreground)]">{item.response.title}{titleSuffix}</strong>{item.response.description ? ` ${item.response.description}` : ""}</p>
 
         {item.response.results.length > 0 && (
           <ul className="mt-4 divide-y divide-[var(--border)] border-y border-[var(--border)]">

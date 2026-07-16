@@ -38,12 +38,51 @@ export function getMusicMeaning(value) {
  */
 export function getHubPersonalityResponse(value, context = {}) {
   const query = normalize(value);
+  const command = query.replace(/[.,]/g, "").trim();
+
+  if (command === "agenda") {
+    return { intent: "agenda", title: "Abro-te a agenda", description: "", results: [], actions: [{ label: "Abrir Agenda", href: "/agenda", primary: true }], context };
+  }
+
+  if (command === "mapa" || command === "abrir mapa") {
+    return { intent: "map", title: "Vamos ver o que está perto de ti", description: "", results: [], actions: [{ label: "Abrir Mapa", href: "/mapa", primary: true }], context };
+  }
+
+  if (command === "bilhetes") {
+    return { intent: "tickets", title: "Aqui tens os teus bilhetes", description: "", results: [], actions: [{ label: "Abrir Bilhetes", href: "/bilhetes", primary: true }], context };
+  }
+
+  if (command === "loja") {
+    return { intent: "shop", title: "Vamos à loja", description: "", results: [], actions: [{ label: "Abrir Loja", href: "/loja", primary: true }], context };
+  }
+
+  if (command === "tenho fome") {
+    return {
+      intent: "dining",
+      title: context.city || context.eventTitle ? "Vamos encontrar comida a sério" : "Diz-me onde estás para procurar opções perto de ti",
+      description: context.city ? `Posso procurar em ${context.city} sem inventar locais.` : context.eventTitle ? `Posso procurar opções confirmadas em ${context.eventTitle}.` : "",
+      results: [],
+      actions: [{ label: "Abrir mapa", href: "/mapa" }],
+      context,
+    };
+  }
+
+  if (/\bnoite\s+(?:bem\s+)?pesada\b|\bsom\s+pesado\b|\bmusica\s+pesada\b/.test(command)) {
+    return {
+      intent: "agenda",
+      title: "Pesada musicalmente?",
+      description: "Posso procurar metal, doom, sludge, hardcore, punk e rock.",
+      results: [],
+      actions: [{ label: "Abrir Agenda", href: "/agenda", primary: true }],
+      context: { ...context, preferredGenres: ["metal", "doom", "sludge", "hardcore", "punk", "rock"] },
+    };
+  }
 
   if (/comer pedras|beber terra|comer terra/.test(query)) {
     return {
       intent: "dining",
       title: "Para isso qualquer descampado serve",
-      description: context.city ? `Se preferires comida a sério, procuro em ${context.city} ou dentro do evento onde estás.` : "Se preferires comida a sério, diz-me em que cidade ou evento estás.",
+      description: context.city ? `Para comida a sério, posso procurar em ${context.city}.` : "Para comida a sério, diz-me onde estás.",
       results: [],
       actions: [{ label: "Abrir mapa", href: "/mapa", primary: true }],
       context,
