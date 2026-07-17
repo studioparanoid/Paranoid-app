@@ -24,8 +24,8 @@ export function EventCard({ event, showSave = true, action }: { event: EventCard
   const location = [event.venue, event.municipality || event.city].filter(Boolean).join(" · ");
 
   return (
-    <article className="group card-hover relative min-w-0 overflow-hidden rounded-lg border border-zinc-900 bg-[#0d0d0d] hover:border-zinc-700 focus-within:border-red-900">
-      <div className="relative aspect-[4/5] overflow-hidden bg-zinc-950">
+    <article className="group card-hover relative min-w-0 overflow-hidden rounded-lg border border-border bg-card hover:border-border-strong focus-within:border-accent/60">
+      <div className="relative aspect-[4/5] overflow-hidden bg-surface-secondary">
         {event.image ? (
           <Image
             src={event.image}
@@ -37,7 +37,7 @@ export function EventCard({ event, showSave = true, action }: { event: EventCard
           />
         ) : (
           <div className="event-card-fallback absolute inset-0 grid place-items-center px-6 text-center">
-            <span className="text-xs font-black uppercase tracking-[0.3em] text-zinc-700">{event.category || "Evento"}</span>
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-foreground-muted">{event.category || "Evento"}</span>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/35" aria-hidden="true" />
@@ -53,13 +53,13 @@ export function EventCard({ event, showSave = true, action }: { event: EventCard
 
       <div className="relative min-h-36 p-4">
         <Link href={`/eventos/${event.slug}`} className="focus-ring absolute inset-0 z-10 rounded-lg" aria-label={`Abrir ${event.title}`} />
-        <h3 className="line-clamp-2 pr-8 text-xl font-black leading-[1.08] text-[#f2f1ec]">{event.title}</h3>
-        <p className="mt-3 truncate text-xs font-bold text-zinc-500">{location || event.category || "Local por definir"}</p>
-        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-600">
+        <h3 className="line-clamp-2 pr-8 text-xl font-black leading-[1.08] text-foreground">{event.title}</h3>
+        <p className="mt-3 truncate text-xs font-bold text-foreground-muted">{location || event.category || "Local por definir"}</p>
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-foreground-muted">
           <span>{event.time || "Hora por definir"}</span>
-          {event.price ? <span className="font-black text-zinc-300">{event.price}</span> : null}
+          {event.price ? <span className="font-black text-foreground-secondary">{event.price}</span> : null}
         </div>
-        <AppIcon name="chevron" className="absolute bottom-4 right-4 h-4 w-4 translate-x-1 text-zinc-700 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+        <AppIcon name="chevron" className="absolute bottom-4 right-4 h-4 w-4 translate-x-1 text-foreground-muted opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
       </div>
     </article>
   );

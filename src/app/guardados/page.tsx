@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppIcon } from "@/components/AppIcon";
 import { CardGrid } from "@/components/CardGrid";
 import { EventCard } from "@/components/EventCard";
+import { EventCardSkeleton } from "@/components/LoadingSkeleton";
+import { Card } from "@/components/ui/Card";
+import { LinkButton } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase/public";
 
 type SavedEventRow = {
@@ -47,88 +49,40 @@ function sortSavedEvents(events: SavedEvent[]) {
   return [...events].sort((first, second) => {
     const firstDate = eventDateValue(first);
     const secondDate = eventDateValue(second);
-
-    if (!firstDate && !secondDate) {
-      return 0;
-    }
-
-    if (!firstDate) {
-      return 1;
-    }
-
-    if (!secondDate) {
-      return -1;
-    }
-
+    if (!firstDate && !secondDate) return 0;
+    if (!firstDate) return 1;
+    if (!secondDate) return -1;
     return new Date(firstDate).getTime() - new Date(secondDate).getTime();
   });
 }
 
 function LoginCard() {
   return (
-    <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-      <p className="text-xs uppercase tracking-[0.35em] text-red-700">
-        Guardados
+    <Card className="p-6 text-center lg:p-10">
+      <h2 className="text-2xl font-black leading-tight text-foreground">Entra para guardar eventos.</h2>
+      <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-foreground-muted">
+        Guarda concertos, festas e sessões que não queres perder de vista.
       </p>
-
-      <h2 className="mt-4 text-5xl font-black leading-none">
-        Entra para guardar eventos.
-      </h2>
-
-      <p className="mt-5 text-base leading-relaxed text-zinc-400">
-        Guarda concertos, festas, sessões e datas que queres apanhar mais tarde.
-      </p>
-
-      <div className="mt-8 grid gap-3 lg:grid-cols-2">
-        <Link
-          href="/login"
-          className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-        >
-          Entrar
-        </Link>
-
-        <Link
-          href="/registar"
-          className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-        >
-          Criar conta
-        </Link>
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <LinkButton href="/login" variant="primary">Entrar</LinkButton>
+        <LinkButton href="/registar" variant="secondary">Criar conta</LinkButton>
       </div>
-    </section>
+    </Card>
   );
 }
 
 function EmptyState() {
   return (
-    <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-      <p className="text-xs uppercase tracking-[0.35em] text-red-700">
-        Sem guardados
+    <Card className="p-6 text-center lg:p-10">
+      <h2 className="text-2xl font-black leading-tight text-foreground">Ainda não guardaste nada.</h2>
+      <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-foreground-muted">
+        Não encontrámos eventos guardados. Vai à agenda e guarda o que queres acompanhar.
       </p>
-
-      <h2 className="mt-4 text-5xl font-black leading-none">
-        Ainda não guardaste nada.
-      </h2>
-
-      <p className="mt-5 text-base leading-relaxed text-zinc-400">
-        Vai à agenda, abre um evento e guarda o que queres acompanhar.
-      </p>
-
-      <div className="mt-8 grid gap-3 lg:grid-cols-2">
-        <Link
-          href="/agenda"
-          className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-        >
-          Ver agenda
-        </Link>
-
-        <Link
-          href="/para-ti"
-          className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-        >
-          Para ti
-        </Link>
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <LinkButton href="/agenda" variant="primary">Ver agenda</LinkButton>
+        <LinkButton href="/para-ti" variant="secondary">Para ti</LinkButton>
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -136,7 +90,6 @@ export default function SavedEventsPage() {
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState("");
   const [message, setMessage] = useState("");
-
   const [userId, setUserId] = useState("");
   const [savedRows, setSavedRows] = useState<SavedEventRow[]>([]);
   const [events, setEvents] = useState<SavedEvent[]>([]);
@@ -147,9 +100,7 @@ export default function SavedEventsPage() {
     setLoading(true);
     setMessage("");
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       setUserId("");
@@ -178,9 +129,7 @@ export default function SavedEventsPage() {
     const loadedSavedRows = (savedData || []) as SavedEventRow[];
     setSavedRows(loadedSavedRows);
 
-    const eventIds = loadedSavedRows
-      .map((row) => row.event_id)
-      .filter(Boolean);
+    const eventIds = loadedSavedRows.map((row) => row.event_id).filter(Boolean);
 
     if (eventIds.length === 0) {
       setEvents([]);
@@ -190,9 +139,7 @@ export default function SavedEventsPage() {
 
     const { data: eventData, error: eventError } = await supabase
       .from("events")
-      .select(
-        "id,slug,title,status,city,venue_name,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price"
-      )
+      .select("id,slug,title,status,city,venue_name,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,description,image_url,featured,ticket_mode,ticket_price")
       .eq("status", "published")
       .in("id", eventIds);
 
@@ -204,10 +151,7 @@ export default function SavedEventsPage() {
     }
 
     const savedMap = new Map<string, string | null>();
-
-    loadedSavedRows.forEach((row) => {
-      savedMap.set(row.event_id, row.created_at);
-    });
+    loadedSavedRows.forEach((row) => savedMap.set(row.event_id, row.created_at));
 
     const loadedEvents = ((eventData || []) as EventRow[]).map((event) => ({
       ...event,
@@ -244,96 +188,39 @@ export default function SavedEventsPage() {
       return;
     }
 
-    setSavedRows((current) =>
-      current.filter((row) => row.event_id !== eventId)
-    );
-
+    setSavedRows((current) => current.filter((row) => row.event_id !== eventId));
     setEvents((current) => current.filter((event) => event.id !== eventId));
     setRemovingId("");
   }
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
-        <section className="mx-auto max-w-md lg:max-w-7xl">
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-            <p className="text-zinc-500">A carregar guardados...</p>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
-      <section className="mx-auto max-w-md lg:max-w-7xl">
-        <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
+    <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground lg:px-10 lg:py-12">
+      <section className="mx-auto max-w-md lg:max-w-6xl">
+        <header className="flex items-end justify-between gap-4">
           <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
-              Guardados
-            </p>
-
-            <h1 className="text-6xl font-black leading-none tracking-tight lg:text-9xl">
-              A tua pilha.
-            </h1>
-
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-400 lg:text-lg">
-              Eventos que marcaste para não perder no meio do ruído.
-            </p>
+            <h1 className="text-3xl font-black tracking-tight lg:text-4xl">Guardados</h1>
+            {!loading && userId && (
+              <p className="mt-1 text-sm text-foreground-muted">
+                {savedRows.length === 0 ? "Nada guardado" : savedRows.length === 1 ? "1 evento guardado" : `${savedRows.length} eventos guardados`}
+              </p>
+            )}
           </div>
-
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
-              Estado
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                <p className="text-3xl font-black">{savedRows.length}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                  Guardados
-                </p>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-                <p className="text-3xl font-black">{events.length}</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
-                  Ativos
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3">
-              <Link
-                href="/agenda"
-                className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-              >
-                Encontrar eventos
-              </Link>
-
-              <button
-                type="button"
-                onClick={loadSavedEvents}
-                className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
-              >
-                Atualizar
-              </button>
-            </div>
-          </div>
-        </section>
+        </header>
 
         {message && (
-          <div className="mt-8 rounded-[2rem] border border-red-900 bg-red-950/20 p-5">
-            <p className="text-sm font-bold text-red-300">{message}</p>
-          </div>
+          <Card className="mt-6 border-danger/40 p-4">
+            <p className="text-sm font-bold text-danger">{message}</p>
+          </Card>
         )}
 
-        <section className="mt-8 lg:mt-12">
-          {!userId && <LoginCard />}
+        <section className="mt-6">
+          {loading && <EventCardSkeleton rows={4} />}
 
-          {userId && sortedEvents.length === 0 && <EmptyState />}
+          {!loading && !userId && <LoginCard />}
 
-          {userId && sortedEvents.length > 0 && (
+          {!loading && userId && sortedEvents.length === 0 && <EmptyState />}
+
+          {!loading && userId && sortedEvents.length > 0 && (
             <CardGrid>
               {sortedEvents.map((event) => (
                 <EventCard
@@ -359,7 +246,7 @@ export default function SavedEventsPage() {
                       disabled={removingId === event.id}
                       aria-label={`Remover ${event.title} dos guardados`}
                       aria-busy={removingId === event.id}
-                      className="pressable focus-ring grid h-11 w-11 place-items-center rounded-full border border-red-700/70 bg-red-950/90 text-red-100 disabled:opacity-50"
+                      className="pressable focus-ring grid h-11 w-11 place-items-center rounded-full border border-danger/40 bg-danger/15 text-danger disabled:opacity-50"
                     >
                       <AppIcon name="bookmark" className="h-4 w-4 fill-current" />
                     </button>

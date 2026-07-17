@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   createContext,
@@ -162,6 +163,10 @@ function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: 
           aria-hidden="true"
         >
           <span className="mx-auto block h-1 w-9 rounded-full bg-[var(--foreground-muted)] opacity-45" />
+        </div>
+        <div className="flex items-center justify-center gap-5 pb-3">
+          <Link href="/descobrir" className="pressable focus-ring rounded py-1 text-xs font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)]">Descobrir</Link>
+          <Link href="/loja" className="pressable focus-ring rounded py-1 text-xs font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)]">Loja</Link>
         </div>
         <button
           ref={closeButtonRef}
