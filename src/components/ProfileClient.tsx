@@ -236,7 +236,7 @@ export function ProfileClient() {
   }
 
   if (loading) return <LoadingSkeleton rows={5} />;
-  if (!userId) return <div className="mx-auto max-w-lg py-16 text-center"><h1 className="text-4xl font-black">Entra na tua conta.</h1><p className="mt-3 text-sm text-zinc-500">Guarda eventos, segue a rede e consulta os teus bilhetes.</p><div className="mt-6 flex justify-center gap-3"><LinkButton href="/login">Entrar</LinkButton><LinkButton href="/registar" variant="secondary">Criar conta</LinkButton></div></div>;
+  if (!userId) return <div className="mx-auto max-w-lg py-16 text-center"><h1 className="text-4xl font-black">Entra na tua conta.</h1><p className="mt-3 text-sm text-foreground-muted">Guarda eventos, segue a rede e consulta os teus bilhetes.</p><div className="mt-6 flex justify-center gap-3"><LinkButton href="/login">Entrar</LinkButton><LinkButton href="/registar" variant="secondary">Criar conta</LinkButton></div></div>;
 
   const accountType = profile?.account_type || "community";
   const approved = profile?.account_status === "approved";
@@ -260,26 +260,26 @@ export function ProfileClient() {
       <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-600">Configurar conta</p>
       <p className="mt-2 text-sm font-bold text-[var(--foreground)]">Completa o perfil</p>
     </div>}
-    <header className="flex items-center gap-3 border-b border-zinc-900 pb-6 sm:gap-4">
-      <div className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden border border-red-950 bg-red-950/25 text-xl font-black text-red-500 sm:h-16 sm:w-16 ${mobileSimplificationEnabled ? "[clip-path:polygon(50%_0,92%_20%,100%_72%,72%_100%,28%_100%,0_72%,8%_20%)]" : "rounded-full"}`}>{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
-      <div className="min-w-0 flex-1"><h1 className="truncate text-xl font-black sm:text-3xl">{title}</h1><p className="truncate text-xs text-zinc-600 sm:text-sm">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
+    <header className="flex items-center gap-3 border-b border-border pb-6 sm:gap-4">
+      <div className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden border border-accent/30 bg-accent/12 text-xl font-black text-accent sm:h-16 sm:w-16 ${mobileSimplificationEnabled ? "[clip-path:polygon(50%_0,92%_20%,100%_72%,72%_100%,28%_100%,0_72%,8%_20%)]" : "rounded-full"}`}>{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
+      <div className="min-w-0 flex-1"><h1 className="truncate text-xl font-black sm:text-3xl">{title}</h1><p className="truncate text-xs text-foreground-muted sm:text-sm">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
       <Button type="button" variant="secondary" size="sm" onClick={() => setEditing((value) => !value)} aria-expanded={editing} className={mobileSimplificationEnabled ? "inline-flex shrink-0" : "hidden sm:inline-flex"}>Editar perfil</Button>
     </header>
 
-    {editing && <section className="slide-up border-b border-zinc-900 py-7">
+    {editing && <section className="slide-up border-b border-border py-7">
       <SectionHeader title="Editar perfil" />
       <div className="grid gap-4 sm:grid-cols-2">
         <ProfileImageField imageUrl={removeAvatar ? "" : avatarUrl} onFile={(file) => { setAvatarFile(file); setRemoveAvatar(false); }} onRemove={() => { setAvatarFile(null); setRemoveAvatar(true); }} disabled={saving} />
         <Field label={accountType === "community" ? "Nome" : "Nome público"} value={accountType === "community" ? displayName : entityName} onChange={accountType === "community" ? setDisplayName : setEntityName} />
         <CityCombobox label="Cidade/localidade" value={city} onChange={setCity} />
         <Field label="Instagram" value={instagram} onChange={setInstagram} />
-        {accountType === "organizer" && <><label><span className="mb-2 block text-xs font-bold text-zinc-500">Tipo</span><select value={organizerType} onChange={(event) => setOrganizerType(event.target.value)} className="h-12 w-full rounded border border-zinc-800 bg-black px-4 outline-none focus:border-red-800"><option value="">Escolher tipo</option>{organizerTypes.map((value) => <option key={value}>{value}</option>)}</select></label>{organizerType === "Outro" && <Field label="Especificar tipo" value={organizerTypeOther} onChange={setOrganizerTypeOther} />}</>}
-        {accountType === "artist" && <><label><span className="mb-2 block text-xs font-bold text-zinc-500">Categoria</span><select value={artistCategory} onChange={(event) => { setArtistCategory(event.target.value); if (event.target.value !== "Música") setMusicGenres([]); }} className="h-12 w-full rounded border border-zinc-800 bg-black px-4 outline-none focus:border-red-800"><option value="">Escolher categoria</option>{artistCategories.map((value) => <option key={value}>{value}</option>)}</select></label>{artistCategory === "Outro" && <Field label="Especificar categoria" value={artistCategoryOther} onChange={setArtistCategoryOther} />}{artistCategory === "Música" && <GenreMultiSelect values={musicGenres} onChange={setMusicGenres} />}</>}
-        {accountType !== "community" && <label className="sm:col-span-2"><span className="mb-2 flex justify-between gap-3 text-xs font-bold text-zinc-500"><span>Descrição</span><span>{description.length}/{maxProfileDescriptionLength}</span></span><textarea value={description} maxLength={maxProfileDescriptionLength} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder={accountType === "artist" ? "Apresenta o projeto, influências e percurso." : accountType === "organizer" ? "Fala sobre o projeto, espaço ou eventos que organizas." : "Apresenta o espaço e a sua atividade."} className="w-full resize-y rounded border border-zinc-800 bg-black px-4 py-3 outline-none focus:border-red-800" /></label>}
+        {accountType === "organizer" && <><label><span className="mb-2 block text-xs font-bold text-foreground-muted">Tipo</span><select value={organizerType} onChange={(event) => setOrganizerType(event.target.value)} className="focus-ring h-12 w-full rounded-md border border-input-border bg-input px-4 text-foreground outline-none"><option value="">Escolher tipo</option>{organizerTypes.map((value) => <option key={value}>{value}</option>)}</select></label>{organizerType === "Outro" && <Field label="Especificar tipo" value={organizerTypeOther} onChange={setOrganizerTypeOther} />}</>}
+        {accountType === "artist" && <><label><span className="mb-2 block text-xs font-bold text-foreground-muted">Categoria</span><select value={artistCategory} onChange={(event) => { setArtistCategory(event.target.value); if (event.target.value !== "Música") setMusicGenres([]); }} className="focus-ring h-12 w-full rounded-md border border-input-border bg-input px-4 text-foreground outline-none"><option value="">Escolher categoria</option>{artistCategories.map((value) => <option key={value}>{value}</option>)}</select></label>{artistCategory === "Outro" && <Field label="Especificar categoria" value={artistCategoryOther} onChange={setArtistCategoryOther} />}{artistCategory === "Música" && <GenreMultiSelect values={musicGenres} onChange={setMusicGenres} />}</>}
+        {accountType !== "community" && <label className="sm:col-span-2"><span className="mb-2 flex justify-between gap-3 text-xs font-bold text-foreground-muted"><span>Descrição</span><span>{description.length}/{maxProfileDescriptionLength}</span></span><textarea value={description} maxLength={maxProfileDescriptionLength} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder={accountType === "artist" ? "Apresenta o projeto, influências e percurso." : accountType === "organizer" ? "Fala sobre o projeto, espaço ou eventos que organizas." : "Apresenta o espaço e a sua atividade."} className="focus-ring w-full resize-y rounded-md border border-input-border bg-input px-4 py-3 text-foreground outline-none" /></label>}
         <PreferencePicker label="Cidades" values={cities} selected={preferredCities} onToggle={(value) => setPreferredCities((current) => toggle(current, value))} />
         <PreferencePicker label="Categorias" values={categories} selected={preferredCategories} onToggle={(value) => setPreferredCategories((current) => toggle(current, value))} />
       </div>
-      {message && <p className="mt-4 text-sm text-zinc-400" role="status">{message}</p>}
+      {message && <p className="mt-4 text-sm text-foreground-secondary" role="status">{message}</p>}
       <div className="mt-5 flex gap-3"><LoadingButton type="button" onClick={saveProfile} loading={saving} loadingText="A guardar...">Guardar</LoadingButton><Button type="button" variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button></div>
     </section>}
 
@@ -299,11 +299,11 @@ export function ProfileClient() {
 }
 
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <label><span className="mb-2 block text-xs font-bold text-zinc-500">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded border border-zinc-800 bg-black px-4 py-3 outline-none focus:border-red-800" /></label>;
+  return <label><span className="mb-2 block text-xs font-bold text-foreground-muted">{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} className="focus-ring w-full rounded-md border border-input-border bg-input px-4 py-3 text-foreground outline-none" /></label>;
 }
 
 function PreferencePicker({ label, values, selected, onToggle }: { label: string; values: string[]; selected: string[]; onToggle: (value: string) => void }) {
-  return <fieldset className="sm:col-span-2"><legend className="mb-2 text-xs font-bold text-zinc-500">{label}</legend><div className="flex flex-wrap gap-2">{values.map((value) => <button key={value} type="button" onClick={() => onToggle(value)} aria-pressed={selected.includes(value)} className={`pressable focus-ring rounded-full border px-3 py-2 text-xs font-bold ${selected.includes(value) ? "border-zinc-100 bg-zinc-100 text-black" : "border-zinc-800 text-zinc-500 hover:border-zinc-600"}`}>{value}</button>)}</div></fieldset>;
+  return <fieldset className="sm:col-span-2"><legend className="mb-2 text-xs font-bold text-foreground-muted">{label}</legend><div className="flex flex-wrap gap-2">{values.map((value) => <button key={value} type="button" onClick={() => onToggle(value)} aria-pressed={selected.includes(value)} className={`pressable focus-ring rounded-full border px-3 py-2 text-xs font-bold ${selected.includes(value) ? "border-foreground bg-foreground text-background" : "border-border text-foreground-muted hover:border-border-strong"}`}>{value}</button>)}</div></fieldset>;
 }
 
 function ProfileSection({ title, items }: { title: string; items: SettingsListItem[] }) {
