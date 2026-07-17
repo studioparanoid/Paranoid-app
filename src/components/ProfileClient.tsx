@@ -18,6 +18,7 @@ import { ProfileImageField } from "@/components/profile/ProfileImageField";
 import { profileActivityNavigation, profilePurchaseNavigation } from "@/config/navigation";
 import { removeProfileImage, uploadProfileImage } from "@/lib/profileImages";
 import { artistCategories, maxProfileDescriptionLength, organizerTypes } from "@/lib/profileOptions";
+import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
 import { supabase } from "@/lib/supabase/public";
 import { MfaSecurityPanel } from "@/components/auth/MfaSecurityPanel";
 
@@ -241,7 +242,7 @@ export function ProfileClient() {
   const approved = profile?.account_status === "approved";
   const entityPath = publicPath(accountType, profile?.entity_slug || null);
   const title = entityName || displayName || email.split("@")[0] || "Perfil";
-  const mobileSimplificationEnabled = process.env.NEXT_PUBLIC_MOBILE_SIMPLIFICATION_ENABLED === "true";
+  const mobileSimplificationEnabled = isMobileSimplificationEnabled();
   const activityItems: SettingsListItem[] = profileActivityNavigation.map((item) => ({ ...item, description: item.href === "/guardados" ? "Eventos que queres voltar a ver" : "Artistas, espaços e organizadores" }));
   const purchaseItems: SettingsListItem[] = profilePurchaseNavigation.map((item) => ({ ...item, description: item.href === "/bilhetes" ? "Carteira e códigos de entrada" : "Loja e compras" }));
   const creatorItems: SettingsListItem[] = [];

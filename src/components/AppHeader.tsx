@@ -7,13 +7,14 @@ import { ProfileMenu } from "@/components/ProfileMenu";
 import { SearchButton } from "@/components/SearchButton";
 import { ParanoidBackIcon, ParanoidMark } from "@/components/navigation/ParanoidIconSystem";
 import { isNavigationActive, mobileNavigation } from "@/config/navigation";
+import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
 
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [agenda, map, tickets, shop] = mobileNavigation;
   const items = [agenda, map, tickets, shop];
-  const mobileSimplificationEnabled = process.env.NEXT_PUBLIC_MOBILE_SIMPLIFICATION_ENABLED === "true";
+  const mobileSimplificationEnabled = isMobileSimplificationEnabled();
   const hideMobileHeader = mobileSimplificationEnabled && pathname === "/";
 
   function focusHub(event: React.MouseEvent<HTMLAnchorElement>) {

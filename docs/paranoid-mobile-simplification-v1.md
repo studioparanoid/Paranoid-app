@@ -37,7 +37,7 @@ NEXT_PUBLIC_MOBILE_SIMPLIFICATION_ENABLED=false
 
 Com a flag desativada, o shell volta a montar `MobileBottomNav`, o header mobile completo e a Home anterior. `NEXT_PUBLIC_DISCOVERY_FEED_ENABLED` continua suportada; a simplificação mobile também ativa o feed de descoberta porque a nova Home depende do motor já existente.
 
-A variável deve existir em `.env.local` durante desenvolvimento e ser configurada separadamente em Vercel Preview e Vercel Production. Como é `NEXT_PUBLIC_`, o valor fica incorporado durante o build. Variável ausente ou qualquer valor diferente de `true` mantém a experiência anterior.
+A experiência nova é o padrão quando a variável não existe, incluindo builds Vercel criados apenas a partir do repositório. Definir explicitamente `false` em Vercel Preview ou Production e fazer novo deploy recupera a experiência anterior. Como é `NEXT_PUBLIC_`, o valor fica incorporado durante o build.
 
 `NEXT_PUBLIC_DISCOVERY_FEED_ENABLED` continua a controlar a experiência Discovery no desktop. A API aceita pedidos quando qualquer uma das duas experiências precisa do motor, sem obrigar a nova flag mobile a redesenhar o desktop.
 
