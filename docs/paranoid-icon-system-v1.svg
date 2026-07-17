@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="440" viewBox="0 0 960 440" role="img" aria-labelledby="title desc">
+  <title id="title">Paranoid Icon System V1</title>
+  <desc id="desc">Comparacao de tres desenhos originais do P a 24 pixels e os cinco simbolos finais da navegacao.</desc>
+  <rect width="960" height="440" fill="#080808" />
+  <path d="M48 68h864M48 244h864" stroke="#2b2b2b" />
+  <text x="48" y="42" fill="#f1efeb" font-family="Arial, sans-serif" font-size="18" font-weight="700">P OPTIONS / 24 PX</text>
+
+  <g fill="#f1efeb">
+    <g transform="translate(171 104) scale(.75)">
+      <path d="M7 29V4h8.4C21.5 4 25 7.2 25 12.3c0 5.2-3.5 8.5-9.6 8.5H11v8.2H7Zm4-12h4.1c3.7 0 5.7-1.5 5.7-4.7 0-3.1-2-4.5-5.7-4.5H11V17Z" />
+    </g>
+    <g transform="translate(467 104) scale(.75)">
+      <path fill-rule="evenodd" d="M3 3h11.1C20.3 3 24 6.2 24 11.4c0 5.4-3.8 8.7-10 8.7h-3.6v7.1l2.4 1.8H3l2.6-1.8V6L3 3Zm7.4 4.3v8.5h3.2c3.2 0 4.8-1.4 4.8-4.3 0-2.9-1.6-4.2-4.8-4.2h-3.2Z" />
+    </g>
+    <g transform="translate(763 104) scale(.75)">
+      <path fill-rule="evenodd" d="M5 3h11l8 7v7l-8 6h-5v6H5V3Zm6 5v10h3.4l4.1-3v-3.6L14.5 8H11Z" />
+    </g>
+  </g>
+
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <text x="180" y="159" fill="#f1efeb" font-size="15" font-weight="700">A / OPEN</text>
+    <text x="180" y="182" fill="#777" font-size="12">generic</text>
+    <text x="476" y="159" fill="#e1172d" font-size="15" font-weight="700">B / EDITORIAL</text>
+    <text x="476" y="182" fill="#aaa" font-size="12">selected</text>
+    <text x="772" y="159" fill="#f1efeb" font-size="15" font-weight="700">C / ANGULAR</text>
+    <text x="772" y="182" fill="#777" font-size="12">too symbolic</text>
+  </g>
+
+  <text x="48" y="286" fill="#f1efeb" font-family="Arial, sans-serif" font-size="18" font-weight="700">FINAL NAVIGATION SYSTEM</text>
+
+  <g color="#f1efeb" fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter">
+    <g transform="translate(126 316) scale(1.5)">
+      <path d="M6 27V8h20v19M11 27V13h10v14M4 27h24" stroke-width="1.8" />
+    </g>
+    <g transform="translate(292 316) scale(1.5)">
+      <path d="M6 9 13 6l7 3 6-3v18l-6 3-7-3-7 3V9Z" stroke-width="1.8" />
+      <path d="M13 6v18M20 9v18" stroke-width="1.6" />
+    </g>
+    <g transform="translate(624 316) scale(1.5)">
+      <path d="M5 9h22v5c-2 0-3 .8-3 2s1 2 3 2v5H5v-5c2 0 3-.8 3-2s-1-2-3-2V9Z" stroke-width="1.8" />
+      <path d="M16 11v3M16 16v1M16 19v2" stroke-width="1.6" />
+    </g>
+    <g transform="translate(790 316) scale(1.5)">
+      <path d="m16 5 5 3v7l-5 3-5-3V8l5-3Z" stroke-width="1.8" />
+      <path d="M7 27v-3.5c0-3.7 3.6-5.7 9-5.7s9 2 9 5.7V27M5 27h22" stroke-width="1.8" />
+    </g>
+  </g>
+  <g transform="translate(462 316) scale(1.5)" fill="#f1efeb">
+    <path fill-rule="evenodd" d="M3 3h11.1C20.3 3 24 6.2 24 11.4c0 5.4-3.8 8.7-10 8.7h-3.6v7.1l2.4 1.8H3l2.6-1.8V6L3 3Zm7.4 4.3v8.5h3.2c3.2 0 4.8-1.4 4.8-4.3 0-2.9-1.6-4.2-4.8-4.2h-3.2Z" />
+  </g>
+
+  <g fill="#aaa" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="middle">
+    <text x="150" y="405">HOME</text>
+    <text x="316" y="405">MAPA</text>
+    <text x="482" y="405">PARANOID</text>
+    <text x="648" y="405">BILHETES</text>
+    <text x="814" y="405">PERFIL</text>
+  </g>
+</svg>

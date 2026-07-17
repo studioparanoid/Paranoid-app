@@ -758,6 +758,12 @@ html[data-paranoid-splash="hide"] .paranoid-splash {
     --header-height: 3.5rem;
   }
 
+  html[data-mobile-simplification="enabled"] .hub-home-screen {
+    height: auto;
+    min-height: calc(100dvh - 4.25rem - env(safe-area-inset-bottom) - 1px);
+    overflow: visible;
+  }
+
   html[data-mobile-simplification="enabled"] .map-screen {
     margin-bottom: calc(-4.25rem - env(safe-area-inset-bottom));
   }
@@ -768,6 +774,10 @@ html[data-paranoid-splash="hide"] .paranoid-splash {
 }
 
 @media (min-width: 1024px) {
+  .paranoid-splash {
+    display: none !important;
+  }
+
   .hub-overlay-sheet {
     animation-name: paranoid-panel-enter;
   }

@@ -3,7 +3,12 @@ import Image from "next/image";
 const splashBootstrap = `(() => {
   const root = document.documentElement;
   const storageKey = "paranoid.mobile-splash-seen";
+  const mobile = window.matchMedia("(max-width: 1023px)").matches;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!mobile) {
+    root.dataset.paranoidSplash = "complete";
+    return;
+  }
   try {
     if (window.sessionStorage.getItem(storageKey)) {
       root.dataset.paranoidSplash = "complete";

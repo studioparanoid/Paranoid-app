@@ -23,13 +23,19 @@ export function AppHeader() {
     window.dispatchEvent(new Event("paranoid:focus-hub"));
   }
 
+  function goBack() {
+    const cameFromThisApp = document.referrer.startsWith(window.location.origin);
+    if (cameFromThisApp && window.history.length > 1) router.back();
+    else router.push("/");
+  }
+
   return <header className={`brand-surface app-header-shadow sticky top-0 z-50 border-b border-[var(--brand-border)] bg-black backdrop-blur-lg ${hideMobileHeader ? "hidden lg:block" : "block"}`}>
     {mobileSimplificationEnabled && (
       <div className="mx-auto flex h-14 items-center justify-between gap-3 px-3 lg:hidden">
         {isPrimaryMobileRoute(pathname) ? (
           <span className="h-11 w-11" aria-hidden="true" />
         ) : (
-          <button type="button" onClick={() => router.back()} aria-label="Voltar" className="focus-ring pressable grid h-11 w-11 place-items-center text-zinc-300 hover:text-white">
+          <button type="button" onClick={goBack} aria-label="Voltar" className="focus-ring pressable grid h-11 w-11 place-items-center text-zinc-300 hover:text-white">
             <ParanoidBackIcon className="h-5 w-5" />
           </button>
         )}

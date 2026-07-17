@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import {
   createContext,
   type PointerEvent as ReactPointerEvent,
@@ -12,6 +13,8 @@ import {
 } from "react";
 import { SmartHub } from "@/components/home/SmartHub";
 import { ParanoidCloseIcon } from "@/components/navigation/ParanoidIconSystem";
+import { useToast } from "@/components/ui/Toast";
+import type { HubResponse } from "@/lib/hub/types";
 
 type HubOverlayContextValue = {
   closeHub: () => void;
@@ -22,14 +25,35 @@ type HubOverlayContextValue = {
 const HubOverlayContext = createContext<HubOverlayContextValue | null>(null);
 
 export function HubOverlayProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const { toast } = useToast();
   const [isHubOpen, setHubOpen] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
   const openHub = useCallback(() => setHubOpen(true), []);
-  const closeHub = useCallback(() => setHubOpen(false), []);
+  const closeHub = useCallback(() => {
+    if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+    setHubOpen(false);
+  }, []);
+  const handleResponse = useCallback((response: HubResponse) => {
+    const awaitingFollowUp = Boolean(response.context?.pendingQuestion);
+    if (pathname === "/" && !awaitingFollowUp) {
+      toast({ message: "A ajustar o Feed ao teu pedido.", tone: "success" });
+      if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = window.setTimeout(() => setHubOpen(false), 520);
+      return;
+    }
+    toast({ message: awaitingFollowUp ? "A Paranoid precisa de mais um detalhe." : "Contexto atualizado.", tone: "success" });
+  }, [pathname, toast]);
+
+  useEffect(() => () => {
+    if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+  }, []);
 
   return (
     <HubOverlayContext.Provider value={{ closeHub, isHubOpen, openHub }}>
       {children}
-      {isHubOpen && <HubOverlay onClose={closeHub} />}
+      {isHubOpen && <HubOverlay onClose={closeHub} onResponse={handleResponse} />}
     </HubOverlayContext.Provider>
   );
 }
@@ -40,7 +64,7 @@ export function useHubOverlay() {
   return context;
 }
 
-function HubOverlay({ onClose }: { onClose: () => void }) {
+function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: (response: HubResponse) => void }) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const dragStartRef = useRef<number | null>(null);
@@ -149,7 +173,7 @@ function HubOverlay({ onClose }: { onClose: () => void }) {
           <ParanoidCloseIcon className="h-5 w-5" />
         </button>
         <div className="min-h-0 flex-1 overflow-hidden pr-12 lg:pr-10">
-          <SmartHub instanceId="overlay" overlayMode />
+          <SmartHub instanceId="overlay" overlayMode onResponse={onResponse} />
         </div>
       </section>
     </div>

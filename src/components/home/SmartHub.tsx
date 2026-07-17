@@ -42,6 +42,7 @@ type SmartHubProps = {
   discoveryMode?: boolean;
   discoveryFeed?: ReactNode;
   onHistoryChange?: (history: HubHistoryItem[]) => void;
+  onResponse?: (response: HubResponse) => void;
   instanceId?: string;
   overlayMode?: boolean;
 };
@@ -51,6 +52,7 @@ export function SmartHub({
   discoveryMode = false,
   discoveryFeed,
   onHistoryChange,
+  onResponse,
   instanceId = "main",
   overlayMode = false,
 }: SmartHubProps = {}) {
@@ -130,6 +132,7 @@ export function SmartHub({
       const remainingThinkingTime = minimumThinkingMs - (window.performance.now() - startedAt);
       if (remainingThinkingTime > 0) await new Promise((resolve) => window.setTimeout(resolve, remainingThinkingTime));
       appendHistory({ id: crypto.randomUUID(), query: cleanQuery, response: payload });
+      onResponse?.(payload);
     } catch (requestError) {
       const timedOut = requestError instanceof DOMException && requestError.name === "AbortError" || requestError instanceof Error && requestError.message === timeoutErrorMessage;
       if (process.env.NODE_ENV === "development") console.error("[hub] Falha no pedido", requestError);

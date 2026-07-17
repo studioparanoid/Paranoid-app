@@ -112,7 +112,7 @@ export function DiscoveryFeed({ history, standalone = false, variant = "compact"
       )}
 
       {error && !response && (
-        <div className="mt-6 border-l-2 border-red-600 pl-4" role="alert">
+        <div className={`mt-6 border-l-2 border-red-600 pl-4 ${variant === "immersive" ? "mr-4" : ""}`} role="alert">
           <p className="text-sm text-[var(--foreground-secondary)]">{error}</p>
           <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="pressable focus-ring mt-2 rounded py-1 text-xs font-black text-red-600 hover:text-red-500">Tentar novamente</button>
         </div>
@@ -121,7 +121,7 @@ export function DiscoveryFeed({ history, standalone = false, variant = "compact"
       {loading && !response && <DiscoveryFeedSkeleton variant={variant} />}
 
       {!loading && response && visibleItems.length === 0 && (
-        <div className="mt-7 border-y border-[var(--border)] py-7">
+        <div className={`mt-7 border-y border-[var(--border)] py-7 ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>
           <p className="text-sm leading-6 text-[var(--foreground-secondary)]">Ainda não há conteúdo publicado para este contexto.</p>
           <div className="mt-3 flex flex-wrap gap-5">
             <Link href="/agenda" className="pressable focus-ring rounded py-1 text-xs font-black text-red-600">Abrir Agenda</Link>
@@ -139,14 +139,14 @@ export function DiscoveryFeed({ history, standalone = false, variant = "compact"
       )}
 
       {error && response && (
-        <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="pressable focus-ring mt-4 rounded py-1 text-xs font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)]">Atualizar novamente</button>
+        <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className={`pressable focus-ring mt-4 rounded py-1 text-xs font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)] ${variant === "immersive" ? "ml-4 sm:ml-0" : ""}`}>Atualizar novamente</button>
       )}
     </section>
   );
 }
 
 function ImmersiveDiscoveryFeedItem({ item, intent, onDismiss }: { item: DiscoveryItem; intent: string; onDismiss: (item: DiscoveryItem) => void }) {
-  const props = { item, intent, onDismiss, onOpen: () => sendInteraction(item, "open", intent) };
+  const props = { item, onDismiss, onOpen: () => sendInteraction(item, "open", intent) };
   if (item.kind === "event") return <FeedEventItem {...props} />;
   if (item.kind === "venue") return <FeedVenueItem {...props} />;
   if (item.kind === "promotion" || item.kind === "community") return <FeedSignalItem {...props} />;

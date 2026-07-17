@@ -5,10 +5,15 @@ import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag"
 
 export default function HomePage() {
   const mobileSimplificationEnabled = isMobileSimplificationEnabled();
+  const discoveryFeedEnabled = isDiscoveryFeedEnabled();
 
   return (
     <main className={`hub-home-screen bg-[var(--background)] text-[var(--foreground)] ${mobileSimplificationEnabled ? "px-0 lg:px-10" : "px-4 sm:px-6 lg:px-10"}`}>
-      {isDiscoveryFeedEnabled() ? <DiscoveryHome mobileSimplified={mobileSimplificationEnabled} /> : <SmartHub />}
+      {discoveryFeedEnabled || mobileSimplificationEnabled ? (
+        <DiscoveryHome mobileSimplified={mobileSimplificationEnabled} desktopDiscoveryEnabled={discoveryFeedEnabled} />
+      ) : (
+        <SmartHub />
+      )}
     </main>
   );
 }

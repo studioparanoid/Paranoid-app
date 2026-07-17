@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isDiscoveryFeedEnabled } from "@/lib/discovery/flag";
+import { isDiscoveryApiEnabled } from "@/lib/discovery/flag";
 import { buildDiscoveryResponse } from "@/lib/discovery/server";
 import type { DiscoveryLocation, DiscoveryRequest } from "@/lib/discovery/types";
 import { HubTimeoutError, withHubTimeout } from "@/lib/hub/timeout";
@@ -28,7 +28,7 @@ function cleanLocation(value: unknown): DiscoveryLocation | undefined {
 }
 
 export async function POST(request: Request) {
-  if (!isDiscoveryFeedEnabled()) return NextResponse.json({ error: "Discovery Feed desativado." }, { status: 404 });
+  if (!isDiscoveryApiEnabled()) return NextResponse.json({ error: "Discovery Feed desativado." }, { status: 404 });
   let payload: Record<string, unknown>;
   try {
     payload = await request.json() as Record<string, unknown>;
