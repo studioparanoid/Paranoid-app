@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/public";
 import { AppIcon } from "@/components/AppIcon";
 import { Button, LoadingButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { ParanoidBookmarkIcon } from "@/components/navigation/ParanoidIconSystem";
 
 type SaveEventButtonProps = {
   eventId?: string;
@@ -12,9 +13,10 @@ type SaveEventButtonProps = {
     id: string;
   };
   compact?: boolean;
+  feed?: boolean;
 };
 
-export function SaveEventButton({ eventId, event, compact = false }: SaveEventButtonProps) {
+export function SaveEventButton({ eventId, event, compact = false, feed = false }: SaveEventButtonProps) {
   const resolvedEventId = eventId || event?.id || "";
 
   const [saved, setSaved] = useState(false);
@@ -131,6 +133,25 @@ export function SaveEventButton({ eventId, event, compact = false }: SaveEventBu
     }
 
     setLoading(false);
+  }
+
+  if (feed) {
+    return (
+      <button
+        type="button"
+        onClick={toggleSaved}
+        disabled={loading}
+        aria-label={saved ? "Remover dos guardados" : "Guardar evento"}
+        aria-pressed={saved}
+        aria-busy={loading}
+        className={`focus-ring pressable inline-flex min-h-9 items-center gap-2 text-xs font-black transition-colors ${
+          saved ? "text-red-600" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"
+        } disabled:opacity-45`}
+      >
+        <ParanoidBookmarkIcon className="h-[1.05rem] w-[1.05rem]" active={saved} />
+        {saved ? "Guardado" : "Guardar"}
+      </button>
+    );
   }
 
   if (compact) {

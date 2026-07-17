@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppIcon } from "@/components/AppIcon";
+import { FeedEventItem, FeedItem, FeedSignalItem, FeedVenueItem } from "@/components/discovery/feed/FeedItem";
 import type { DiscoveryAction, DiscoveryItem, DiscoveryLocation, DiscoveryResponse } from "@/lib/discovery/types";
 import type { HubConversationContext, HubHistoryItem } from "@/lib/hub/types";
 
@@ -12,6 +13,7 @@ const manualLocationKey = "paranoid.map.manualLocation";
 type DiscoveryFeedProps = {
   history: HubHistoryItem[];
   standalone?: boolean;
+  variant?: "compact" | "immersive";
 };
 
 function readManualLocation(): DiscoveryLocation | null {
@@ -51,7 +53,7 @@ function sendInteraction(item: DiscoveryItem, action: "open" | "dismiss", intent
   }).catch(() => undefined);
 }
 
-export function DiscoveryFeed({ history, standalone = false }: DiscoveryFeedProps) {
+export function DiscoveryFeed({ history, standalone = false, variant = "compact" }: DiscoveryFeedProps) {
   const [location] = useState<DiscoveryLocation | null>(() => typeof window === "undefined" ? null : readManualLocation());
   const [response, setResponse] = useState<DiscoveryResponse | null>(null);
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
@@ -93,8 +95,8 @@ export function DiscoveryFeed({ history, standalone = false }: DiscoveryFeedProp
   }
 
   return (
-    <section className="content-transition pb-3" aria-labelledby={standalone ? "standalone-discovery-title" : "discovery-title"} aria-busy={loading}>
-      <header className="flex items-end justify-between gap-4">
+    <section className={`content-transition pb-3 ${variant === "immersive" ? "pt-5 sm:px-6" : ""}`} aria-labelledby={standalone ? "standalone-discovery-title" : "discovery-title"} aria-busy={loading}>
+      <header className={`flex items-end justify-between gap-4 ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>
         <div className="min-w-0">
           <p className="text-xs font-black uppercase text-red-600">Para ti agora</p>
           <h2 id={standalone ? "standalone-discovery-title" : "discovery-title"} className="mt-1 text-xl font-black text-[var(--foreground)] sm:text-2xl">
@@ -104,9 +106,9 @@ export function DiscoveryFeed({ history, standalone = false }: DiscoveryFeedProp
         {loading && response && <span className="shrink-0 text-xs text-[var(--foreground-muted)]">A ajustar</span>}
       </header>
 
-      {response && response.items.length > 0 && <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">{response.summary}</p>}
+      {response && response.items.length > 0 && <p className={`mt-2 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)] ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>{response.summary}</p>}
       {response && response.signals.length > 0 && (
-        <p className="mt-2 text-xs text-[var(--foreground-muted)]">Com base em {response.signals.join(" · ")}.</p>
+        <p className={`mt-2 text-xs text-[var(--foreground-muted)] ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>Com base em {response.signals.join(" · ")}.</p>
       )}
 
       {error && !response && (
@@ -116,7 +118,7 @@ export function DiscoveryFeed({ history, standalone = false }: DiscoveryFeedProp
         </div>
       )}
 
-      {loading && !response && <DiscoveryFeedSkeleton />}
+      {loading && !response && <DiscoveryFeedSkeleton variant={variant} />}
 
       {!loading && response && visibleItems.length === 0 && (
         <div className="mt-7 border-y border-[var(--border)] py-7">
@@ -129,8 +131,10 @@ export function DiscoveryFeed({ history, standalone = false }: DiscoveryFeedProp
       )}
 
       {visibleItems.length > 0 && (
-        <div className="mt-6 divide-y divide-[var(--border)] border-y border-[var(--border)]">
-          {visibleItems.map((item) => <DiscoveryFeedItem key={`${item.kind}:${item.id}`} item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />)}
+        <div className={variant === "immersive" ? "mt-4" : "mt-6 divide-y divide-[var(--border)] border-y border-[var(--border)]"}>
+          {visibleItems.map((item) => variant === "immersive"
+            ? <ImmersiveDiscoveryFeedItem key={`${item.kind}:${item.id}`} item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />
+            : <DiscoveryFeedItem key={`${item.kind}:${item.id}`} item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />)}
         </div>
       )}
 
@@ -139,6 +143,14 @@ export function DiscoveryFeed({ history, standalone = false }: DiscoveryFeedProp
       )}
     </section>
   );
+}
+
+function ImmersiveDiscoveryFeedItem({ item, intent, onDismiss }: { item: DiscoveryItem; intent: string; onDismiss: (item: DiscoveryItem) => void }) {
+  const props = { item, intent, onDismiss, onOpen: () => sendInteraction(item, "open", intent) };
+  if (item.kind === "event") return <FeedEventItem {...props} />;
+  if (item.kind === "venue") return <FeedVenueItem {...props} />;
+  if (item.kind === "promotion" || item.kind === "community") return <FeedSignalItem {...props} />;
+  return <FeedItem {...props} />;
 }
 
 function DiscoveryFeedItem({ item, intent, onDismiss }: { item: DiscoveryItem; intent: string; onDismiss: (item: DiscoveryItem) => void }) {
@@ -176,7 +188,22 @@ function DiscoveryActionLink({ action, primary = false, onOpen }: { action: Disc
   return <Link href={action.href} onClick={onOpen} className={className}>{content}</Link>;
 }
 
-function DiscoveryFeedSkeleton() {
+function DiscoveryFeedSkeleton({ variant = "compact" }: { variant?: "compact" | "immersive" }) {
+  if (variant === "immersive") {
+    return (
+      <div className="mt-5" aria-hidden="true">
+        {[0, 1].map((item) => (
+          <div key={item} className="border-b border-[var(--border)] pb-7 pt-4">
+            <div className="mx-4 h-3 w-20 animate-pulse rounded bg-[var(--surface-secondary)]" />
+            <div className="mx-4 mt-3 h-5 w-2/3 animate-pulse rounded bg-[var(--surface-secondary)]" />
+            <div className="mt-4 aspect-[4/3] w-full animate-pulse bg-[var(--surface-secondary)]" />
+            <div className="mx-4 mt-4 h-3 w-4/5 animate-pulse rounded bg-[var(--surface-secondary)]" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="mt-6 divide-y divide-[var(--border)] border-y border-[var(--border)]" aria-hidden="true">
       {[0, 1, 2].map((item) => (

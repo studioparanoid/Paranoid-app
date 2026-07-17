@@ -7,6 +7,10 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeScript } from "@/components/theme/ThemeScript";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { SplashBootstrapScript, SplashScreen } from "@/components/brand/SplashScreen";
+import { HubOverlayProvider } from "@/components/hub/HubOverlayProvider";
+import { MobileBottomNavigation } from "@/components/navigation/MobileBottomNavigation";
+import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
 
 export const metadata: Metadata = {
   title: "Paranoid — Agenda Cultural Alternativa",
@@ -58,19 +62,40 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const mobileSimplificationEnabled = isMobileSimplificationEnabled();
+
   return (
-    <html lang="pt" data-theme="dark" data-theme-preference="dark" className="h-full antialiased" suppressHydrationWarning>
+    <html
+      lang="pt"
+      data-theme="dark"
+      data-theme-preference="dark"
+      data-mobile-simplification={mobileSimplificationEnabled ? "enabled" : undefined}
+      className="h-full antialiased"
+      suppressHydrationWarning
+    >
       <head>
         <ThemeScript />
+        {mobileSimplificationEnabled && <SplashBootstrapScript />}
       </head>
       <body className="min-h-full bg-[var(--background)] text-[var(--foreground)]">
         <PwaRegister />
+        {mobileSimplificationEnabled && <SplashScreen />}
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>
-              <DesktopHeader />
-              <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
-              <MobileBottomNav />
+              {mobileSimplificationEnabled ? (
+                <HubOverlayProvider>
+                  <DesktopHeader />
+                  <div className="pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
+                  <MobileBottomNavigation />
+                </HubOverlayProvider>
+              ) : (
+                <>
+                  <DesktopHeader />
+                  <div className="pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</div>
+                  <MobileBottomNav />
+                </>
+              )}
             </ToastProvider>
           </AuthProvider>
         </ThemeProvider>

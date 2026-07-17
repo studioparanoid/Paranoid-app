@@ -3,42 +3,19 @@
 import Link from "next/link";
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { AppIcon } from "@/components/AppIcon";
+import {
+  clearHubHistory,
+  HUB_HISTORY_LIMIT,
+  readHubHistory,
+  writeHubHistory,
+} from "@/lib/hub/client-history";
 import type { HubHistoryItem, HubResponse } from "@/lib/hub/types";
 
-const historyKey = "paranoid.hub-history";
-const historyLimit = 32;
 const requestTimeoutMs = 10_000;
 const minimumThinkingMs = 360;
 const genericErrorMessage = "O Hub falhou a responder. Tenta novamente.";
 const timeoutErrorMessage = "Demorei demasiado a obter a informação. Tenta novamente.";
 const suggestions = ["Quero sair hoje", "Tenho fome", "O que está a acontecer?", "Estou num festival"];
-
-function readHistory() {
-  try {
-    const value = JSON.parse(window.sessionStorage.getItem(historyKey) || "[]");
-    if (!Array.isArray(value)) return [];
-    return value.filter((item): item is HubHistoryItem => Boolean(
-      item &&
-      typeof item === "object" &&
-      typeof item.id === "string" &&
-      typeof item.query === "string" &&
-      item.response &&
-      typeof item.response.title === "string" &&
-      Array.isArray(item.response.results) &&
-      Array.isArray(item.response.actions)
-    )).slice(-historyLimit);
-  } catch {
-    return [];
-  }
-}
-
-function persistHistory(history: HubHistoryItem[]) {
-  try {
-    window.sessionStorage.setItem(historyKey, JSON.stringify(history));
-  } catch (storageError) {
-    if (process.env.NODE_ENV === "development") console.warn("[hub] Não foi possível guardar a conversa na sessão.", storageError);
-  }
-}
 
 function isHubResponse(value: unknown): value is HubResponse {
   if (!value || typeof value !== "object") return false;
@@ -61,12 +38,22 @@ function resizeInput(input: HTMLTextAreaElement) {
 }
 
 type SmartHubProps = {
+  autoFocus?: boolean;
   discoveryMode?: boolean;
   discoveryFeed?: ReactNode;
   onHistoryChange?: (history: HubHistoryItem[]) => void;
+  instanceId?: string;
+  overlayMode?: boolean;
 };
 
-export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange }: SmartHubProps = {}) {
+export function SmartHub({
+  autoFocus = true,
+  discoveryMode = false,
+  discoveryFeed,
+  onHistoryChange,
+  instanceId = "main",
+  overlayMode = false,
+}: SmartHubProps = {}) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
@@ -78,7 +65,7 @@ export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
-      setHistory(readHistory());
+      setHistory(readHubHistory());
       setHistoryRestored(true);
     }, 0);
     const focusHub = () => {
@@ -86,7 +73,7 @@ export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange
       inputRef.current?.focus({ preventScroll: true });
     };
     const focusTimer = window.setTimeout(() => {
-      if (new URLSearchParams(window.location.search).get("focus") === "hub" || window.matchMedia("(pointer: fine)").matches) focusHub();
+      if (autoFocus && (new URLSearchParams(window.location.search).get("focus") === "hub" || window.matchMedia("(pointer: fine)").matches)) focusHub();
     }, 100);
     window.addEventListener("paranoid:focus-hub", focusHub);
     return () => {
@@ -94,7 +81,7 @@ export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange
       window.clearTimeout(focusTimer);
       window.removeEventListener("paranoid:focus-hub", focusHub);
     };
-  }, []);
+  }, [autoFocus]);
 
   useEffect(() => {
     if (historyRestored) onHistoryChange?.(history);
@@ -111,8 +98,8 @@ export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange
 
   function appendHistory(item: HubHistoryItem) {
     setHistory((current) => {
-      const next = [...current, item].slice(-historyLimit);
-      persistHistory(next);
+      const next = [...current, item].slice(-HUB_HISTORY_LIMIT);
+      writeHubHistory(next);
       return next;
     });
   }
@@ -185,11 +172,7 @@ export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange
   }
 
   function clearHistory() {
-    try {
-      window.sessionStorage.removeItem(historyKey);
-    } catch (storageError) {
-      if (process.env.NODE_ENV === "development") console.warn("[hub] Não foi possível limpar a conversa guardada.", storageError);
-    }
+    clearHubHistory();
     setHistory([]);
     setQuery("");
     if (inputRef.current) inputRef.current.style.height = "auto";
@@ -197,12 +180,17 @@ export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange
   }
 
   const visibleHistory = discoveryMode ? history.slice(-3) : history;
+  const titleId = `hub-title-${instanceId}`;
+  const inputId = `paranoid-hub-query-${instanceId}`;
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[52rem] flex-col" aria-labelledby="hub-title">
+    <section
+      className={`mx-auto flex h-full w-full flex-col ${overlayMode ? "max-w-none" : "max-w-[52rem]"}`}
+      aria-labelledby={titleId}
+    >
       <header className="flex shrink-0 items-center justify-between gap-4 py-4 sm:py-5">
         <div>
-          <h1 id="hub-title" className="text-xl font-black sm:text-2xl">{discoveryMode ? "Paranoid" : "Paranoid Hub"}</h1>
+          <h1 id={titleId} className="text-xl font-black sm:text-2xl">{discoveryMode ? "Paranoid" : "Paranoid Hub"}</h1>
           <p className="mt-0.5 text-xs text-[var(--foreground-muted)]">{discoveryMode ? "Diz-me o que procuras." : "O centro da tua noite."}</p>
         </div>
         {history.length > 0 && (
@@ -236,11 +224,11 @@ export function SmartHub({ discoveryMode = false, discoveryFeed, onHistoryChange
       </div>
 
       <form onSubmit={submit} className="shrink-0 bg-[var(--background)] pb-3 pt-2 sm:pb-5" aria-busy={loading}>
-        <label htmlFor="paranoid-hub-query" className="sr-only">Fala com a Paranoid</label>
+        <label htmlFor={inputId} className="sr-only">Fala com a Paranoid</label>
         <div className="hub-composer flex min-h-14 items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2 pl-3.5 focus-within:border-[var(--border-strong)]">
           <textarea
             ref={inputRef}
-            id="paranoid-hub-query"
+            id={inputId}
             rows={1}
             value={query}
             onChange={handleInput}

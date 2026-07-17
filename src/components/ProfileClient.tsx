@@ -241,6 +241,7 @@ export function ProfileClient() {
   const approved = profile?.account_status === "approved";
   const entityPath = publicPath(accountType, profile?.entity_slug || null);
   const title = entityName || displayName || email.split("@")[0] || "Perfil";
+  const mobileSimplificationEnabled = process.env.NEXT_PUBLIC_MOBILE_SIMPLIFICATION_ENABLED === "true";
   const activityItems: SettingsListItem[] = profileActivityNavigation.map((item) => ({ ...item, description: item.href === "/guardados" ? "Eventos que queres voltar a ver" : "Artistas, espaços e organizadores" }));
   const purchaseItems: SettingsListItem[] = profilePurchaseNavigation.map((item) => ({ ...item, description: item.href === "/bilhetes" ? "Carteira e códigos de entrada" : "Loja e compras" }));
   const creatorItems: SettingsListItem[] = [];
@@ -258,10 +259,10 @@ export function ProfileClient() {
       <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-600">Configurar conta</p>
       <p className="mt-2 text-sm font-bold text-[var(--foreground)]">Completa o perfil</p>
     </div>}
-    <header className="flex items-center gap-4 border-b border-zinc-900 pb-6">
-      <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border border-red-950 bg-red-950/25 text-xl font-black text-red-500">{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
-      <div className="min-w-0 flex-1"><h1 className="truncate text-3xl font-black">{title}</h1><p className="truncate text-sm text-zinc-600">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
-      <Button type="button" variant="secondary" size="sm" onClick={() => setEditing((value) => !value)} aria-expanded={editing} className="hidden sm:inline-flex">Editar perfil</Button>
+    <header className="flex items-center gap-3 border-b border-zinc-900 pb-6 sm:gap-4">
+      <div className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden border border-red-950 bg-red-950/25 text-xl font-black text-red-500 sm:h-16 sm:w-16 ${mobileSimplificationEnabled ? "[clip-path:polygon(50%_0,92%_20%,100%_72%,72%_100%,28%_100%,0_72%,8%_20%)]" : "rounded-full"}`}>{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
+      <div className="min-w-0 flex-1"><h1 className="truncate text-xl font-black sm:text-3xl">{title}</h1><p className="truncate text-xs text-zinc-600 sm:text-sm">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
+      <Button type="button" variant="secondary" size="sm" onClick={() => setEditing((value) => !value)} aria-expanded={editing} className={mobileSimplificationEnabled ? "inline-flex shrink-0" : "hidden sm:inline-flex"}>Editar perfil</Button>
     </header>
 
     {editing && <section className="slide-up border-b border-zinc-900 py-7">
