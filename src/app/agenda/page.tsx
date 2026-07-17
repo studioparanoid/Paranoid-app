@@ -9,6 +9,7 @@ import { FilterDrawer } from "@/components/FilterDrawer";
 import { EventCardSkeleton } from "@/components/LoadingSkeleton";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import {
   ALL_CATEGORIES, ALL_CITIES, ALL_DISTRICTS, ALL_MUNICIPALITIES,
@@ -88,31 +89,31 @@ export default function AgendaPage() {
 
   function clearAdvanced() { setDistrict(ALL_DISTRICTS); setMunicipality(ALL_MUNICIPALITIES); setCategory(ALL_CATEGORIES); setPrice("all"); setOnlyFeatured(false); }
 
-  return <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 pb-28 text-[#f2f1ec] sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-7xl">
+  return <main className="min-h-screen bg-background px-4 py-6 pb-28 text-foreground sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-7xl">
     <PageHeader eyebrow="Agenda" title="Eventos" description="Encontra o que acontece por data, local e categoria." />
-    <div className="sticky top-16 z-30 -mx-4 mt-5 border-y border-zinc-900 bg-[#0b0b0b]/96 px-4 py-4 backdrop-blur-xl sm:mx-0 sm:rounded sm:border sm:px-4">
+    <div className="sticky top-16 z-30 -mx-4 mt-5 border-y border-border bg-background/96 px-4 py-4 backdrop-blur-xl sm:mx-0 sm:rounded sm:border sm:px-4">
       <div className="grid gap-3 lg:grid-cols-[1fr_360px_auto] lg:items-center">
-        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar evento, espaço ou cidade" aria-label="Pesquisar eventos" className="h-11 w-full rounded border border-zinc-800 bg-black px-4 text-sm font-bold outline-none placeholder:text-zinc-700 focus:border-red-800" />
+        <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar evento, espaço ou cidade" aria-label="Pesquisar eventos" className="h-11 font-bold" />
         <DateQuickFilters value={quickDate} onChange={setQuickDate} />
         <Button variant="secondary" onClick={() => setFiltersOpen(true)} className="rounded">Filtros{activeAdvanced > 0 ? ` · ${activeAdvanced}` : ""}</Button>
       </div>
-      {quickDate === "custom" && <input type="date" value={customDate} onChange={(event) => setCustomDate(event.target.value)} aria-label="Escolher data" className="mt-3 h-11 w-full rounded border border-zinc-800 bg-black px-4 text-sm sm:w-auto" />}
+      {quickDate === "custom" && <Input type="date" value={customDate} onChange={(event) => setCustomDate(event.target.value)} aria-label="Escolher data" className="mt-3 h-11 sm:w-auto" />}
     </div>
 
-    <div className="mt-6 flex items-center justify-between"><p className="text-xs font-bold text-zinc-600" aria-live="polite">{filtered.length} resultado{filtered.length === 1 ? "" : "s"}</p>{(search || activeAdvanced > 0) && <button type="button" onClick={() => { setSearch(""); clearAdvanced(); toast("Filtros limpos."); }} className="pressable focus-ring rounded text-xs font-bold text-zinc-500 underline underline-offset-4">Limpar filtros</button>}</div>
-    {message && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-l-2 border-red-800 pl-4" role="alert"><p className="text-sm text-red-300">{message}</p><Button variant="secondary" size="sm" onClick={() => void loadEvents()}>Tentar novamente</Button></div>}
-    <div className="content-transition mt-3">{loading ? <EventCardSkeleton rows={8} /> : groups.length === 0 ? <EmptyState title="Não encontrámos eventos para estes filtros." actionLabel="Limpar filtros" actionHref="/agenda" /> : groups.map(([label, dayEvents]) => <section key={label} className="mt-10 first:mt-0"><h2 className="mb-5 border-b border-zinc-800 pb-3 text-sm font-black capitalize text-zinc-300">{label}</h2><CardGrid>{dayEvents.map((event) => <EventCard key={event.id} event={{ id: event.id, slug: event.slug, title: event.title, date: compactDate(event), time: event.display_time, venue: event.venue_name, municipality: event.municipality, city: event.city, price: event.price || event.ticket_price, category: event.category, image: event.image_url, featured: event.featured }} />)}</CardGrid></section>)}</div>
+    <div className="mt-6 flex items-center justify-between"><p className="text-xs font-bold text-foreground-muted" aria-live="polite">{filtered.length} resultado{filtered.length === 1 ? "" : "s"}</p>{(search || activeAdvanced > 0) && <button type="button" onClick={() => { setSearch(""); clearAdvanced(); toast("Filtros limpos."); }} className="pressable focus-ring rounded text-xs font-bold text-foreground-muted underline underline-offset-4">Limpar filtros</button>}</div>
+    {message && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-l-2 border-danger pl-4" role="alert"><p className="text-sm text-danger">{message}</p><Button variant="secondary" size="sm" onClick={() => void loadEvents()}>Tentar novamente</Button></div>}
+    <div className="content-transition mt-3">{loading ? <EventCardSkeleton rows={8} /> : groups.length === 0 ? <EmptyState title="Não encontrámos eventos para estes filtros." description="Experimenta mudar a data ou a localização." actionLabel="Limpar filtros" actionHref="/agenda" /> : groups.map(([label, dayEvents]) => <section key={label} className="mt-10 first:mt-0"><h2 className="mb-5 border-b border-border pb-3 text-sm font-black capitalize text-foreground-secondary">{label}</h2><CardGrid>{dayEvents.map((event) => <EventCard key={event.id} event={{ id: event.id, slug: event.slug, title: event.title, date: compactDate(event), time: event.display_time, venue: event.venue_name, municipality: event.municipality, city: event.city, price: event.price || event.ticket_price, category: event.category, image: event.image_url, featured: event.featured }} />)}</CardGrid></section>)}</div>
 
     <FilterDrawer open={filtersOpen} onClose={() => setFiltersOpen(false)} footer={<div className="flex gap-3"><Button type="button" variant="secondary" onClick={clearAdvanced} className="flex-1">Limpar</Button><Button type="button" onClick={() => { setFiltersOpen(false); toast({ message: "Filtros aplicados.", tone: "success" }); }} className="flex-1">Aplicar</Button></div>}>
       <SelectField label="Distrito" value={district} onChange={(value) => { setDistrict(value); setMunicipality(ALL_MUNICIPALITIES); }} options={districtOptions} />
       <SelectField label="Concelho" value={municipality} onChange={setMunicipality} options={municipalityOptions} />
       <SelectField label="Categoria" value={category} onChange={setCategory} options={categoryOptions} />
       <SelectField label="Preço" value={price} onChange={(value) => setPrice(value as EventPriceFilter)} options={eventPriceFilterOptions.map((option) => option.value)} labels={Object.fromEntries(eventPriceFilterOptions.map((option) => [option.value, option.label]))} />
-      <label className="flex min-h-12 items-center justify-between border-y border-zinc-900 py-3 text-sm font-bold"><span>Apenas eventos destacados</span><input type="checkbox" checked={onlyFeatured} onChange={(event) => setOnlyFeatured(event.target.checked)} className="h-5 w-5 accent-red-700" /></label>
+      <label className="flex min-h-12 items-center justify-between border-y border-border py-3 text-sm font-bold"><span>Apenas eventos destacados</span><input type="checkbox" checked={onlyFeatured} onChange={(event) => setOnlyFeatured(event.target.checked)} className="h-5 w-5 accent-[var(--accent)]" /></label>
     </FilterDrawer>
   </section></main>;
 }
 
 function SelectField({ label, value, onChange, options, labels = {} }: { label: string; value: string; onChange: (value: string) => void; options: readonly string[]; labels?: Record<string, string> }) {
-  return <label><span className="mb-2 block text-xs font-bold text-zinc-500">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="h-12 w-full rounded border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-red-800">{options.map((option) => <option key={option} value={option}>{labels[option] || option}</option>)}</select></label>;
+  return <label><span className="mb-2 block text-xs font-bold text-foreground-muted">{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="focus-ring h-12 w-full rounded-md border border-input-border bg-input px-4 text-sm text-foreground outline-none">{options.map((option) => <option key={option} value={option}>{labels[option] || option}</option>)}</select></label>;
 }

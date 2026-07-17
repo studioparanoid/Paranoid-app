@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 import { StructuredEventSections } from "@/components/events/StructuredEventSections";
+import { Card } from "@/components/ui/Card";
+import { LinkButton, buttonClassName } from "@/components/ui/Button";
 
 type EventRow = {
   id: string;
@@ -159,29 +161,24 @@ function eventDateValue(event: EventRow) {
 
 function NotFoundCard() {
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground lg:px-10 lg:py-12">
       <section className="mx-auto max-w-md lg:max-w-5xl">
-        <div className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-          <p className="text-xs uppercase tracking-[0.35em] text-red-700">
+        <Card className="p-6 lg:p-10">
+          <p className="text-xs uppercase tracking-[0.35em] text-accent">
             Evento
           </p>
 
-          <h1 className="mt-4 text-5xl font-black leading-none lg:text-7xl">
+          <h1 className="mt-4 text-4xl font-black leading-none lg:text-6xl">
             Isto não existe.
           </h1>
 
-          <p className="mt-5 text-base leading-relaxed text-zinc-400">
+          <p className="mt-5 text-base leading-relaxed text-foreground-muted">
             O evento pode ter sido removido, arquivado ou ainda não estar
             publicado.
           </p>
 
-          <Link
-            href="/agenda"
-            className="mt-8 inline-block rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
-          >
-            Voltar à agenda
-          </Link>
-        </div>
+          <LinkButton href="/agenda" className="mt-8">Voltar à agenda</LinkButton>
+        </Card>
       </section>
     </main>
   );
@@ -374,10 +371,15 @@ export default function EventPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground lg:px-10 lg:py-12">
         <section className="mx-auto max-w-md lg:max-w-7xl">
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-            <p className="text-zinc-500">A carregar evento...</p>
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="skeleton-shimmer aspect-[4/5] lg:aspect-[16/7]" />
+            <div className="space-y-3 p-6">
+              <div className="skeleton-shimmer h-4 w-24 rounded" />
+              <div className="skeleton-shimmer h-9 w-3/4 rounded" />
+              <div className="skeleton-shimmer h-4 w-1/2 rounded" />
+            </div>
           </div>
         </section>
       </main>
@@ -395,20 +397,20 @@ export default function EventPage() {
   const ticketBadgeText = ticketBadge(event);
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground lg:px-10 lg:py-12">
       <section className="mx-auto max-w-md lg:max-w-7xl">
-        <Link href="/agenda" className="mb-6 inline-block text-sm text-zinc-400">
+        <Link href="/agenda" className="pressable focus-ring mb-6 inline-block rounded text-sm text-foreground-muted hover:text-foreground">
           ← Voltar à agenda
         </Link>
 
         {message && (
-          <div className="mb-6 rounded-[2rem] border border-red-900 bg-red-950/20 p-5">
-            <p className="text-sm font-bold text-red-300">{message}</p>
-          </div>
+          <Card className="mb-6 border-danger/40 p-5">
+            <p className="text-sm font-bold text-danger">{message}</p>
+          </Card>
         )}
 
-        <section className="grid overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <div className="relative aspect-[4/5] overflow-hidden bg-zinc-900 lg:min-h-[580px] lg:aspect-auto">
+        <section className="grid overflow-hidden rounded-lg border border-border bg-card lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+          <div className="relative aspect-[4/5] overflow-hidden bg-surface-secondary lg:min-h-[580px] lg:aspect-auto">
             {event.image_url ? (
               <Image
                 src={event.image_url}
@@ -449,16 +451,16 @@ export default function EventPage() {
           </div>
 
           <div className="flex flex-col justify-end p-6 sm:p-8 lg:p-10">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-accent">
               {event.display_date || formatDate(dateValue)}
             </p>
             <h1 className="mt-4 break-words text-4xl font-black leading-[0.96] sm:text-5xl lg:text-6xl">
               {event.title}
             </h1>
-            <p className="mt-6 text-base font-bold text-zinc-400">
+            <p className="mt-6 text-base font-bold text-foreground-secondary">
               {[event.display_time, event.venue_name, event.city].filter(Boolean).join(" · ")}
             </p>
-            <p className="mt-2 text-sm text-zinc-600">
+            <p className="mt-2 text-sm text-foreground-muted">
               {event.price || event.ticket_price || "Preço por definir"}
             </p>
           </div>
@@ -466,14 +468,14 @@ export default function EventPage() {
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px] lg:items-start">
           <section className="space-y-6">
-            <article className="rounded-lg border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            <Card className="p-5 lg:p-8">
+              <p className="text-xs uppercase tracking-[0.3em] text-accent">
                 Informação
               </p>
 
               <div className="mt-6 grid gap-5 lg:grid-cols-2">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
+                  <p className="text-xs font-black uppercase tracking-wide text-foreground-muted">
                     Data
                   </p>
 
@@ -482,14 +484,14 @@ export default function EventPage() {
                   </p>
 
                   {event.is_multi_day && event.end_date && (
-                    <p className="mt-1 text-sm text-zinc-500">
+                    <p className="mt-1 text-sm text-foreground-muted">
                       até {formatShortDate(event.end_date)}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
+                  <p className="text-xs font-black uppercase tracking-wide text-foreground-muted">
                     Hora
                   </p>
 
@@ -499,7 +501,7 @@ export default function EventPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
+                  <p className="text-xs font-black uppercase tracking-wide text-foreground-muted">
                     Cidade
                   </p>
 
@@ -509,7 +511,7 @@ export default function EventPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
+                  <p className="text-xs font-black uppercase tracking-wide text-foreground-muted">
                     Preço
                   </p>
 
@@ -518,47 +520,47 @@ export default function EventPage() {
                   </p>
                 </div>
               </div>
-            </article>
+            </Card>
 
-            <article className="rounded-lg border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            <Card className="p-5 lg:p-8">
+              <p className="text-xs uppercase tracking-[0.3em] text-accent">
                 Rede
               </p>
 
-              <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                <div className="rounded-lg border border-zinc-800 bg-black p-5">
-                  <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
+              <div className="mt-6 grid gap-6 lg:grid-cols-2">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-foreground-muted">
                     Espaço
                   </p>
 
                   {venue ? (
                     <Link
                       href={`/espacos/${venue.slug}`}
-                      className="mt-2 inline-block text-3xl font-black underline decoration-zinc-700 underline-offset-4"
+                      className="focus-ring mt-2 inline-block rounded text-2xl font-black underline decoration-border-strong underline-offset-4 hover:decoration-foreground"
                     >
                       {venue.name}
                     </Link>
                   ) : (
-                    <p className="mt-2 text-3xl font-black">
+                    <p className="mt-2 text-2xl font-black">
                       {event.venue_name || "Sem espaço"}
                     </p>
                   )}
                 </div>
 
-                <div className="rounded-lg border border-zinc-800 bg-black p-5">
-                  <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-foreground-muted">
                     Organizador
                   </p>
 
                   {organizer ? (
                     <Link
                       href={`/organizadores/${organizer.slug}`}
-                      className="mt-2 inline-block text-3xl font-black underline decoration-zinc-700 underline-offset-4"
+                      className="focus-ring mt-2 inline-block rounded text-2xl font-black underline decoration-border-strong underline-offset-4 hover:decoration-foreground"
                     >
                       {organizer.name}
                     </Link>
                   ) : (
-                    <p className="mt-2 text-3xl font-black">
+                    <p className="mt-2 text-2xl font-black">
                       {event.organizer_name || "Sem organizador"}
                     </p>
                   )}
@@ -566,8 +568,8 @@ export default function EventPage() {
               </div>
 
               {artists.length > 0 && (
-                <div className="mt-5 rounded-lg border border-zinc-800 bg-black p-5">
-                  <p className="text-xs font-black uppercase tracking-wide text-zinc-600">
+                <div className="mt-6 border-t border-border pt-5">
+                  <p className="text-xs font-black uppercase tracking-wide text-foreground-muted">
                     Artistas
                   </p>
 
@@ -576,7 +578,7 @@ export default function EventPage() {
                       <Link
                         key={artist.id}
                         href={`/artistas/${artist.slug}`}
-                        className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-bold text-zinc-300"
+                        className="pressable focus-ring rounded-full border border-border-strong px-4 py-2 text-sm font-bold text-foreground-secondary hover:text-foreground"
                       >
                         {artist.name}
                       </Link>
@@ -584,24 +586,24 @@ export default function EventPage() {
                   </div>
                 </div>
               )}
-            </article>
+            </Card>
 
-            {event.description ? <article className="rounded-lg border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            {event.description ? <Card className="p-5 lg:p-8">
+              <p className="text-xs uppercase tracking-[0.3em] text-accent">
                 Descrição
               </p>
 
-              <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-zinc-300 lg:text-lg">
+              <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-foreground-secondary lg:text-lg">
                 {event.description}
               </p>
-            </article> : null}
+            </Card> : null}
 
             <StructuredEventSections eventId={event.id} />
           </section>
 
           <aside className="space-y-6 lg:sticky lg:top-28">
-            <section className="rounded-lg border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+            <Card className="p-5 lg:p-6">
+              <p className="text-xs uppercase tracking-[0.3em] text-accent">
                 Ação
               </p>
 
@@ -610,14 +612,32 @@ export default function EventPage() {
               </h2>
 
               <div className="mt-6 grid gap-3">
+                {event.ticket_mode === "internal" && (
+                  <LinkButton href={`/bilhetes/${event.slug}`} size="lg">
+                    {ticketButtonText || "Reservar bilhete"}
+                  </LinkButton>
+                )}
+
+                {event.ticket_mode === "external" && externalTicketUrl && (
+                  <a
+                    href={externalTicketUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonClassName({ size: "lg" })}
+                  >
+                    {ticketButtonText || "Comprar bilhete"}
+                  </a>
+                )}
+
                 <button
                   type="button"
                   onClick={toggleSavedEvent}
                   disabled={actionLoading}
-                  className={`rounded-full px-5 py-4 text-center text-sm font-black disabled:opacity-50 ${
+                  aria-pressed={isSaved}
+                  className={`pressable focus-ring rounded-full px-5 py-4 text-center text-sm font-black disabled:opacity-50 ${
                     isSaved
-                      ? "border border-yellow-900 text-yellow-500"
-                      : "border border-zinc-700 text-zinc-300"
+                      ? "border border-warning/40 text-warning"
+                      : "border border-border-strong text-foreground-secondary hover:text-foreground"
                   }`}
                 >
                   {actionLoading
@@ -627,58 +647,26 @@ export default function EventPage() {
                       : "Guardar evento"}
                 </button>
 
-                {event.ticket_mode === "internal" && (
-                  <Link
-                    href={`/bilhetes/${event.slug}`}
-                    className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-                  >
-                    {ticketButtonText || "Reservar bilhete"}
-                  </Link>
-                )}
-
-                {event.ticket_mode === "external" && externalTicketUrl && (
-                  <a
-                    href={externalTicketUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
-                  >
-                    {ticketButtonText || "Comprar bilhete"}
-                  </a>
-                )}
-
                 {instagramUrl && (
                   <a
                     href={instagramUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                    className={buttonClassName({ variant: "ghost" })}
                   >
                     Ver Instagram
                   </a>
                 )}
 
-                <Link
-                  href="/guardados"
-                  className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
-                >
-                  Ver guardados
-                </Link>
-
-                <Link
-                  href="/agenda"
-                  className="rounded-full border border-zinc-800 px-5 py-4 text-center text-sm font-bold text-zinc-500"
-                >
-                  Mais eventos
-                </Link>
+                <LinkButton href="/guardados" variant="ghost">Ver guardados</LinkButton>
               </div>
 
               {event.ticket_mode === "none" && (
-                <p className="mt-5 rounded-2xl border border-zinc-800 bg-black p-4 text-sm text-zinc-500">
+                <p className="mt-5 rounded-md border border-border bg-background-subtle p-4 text-sm text-foreground-muted">
                   Este evento ainda não tem bilheteira associada.
                 </p>
               )}
-            </section>
+            </Card>
 
           </aside>
         </section>
