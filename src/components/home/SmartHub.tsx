@@ -99,11 +99,9 @@ export function SmartHub({
   }, [history, loading, pendingQuery]);
 
   function appendHistory(item: HubHistoryItem) {
-    setHistory((current) => {
-      const next = [...current, item].slice(-HUB_HISTORY_LIMIT);
-      writeHubHistory(next);
-      return next;
-    });
+    const next = [...history, item].slice(-HUB_HISTORY_LIMIT);
+    setHistory(next);
+    writeHubHistory(next);
   }
 
   async function runQuery(value: string) {
