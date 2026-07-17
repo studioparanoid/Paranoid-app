@@ -106,8 +106,8 @@ export function MobileBottomNavigation() {
           aria-controls="paranoid-hub-overlay"
           className="group focus-ring pressable relative mx-auto grid h-12 w-full min-w-11 place-items-center text-[var(--foreground)]"
         >
-          <span className="-translate-y-0.5 transition-transform duration-150 group-active:translate-y-0">
-            <ParanoidMark className="h-8 w-8" active={isHubOpen} />
+          <span className="relative grid h-8 w-8 place-items-center transition-transform duration-150 group-active:translate-y-px group-active:scale-[0.96]">
+            <ParanoidMark className="h-[1.65rem] w-[1.44rem]" active={isHubOpen} />
           </span>
           <ActiveSignal active={isHubOpen} />
         </button>
