@@ -60,9 +60,9 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: strin
   }, [item.duration, item.id, onDismiss]);
 
   const tone = item.tone === "error"
-    ? "border-red-900 text-red-100"
+    ? "border-[var(--danger)]/40 text-[var(--foreground)]"
     : item.tone === "success"
-      ? "border-emerald-900 text-emerald-100"
+      ? "border-[var(--success)]/40 text-[var(--foreground)]"
       : "border-[var(--border-strong)] text-[var(--foreground)]";
 
   return (
@@ -71,7 +71,7 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: strin
       {item.action && (
         <button
           type="button"
-          className="pressable focus-ring shrink-0 rounded-full px-2 py-1 text-xs font-black text-red-300 hover:text-red-200"
+          className="pressable focus-ring shrink-0 rounded-full px-2 py-1 text-xs font-black text-[var(--accent)] hover:text-[var(--accent-hover)]"
           onClick={() => {
             item.action?.onClick();
             onDismiss(item.id);
