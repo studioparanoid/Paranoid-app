@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -15,7 +16,7 @@ import { useToast } from "@/components/ui/Toast";
 import { CityCombobox, isKnownPortugueseMunicipality } from "@/components/profile/CityCombobox";
 import { GenreMultiSelect } from "@/components/profile/GenreMultiSelect";
 import { ProfileImageField } from "@/components/profile/ProfileImageField";
-import { profileActivityNavigation, profilePurchaseNavigation } from "@/config/navigation";
+import { profilePurchaseNavigation } from "@/config/navigation";
 import { removeProfileImage, uploadProfileImage } from "@/lib/profileImages";
 import { artistCategories, maxProfileDescriptionLength, organizerTypes } from "@/lib/profileOptions";
 import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
@@ -68,6 +69,7 @@ export function ProfileClient() {
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<"atividade" | "definicoes">("atividade");
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [onboardingStep, setOnboardingStep] = useState<"profile" | null>(null);
@@ -154,6 +156,7 @@ export function ProfileClient() {
       if (params.get("onboarding") === "1") {
         setOnboardingStep("profile");
         setEditing(true);
+        setActiveTab("definicoes");
       }
       void loadProfile();
     }, 0);
@@ -243,8 +246,9 @@ export function ProfileClient() {
   const entityPath = publicPath(accountType, profile?.entity_slug || null);
   const title = entityName || displayName || email.split("@")[0] || "Perfil";
   const mobileSimplificationEnabled = isMobileSimplificationEnabled();
-  const activityItems: SettingsListItem[] = profileActivityNavigation.map((item) => ({ ...item, description: item.href === "/guardados" ? "Eventos que queres voltar a ver" : "Artistas, espaços e organizadores" }));
-  const purchaseItems: SettingsListItem[] = profilePurchaseNavigation.map((item) => ({ ...item, description: item.href === "/bilhetes" ? "Carteira e códigos de entrada" : "Loja e compras" }));
+  const purchaseItems: SettingsListItem[] = profilePurchaseNavigation
+    .filter((item) => item.href !== "/bilhetes")
+    .map((item) => ({ ...item, description: "Loja e compras" }));
   const creatorItems: SettingsListItem[] = [];
   if (approved && accountType === "organizer") {
     creatorItems.push(
@@ -263,7 +267,7 @@ export function ProfileClient() {
     <header className="flex items-center gap-3 border-b border-border pb-6 sm:gap-4">
       <div className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden border border-accent/30 bg-accent/12 text-xl font-black text-accent sm:h-16 sm:w-16 ${mobileSimplificationEnabled ? "[clip-path:polygon(50%_0,92%_20%,100%_72%,72%_100%,28%_100%,0_72%,8%_20%)]" : "rounded-full"}`}>{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
       <div className="min-w-0 flex-1"><h1 className="truncate text-xl font-black sm:text-3xl">{title}</h1><p className="truncate text-xs text-foreground-muted sm:text-sm">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
-      <Button type="button" variant="secondary" size="sm" onClick={() => setEditing((value) => !value)} aria-expanded={editing} className={mobileSimplificationEnabled ? "inline-flex shrink-0" : "hidden sm:inline-flex"}>Editar perfil</Button>
+      <Button type="button" variant="secondary" size="sm" onClick={() => { setEditing((value) => !value); setActiveTab("definicoes"); }} aria-expanded={editing} className={mobileSimplificationEnabled ? "inline-flex shrink-0" : "hidden sm:inline-flex"}>Editar perfil</Button>
     </header>
 
     {editing && <section className="slide-up border-b border-border py-7">
@@ -283,18 +287,20 @@ export function ProfileClient() {
       <div className="mt-5 flex gap-3"><LoadingButton type="button" onClick={saveProfile} loading={saving} loadingText="A guardar...">Guardar</LoadingButton><Button type="button" variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Cancelar</Button></div>
     </section>}
 
-    {!onboardingStep && <div className="mt-8">
-      <MfaSecurityPanel />
-    </div>}
+    {!editing && <ProfileTabs active={activeTab} onChange={setActiveTab} />}
 
-    <div className="grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">
-      <ProfileSection title="A minha atividade" items={activityItems} />
-      <ProfileSection title="A minha conta" items={[{ label: "Dados e preferências", description: "Nome, localização e categorias", icon: "settings", onClick: () => setEditing(true) }, { label: "Aparência", description: `Tema atual: ${themeLabel(preferredTheme)}`, icon: "sun", onClick: () => setAppearanceOpen(true) }, { label: signingOut ? "A terminar sessão..." : "Terminar sessão", icon: "logout", tone: "danger", onClick: signOut }]} />
-      <ProfileSection title="Bilhetes e compras" items={purchaseItems} />
+    {!editing && activeTab === "atividade" && <div className="content-transition grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">
       {creatorItems.length > 0 && <ProfileSection title="Criar e gerir" items={creatorItems} />}
       {approved && accountType === "organizer" && <ProfileSection title="Visibilidade e parcerias" items={[{ href: "/organizador/destaques", label: "Destaques e Frequency", icon: "visibility" }, { href: "/patrocinar", label: "Parcerias Paranoid", icon: "organizer" }]} />}
+      {creatorItems.length === 0 && !(approved && accountType === "organizer") && <p className="text-sm text-foreground-muted">Sem atividade de gestão associada a esta conta.</p>}
+    </div>}
+
+    {!editing && activeTab === "definicoes" && <div className="content-transition space-y-8 py-8">
+      <MfaSecurityPanel />
+      <ProfileSection title="A minha conta" items={[{ label: "Dados e preferências", description: "Nome, localização e categorias", icon: "settings", onClick: () => setEditing(true) }, { label: "Aparência", description: `Tema atual: ${themeLabel(preferredTheme)}`, icon: "sun", onClick: () => setAppearanceOpen(true) }, { label: signingOut ? "A terminar sessão..." : "Terminar sessão", icon: "logout", tone: "danger", onClick: signOut }]} />
+      {purchaseItems.length > 0 && <ProfileSection title="Compras" items={purchaseItems} />}
       {isAdmin && <ProfileSection title="Administração" items={[{ href: "/admin", label: "Painel administrativo", description: "Conteúdo, utilizadores, comercial e loja", icon: "admin" }]} />}
-    </div>
+    </div>}
   </div>;
 }
 
@@ -308,4 +314,17 @@ function PreferencePicker({ label, values, selected, onToggle }: { label: string
 
 function ProfileSection({ title, items }: { title: string; items: SettingsListItem[] }) {
   return <section><SectionHeader title={title} /><SettingsList items={items} /></section>;
+}
+
+function ProfileTabs({ active, onChange }: { active: "atividade" | "definicoes"; onChange: (tab: "atividade" | "definicoes") => void }) {
+  const tabClassName = (isActive: boolean) => `pressable focus-ring shrink-0 rounded-full px-4 py-2 text-xs font-black ${isActive ? "bg-foreground text-background" : "text-foreground-muted hover:text-foreground"}`;
+  return (
+    <nav aria-label="Secções do perfil" className="mt-6 flex gap-1 overflow-x-auto border-b border-border pb-3">
+      <button type="button" onClick={() => onChange("atividade")} aria-current={active === "atividade" ? "page" : undefined} className={tabClassName(active === "atividade")}>Atividade</button>
+      <Link href="/guardados" className={tabClassName(false)}>Guardados</Link>
+      <Link href="/descobrir" className={tabClassName(false)}>Seguir</Link>
+      <Link href="/bilhetes" className={tabClassName(false)}>Bilhetes</Link>
+      <button type="button" onClick={() => onChange("definicoes")} aria-current={active === "definicoes" ? "page" : undefined} className={tabClassName(active === "definicoes")}>Definições</button>
+    </nav>
+  );
 }
