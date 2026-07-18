@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { AppIcon } from "@/components/AppIcon";
-import { HubGlobe } from "@/components/home/HubGlobe";
+import { HubGlobe, type HubGlobeState } from "@/components/home/HubGlobe";
 import {
   clearHubHistory,
   HUB_HISTORY_LIMIT,
@@ -208,17 +208,18 @@ export function SmartHub({
   const visibleHistory = discoveryMode ? history.slice(-3) : history;
   const titleId = `hub-title-${instanceId}`;
   const inputId = `paranoid-hub-query-${instanceId}`;
+  const showChatZone = history.length > 0 || Boolean(pendingQuery);
+  const stageFillsHeight = !discoveryMode || !discoveryFeed;
+  const globeState: HubGlobeState = navigatingLabel ? "navigating" : loading ? "thinking" : "idle";
 
   return (
     <section
-      className={`mx-auto flex h-full w-full flex-col ${overlayMode ? "max-w-none" : "max-w-[52rem]"}`}
+      className={`brand-surface mx-auto flex h-full w-full flex-col bg-[var(--brand-surface)] ${overlayMode ? "max-w-none" : "max-w-[52rem]"}`}
       aria-labelledby={titleId}
     >
-      <header className="flex shrink-0 items-center justify-between gap-4 py-4 sm:py-5">
-        <div>
-          <h1 id={titleId} className="text-xl font-black sm:text-2xl">{discoveryMode ? "Paranoid" : "Paranoid Hub"}</h1>
-          <p className="mt-0.5 text-xs text-[var(--foreground-muted)]">{discoveryMode ? "Diz-me o que procuras." : "O centro da tua noite."}</p>
-        </div>
+      <header className="relative z-10 flex shrink-0 items-center justify-between gap-4 py-3 sm:py-4">
+        <h1 id={titleId} className="sr-only">{discoveryMode ? "Paranoid" : "Paranoid Hub"}</h1>
+        <span aria-hidden="true" />
         {history.length > 0 && (
           <button type="button" onClick={clearHistory} className="pressable focus-ring inline-flex min-h-9 items-center gap-1.5 rounded px-2 text-xs font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
             <AppIcon name="plus" className="h-3.5 w-3.5" />
@@ -227,45 +228,44 @@ export function SmartHub({
         )}
       </header>
 
-      <div className="paranoid-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-5 sm:px-2 sm:py-8" aria-live="polite">
-        {history.length === 0 && (
-          <div className={`hub-message-enter brand-surface overflow-hidden rounded-lg bg-[var(--brand-surface)] ${discoveryMode ? "mt-3 sm:mt-5" : "mt-[clamp(1.5rem,8vh,4rem)]"}`}>
-            <div className="relative h-40 sm:h-48">
-              <HubGlobe accelerated={Boolean(navigatingLabel)} />
-            </div>
-            <div className="px-5 pb-7 pt-1 text-center sm:px-8">
-              {navigatingLabel ? (
-                <>
-                  <p className="text-base font-black text-[var(--foreground)]">{navigatingLabel}</p>
-                  <p className="mt-1 text-xs text-[var(--foreground-muted)]">Vais ser reencaminhado</p>
-                </>
-              ) : loading ? (
-                <p className="inline-flex items-center gap-2 text-sm text-[var(--foreground-muted)]"><span className="hub-thinking-dots" aria-hidden="true"><i /><i /><i /></span>{thinkingLabel(pendingQuery)}</p>
-              ) : (
-                <>
-                  <p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p>
-                  <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Sugestões rápidas">
-                    {suggestions.map((suggestion) => (
-                      <button key={suggestion} type="button" onClick={() => void runQuery(suggestion)} className="pressable focus-ring rounded py-1 text-sm font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+      <div className="paranoid-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-live="polite">
+        <div className={`relative flex flex-col overflow-hidden rounded-lg ${stageFillsHeight ? "h-full" : "h-[68vh] sm:h-[36rem]"}`}>
+          <div className={`relative flex min-h-0 shrink-0 flex-col items-center justify-end overflow-hidden ${showChatZone ? "h-32 sm:h-40" : "h-full"}`}>
+            <HubGlobe state={globeState} className="absolute inset-0" />
+            {!showChatZone && (
+              <div className="relative z-10 px-6 pb-7 text-center sm:pb-9">
+                <p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p>
+                <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Sugestões rápidas">
+                  {suggestions.map((suggestion) => (
+                    <button key={suggestion} type="button" onClick={() => void runQuery(suggestion)} className="pressable focus-ring rounded py-1 text-sm font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
 
-        <div className={discoveryMode ? "space-y-6 sm:space-y-8" : "space-y-8 sm:space-y-10"}>
-          {visibleHistory.map((item) => <HubExchange key={item.id} item={item} />)}
-          {pendingQuery && <PendingHubExchange query={pendingQuery} />}
+          {showChatZone && (
+            <div className={`paranoid-scrollbar flex min-h-0 flex-1 flex-col justify-end overflow-y-auto px-4 pb-4 pt-2 sm:px-6 ${discoveryMode ? "gap-6 sm:gap-8" : "gap-8 sm:gap-10"}`}>
+              {visibleHistory.map((item) => <HubExchange key={item.id} item={item} />)}
+              {pendingQuery && <PendingHubExchange query={pendingQuery} />}
+              <div ref={conversationEndRef} className="h-1" aria-hidden="true" />
+            </div>
+          )}
+
+          {navigatingLabel && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[var(--brand-surface)]/88 text-center backdrop-blur-sm">
+              <p className="text-base font-black text-[var(--foreground)]">{navigatingLabel}</p>
+              <p className="mt-1 text-xs text-[var(--foreground-muted)]">Vais ser reencaminhado</p>
+            </div>
+          )}
         </div>
-        <div ref={conversationEndRef} className="h-1" aria-hidden="true" />
-        {discoveryMode && discoveryFeed && <div className="mt-10 sm:mt-12">{discoveryFeed}</div>}
+
+        {discoveryMode && discoveryFeed && <div className="mt-10 px-1 sm:mt-12 sm:px-2">{discoveryFeed}</div>}
       </div>
 
-      <form onSubmit={submit} className="shrink-0 bg-[var(--background)] pb-3 pt-2 sm:pb-5" aria-busy={loading}>
+      <form onSubmit={submit} className="shrink-0 pb-3 pt-2 sm:pb-5" aria-busy={loading}>
         <label htmlFor={inputId} className="sr-only">Fala com a Paranoid</label>
         <div className="hub-composer flex min-h-14 items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2 pl-3.5 focus-within:border-[var(--border-strong)]">
           <textarea

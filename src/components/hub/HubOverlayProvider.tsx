@@ -151,7 +151,7 @@ function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: 
         role="dialog"
         aria-modal="true"
         aria-label="Paranoid Hub"
-        className="hub-overlay-sheet absolute inset-x-0 bottom-0 flex h-[min(92dvh,58rem)] flex-col rounded-t-[1.1rem] border-t border-[var(--border)] bg-[var(--background)] px-4 pb-[env(safe-area-inset-bottom)] shadow-[0_-24px_70px_rgb(0_0_0_/_0.48)] sm:px-6 lg:inset-y-0 lg:left-auto lg:h-full lg:w-[min(48rem,72vw)] lg:rounded-none lg:border-l lg:border-t-0"
+        className="hub-overlay-sheet brand-surface absolute inset-x-0 bottom-0 flex h-[min(92dvh,58rem)] flex-col rounded-t-[1.1rem] border-t border-[var(--border)] bg-[var(--brand-surface)] px-4 pb-[env(safe-area-inset-bottom)] shadow-[0_-24px_70px_rgb(0_0_0_/_0.48)] sm:px-6 lg:inset-y-0 lg:left-auto lg:h-full lg:w-[min(48rem,72vw)] lg:rounded-none lg:border-l lg:border-t-0"
         style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined }}
       >
         <div
