@@ -78,6 +78,7 @@ export function SmartHub({
   const [pendingQuery, setPendingQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [navigatingLabel, setNavigatingLabel] = useState("");
+  const [pulse, setPulse] = useState(0);
   const [historyRestored, setHistoryRestored] = useState(false);
 
   useEffect(() => {
@@ -117,6 +118,7 @@ export function SmartHub({
     const next = [...history, item].slice(-HUB_HISTORY_LIMIT);
     setHistory(next);
     writeHubHistory(next);
+    setPulse((value) => value + 1);
   }
 
   async function runQuery(value: string) {
@@ -229,37 +231,45 @@ export function SmartHub({
       </header>
 
       <div className="paranoid-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-live="polite">
-        <div className={`relative flex flex-col overflow-hidden rounded-lg ${stageFillsHeight ? "h-full" : "h-[68vh] sm:h-[36rem]"}`}>
-          <div className={`relative flex min-h-0 shrink-0 flex-col items-center justify-end overflow-hidden ${showChatZone ? "h-32 sm:h-40" : "h-full"}`}>
-            <HubGlobe state={globeState} className="absolute inset-0" />
-            {!showChatZone && (
-              <div className="relative z-10 px-6 pb-7 text-center sm:pb-9">
-                <p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p>
-                <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Sugestões rápidas">
-                  {suggestions.map((suggestion) => (
-                    <button key={suggestion} type="button" onClick={() => void runQuery(suggestion)} className="pressable focus-ring rounded py-1 text-sm font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+        <div className={`relative overflow-hidden rounded-lg ${stageFillsHeight ? "h-full" : "h-[68vh] sm:h-[36rem]"}`}>
+          <div className={`absolute inset-0 transition-transform duration-[900ms] ease-out ${navigatingLabel ? "scale-[1.35]" : "scale-100"}`}>
+            <HubGlobe state={globeState} pulse={pulse} className="h-full w-full" />
           </div>
 
-          {showChatZone && (
-            <div className={`paranoid-scrollbar flex min-h-0 flex-1 flex-col justify-end overflow-y-auto px-4 pb-4 pt-2 sm:px-6 ${discoveryMode ? "gap-6 sm:gap-8" : "gap-8 sm:gap-10"}`}>
+          <div
+            className={`absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-8 text-center transition-all duration-500 ease-out sm:pb-10 ${
+              showChatZone ? "translate-y-3 opacity-0" : "translate-y-0 opacity-100"
+            }`}
+            aria-hidden={showChatZone}
+            inert={showChatZone || undefined}
+          >
+            <p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p>
+            <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Sugestões rápidas">
+              {suggestions.map((suggestion) => (
+                <button key={suggestion} type="button" onClick={() => void runQuery(suggestion)} className="pressable focus-ring rounded py-1 text-sm font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div
+            className={`absolute inset-x-0 bottom-0 flex h-[64%] flex-col overflow-hidden transition-transform duration-500 ease-out ${showChatZone ? "translate-y-0" : "translate-y-full"}`}
+            aria-hidden={!showChatZone}
+            inert={!showChatZone || undefined}
+          >
+            <div aria-hidden="true" className="h-10 shrink-0 bg-gradient-to-b from-transparent to-[var(--brand-surface)] sm:h-14" />
+            <div className={`paranoid-scrollbar flex min-h-0 flex-1 flex-col justify-end overflow-y-auto bg-[var(--brand-surface)] px-4 pb-4 sm:px-6 ${discoveryMode ? "gap-6 sm:gap-8" : "gap-8 sm:gap-10"}`}>
               {visibleHistory.map((item) => <HubExchange key={item.id} item={item} />)}
               {pendingQuery && <PendingHubExchange query={pendingQuery} />}
               <div ref={conversationEndRef} className="h-1" aria-hidden="true" />
             </div>
-          )}
+          </div>
 
-          {navigatingLabel && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[var(--brand-surface)]/88 text-center backdrop-blur-sm">
-              <p className="text-base font-black text-[var(--foreground)]">{navigatingLabel}</p>
-              <p className="mt-1 text-xs text-[var(--foreground-muted)]">Vais ser reencaminhado</p>
-            </div>
-          )}
+          <div className={`absolute inset-0 z-20 flex flex-col items-center justify-center bg-[var(--brand-surface)]/85 text-center backdrop-blur-md transition-opacity duration-500 ease-out ${navigatingLabel ? "opacity-100" : "pointer-events-none opacity-0"}`} aria-hidden={!navigatingLabel}>
+            <p className="text-base font-black text-[var(--foreground)]">{navigatingLabel}</p>
+            <p className="mt-1 text-xs text-[var(--foreground-muted)]">Vais ser reencaminhado</p>
+          </div>
         </div>
 
         {discoveryMode && discoveryFeed && <div className="mt-10 px-1 sm:mt-12 sm:px-2">{discoveryFeed}</div>}

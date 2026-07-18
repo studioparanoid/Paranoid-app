@@ -12,13 +12,18 @@ function hexToRgb(hex: string) {
   return match ? `${parseInt(match[1], 16)},${parseInt(match[2], 16)},${parseInt(match[3], 16)}` : "220,38,38";
 }
 
-export function HubGlobe({ state = "idle", className = "" }: { state?: HubGlobeState; className?: string }) {
+export function HubGlobe({ state = "idle", pulse = 0, className = "" }: { state?: HubGlobeState; pulse?: number; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef(state);
+  const pulseUntilRef = useRef(0);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    if (pulse > 0) pulseUntilRef.current = performance.now() + 650;
+  }, [pulse]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -62,9 +67,11 @@ export function HubGlobe({ state = "idle", className = "" }: { state?: HubGlobeS
       const cy = height / 2;
       const R = Math.min(width, height) * 0.44;
       const targetSpeed = speedByState[stateRef.current];
-      const targetBrightness = brightnessByState[stateRef.current];
+      const pulseRemaining = pulseUntilRef.current - performance.now();
+      const pulseBoost = pulseRemaining > 0 ? (pulseRemaining / 650) * 0.5 : 0;
+      const targetBrightness = brightnessByState[stateRef.current] + pulseBoost;
       speed += (targetSpeed - speed) * 0.05;
-      brightness += (targetBrightness - brightness) * 0.06;
+      brightness += (targetBrightness - brightness) * 0.12;
       breathe += 0.012;
       if (!reduceMotion) angle += speed;
       const breatheScale = reduceMotion ? 1 : 1 + Math.sin(breathe) * 0.012;
