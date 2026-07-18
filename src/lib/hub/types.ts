@@ -1,4 +1,4 @@
-export type HubIntent = "agenda" | "nearby" | "map" | "tickets" | "shop" | "lineup" | "dining" | "unknown";
+export type HubIntent = "agenda" | "nearby" | "map" | "tickets" | "shop" | "profile" | "lineup" | "dining" | "unknown";
 
 export type HubAction = {
   label: string;

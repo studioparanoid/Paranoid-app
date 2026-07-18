@@ -178,7 +178,7 @@ function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: 
           <ParanoidCloseIcon className="h-5 w-5" />
         </button>
         <div className="min-h-0 flex-1 overflow-hidden pr-12 lg:pr-10">
-          <SmartHub instanceId="overlay" overlayMode onResponse={onResponse} />
+          <SmartHub instanceId="overlay" overlayMode onResponse={onResponse} onBeforeNavigate={onClose} />
         </div>
       </section>
     </div>

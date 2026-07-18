@@ -32,6 +32,7 @@ const mapTerms = ["mapa", "onde fica", "como chegar", "direcao", "direcoes", "lo
 const nearbyTerms = ["perto de mim", "a minha volta", "por aqui", "proximo evento", "proximos de mim"];
 const ticketTerms = ["bilhete", "bilhetes", "meus bilhetes", "carteira"];
 const shopTerms = ["loja", "merch", "t-shirt", "tshirt", "camisola", "comprar merch"];
+const profileTerms = ["perfil", "minha conta", "a minha conta", "definicoes", "editar perfil"];
 const diningTerms = ["tenho fome", "tenho sede", "cheio de sede", "cheia de sede", "com sede", "comer", "restaurante", "jantar", "almocar", "petiscar", "beber um copo", "bar aberto"];
 const ignoredSearchTerms = new Set(["agenda", "evento", "eventos", "concertos", "concerto", "festival", "festivais", "quero", "ver", "mostra", "mostrar", "encontra", "encontrar", "gastar", "menos", "ate", "euro", "euros", "que", "ha", "hoje", "agora", "onde", "esta", "estao", "acontecer", "acontecendo", "perto", "mim", "em", "no", "na", "nos", "nas", "de", "do", "da", "dos", "das", "um", "uma", "o", "a", "e"]);
 
@@ -47,6 +48,7 @@ export function classifyHubQuery(value: string): HubIntent {
   const query = normalizeHubText(value);
   if (includesAny(query, ticketTerms)) return "tickets";
   if (includesAny(query, shopTerms)) return "shop";
+  if (includesAny(query, profileTerms)) return "profile";
   if (query.includes("lineup") || query.includes("line up") || query.includes("programa do festival")) return "lineup";
   if (includesAny(query, diningTerms)) return "dining";
   if (includesAny(query, nearbyTerms)) return "nearby";
@@ -142,6 +144,10 @@ export function buildHubResponse(value: string, events: HubEventRecord[], contex
 
   if (intent === "map") {
     return { intent, title: "Vamos ao mapa.", description: "Mostro-te os eventos e locais publicados.", results: [], actions: [{ label: "Abrir Mapa", href: "/mapa", primary: true }] };
+  }
+
+  if (intent === "profile") {
+    return { intent, title: "Vamos ao teu perfil.", description: "Dados, guardados, bilhetes e definições.", results: [], actions: [{ label: "Abrir Perfil", href: "/perfil", primary: true }] };
   }
 
   if (intent === "dining") {

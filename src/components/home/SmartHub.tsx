@@ -1,21 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { AppIcon } from "@/components/AppIcon";
+import { HubGlobe } from "@/components/home/HubGlobe";
 import {
   clearHubHistory,
   HUB_HISTORY_LIMIT,
   readHubHistory,
   writeHubHistory,
 } from "@/lib/hub/client-history";
-import type { HubHistoryItem, HubResponse } from "@/lib/hub/types";
+import type { HubAction, HubHistoryItem, HubIntent, HubResponse } from "@/lib/hub/types";
 
 const requestTimeoutMs = 10_000;
 const minimumThinkingMs = 360;
+const navigationTransitionMs = 850;
 const genericErrorMessage = "O Hub falhou a responder. Tenta novamente.";
 const timeoutErrorMessage = "Demorei demasiado a obter a informação. Tenta novamente.";
 const suggestions = ["Quero sair hoje", "Tenho fome", "O que está a acontecer?", "Estou num festival"];
+const directNavIntents = new Set<HubIntent>(["tickets", "shop", "map", "profile"]);
+const directNavLabels: Partial<Record<HubIntent, string>> = { tickets: "Bilhetes", shop: "Loja", map: "Mapa", profile: "Perfil" };
+
+function directNavAction(response: HubResponse): HubAction | null {
+  if (!directNavIntents.has(response.intent)) return null;
+  if (response.results.length > 0 || response.actions.length !== 1) return null;
+  return response.actions[0];
+}
 
 function isHubResponse(value: unknown): value is HubResponse {
   if (!value || typeof value !== "object") return false;
@@ -43,6 +54,7 @@ type SmartHubProps = {
   discoveryFeed?: ReactNode;
   onHistoryChange?: (history: HubHistoryItem[]) => void;
   onResponse?: (response: HubResponse) => void;
+  onBeforeNavigate?: () => void;
   instanceId?: string;
   overlayMode?: boolean;
 };
@@ -53,9 +65,11 @@ export function SmartHub({
   discoveryFeed,
   onHistoryChange,
   onResponse,
+  onBeforeNavigate,
   instanceId = "main",
   overlayMode = false,
 }: SmartHubProps = {}) {
+  const router = useRouter();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
@@ -63,6 +77,7 @@ export function SmartHub({
   const [history, setHistory] = useState<HubHistoryItem[]>([]);
   const [pendingQuery, setPendingQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [navigatingLabel, setNavigatingLabel] = useState("");
   const [historyRestored, setHistoryRestored] = useState(false);
 
   useEffect(() => {
@@ -129,6 +144,16 @@ export function SmartHub({
       if (!isHubResponse(payload)) throw new Error(genericErrorMessage);
       const remainingThinkingTime = minimumThinkingMs - (window.performance.now() - startedAt);
       if (remainingThinkingTime > 0) await new Promise((resolve) => window.setTimeout(resolve, remainingThinkingTime));
+
+      const navigation = directNavAction(payload);
+      if (navigation) {
+        setNavigatingLabel(`A levar-te para ${directNavLabels[payload.intent] || navigation.label}...`);
+        await new Promise((resolve) => window.setTimeout(resolve, navigationTransitionMs));
+        onBeforeNavigate?.();
+        router.push(navigation.href);
+        return;
+      }
+
       appendHistory({ id: crypto.randomUUID(), query: cleanQuery, response: payload });
       onResponse?.(payload);
     } catch (requestError) {
@@ -203,15 +228,31 @@ export function SmartHub({
       </header>
 
       <div className="paranoid-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-5 sm:px-2 sm:py-8" aria-live="polite">
-        {history.length === 0 && !loading && (
-          <div className={`hub-message-enter max-w-2xl ${discoveryMode ? "pt-3 sm:pt-5" : "pt-[clamp(2rem,10vh,6rem)]"}`}>
-            <ParanoidMessage><p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p></ParanoidMessage>
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 pl-4" aria-label="Sugestões rápidas">
-              {suggestions.map((suggestion) => (
-                <button key={suggestion} type="button" onClick={() => void runQuery(suggestion)} className="pressable focus-ring rounded py-1 text-left text-sm font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
-                  {suggestion}
-                </button>
-              ))}
+        {history.length === 0 && (
+          <div className={`hub-message-enter brand-surface overflow-hidden rounded-lg bg-[var(--brand-surface)] ${discoveryMode ? "mt-3 sm:mt-5" : "mt-[clamp(1.5rem,8vh,4rem)]"}`}>
+            <div className="relative h-40 sm:h-48">
+              <HubGlobe accelerated={Boolean(navigatingLabel)} />
+            </div>
+            <div className="px-5 pb-7 pt-1 text-center sm:px-8">
+              {navigatingLabel ? (
+                <>
+                  <p className="text-base font-black text-[var(--foreground)]">{navigatingLabel}</p>
+                  <p className="mt-1 text-xs text-[var(--foreground-muted)]">Vais ser reencaminhado</p>
+                </>
+              ) : loading ? (
+                <p className="inline-flex items-center gap-2 text-sm text-[var(--foreground-muted)]"><span className="hub-thinking-dots" aria-hidden="true"><i /><i /><i /></span>{thinkingLabel(pendingQuery)}</p>
+              ) : (
+                <>
+                  <p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p>
+                  <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Sugestões rápidas">
+                    {suggestions.map((suggestion) => (
+                      <button key={suggestion} type="button" onClick={() => void runQuery(suggestion)} className="pressable focus-ring rounded py-1 text-sm font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

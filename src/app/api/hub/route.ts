@@ -8,7 +8,7 @@ import type { HubConversationContext } from "@/lib/hub/types";
 
 type HubPayload = { query?: unknown; context?: unknown };
 
-const intentsWithoutEvents = new Set(["tickets", "shop", "map", "dining"]);
+const intentsWithoutEvents = new Set(["tickets", "shop", "map", "profile", "dining"]);
 const hubTimeoutMs = 8_000;
 
 function cleanContext(value: unknown): HubConversationContext {
