@@ -7,7 +7,6 @@ import { EmptyState } from "@/components/EmptyState";
 import { EventCard } from "@/components/EventCard";
 import { FilterDrawer } from "@/components/FilterDrawer";
 import { EventCardSkeleton } from "@/components/LoadingSkeleton";
-import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
@@ -89,9 +88,8 @@ export default function AgendaPage() {
 
   function clearAdvanced() { setDistrict(ALL_DISTRICTS); setMunicipality(ALL_MUNICIPALITIES); setCategory(ALL_CATEGORIES); setPrice("all"); setOnlyFeatured(false); }
 
-  return <main className="min-h-screen bg-background px-4 py-6 pb-28 text-foreground sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-7xl">
-    <PageHeader eyebrow="Agenda" title="Eventos" description="Encontra o que acontece por data, local e categoria." />
-    <div className="sticky top-16 z-30 -mx-4 mt-5 border-y border-border bg-background/96 px-4 py-4 backdrop-blur-xl sm:mx-0 sm:rounded sm:border sm:px-4">
+  return <main className="min-h-screen bg-background px-4 py-4 pb-28 text-foreground sm:px-6 lg:px-10 lg:py-8"><section className="mx-auto max-w-7xl">
+    <div className="sticky top-12 z-30 -mx-4 border-y border-border bg-background/96 px-4 py-3 backdrop-blur-xl sm:mx-0 sm:rounded-2xl sm:border sm:px-4 lg:top-16">
       <div className="grid gap-3 lg:grid-cols-[1fr_360px_auto] lg:items-center">
         <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar evento, espaço ou cidade" aria-label="Pesquisar eventos" className="h-11 font-bold" />
         <DateQuickFilters value={quickDate} onChange={setQuickDate} />

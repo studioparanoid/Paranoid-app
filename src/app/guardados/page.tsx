@@ -196,16 +196,11 @@ export default function SavedEventsPage() {
   return (
     <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground lg:px-10 lg:py-12">
       <section className="mx-auto max-w-md lg:max-w-6xl">
-        <header className="flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight lg:text-4xl">Guardados</h1>
-            {!loading && userId && (
-              <p className="mt-1 text-sm text-foreground-muted">
-                {savedRows.length === 0 ? "Nada guardado" : savedRows.length === 1 ? "1 evento guardado" : `${savedRows.length} eventos guardados`}
-              </p>
-            )}
-          </div>
-        </header>
+        {!loading && userId && savedRows.length > 0 && (
+          <p className="text-xs font-black uppercase tracking-[0.15em] text-foreground-muted">
+            {savedRows.length === 1 ? "1 evento guardado" : `${savedRows.length} eventos guardados`}
+          </p>
+        )}
 
         {message && (
           <Card className="mt-6 border-danger/40 p-4">

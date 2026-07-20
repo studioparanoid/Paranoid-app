@@ -144,47 +144,42 @@ export default function DiscoverPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-8 pb-28 text-[var(--foreground)] sm:px-6 lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-[var(--background)] px-4 py-4 pb-28 text-[var(--foreground)] sm:px-6 lg:px-10 lg:py-8">
       <div className="mx-auto w-full max-w-7xl">
-        <header className="max-w-2xl">
-          <h1 className="text-4xl font-black sm:text-5xl">Rede Cultural</h1>
-          <p className="mt-2 text-sm text-[var(--foreground-muted)]">Segue a cultura que queres acompanhar.</p>
-        </header>
-
-        <section className="mt-7" aria-label="Pesquisa e filtros">
+        <section aria-label="Pesquisa e filtros">
           <label htmlFor="network-search" className="sr-only">Pesquisar na Rede Cultural</label>
-          <input id="network-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar nome, cidade ou categoria" className="h-12 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-4 text-base outline-none placeholder:text-[var(--foreground-muted)] focus:border-red-700" />
+          <input id="network-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar nome, cidade ou categoria" className="h-12 w-full rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 text-base outline-none placeholder:text-[var(--foreground-muted)] focus:border-[var(--accent)]" />
 
           <div className="mt-4 flex border-b border-[var(--border)]" role="tablist" aria-label="Vista da rede">
-            {(["discover", "following"] as NetworkTab[]).map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => setTab(value)} className={`min-h-11 flex-1 border-b-2 px-3 text-sm font-black sm:flex-none sm:px-6 ${tab === value ? "border-red-600 text-[var(--foreground)]" : "border-transparent text-[var(--foreground-muted)]"}`}>{value === "discover" ? "A descobrir" : "Seguidos"}</button>)}
+            {(["discover", "following"] as NetworkTab[]).map((value) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => setTab(value)} className={`min-h-11 flex-1 border-b-2 px-3 text-sm font-black sm:flex-none sm:px-6 ${tab === value ? "border-[var(--accent)] text-[var(--foreground)]" : "border-transparent text-[var(--foreground-muted)]"}`}>{value === "discover" ? "A descobrir" : "Seguidos"}</button>)}
           </div>
 
           <div className="mt-4 flex gap-2 overflow-x-auto pb-1" aria-label="Filtrar por tipo">
-            {filters.map((filter) => <button key={filter.value} type="button" aria-pressed={typeFilter === filter.value} onClick={() => setTypeFilter(filter.value)} className={`min-h-10 shrink-0 rounded-full border px-4 text-xs font-black ${typeFilter === filter.value ? "border-red-600 bg-red-950/20 text-red-400" : "border-[var(--border)] text-[var(--foreground-secondary)]"}`}>{filter.label}</button>)}
+            {filters.map((filter) => <button key={filter.value} type="button" aria-pressed={typeFilter === filter.value} onClick={() => setTypeFilter(filter.value)} className={`min-h-10 shrink-0 rounded-full border px-4 text-xs font-black ${typeFilter === filter.value ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--foreground-secondary)]"}`}>{filter.label}</button>)}
           </div>
         </section>
 
         <p className="mt-6 text-xs font-bold text-[var(--foreground-muted)]" aria-live="polite">{loading ? "A carregar rede..." : `${visibleItems.length} ${visibleItems.length === 1 ? "perfil" : "perfis"}`}</p>
 
         {!loading && visibleItems.length === 0 ? (
-          <section className="mt-6 border-y border-[var(--border)] py-10 text-center" role="status">
+          <section className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-10 text-center" role="status">
             <h2 className="text-xl font-black">{tab === "following" ? "Ainda não segues ninguém." : "Sem resultados."}</h2>
-            {tab === "following" && <button type="button" onClick={() => setTab("discover")} className="mt-5 min-h-11 rounded-full bg-red-600 px-5 text-sm font-black text-white">Explorar a rede</button>}
+            {tab === "following" && <button type="button" onClick={() => setTab("discover")} className="mt-5 min-h-11 rounded-full bg-[var(--accent)] px-5 text-sm font-black text-white">Explorar a rede</button>}
           </section>
         ) : (
           <section className="mt-4 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-busy={loading}>
             {visibleItems.map((item) => {
               const key = followKey(item.type, item.id);
               const following = Boolean(follows[key]);
-              return <article key={key} className="overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)]">
+              return <article key={key} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
                 <Link href={item.href} className="block aspect-square bg-[var(--surface-secondary)]">
-                  {item.image_url ? <img src={item.image_url} alt={`Foto de ${item.name}`} className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-5xl font-black text-red-700" aria-hidden="true">{item.name.charAt(0).toUpperCase()}</span>}
+                  {item.image_url ? <img src={item.image_url} alt={`Foto de ${item.name}`} className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-5xl font-black text-[var(--accent)]" aria-hidden="true">{item.name.charAt(0).toUpperCase()}</span>}
                 </Link>
                 <div className="p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">{entityLabel(item.type)}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--accent)]">{entityLabel(item.type)}</p>
                   <Link href={item.href}><h2 className="mt-1 truncate text-lg font-black">{item.name}</h2></Link>
                   <p className="mt-1 min-h-5 truncate text-xs text-[var(--foreground-muted)]">{[item.city, item.category].filter(Boolean).join(" · ") || "Perfil cultural"}</p>
-                  <button type="button" onClick={() => void toggleFollow(item)} disabled={actionKey === key} aria-pressed={following} className={`mt-4 min-h-11 w-full rounded-full border px-4 text-xs font-black disabled:opacity-60 ${following ? "border-[var(--border-strong)] text-[var(--foreground-secondary)]" : "border-red-700 text-red-500"}`}>{actionKey === key ? "A guardar..." : following ? "Seguido" : "Seguir"}</button>
+                  <button type="button" onClick={() => void toggleFollow(item)} disabled={actionKey === key} aria-pressed={following} className={`mt-4 min-h-11 w-full rounded-full border px-4 text-xs font-black disabled:opacity-60 ${following ? "border-[var(--border-strong)] text-[var(--foreground-secondary)]" : "border-[var(--accent)] text-[var(--accent)]"}`}>{actionKey === key ? "A guardar..." : following ? "Seguido" : "Seguir"}</button>
                 </div>
               </article>;
             })}

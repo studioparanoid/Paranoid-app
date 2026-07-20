@@ -14,7 +14,7 @@ type FeedItemProps = {
   onOpen: () => void;
 };
 
-const kindIcon: Record<DiscoveryItemKind, "calendar" | "venue" | "spark" | "store" | "compass"> = {
+export const kindIcon: Record<DiscoveryItemKind, "calendar" | "venue" | "spark" | "store" | "compass"> = {
   event: "calendar",
   venue: "venue",
   promotion: "spark",

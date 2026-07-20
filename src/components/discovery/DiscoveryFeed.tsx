@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppIcon } from "@/components/AppIcon";
-import { FeedEventItem, FeedItem, FeedSignalItem, FeedVenueItem } from "@/components/discovery/feed/FeedItem";
+import { FeedEventItem, FeedItem, FeedSignalItem, FeedVenueItem, kindIcon } from "@/components/discovery/feed/FeedItem";
 import type { DiscoveryAction, DiscoveryItem, DiscoveryLocation, DiscoveryResponse } from "@/lib/discovery/types";
 import type { HubConversationContext, HubHistoryItem } from "@/lib/hub/types";
 
@@ -104,7 +104,7 @@ export function DiscoveryFeed({ history, standalone = false, variant = "compact"
             </p>
           ) : (
             <>
-              <p className="text-xs font-black uppercase text-red-600">Para ti agora</p>
+              <p className="text-xs font-black uppercase text-[var(--accent)]">Para ti agora</p>
               <h2 id={standalone ? "standalone-discovery-title" : "discovery-title"} className="mt-1 text-xl font-black text-[var(--foreground)] sm:text-2xl">
                 {response?.heading || "A preparar possibilidades"}
               </h2>
@@ -120,26 +120,26 @@ export function DiscoveryFeed({ history, standalone = false, variant = "compact"
       )}
 
       {error && !response && (
-        <div className={`mt-6 border-l-2 border-red-600 pl-4 ${variant === "immersive" ? "mr-4" : ""}`} role="alert">
+        <div className={`mt-6 border-l-2 border-danger pl-4 ${variant === "immersive" ? "mr-4" : ""}`} role="alert">
           <p className="text-sm text-[var(--foreground-secondary)]">{error}</p>
-          <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="pressable focus-ring mt-2 rounded py-1 text-xs font-black text-red-600 hover:text-red-500">Tentar novamente</button>
+          <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="pressable focus-ring mt-2 rounded py-1 text-xs font-black text-danger hover:opacity-80">Tentar novamente</button>
         </div>
       )}
 
       {loading && !response && <DiscoveryFeedSkeleton variant={variant} />}
 
       {!loading && response && visibleItems.length === 0 && (
-        <div className={`mt-7 border-y border-[var(--border)] py-7 ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>
-          <p className="text-sm leading-6 text-[var(--foreground-secondary)]">Ainda não há conteúdo publicado para este contexto.</p>
-          <div className="mt-3 flex flex-wrap gap-5">
-            <Link href="/agenda" className="pressable focus-ring rounded py-1 text-xs font-black text-red-600">Abrir Agenda</Link>
+        <div className={`mt-7 rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-7 text-center ${variant === "immersive" ? "mx-4 sm:mx-0" : ""}`}>
+          <p className="px-4 text-sm leading-6 text-[var(--foreground-secondary)]">Ainda não há conteúdo publicado para este contexto.</p>
+          <div className="mt-3 flex flex-wrap justify-center gap-5">
+            <Link href="/agenda" className="pressable focus-ring rounded py-1 text-xs font-black text-[var(--accent)]">Abrir Agenda</Link>
             <Link href="/mapa" className="pressable focus-ring rounded py-1 text-xs font-black text-[var(--foreground-secondary)]">Abrir Mapa</Link>
           </div>
         </div>
       )}
 
       {visibleItems.length > 0 && (
-        <div className={variant === "immersive" ? "mt-4" : "mt-6 divide-y divide-[var(--border)] border-y border-[var(--border)]"}>
+        <div className={variant === "immersive" ? "mt-4" : "mt-5 flex flex-col gap-3"}>
           {visibleItems.map((item) => variant === "immersive"
             ? <ImmersiveDiscoveryFeedItem key={`${item.kind}:${item.id}`} item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />
             : <DiscoveryFeedItem key={`${item.kind}:${item.id}`} item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />)}
@@ -165,24 +165,33 @@ function DiscoveryFeedItem({ item, intent, onDismiss }: { item: DiscoveryItem; i
   const imageUrl = safeImageUrl(item.imageUrl);
   const open = () => sendInteraction(item, "open", intent);
   return (
-    <article className={`relative grid gap-4 py-5 pr-9 sm:gap-6 sm:py-6 ${imageUrl ? "grid-cols-[7rem_minmax(0,1fr)] sm:grid-cols-[12rem_minmax(0,1fr)]" : "grid-cols-1"}`}>
-      <button type="button" onClick={() => onDismiss(item)} title="Ocultar recomendação" aria-label={`Ocultar ${item.title}`} className="pressable focus-ring absolute right-0 top-4 grid h-8 w-8 place-items-center rounded text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
-        <AppIcon name="close" className="h-4 w-4" />
-      </button>
-      {imageUrl && (
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-md bg-[var(--surface-secondary)]">
-          <Image src={imageUrl} alt="" fill unoptimized sizes="(max-width: 639px) 112px, 192px" className="object-cover" />
+    <article className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+      <header className="flex items-center gap-2.5 px-3.5 py-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--surface-secondary)] text-[var(--accent)]">
+          <AppIcon name={kindIcon[item.kind]} className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[0.7rem] font-black uppercase text-[var(--accent)]">{item.eyebrow}</p>
+          <h3 className="truncate text-[0.98rem] font-black leading-5 text-[var(--foreground)]">{item.title}</h3>
         </div>
-      )}
-      <div className="min-w-0 self-center">
-        <p className="text-[11px] font-black uppercase text-red-600">{item.eyebrow}</p>
-        <h3 className="mt-1 pr-1 text-base font-black leading-6 text-[var(--foreground)] sm:text-lg">{item.title}</h3>
-        {item.reason && <p className="mt-1 text-xs font-bold text-[var(--foreground-secondary)]">{item.reason}</p>}
-        {item.description && <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--foreground-muted)]">{item.description}</p>}
-        {item.meta.length > 0 && <p className="mt-2 text-xs leading-5 text-[var(--foreground-muted)]">{item.meta.join(" · ")}</p>}
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-          <DiscoveryActionLink action={item.primaryAction} primary onOpen={open} />
-          {item.secondaryAction && <DiscoveryActionLink action={item.secondaryAction} onOpen={open} />}
+        <button type="button" onClick={() => onDismiss(item)} title="Ocultar recomendação" aria-label={`Ocultar ${item.title}`} className="pressable focus-ring grid h-9 w-9 shrink-0 place-items-center rounded text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
+          <AppIcon name="close" className="h-4 w-4" />
+        </button>
+      </header>
+      <div className={`gap-4 px-3.5 pb-3.5 sm:gap-6 ${imageUrl ? "grid grid-cols-[7rem_minmax(0,1fr)] sm:grid-cols-[12rem_minmax(0,1fr)]" : ""}`}>
+        {imageUrl && (
+          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-[var(--surface-secondary)]">
+            <Image src={imageUrl} alt="" fill unoptimized sizes="(max-width: 639px) 112px, 192px" className="object-cover" />
+          </div>
+        )}
+        <div className="min-w-0 self-center">
+          {item.reason && <p className="text-xs font-bold text-[var(--foreground-secondary)]">{item.reason}</p>}
+          {item.description && <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-[var(--foreground-muted)]">{item.description}</p>}
+          {item.meta.length > 0 && <p className="mt-1.5 text-xs leading-5 text-[var(--foreground-muted)]">{item.meta.join(" · ")}</p>}
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+            <DiscoveryActionLink action={item.primaryAction} primary onOpen={open} />
+            {item.secondaryAction && <DiscoveryActionLink action={item.secondaryAction} onOpen={open} />}
+          </div>
         </div>
       </div>
     </article>
@@ -190,7 +199,7 @@ function DiscoveryFeedItem({ item, intent, onDismiss }: { item: DiscoveryItem; i
 }
 
 function DiscoveryActionLink({ action, primary = false, onOpen }: { action: DiscoveryAction; primary?: boolean; onOpen: () => void }) {
-  const className = `pressable focus-ring inline-flex min-h-8 items-center gap-0.5 rounded text-xs font-black ${primary ? "text-red-600 hover:text-red-500" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"}`;
+  const className = `pressable focus-ring inline-flex min-h-8 items-center gap-0.5 rounded text-xs font-black ${primary ? "text-[var(--accent)] hover:text-[var(--accent-hover)]" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"}`;
   const content = <>{action.label}<AppIcon name="chevron" className="h-3 w-3" /></>;
   if (action.external) return <a href={action.href} target="_blank" rel="noreferrer" onClick={onOpen} className={className}>{content}</a>;
   return <Link href={action.href} onClick={onOpen} className={className}>{content}</Link>;
@@ -220,14 +229,22 @@ function DiscoveryFeedSkeleton({ variant = "compact" }: { variant?: "compact" | 
   }
 
   return (
-    <div className="mt-6 divide-y divide-[var(--border)] border-y border-[var(--border)]" aria-hidden="true">
+    <div className="mt-5 flex flex-col gap-3" aria-hidden="true">
       {[0, 1, 2].map((item) => (
-        <div key={item} className="grid grid-cols-[7rem_minmax(0,1fr)] gap-4 py-5 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6 sm:py-6">
-          <div className="aspect-[4/3] animate-pulse rounded-md bg-[var(--surface-secondary)]" />
-          <div className="self-center">
-            <div className="h-3 w-20 animate-pulse rounded bg-[var(--surface-secondary)]" />
-            <div className="mt-3 h-5 w-3/4 animate-pulse rounded bg-[var(--surface-secondary)]" />
-            <div className="mt-3 h-3 w-full animate-pulse rounded bg-[var(--surface-secondary)]" />
+        <div key={item} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+          <div className="flex items-center gap-2.5 px-3.5 py-3">
+            <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-[var(--surface-secondary)]" />
+            <div className="min-w-0 flex-1">
+              <div className="h-2.5 w-16 animate-pulse rounded bg-[var(--surface-secondary)]" />
+              <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-[var(--surface-secondary)]" />
+            </div>
+          </div>
+          <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-4 px-3.5 pb-3.5 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6">
+            <div className="aspect-square animate-pulse rounded-xl bg-[var(--surface-secondary)]" />
+            <div className="self-center">
+              <div className="h-3 w-3/4 animate-pulse rounded bg-[var(--surface-secondary)]" />
+              <div className="mt-3 h-3 w-full animate-pulse rounded bg-[var(--surface-secondary)]" />
+            </div>
           </div>
         </div>
       ))}
