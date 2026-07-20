@@ -18,7 +18,6 @@ const minimumThinkingMs = 360;
 const navigationTransitionMs = 850;
 const genericErrorMessage = "O Hub falhou a responder. Tenta novamente.";
 const timeoutErrorMessage = "Demorei demasiado a obter a informação. Tenta novamente.";
-const suggestions = ["Quero sair hoje", "Tenho fome", "O que está a acontecer?", "Estou num festival"];
 const directNavIntents = new Set<HubIntent>(["tickets", "shop", "map", "profile"]);
 const directNavLabels: Partial<Record<HubIntent, string>> = { tickets: "Bilhetes", shop: "Loja", map: "Mapa", profile: "Perfil" };
 
@@ -237,24 +236,8 @@ export function SmartHub({
           </div>
 
           {!showChatZone && (
-            <div className="feed-item-enter absolute inset-x-0 top-4 z-10 flex flex-wrap justify-center gap-2 px-4 sm:top-6 sm:gap-3">
-              <SatelliteLink href="/agenda" icon="calendar" label="Agenda" onClick={onBeforeNavigate} />
-              <SatelliteLink href="/loja" icon="store" label="Loja" onClick={onBeforeNavigate} />
-              <SatelliteLink href="/descobrir" icon="compass" label="Nexus" onClick={onBeforeNavigate} />
-              <SatelliteLink href="/para-ti" icon="spark" label="Para ti" onClick={onBeforeNavigate} />
-            </div>
-          )}
-
-          {!showChatZone && (
             <div className="feed-item-enter absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-8 text-center sm:pb-10">
               <p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Sugestões rápidas">
-                {suggestions.map((suggestion) => (
-                  <button key={suggestion} type="button" onClick={() => void runQuery(suggestion)} className="pressable focus-ring rounded py-1 text-sm font-bold text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
@@ -300,6 +283,14 @@ export function SmartHub({
           </button>
         </div>
       </form>
+
+      {!showChatZone && (
+        <div className="feed-item-enter flex shrink-0 justify-center gap-2 pb-3 sm:gap-3 sm:pb-5">
+          <SatelliteLink href="/agenda" icon="calendar" label="Agenda" onClick={onBeforeNavigate} />
+          <SatelliteLink href="/descobrir" icon="compass" label="Nexus" onClick={onBeforeNavigate} />
+          <SatelliteLink href="/loja" icon="store" label="Loja" onClick={onBeforeNavigate} />
+        </div>
+      )}
     </section>
   );
 }

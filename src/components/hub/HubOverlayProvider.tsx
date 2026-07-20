@@ -43,7 +43,7 @@ export function HubOverlayProvider({ children }: { children: ReactNode }) {
       closeTimerRef.current = window.setTimeout(() => setHubOpen(false), 520);
       return;
     }
-    toast({ message: awaitingFollowUp ? "A Paranoid precisa de mais um detalhe." : "Contexto atualizado.", tone: "success" });
+    if (awaitingFollowUp) toast({ message: "A Paranoid precisa de mais um detalhe.", tone: "success" });
   }, [pathname, toast]);
 
   useEffect(() => () => {
