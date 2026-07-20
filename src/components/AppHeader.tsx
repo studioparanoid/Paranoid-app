@@ -30,18 +30,14 @@ export function AppHeader() {
     else router.push("/");
   }
 
+  const showBackBar = mobileSimplificationEnabled && !isPrimaryMobileRoute(pathname);
+
   return <header className={`brand-surface app-header-shadow sticky top-0 z-50 border-b border-[var(--brand-border)] bg-black backdrop-blur-lg ${hideMobileHeader ? "hidden lg:block" : "block"}`}>
-    {mobileSimplificationEnabled && (
-      <div className="mx-auto flex h-14 items-center justify-between gap-3 px-3 lg:hidden">
-        {isPrimaryMobileRoute(pathname) ? (
-          <span className="h-11 w-11" aria-hidden="true" />
-        ) : (
-          <button type="button" onClick={goBack} aria-label="Voltar" className="focus-ring pressable grid h-11 w-11 place-items-center text-zinc-300 hover:text-white">
-            <ParanoidBackIcon className="h-5 w-5" />
-          </button>
-        )}
-        <p className="min-w-0 flex-1 truncate text-center text-[0.82rem] font-black uppercase text-white">{mobileRouteTitle(pathname)}</p>
-        <span className="h-11 w-11" aria-hidden="true" />
+    {showBackBar && (
+      <div className="mx-auto flex h-12 items-center px-3 lg:hidden">
+        <button type="button" onClick={goBack} aria-label="Voltar" className="focus-ring pressable grid h-11 w-11 place-items-center text-zinc-300 hover:text-white">
+          <ParanoidBackIcon className="h-5 w-5" />
+        </button>
       </div>
     )}
     <div className={`mx-auto h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-10 ${mobileSimplificationEnabled ? "hidden lg:flex" : "flex"}`}>
@@ -78,20 +74,4 @@ export function AppHeader() {
 
 function isPrimaryMobileRoute(pathname: string) {
   return pathname === "/mapa" || pathname === "/bilhetes" || pathname === "/perfil";
-}
-
-function mobileRouteTitle(pathname: string) {
-  if (pathname.startsWith("/agenda")) return "Agenda";
-  if (pathname.startsWith("/mapa")) return "Mapa";
-  if (pathname.startsWith("/bilhetes")) return "Bilhetes";
-  if (pathname.startsWith("/perfil")) return "Perfil";
-  if (pathname.startsWith("/loja")) return "Loja";
-  if (pathname.startsWith("/eventos")) return "Evento";
-  if (pathname.startsWith("/artistas")) return "Artista";
-  if (pathname.startsWith("/espacos")) return "Espaço";
-  if (pathname.startsWith("/organizadores")) return "Organizador";
-  if (pathname.startsWith("/guardados")) return "Guardados";
-  if (pathname.startsWith("/admin")) return "Administração";
-  if (pathname.startsWith("/organizador")) return "Organizador";
-  return "Paranoid";
 }

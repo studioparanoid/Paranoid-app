@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AppIcon } from "@/components/AppIcon";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SettingsList, type SettingsListItem } from "@/components/SettingsList";
@@ -41,6 +42,8 @@ type ProfileRow = {
   avatar_url: string | null;
 };
 
+type SavedPreviewItem = { id: string; slug: string; title: string; imageUrl: string | null };
+
 const cities = ["Pombal", "Leiria", "Coimbra", "Figueira da Foz", "Caldas da Rainha", "Marinha Grande"];
 const categories = ["Concertos", "Festivais", "DJ Sets", "Cinema", "Exposições", "Mercados", "Workshops", "Teatro", "Outros"];
 
@@ -69,7 +72,11 @@ export function ProfileClient() {
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"atividade" | "definicoes">("atividade");
+  const [activeTab, setActiveTab] = useState<"guardados" | "atividade" | "definicoes">("guardados");
+  const [savedCount, setSavedCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [ticketCount, setTicketCount] = useState(0);
+  const [savedPreview, setSavedPreview] = useState<SavedPreviewItem[]>([]);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [onboardingStep, setOnboardingStep] = useState<"profile" | null>(null);
@@ -100,14 +107,23 @@ export function ProfileClient() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const [profileResponse, adminResponse] = await Promise.all([
+    const [profileResponse, adminResponse, savedCountResponse, followingCountResponse, ticketCountResponse, savedPreviewResponse] = await Promise.all([
       supabase.from("profiles").select("id,display_name,account_type,account_status,artist_name,organizer_name,venue_name,city,instagram_url,entity_id,entity_slug,preferred_cities,preferred_categories,avatar_url").eq("id", user.id).maybeSingle(),
       supabase.from("app_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
+      supabase.from("saved_events").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+      supabase.from("follows").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+      supabase.from("ticket_reservations").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "reserved"),
+      supabase.from("saved_events").select("event_id, events(id,slug,title,image_url)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(9),
     ]);
     const nextProfile = profileResponse.data as ProfileRow | null;
     setUserId(user.id);
     setEmail(user.email || "");
     setIsAdmin(Boolean(adminResponse.data));
+    setSavedCount(savedCountResponse.count || 0);
+    setFollowingCount(followingCountResponse.count || 0);
+    setTicketCount(ticketCountResponse.count || 0);
+    const previewRows = (savedPreviewResponse.data || []) as unknown as Array<{ event_id: string; events: { id: string; slug: string; title: string; image_url: string | null } | null }>;
+    setSavedPreview(previewRows.filter((row) => row.events).map((row) => ({ id: row.events!.id, slug: row.events!.slug, title: row.events!.title, imageUrl: row.events!.image_url })));
     setProfile(nextProfile);
     setDisplayName(nextProfile?.display_name || "");
     setCity(nextProfile?.city || "");
@@ -264,10 +280,26 @@ export function ProfileClient() {
       <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-600">Configurar conta</p>
       <p className="mt-2 text-sm font-bold text-[var(--foreground)]">Completa o perfil</p>
     </div>}
-    <header className="flex items-center gap-3 border-b border-border pb-6 sm:gap-4">
-      <div className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden border border-accent/30 bg-accent/12 text-xl font-black text-accent sm:h-16 sm:w-16 ${mobileSimplificationEnabled ? "[clip-path:polygon(50%_0,92%_20%,100%_72%,72%_100%,28%_100%,0_72%,8%_20%)]" : "rounded-full"}`}>{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
-      <div className="min-w-0 flex-1"><h1 className="truncate text-xl font-black sm:text-3xl">{title}</h1><p className="truncate text-xs text-foreground-muted sm:text-sm">{email}</p><div className="mt-2"><StatusBadge label={profile?.account_status === "pending" ? "Perfil pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} /></div></div>
-      <Button type="button" variant="secondary" size="sm" onClick={() => { setEditing((value) => !value); setActiveTab("definicoes"); }} aria-expanded={editing} className={mobileSimplificationEnabled ? "inline-flex shrink-0" : "hidden sm:inline-flex"}>Editar perfil</Button>
+    <header className="pb-5">
+      <div className="flex items-center gap-6 sm:gap-10">
+        <div className={`relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden border border-accent/30 bg-accent/12 text-2xl font-black text-accent sm:h-24 sm:w-24 ${mobileSimplificationEnabled ? "[clip-path:polygon(50%_0,92%_20%,100%_72%,72%_100%,28%_100%,0_72%,8%_20%)]" : "rounded-full"}`}>{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
+        <div className="flex flex-1 justify-around sm:justify-start sm:gap-10">
+          <StatBlock value={savedCount} label="Guardados" onClick={() => setActiveTab("guardados")} active={activeTab === "guardados"} />
+          <StatBlock value={followingCount} label="A seguir" href="/descobrir" />
+          <StatBlock value={ticketCount} label="Bilhetes" href="/bilhetes" />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-center gap-2">
+          <h1 className="truncate text-base font-black sm:text-lg">{title}</h1>
+          <StatusBadge label={profile?.account_status === "pending" ? "Pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} />
+        </div>
+        {accountType !== "community" && description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-foreground-secondary">{description}</p>}
+        {accountType === "community" && city && <p className="mt-1 text-sm text-foreground-muted">{city}</p>}
+      </div>
+
+      <Button type="button" variant="secondary" onClick={() => { setEditing(true); setActiveTab("definicoes"); }} className="mt-4 w-full">Editar perfil</Button>
     </header>
 
     {editing && <section className="slide-up border-b border-border py-7">
@@ -288,6 +320,34 @@ export function ProfileClient() {
     </section>}
 
     {!editing && <ProfileTabs active={activeTab} onChange={setActiveTab} />}
+
+    {!editing && activeTab === "guardados" && (
+      <div className="content-transition py-6">
+        {savedPreview.length === 0 ? (
+          <div className="py-14 text-center">
+            <AppIcon name="bookmark" className="mx-auto h-7 w-7 text-foreground-muted" />
+            <p className="mt-3 text-sm font-bold text-foreground">Ainda não guardaste nada</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm text-foreground-muted">Os eventos que guardares na agenda aparecem aqui.</p>
+            <LinkButton href="/agenda" variant="secondary" className="mt-5">Ver agenda</LinkButton>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-0.5">
+              {savedPreview.map((item) => (
+                <Link key={item.id} href={`/eventos/${item.slug}`} className="group focus-ring relative block aspect-square overflow-hidden bg-surface-secondary">
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  ) : (
+                    <span className="grid h-full place-items-center px-2 text-center text-[10px] font-black uppercase tracking-wide text-foreground-muted">{item.title}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+            {savedCount > savedPreview.length && <LinkButton href="/guardados" variant="ghost" className="mt-5 w-full">Ver todos os {savedCount} guardados</LinkButton>}
+          </>
+        )}
+      </div>
+    )}
 
     {!editing && activeTab === "atividade" && <div className="content-transition grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">
       {creatorItems.length > 0 && <ProfileSection title="Criar e gerir" items={creatorItems} />}
@@ -316,15 +376,34 @@ function ProfileSection({ title, items }: { title: string; items: SettingsListIt
   return <section><SectionHeader title={title} /><SettingsList items={items} /></section>;
 }
 
-function ProfileTabs({ active, onChange }: { active: "atividade" | "definicoes"; onChange: (tab: "atividade" | "definicoes") => void }) {
-  const tabClassName = (isActive: boolean) => `pressable focus-ring shrink-0 rounded-full px-4 py-2 text-xs font-black ${isActive ? "bg-foreground text-background" : "text-foreground-muted hover:text-foreground"}`;
+type LocalTab = "guardados" | "atividade" | "definicoes";
+
+function ProfileTabs({ active, onChange }: { active: LocalTab; onChange: (tab: LocalTab) => void }) {
+  const itemClassName = (isActive: boolean) => `pressable focus-ring flex flex-1 items-center justify-center border-t-2 py-3 ${isActive ? "border-foreground text-foreground" : "border-transparent text-foreground-muted hover:text-foreground"}`;
   return (
-    <nav aria-label="Secções do perfil" className="mt-6 flex gap-1 overflow-x-auto border-b border-border pb-3">
-      <button type="button" onClick={() => onChange("atividade")} aria-current={active === "atividade" ? "page" : undefined} className={tabClassName(active === "atividade")}>Atividade</button>
-      <Link href="/guardados" className={tabClassName(false)}>Guardados</Link>
-      <Link href="/descobrir" className={tabClassName(false)}>Seguir</Link>
-      <Link href="/bilhetes" className={tabClassName(false)}>Bilhetes</Link>
-      <button type="button" onClick={() => onChange("definicoes")} aria-current={active === "definicoes" ? "page" : undefined} className={tabClassName(active === "definicoes")}>Definições</button>
+    <nav aria-label="Secções do perfil" className="-mt-px flex border-t border-border">
+      <button type="button" onClick={() => onChange("guardados")} aria-current={active === "guardados" ? "page" : undefined} aria-label="Guardados" title="Guardados" className={itemClassName(active === "guardados")}>
+        <AppIcon name="bookmark" className="h-5 w-5" />
+      </button>
+      <Link href="/descobrir" aria-label="Seguir" title="Seguir" className={itemClassName(false)}>
+        <AppIcon name="compass" className="h-5 w-5" />
+      </Link>
+      <Link href="/bilhetes" aria-label="Bilhetes" title="Bilhetes" className={itemClassName(false)}>
+        <AppIcon name="ticket" className="h-5 w-5" />
+      </Link>
+      <button type="button" onClick={() => onChange("atividade")} aria-current={active === "atividade" ? "page" : undefined} aria-label="Atividade" title="Atividade" className={itemClassName(active === "atividade")}>
+        <AppIcon name="spark" className="h-5 w-5" />
+      </button>
+      <button type="button" onClick={() => onChange("definicoes")} aria-current={active === "definicoes" ? "page" : undefined} aria-label="Definições" title="Definições" className={itemClassName(active === "definicoes")}>
+        <AppIcon name="settings" className="h-5 w-5" />
+      </button>
     </nav>
   );
+}
+
+function StatBlock({ value, label, onClick, href, active }: { value: number; label: string; onClick?: () => void; href?: string; active?: boolean }) {
+  const content = <><span className="block text-lg font-black leading-tight">{value}</span><span className={`block text-xs ${active ? "text-foreground" : "text-foreground-muted"}`}>{label}</span></>;
+  const className = "pressable focus-ring rounded px-1 py-1 text-center";
+  if (href) return <Link href={href} className={className}>{content}</Link>;
+  return <button type="button" onClick={onClick} className={className}>{content}</button>;
 }
