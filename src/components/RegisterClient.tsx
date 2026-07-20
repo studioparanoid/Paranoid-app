@@ -26,7 +26,7 @@ function normalizeExternalUrl(value: string) {
 }
 
 const inputClassName =
-  "h-12 w-full rounded border border-zinc-800 bg-black px-4 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800";
+  "focus-ring h-12 w-full rounded-xl border border-input-border bg-input px-4 text-foreground outline-none placeholder:text-input-placeholder focus:border-accent";
 
 export function RegisterClient() {
   const router = useRouter();
@@ -207,7 +207,7 @@ export function RegisterClient() {
         <div className="grid gap-5 sm:grid-cols-2">
           <ProfileImageField imageUrl="" onFile={setProfileImage} onRemove={() => setProfileImage(null)} disabled={creating} />
           <label className="sm:col-span-2" htmlFor="register-display-name">
-            <span className="mb-2 block text-sm font-bold text-zinc-300">
+            <span className="mb-2 block text-sm font-bold text-foreground-secondary">
               Nome público
             </span>
             <input
@@ -223,7 +223,7 @@ export function RegisterClient() {
           </label>
 
           <label htmlFor="register-email">
-            <span className="mb-2 block text-sm font-bold text-zinc-300">
+            <span className="mb-2 block text-sm font-bold text-foreground-secondary">
               Email
             </span>
             <input
@@ -241,7 +241,7 @@ export function RegisterClient() {
           </label>
 
           <label htmlFor="register-password">
-            <span className="mb-2 block text-sm font-bold text-zinc-300">
+            <span className="mb-2 block text-sm font-bold text-foreground-secondary">
               Palavra-passe
             </span>
             <input
@@ -259,7 +259,7 @@ export function RegisterClient() {
           </label>
 
           <label htmlFor="register-account-type">
-            <span className="mb-2 block text-sm font-bold text-zinc-300">
+            <span className="mb-2 block text-sm font-bold text-foreground-secondary">
               Tipo de perfil
             </span>
             <select
@@ -281,7 +281,7 @@ export function RegisterClient() {
 
           {accountType !== "community" && (
             <label className="sm:col-span-2" htmlFor="register-entity-name">
-              <span className="mb-2 block text-sm font-bold text-zinc-300">
+              <span className="mb-2 block text-sm font-bold text-foreground-secondary">
                 {accountType === "artist"
                   ? "Nome artístico / projeto"
                   : accountType === "organizer"
@@ -311,21 +311,21 @@ export function RegisterClient() {
           )}
 
           {accountType === "organizer" && <>
-            <label htmlFor="register-organizer-type"><span className="mb-2 block text-sm font-bold text-zinc-300">Tipo</span><select id="register-organizer-type" value={organizerType} onChange={(event) => setOrganizerType(event.target.value)} className={inputClassName}><option value="">Escolher tipo</option>{organizerTypes.map((value) => <option key={value}>{value}</option>)}</select></label>
-            {organizerType === "Outro" && <label htmlFor="register-organizer-type-other"><span className="mb-2 block text-sm font-bold text-zinc-300">Especificar tipo</span><input id="register-organizer-type-other" value={organizerTypeOther} onChange={(event) => setOrganizerTypeOther(event.target.value.slice(0, 60))} className={inputClassName} /></label>}
+            <label htmlFor="register-organizer-type"><span className="mb-2 block text-sm font-bold text-foreground-secondary">Tipo</span><select id="register-organizer-type" value={organizerType} onChange={(event) => setOrganizerType(event.target.value)} className={inputClassName}><option value="">Escolher tipo</option>{organizerTypes.map((value) => <option key={value}>{value}</option>)}</select></label>
+            {organizerType === "Outro" && <label htmlFor="register-organizer-type-other"><span className="mb-2 block text-sm font-bold text-foreground-secondary">Especificar tipo</span><input id="register-organizer-type-other" value={organizerTypeOther} onChange={(event) => setOrganizerTypeOther(event.target.value.slice(0, 60))} className={inputClassName} /></label>}
           </>}
 
           {accountType === "artist" && <>
-            <label htmlFor="register-artist-category"><span className="mb-2 block text-sm font-bold text-zinc-300">Categoria</span><select id="register-artist-category" value={artistCategory} onChange={(event) => { setArtistCategory(event.target.value); if (event.target.value !== "Música") setMusicGenres([]); }} className={inputClassName}><option value="">Escolher categoria</option>{artistCategories.map((value) => <option key={value}>{value}</option>)}</select></label>
-            {artistCategory === "Outro" && <label htmlFor="register-artist-category-other"><span className="mb-2 block text-sm font-bold text-zinc-300">Especificar categoria</span><input id="register-artist-category-other" value={artistCategoryOther} onChange={(event) => setArtistCategoryOther(event.target.value.slice(0, 60))} className={inputClassName} /></label>}
+            <label htmlFor="register-artist-category"><span className="mb-2 block text-sm font-bold text-foreground-secondary">Categoria</span><select id="register-artist-category" value={artistCategory} onChange={(event) => { setArtistCategory(event.target.value); if (event.target.value !== "Música") setMusicGenres([]); }} className={inputClassName}><option value="">Escolher categoria</option>{artistCategories.map((value) => <option key={value}>{value}</option>)}</select></label>
+            {artistCategory === "Outro" && <label htmlFor="register-artist-category-other"><span className="mb-2 block text-sm font-bold text-foreground-secondary">Especificar categoria</span><input id="register-artist-category-other" value={artistCategoryOther} onChange={(event) => setArtistCategoryOther(event.target.value.slice(0, 60))} className={inputClassName} /></label>}
             {artistCategory === "Música" && <GenreMultiSelect values={musicGenres} onChange={setMusicGenres} />}
           </>}
 
-          {accountType !== "community" && <label className="sm:col-span-2" htmlFor="register-description"><span className="mb-2 flex justify-between gap-3 text-sm font-bold text-zinc-300"><span>Descrição</span><span className="text-xs text-zinc-600">{description.length}/{maxProfileDescriptionLength}</span></span><textarea id="register-description" value={description} maxLength={maxProfileDescriptionLength} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder={accountType === "artist" ? "Apresenta o projeto, influências e percurso." : accountType === "organizer" ? "Fala sobre o projeto, espaço ou eventos que organizas." : "Apresenta o espaço e a sua atividade."} className={`${inputClassName} h-auto min-h-32 py-3`} /></label>}
+          {accountType !== "community" && <label className="sm:col-span-2" htmlFor="register-description"><span className="mb-2 flex justify-between gap-3 text-sm font-bold text-foreground-secondary"><span>Descrição</span><span className="text-xs text-foreground-muted">{description.length}/{maxProfileDescriptionLength}</span></span><textarea id="register-description" value={description} maxLength={maxProfileDescriptionLength} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder={accountType === "artist" ? "Apresenta o projeto, influências e percurso." : accountType === "organizer" ? "Fala sobre o projeto, espaço ou eventos que organizas." : "Apresenta o espaço e a sua atividade."} className={`${inputClassName} h-auto min-h-32 py-3`} /></label>}
 
           <label className="sm:col-span-2" htmlFor="register-instagram">
-            <span className="mb-2 block text-sm font-bold text-zinc-300">
-              Instagram <span className="font-normal text-zinc-600">(opcional)</span>
+            <span className="mb-2 block text-sm font-bold text-foreground-secondary">
+              Instagram <span className="font-normal text-foreground-muted">(opcional)</span>
             </span>
             <input
               id="register-instagram"
@@ -342,14 +342,14 @@ export function RegisterClient() {
         <button
           type="submit"
           disabled={creating}
-          className="pressable focus-ring mt-7 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:cursor-wait disabled:opacity-50"
+          className="pressable focus-ring mt-7 w-full rounded-full bg-foreground px-5 py-4 text-sm font-black text-background disabled:cursor-wait disabled:opacity-50"
         >
           {creating ? "A criar conta..." : "Criar conta"}
         </button>
 
-        <p className="mt-4 text-center text-sm text-zinc-500">
+        <p className="mt-4 text-center text-sm text-foreground-muted">
           Já tens conta?{" "}
-          <Link href="/login" className="font-black text-[#f2f1ec] underline underline-offset-4">
+          <Link href="/login" className="font-black text-foreground underline underline-offset-4">
             Entrar
           </Link>
         </p>
@@ -359,7 +359,7 @@ export function RegisterClient() {
             id="register-message"
             role="status"
             aria-live="polite"
-            className="mt-5 rounded border border-zinc-800 bg-black px-4 py-3 text-center text-sm font-bold text-zinc-300"
+            className="mt-5 rounded-xl border border-border bg-background-subtle px-4 py-3 text-center text-sm font-bold text-foreground-secondary"
           >
             {message}
           </p>

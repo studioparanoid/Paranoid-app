@@ -18,11 +18,11 @@ export function AuthFormCard({
   children: ReactNode;
 }) {
   return (
-    <section className="content-transition shadow-panel rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 lg:p-9">
-      <p className="text-xs font-black uppercase tracking-[0.32em] text-red-600">
+    <section className="content-transition shadow-panel rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-7 lg:p-9">
+      <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--accent)]">
         {eyebrow}
       </p>
-      <h1 className="mt-3 text-4xl font-black leading-none sm:text-5xl">
+      <h1 className="mt-2 text-2xl font-black leading-tight sm:text-3xl">
         {title}
       </h1>
       <div className="mt-7">{children}</div>
@@ -40,8 +40,8 @@ export function AuthInfoCard({
   children: ReactNode;
 }) {
   return (
-    <section className="brand-surface shadow-card rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-elevated)] p-5 sm:p-6">
-      <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-500">
+    <section className="brand-surface shadow-card rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-surface-elevated)] p-5 sm:p-6">
+      <p className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-[var(--accent)]">
         {eyebrow}
       </p>
       <h2 className="mt-2 text-2xl font-black text-[var(--brand-foreground)] sm:text-3xl">{title}</h2>

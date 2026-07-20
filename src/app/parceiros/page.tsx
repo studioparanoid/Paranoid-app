@@ -22,18 +22,18 @@ export default async function PartnersPage() {
   const campaigns = await getActiveSponsorshipCampaigns();
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-background px-4 py-4 pb-28 text-foreground sm:px-6 lg:px-10 lg:py-8">
       <section className="mx-auto max-w-md lg:max-w-6xl">
-        <p className="mb-3 text-xs font-black uppercase tracking-[0.35em] text-red-700">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-accent">
           Parceiros
         </p>
-        <h1 className="text-5xl font-black leading-none tracking-tight lg:text-8xl">
+        <h1 className="mt-2 text-2xl font-black leading-tight sm:text-3xl">
           Quem amplifica a Paranoid.
         </h1>
 
-        <section className="mt-8 grid gap-4 lg:grid-cols-3">
+        <section className="mt-7 grid gap-4 lg:grid-cols-3">
           {campaigns.length === 0 && (
-            <p className="rounded-[2rem] border border-zinc-900 bg-zinc-950 p-6 text-zinc-500">
+            <p className="rounded-2xl border border-border bg-surface p-6 text-foreground-muted">
               Ainda não há parceiros ativos.
             </p>
           )}
@@ -41,16 +41,16 @@ export default async function PartnersPage() {
           {campaigns.map((campaign) => (
             <article
               key={campaign.id}
-              className="rounded-[2rem] border border-zinc-900 bg-zinc-950 p-6"
+              className="rounded-2xl border border-border bg-surface p-6"
             >
-              <p className="text-xs font-black uppercase tracking-[0.35em] text-red-500">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-accent">
                 {productLabel(campaign.product_code)}
               </p>
-              <h2 className="mt-4 text-3xl font-black">
+              <h2 className="mt-3 text-xl font-black">
                 Parceiro Paranoid
               </h2>
               {campaign.founding_partner_number && (
-                <p className="mt-4 inline-flex rounded-full bg-[#f2f1ec] px-3 py-1 text-xs font-black text-black">
+                <p className="mt-4 inline-flex rounded-full bg-foreground px-3 py-1 text-xs font-black text-background">
                   Parceiro Fundador #{campaign.founding_partner_number}
                 </p>
               )}

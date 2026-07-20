@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase/public";
 import { safeInternalPath } from "@/lib/auth/redirects";
 
 const inputClassName =
-  "h-12 w-full rounded border border-zinc-800 bg-black px-4 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-800";
+  "focus-ring h-12 w-full rounded-xl border border-input-border bg-input px-4 text-foreground outline-none placeholder:text-input-placeholder focus:border-accent";
 
 export function LoginClient() {
   const router = useRouter();
@@ -124,7 +124,7 @@ export function LoginClient() {
       <form onSubmit={handleLogin} noValidate>
         <div className="space-y-5">
           <label htmlFor="login-email">
-            <span className="mb-2 block text-sm font-bold text-zinc-300">
+            <span className="mb-2 block text-sm font-bold text-foreground-secondary">
               Email
             </span>
             <input
@@ -142,7 +142,7 @@ export function LoginClient() {
           </label>
 
           <label htmlFor="login-password">
-            <span className="mb-2 block text-sm font-bold text-zinc-300">
+            <span className="mb-2 block text-sm font-bold text-foreground-secondary">
               Palavra-passe
             </span>
             <input
@@ -162,7 +162,7 @@ export function LoginClient() {
         <button
           type="submit"
           disabled={loading}
-          className="pressable focus-ring mt-7 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:cursor-wait disabled:opacity-50"
+          className="pressable focus-ring mt-7 w-full rounded-full bg-foreground px-5 py-4 text-sm font-black text-background disabled:cursor-wait disabled:opacity-50"
         >
           {loading ? "A entrar..." : "Entrar"}
         </button>
@@ -171,14 +171,14 @@ export function LoginClient() {
           type="button"
           onClick={handlePasswordReset}
           disabled={loading}
-          className="pressable focus-ring mt-3 w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
+          className="pressable focus-ring mt-3 w-full rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary disabled:opacity-50"
         >
           Recuperar palavra-passe
         </button>
 
-        <p className="mt-4 text-center text-sm text-zinc-500">
+        <p className="mt-4 text-center text-sm text-foreground-muted">
           Ainda não tens conta?{" "}
-          <Link href="/registar" className="font-black text-[#f2f1ec] underline underline-offset-4">
+          <Link href="/registar" className="font-black text-foreground underline underline-offset-4">
             Criar conta
           </Link>
         </p>
@@ -188,7 +188,7 @@ export function LoginClient() {
             id="login-message"
             role="status"
             aria-live="polite"
-            className="mt-5 rounded border border-zinc-800 bg-black px-4 py-3 text-center text-sm font-bold text-zinc-300"
+            className="mt-5 rounded-xl border border-border bg-background-subtle px-4 py-3 text-center text-sm font-bold text-foreground-secondary"
           >
             {message}
           </p>
