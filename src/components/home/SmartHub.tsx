@@ -237,6 +237,19 @@ export function SmartHub({
           </div>
 
           <div
+            className={`absolute inset-x-0 top-4 z-10 flex justify-center gap-2 px-4 transition-opacity duration-500 ease-out sm:top-6 sm:gap-3 ${
+              showChatZone ? "pointer-events-none opacity-0" : "opacity-100"
+            }`}
+            aria-hidden={showChatZone}
+            inert={showChatZone || undefined}
+          >
+            <SatelliteLink href="/agenda" icon="calendar" label="Agenda" onClick={onBeforeNavigate} />
+            <SatelliteLink href="/loja" icon="store" label="Loja" onClick={onBeforeNavigate} />
+            <SatelliteLink href="/descobrir" icon="compass" label="Nexus" onClick={onBeforeNavigate} />
+            <SatelliteLink href="/para-ti" icon="spark" label="Para ti" onClick={onBeforeNavigate} />
+          </div>
+
+          <div
             className={`absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-8 text-center transition-all duration-500 ease-out sm:pb-10 ${
               showChatZone ? "translate-y-3 opacity-0" : "translate-y-0 opacity-100"
             }`}
@@ -296,6 +309,15 @@ export function SmartHub({
         </div>
       </form>
     </section>
+  );
+}
+
+function SatelliteLink({ href, icon, label, onClick }: { href: string; icon: "calendar" | "store" | "compass" | "spark"; label: string; onClick?: () => void }) {
+  return (
+    <Link href={href} onClick={onClick} className="pressable focus-ring flex flex-col items-center gap-1.5 rounded-lg border border-white/10 bg-black/35 px-3 py-2.5 backdrop-blur-md transition-colors hover:border-white/25 hover:bg-black/50">
+      <AppIcon name={icon} className="h-4 w-4 text-[var(--foreground)]" />
+      <span className="text-[10px] font-black uppercase tracking-wide text-[var(--foreground-secondary)]">{label}</span>
+    </Link>
   );
 }
 

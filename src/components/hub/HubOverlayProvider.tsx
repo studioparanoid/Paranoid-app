@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   createContext,
@@ -138,11 +137,11 @@ function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: 
   }
 
   return (
-    <div className="fixed inset-0 z-[90] lg:flex lg:justify-end" role="presentation">
+    <div className="fixed inset-0 z-[90]" role="presentation">
       <button
         type="button"
         aria-label="Fechar Paranoid Hub"
-        className="hub-overlay-backdrop absolute inset-0 cursor-default bg-black/72 backdrop-blur-[2px]"
+        className="hub-overlay-backdrop absolute inset-0 cursor-default bg-[var(--brand-surface)]"
         onClick={onClose}
       />
       <section
@@ -151,7 +150,7 @@ function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: 
         role="dialog"
         aria-modal="true"
         aria-label="Paranoid Hub"
-        className="hub-overlay-sheet brand-surface absolute inset-x-0 bottom-0 flex h-[min(92dvh,58rem)] flex-col rounded-t-[1.1rem] border-t border-[var(--border)] bg-[var(--brand-surface)] px-4 pb-[env(safe-area-inset-bottom)] shadow-[0_-24px_70px_rgb(0_0_0_/_0.48)] sm:px-6 lg:inset-y-0 lg:left-auto lg:h-full lg:w-[min(48rem,72vw)] lg:rounded-none lg:border-l lg:border-t-0"
+        className="hub-overlay-sheet brand-surface absolute inset-0 flex h-full w-full flex-col bg-[var(--brand-surface)] px-4 pb-[env(safe-area-inset-bottom)] sm:px-6"
         style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined }}
       >
         <div
@@ -163,10 +162,6 @@ function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: 
           aria-hidden="true"
         >
           <span className="mx-auto block h-1 w-9 rounded-full bg-[var(--foreground-muted)] opacity-45" />
-        </div>
-        <div className="flex items-center justify-center gap-5 pb-3">
-          <Link href="/descobrir" className="pressable focus-ring rounded py-1 text-xs font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)]">Descobrir</Link>
-          <Link href="/loja" className="pressable focus-ring rounded py-1 text-xs font-bold text-[var(--foreground-muted)] hover:text-[var(--foreground)]">Loja</Link>
         </div>
         <button
           ref={closeButtonRef}

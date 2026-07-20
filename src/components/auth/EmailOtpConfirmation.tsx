@@ -18,7 +18,7 @@ export function EmailOtpConfirmation({ email, onChangeEmail, onVerified }: Email
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(cooldownSeconds);
-  const [message, setMessage] = useState("Introduz o código de 6 dígitos que enviámos para o teu email.");
+  const [message, setMessage] = useState("Introduz o código que enviámos para o teu email.");
 
   useEffect(() => {
     window.sessionStorage.setItem(pendingSignupEmailKey, email);
@@ -34,8 +34,8 @@ export function EmailOtpConfirmation({ email, onChangeEmail, onVerified }: Email
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    if (!/^\d{6}$/.test(code)) {
-      setMessage("Introduz os 6 dígitos do código.");
+    if (!/^\d{6,8}$/.test(code)) {
+      setMessage("Introduz o código completo, tal como veio no email.");
       inputRef.current?.focus();
       return;
     }
@@ -85,28 +85,27 @@ export function EmailOtpConfirmation({ email, onChangeEmail, onVerified }: Email
 
   return (
     <form onSubmit={verifyCode} noValidate>
-      <p className="text-sm leading-relaxed text-zinc-400">
-        Código enviado para <strong className="text-zinc-200">{email}</strong>.
+      <p className="text-sm leading-relaxed text-foreground-muted">
+        Código enviado para <strong className="text-foreground-secondary">{email}</strong>.
       </p>
       <label htmlFor="signup-code" className="mt-6 block">
-        <span className="mb-2 block text-sm font-bold text-zinc-300">Código de confirmação</span>
+        <span className="mb-2 block text-sm font-bold text-foreground-secondary">Código de confirmação</span>
         <input
           ref={inputRef}
           id="signup-code"
           value={code}
-          onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+          onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
           inputMode="numeric"
           autoComplete="one-time-code"
-          pattern="[0-9]{6}"
-          maxLength={6}
+          maxLength={8}
           aria-describedby="signup-code-message"
-          className="h-14 w-full rounded border border-zinc-800 bg-black px-4 text-center font-mono text-2xl font-black text-[#f2f1ec] outline-none focus:border-red-800"
+          className="focus-ring h-14 w-full rounded-md border border-input-border bg-input px-4 text-center font-mono text-2xl font-black tracking-widest text-foreground outline-none"
         />
       </label>
       <button
         type="submit"
-        disabled={busy || code.length !== 6}
-        className="pressable focus-ring mt-5 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:cursor-wait disabled:opacity-50"
+        disabled={busy || code.length < 6}
+        className="pressable focus-ring mt-5 w-full rounded-full bg-foreground px-5 py-4 text-sm font-black text-background disabled:cursor-wait disabled:opacity-50"
       >
         {busy ? "A confirmar..." : "Confirmar email"}
       </button>
@@ -114,7 +113,7 @@ export function EmailOtpConfirmation({ email, onChangeEmail, onVerified }: Email
         type="button"
         onClick={resendCode}
         disabled={busy || cooldown > 0}
-        className="pressable focus-ring mt-3 w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
+        className="pressable focus-ring mt-3 w-full rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary disabled:opacity-50"
       >
         {cooldown > 0 ? `Reenviar código em ${cooldown}s` : "Reenviar código"}
       </button>
@@ -122,11 +121,11 @@ export function EmailOtpConfirmation({ email, onChangeEmail, onVerified }: Email
         type="button"
         onClick={changeEmail}
         disabled={busy}
-        className="focus-ring mt-4 w-full text-center text-sm font-bold text-zinc-400 underline underline-offset-4 disabled:opacity-50"
+        className="focus-ring mt-4 w-full text-center text-sm font-bold text-foreground-muted underline underline-offset-4 disabled:opacity-50"
       >
         Alterar email
       </button>
-      <p id="signup-code-message" role="status" aria-live="polite" className="mt-5 rounded border border-zinc-800 bg-black px-4 py-3 text-center text-sm font-bold text-zinc-300">
+      <p id="signup-code-message" role="status" aria-live="polite" className="mt-5 rounded-md border border-border bg-background-subtle px-4 py-3 text-center text-sm font-bold text-foreground-secondary">
         {message}
       </p>
     </form>
