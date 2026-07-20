@@ -100,23 +100,23 @@ export function CheckoutClient() {
       <form
         onSubmit={submitOrder}
         aria-busy={loading}
-        className="space-y-4 rounded-lg border border-zinc-900 bg-zinc-950 p-5"
+        className="space-y-4 rounded-2xl border border-border bg-surface p-5"
       >
-        <div className="flex items-center gap-3 border-b border-zinc-900 pb-4 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-600" aria-label="Progresso do checkout"><span className="text-red-400">1. Dados</span><span aria-hidden="true">→</span><span>2. Pagamento</span></div>
+        <div className="flex items-center gap-3 border-b border-border pb-4 text-[10px] font-black uppercase tracking-[0.18em] text-foreground-muted" aria-label="Progresso do checkout"><span className="text-accent">1. Dados</span><span aria-hidden="true">→</span><span>2. Pagamento</span></div>
         <label className="block space-y-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
             Nome
           </span>
           <input
             value={buyerName}
             onChange={(event) => setBuyerName(event.target.value)}
             required
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+            className="focus-ring w-full rounded-2xl border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
           />
         </label>
 
         <label className="block space-y-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
             Email
           </span>
           <input
@@ -124,23 +124,23 @@ export function CheckoutClient() {
             value={buyerEmail}
             onChange={(event) => setBuyerEmail(event.target.value)}
             required
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+            className="focus-ring w-full rounded-2xl border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
           />
         </label>
 
         <label className="block space-y-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
             Telefone
           </span>
           <input
             value={buyerPhone}
             onChange={(event) => setBuyerPhone(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+            className="focus-ring w-full rounded-2xl border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
           />
         </label>
 
         <label className="block space-y-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
             Morada de envio
           </span>
           <textarea
@@ -148,13 +148,13 @@ export function CheckoutClient() {
             onChange={(event) => setShippingAddress(event.target.value)}
             required
             rows={5}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+            className="focus-ring w-full rounded-2xl border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
           />
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
               Código postal
             </span>
             <input
@@ -165,44 +165,44 @@ export function CheckoutClient() {
               maxLength={8}
               placeholder="0000-000"
               required
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+              className="focus-ring w-full rounded-2xl border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
             />
           </label>
 
           <label className="block space-y-2">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
               Localidade
             </span>
             <input
               value={city}
               onChange={(event) => setCity(event.target.value)}
               required
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+              className="focus-ring w-full rounded-2xl border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
             />
           </label>
         </div>
 
         <label className="block space-y-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
             País
           </span>
           <input
             value={country}
             onChange={(event) => setCountry(event.target.value)}
             required
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+            className="focus-ring w-full rounded-2xl border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
           />
         </label>
 
         <label className="block space-y-2">
-          <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
             Observações
           </span>
           <textarea
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
             rows={3}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+            className="focus-ring w-full rounded-2xl border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
           />
         </label>
 
@@ -218,19 +218,19 @@ export function CheckoutClient() {
         </LoadingButton>
 
         {message && (
-          <p className="subtle-enter rounded-lg border border-red-900 bg-red-950/40 p-4 font-bold text-red-100" role="alert">
+          <p className="subtle-enter rounded-2xl border border-danger/40 bg-danger/10 p-4 font-bold text-danger" role="alert">
             {message}
           </p>
         )}
       </form>
 
-      <aside className="h-fit rounded-lg border border-zinc-900 bg-zinc-950 p-5">
-        <h2 className="text-2xl font-black">Encomenda</h2>
+      <aside className="h-fit rounded-2xl border border-border bg-surface p-5">
+        <h2 className="text-lg font-black">Encomenda</h2>
         <div className="mt-5 space-y-3">
           {items.map((item) => (
             <p
               key={`${item.productId}-${item.variant || "default"}`}
-              className="flex justify-between gap-4 text-sm text-zinc-400"
+              className="flex justify-between gap-4 text-sm text-foreground-muted"
             >
               <span>
                 {item.quantity}x {item.name}
@@ -239,12 +239,12 @@ export function CheckoutClient() {
             </p>
           ))}
         </div>
-        <div className="mt-5 space-y-3 border-t border-zinc-900 pt-4 text-sm">
-          <p className="flex justify-between text-zinc-400">
+        <div className="mt-5 space-y-3 border-t border-border pt-4 text-sm">
+          <p className="flex justify-between text-foreground-muted">
             <span>Subtotal</span>
             <span>{formatMoney(totals.subtotalCents)}</span>
           </p>
-          <p className="flex justify-between text-zinc-400">
+          <p className="flex justify-between text-foreground-muted">
             <span>Envio CTT</span>
             <span>{formatMoney(totals.shippingCents)}</span>
           </p>
@@ -252,7 +252,7 @@ export function CheckoutClient() {
             <span>Total</span>
             <span>{formatMoney(totals.totalCents)}</span>
           </p>
-          <p className="text-xs font-bold text-zinc-500">
+          <p className="text-xs font-bold text-foreground-muted">
             IVA incluído nos preços apresentados.
           </p>
         </div>

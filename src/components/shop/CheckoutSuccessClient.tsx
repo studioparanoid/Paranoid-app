@@ -19,32 +19,32 @@ export function CheckoutSuccessClient() {
   }, []);
 
   return (
-    <section className="subtle-enter rounded-lg border border-zinc-900 bg-zinc-950 p-6">
-      <p className="text-xs font-black uppercase tracking-[0.35em] text-green-400">
+    <section className="subtle-enter rounded-2xl border border-border bg-surface p-6 text-center">
+      <p className="text-xs font-black uppercase tracking-[0.2em] text-success">
         Encomenda recebida
       </p>
-      <h1 className="mt-3 text-4xl font-black leading-none lg:text-6xl">
+      <h1 className="mt-3 text-2xl font-black leading-tight sm:text-3xl">
         Obrigado.
       </h1>
 
-      <p className="mt-5 leading-relaxed text-zinc-300">
+      <p className="mt-3 leading-relaxed text-foreground-secondary">
         Recebemos a tua encomenda. Vais receber confirmação por email assim que
         o pagamento for validado.
       </p>
 
       {order && (
-        <div className="mt-6 space-y-3 rounded-2xl border border-zinc-900 bg-black p-4">
-          <p className="flex justify-between text-sm text-zinc-400">
+        <div className="mt-6 space-y-3 rounded-2xl border border-border bg-background-subtle p-4 text-left">
+          <p className="flex justify-between text-sm text-foreground-muted">
             <span>Número</span>
-            <span className="font-black text-[#f2f1ec]">
+            <span className="font-black text-foreground">
               #{normalizeOrderId(order.id)}
             </span>
           </p>
-          <p className="flex justify-between text-sm text-zinc-400">
+          <p className="flex justify-between text-sm text-foreground-muted">
             <span>Estado</span>
             <span>{getOrderStatusLabel(order.orderStatus)}</span>
           </p>
-          <p className="flex justify-between text-sm text-zinc-400">
+          <p className="flex justify-between text-sm text-foreground-muted">
             <span>Total</span>
             <span>{formatMoney(order.totalCents)}</span>
           </p>

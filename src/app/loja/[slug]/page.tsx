@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AppIcon } from "@/components/AppIcon";
 import { ProductDetailClient } from "@/components/shop/ProductDetailClient";
 import { getShopProductBySlug } from "@/lib/shop";
 
@@ -16,13 +17,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-background px-4 py-4 pb-28 text-foreground sm:px-6 lg:px-10 lg:py-8">
       <section className="mx-auto max-w-md lg:max-w-7xl">
         <Link
           href="/loja"
-          className="mb-6 inline-block text-sm font-black text-zinc-500"
+          className="pressable focus-ring mb-6 inline-flex items-center gap-1.5 text-sm font-bold text-foreground-muted hover:text-foreground"
         >
-          Voltar à loja
+          <AppIcon name="chevron" className="h-3.5 w-3.5 rotate-180" />
+          Loja
         </Link>
 
         <ProductDetailClient product={product} />

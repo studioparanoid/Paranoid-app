@@ -26,7 +26,7 @@ export function ShopCartLink() {
     <Link
       href="/loja/carrinho"
       aria-label="Abrir carrinho"
-      className="pressable focus-ring relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-[#f2f1ec] hover:border-zinc-600"
+      className="pressable focus-ring relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-foreground hover:border-border-strong"
     >
       <svg
         aria-hidden="true"
@@ -44,7 +44,7 @@ export function ShopCartLink() {
       </svg>
 
       {count > 0 && (
-        <span key={count} className="scale-in absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white" aria-live="polite">
+        <span key={count} className="scale-in absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white" aria-live="polite">
           {count}
         </span>
       )}

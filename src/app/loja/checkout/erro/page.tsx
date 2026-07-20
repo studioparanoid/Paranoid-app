@@ -2,21 +2,21 @@ import Link from "next/link";
 
 export default function CheckoutErrorPage() {
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
-      <section className="mx-auto max-w-md rounded-[1.5rem] border border-red-950 bg-red-950/30 p-6">
-        <p className="text-xs font-black uppercase tracking-[0.35em] text-red-300">
+    <main className="min-h-screen bg-background px-4 py-4 pb-28 text-foreground sm:px-6 lg:px-10 lg:py-8">
+      <section className="mx-auto max-w-md rounded-2xl border border-danger/35 bg-danger/10 p-6 text-center">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-danger">
           Checkout
         </p>
-        <h1 className="mt-3 text-4xl font-black leading-none">
+        <h1 className="mt-3 text-2xl font-black leading-tight">
           Algo falhou.
         </h1>
-        <p className="mt-5 leading-relaxed text-red-100">
+        <p className="mt-3 leading-relaxed text-foreground-secondary">
           Não conseguimos preparar a encomenda. Volta ao carrinho e tenta outra
           vez.
         </p>
         <Link
           href="/loja/carrinho"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-5 py-3 font-black text-black"
+          className="pressable focus-ring mt-6 inline-block rounded-full bg-foreground px-5 py-3 font-black text-background"
         >
           Voltar ao carrinho
         </Link>

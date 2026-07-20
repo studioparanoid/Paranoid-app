@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { CardGrid } from "@/components/CardGrid";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { ShopCartLink } from "@/components/shop/ShopCartLink";
 import { type ShopProduct } from "@/lib/shop";
 
 type ShopClientProps = {
@@ -40,20 +41,22 @@ export function ShopClient({ products }: ShopClientProps) {
   }, [category, products, query, seller]);
 
   return (
-    <div className="space-y-7">
-      <section className="sticky top-16 z-20 -mx-5 border-y border-zinc-900 bg-[#0b0b0b]/95 px-5 py-4 backdrop-blur lg:mx-0 lg:rounded lg:border lg:p-4">
-        <div className="grid gap-3 md:grid-cols-3">
+    <div className="space-y-6">
+      <section className="sticky top-12 z-20 -mx-4 border-y border-border bg-background/96 px-4 py-3 backdrop-blur-xl sm:mx-0 sm:rounded-2xl sm:border sm:px-4 lg:top-16">
+        <div className="flex gap-2">
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Pesquisar"
-            className="rounded-full border border-zinc-800 bg-black px-4 py-3 text-sm font-bold text-[#f2f1ec] outline-none placeholder:text-zinc-600"
+            className="focus-ring h-11 min-w-0 flex-1 rounded-full border border-input-border bg-input px-4 text-sm font-bold text-foreground outline-none placeholder:text-foreground-muted"
           />
-
+          <ShopCartLink />
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <select
             value={category}
             onChange={(event) => setCategory(event.target.value)}
-            className="rounded-full border border-zinc-800 bg-black px-4 py-3 text-sm font-bold text-[#f2f1ec] outline-none"
+            className="focus-ring h-11 w-full rounded-full border border-input-border bg-input px-4 text-sm font-bold text-foreground outline-none"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -63,7 +66,7 @@ export function ShopClient({ products }: ShopClientProps) {
           <select
             value={seller}
             onChange={(event) => setSeller(event.target.value)}
-            className="rounded-full border border-zinc-800 bg-black px-4 py-3 text-sm font-bold text-[#f2f1ec] outline-none"
+            className="focus-ring h-11 w-full rounded-full border border-input-border bg-input px-4 text-sm font-bold text-foreground outline-none"
           >
             {sellers.map((item) => (
               <option key={item}>{item}</option>
@@ -79,7 +82,7 @@ export function ShopClient({ products }: ShopClientProps) {
       </CardGrid>
 
       {filteredProducts.length === 0 && (
-        <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-400">
+        <p className="rounded-2xl border border-border bg-surface p-5 text-foreground-muted">
           Ainda não há produtos com estes filtros.
         </p>
       )}

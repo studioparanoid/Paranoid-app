@@ -71,8 +71,8 @@ export function CartClient() {
 
   if (items.length === 0) {
     return (
-      <section className="subtle-enter rounded-lg border border-zinc-900 bg-zinc-950 p-6">
-        <p className="text-zinc-400">O carrinho ainda está vazio.</p>
+      <section className="subtle-enter rounded-2xl border border-border bg-surface p-6 text-center">
+        <p className="text-foreground-muted">O carrinho ainda está vazio.</p>
         <LinkButton href="/loja" className="mt-5">
           Ver loja
         </LinkButton>
@@ -83,17 +83,18 @@ export function CartClient() {
   return (
     <section className="grid gap-6 lg:grid-cols-[1fr_22rem]">
       <div className="space-y-3">
+        <p className="text-xs font-black uppercase tracking-[0.15em] text-foreground-muted">{items.length} {items.length === 1 ? "artigo" : "artigos"}</p>
         {items.map((item) => (
           <article
             key={`${item.productId}-${item.variant || "default"}`}
-            className="subtle-enter grid grid-cols-[5rem_1fr] gap-4 rounded-lg border border-zinc-900 bg-zinc-950 p-3"
+            className="subtle-enter grid grid-cols-[5rem_1fr] gap-4 rounded-2xl border border-border bg-surface p-3"
           >
             <div
-              className="aspect-square rounded-2xl bg-zinc-900 bg-cover bg-center"
+              className="aspect-square rounded-xl bg-surface-secondary bg-cover bg-center"
               style={{
                 backgroundImage: item.imageUrl
                   ? `url(${item.imageUrl})`
-                  : "linear-gradient(135deg,#18181b,#450a0a)",
+                  : "linear-gradient(135deg,var(--surface-secondary),var(--surface))",
               }}
             />
 
@@ -101,9 +102,9 @@ export function CartClient() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="font-black leading-tight">{item.name}</h2>
-                  <p className="text-sm text-zinc-500">{item.sellerName}</p>
+                  <p className="text-sm text-foreground-muted">{item.sellerName}</p>
                   {item.variant && (
-                    <p className="text-xs font-bold uppercase tracking-wide text-red-500">
+                    <p className="text-xs font-bold uppercase tracking-wide text-accent">
                       {item.variant}
                     </p>
                   )}
@@ -136,7 +137,7 @@ export function CartClient() {
                     onClick={() =>
                       updateQuantity(item.productId, item.variant, item.quantity + 1)
                     }
-                    className="h-10 w-10 disabled:text-zinc-700"
+                    className="h-10 w-10 disabled:text-foreground-muted"
                   >
                     +
                   </Button>
@@ -151,7 +152,7 @@ export function CartClient() {
                 </Button>
 
                 {item.quantity >= item.stockQuantity && (
-                  <p className="w-full text-xs font-bold text-red-400">
+                  <p className="w-full text-xs font-bold text-danger">
                     Stock máximo: {item.stockQuantity}
                   </p>
                 )}
@@ -161,22 +162,22 @@ export function CartClient() {
         ))}
       </div>
 
-      <aside className="h-fit rounded-lg border border-zinc-900 bg-zinc-950 p-5">
-        <h2 className="text-2xl font-black">Resumo</h2>
+      <aside className="h-fit rounded-2xl border border-border bg-surface p-5">
+        <h2 className="text-lg font-black">Resumo</h2>
         <div className="mt-5 space-y-3 text-sm">
-          <p className="flex justify-between text-zinc-400">
+          <p className="flex justify-between text-foreground-muted">
             <span>Subtotal</span>
             <span>{formatMoney(totals.subtotalCents)}</span>
           </p>
-          <p className="flex justify-between text-zinc-400">
+          <p className="flex justify-between text-foreground-muted">
             <span>Envio CTT</span>
             <span>{formatMoney(totals.shippingCents)}</span>
           </p>
-          <p className="flex justify-between border-t border-zinc-900 pt-3 text-lg font-black">
+          <p className="flex justify-between border-t border-border pt-3 text-lg font-black">
             <span>Total</span>
             <span>{formatMoney(totals.totalCents)}</span>
           </p>
-          <p className="text-xs font-bold text-zinc-500">
+          <p className="text-xs font-bold text-foreground-muted">
             IVA incluído nos preços apresentados.
           </p>
         </div>

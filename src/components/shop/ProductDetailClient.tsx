@@ -84,14 +84,14 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   }
 
   return (
-    <section className="grid gap-7 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+    <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
       <div className="space-y-3">
         <div
-          className="interactive aspect-square rounded-lg border border-zinc-900 bg-zinc-950 bg-cover bg-center"
+          className="interactive aspect-square rounded-2xl border border-border bg-surface-secondary bg-cover bg-center"
           style={{
             backgroundImage: selectedImage
               ? `url(${selectedImage})`
-              : "linear-gradient(135deg,#18181b,#450a0a)",
+              : "linear-gradient(135deg,var(--surface-secondary),var(--surface))",
           }}
         />
 
@@ -103,7 +103,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                 key={image}
                 onClick={() => setSelectedImage(image)}
                 aria-pressed={selectedImage === image}
-                className={`pressable focus-ring h-20 w-20 shrink-0 rounded border bg-cover bg-center ${selectedImage === image ? "border-red-700" : "border-zinc-800"}`}
+                className={`pressable focus-ring h-20 w-20 shrink-0 rounded-xl border bg-cover bg-center ${selectedImage === image ? "border-accent" : "border-border"}`}
                 style={{ backgroundImage: `url(${image})` }}
                 aria-label="Ver imagem"
               />
@@ -112,37 +112,37 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         )}
       </div>
 
-      <div className="space-y-6 rounded-lg border border-zinc-900 bg-zinc-950 p-5 lg:p-7">
+      <div className="space-y-6 rounded-2xl border border-border bg-surface p-5 lg:p-7">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.35em] text-red-600">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-accent">
             {product.category}
           </p>
-          <h1 className="mt-3 text-4xl font-black leading-none tracking-tight lg:text-6xl">
+          <h1 className="mt-2 text-2xl font-black leading-tight sm:text-3xl">
             {product.name}
           </h1>
-          <p className="mt-3 text-sm font-bold text-zinc-500">
+          <p className="mt-2 text-sm font-bold text-foreground-muted">
             por {product.sellerName}
           </p>
         </div>
 
-        <p className="text-3xl font-black text-[#f2f1ec]">
+        <p className="text-2xl font-black text-foreground">
           {formatMoney(product.finalPriceCents)}
         </p>
-        <p className="-mt-4 text-sm font-bold text-zinc-500">
+        <p className="-mt-4 text-sm font-bold text-foreground-muted">
           IVA incluído · Merch oficial gerido pela Paranoid
         </p>
 
-        <p className="leading-relaxed text-zinc-300">{product.description}</p>
+        <p className="leading-relaxed text-foreground-secondary">{product.description}</p>
 
         {variantOptions.length > 0 && (
           <label className="block space-y-2">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-foreground-muted">
               Variação
             </span>
             <select
               value={variant}
               onChange={(event) => setVariant(event.target.value)}
-              className="w-full rounded-full border border-zinc-800 bg-black px-4 py-3 font-bold text-[#f2f1ec] outline-none"
+              className="focus-ring w-full rounded-full border border-input-border bg-input px-4 py-3 font-bold text-foreground outline-none"
             >
               {variantOptions.map((item) => (
                 <option key={item}>{item}</option>
@@ -151,14 +151,14 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
           </label>
         )}
 
-        <div className="flex items-center justify-between rounded-2xl border border-zinc-900 bg-black px-4 py-3 text-sm">
-          <span className="text-zinc-500">Stock</span>
-          <span className="font-black text-[#f2f1ec]">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-background-subtle px-4 py-3 text-sm">
+          <span className="text-foreground-muted">Stock</span>
+          <span className="font-black text-foreground">
             {product.stockQuantity > 0 ? `${product.stockQuantity} un.` : "Esgotado"}
           </span>
         </div>
 
-        <div className="sticky bottom-[calc(5.4rem+env(safe-area-inset-bottom))] z-10 -mx-2 bg-zinc-950/95 p-2 lg:static lg:mx-0 lg:bg-transparent lg:p-0">
+        <div className="sticky bottom-[calc(5.4rem+env(safe-area-inset-bottom))] z-10 -mx-2 bg-surface/95 p-2 lg:static lg:mx-0 lg:bg-transparent lg:p-0">
         <Button
           onClick={addToCart}
           disabled={!canBuy}
@@ -170,11 +170,11 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
         </div>
 
         {added && (
-          <div className="subtle-enter grid gap-3 rounded-lg border border-green-900 bg-green-950/30 p-4">
-            <p className="font-bold text-green-300">Produto adicionado.</p>
+          <div className="subtle-enter grid gap-3 rounded-2xl border border-success/35 bg-success/10 p-4">
+            <p className="font-bold text-success">Produto adicionado.</p>
             <Link
               href="/loja/carrinho"
-              className="pressable focus-ring rounded-full border border-green-800 px-4 py-3 text-center text-sm font-black text-green-200"
+              className="pressable focus-ring rounded-full border border-success/50 px-4 py-3 text-center text-sm font-black text-success"
             >
               Ver carrinho
             </Link>
