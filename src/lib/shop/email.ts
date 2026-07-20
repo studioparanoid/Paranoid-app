@@ -1,4 +1,5 @@
 import { formatMoney, normalizeOrderId, type ShopOrder } from "@/lib/shop";
+import { sendTransactionalEmail } from "@/lib/email/resend";
 
 export type ShopEmailType =
   | "order_created"
@@ -24,13 +25,12 @@ function getFromName() {
   return process.env.SHOP_EMAIL_FROM_NAME || "Paranoid";
 }
 
-function hasSmtpConfig() {
-  return Boolean(
-    process.env.SMTP_HOST &&
-      process.env.SMTP_PORT &&
-      process.env.SMTP_USER &&
-      process.env.SMTP_PASSWORD
-  );
+function textToHtml(body: string) {
+  const escaped = body
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return `<div style="font-family:sans-serif;white-space:pre-wrap;color:#111;">${escaped}</div>`;
 }
 
 function summarizeItems(order: ShopOrder) {
@@ -66,7 +66,7 @@ async function sendShopEmail(
   subject: string,
   body: string
 ): Promise<ShopEmailResult> {
-  if (!hasSmtpConfig()) {
+  if (!process.env.RESEND_API_KEY) {
     if (process.env.NODE_ENV !== "production") {
       console.warn("[shop-email:pending]", {
         type,
@@ -82,19 +82,29 @@ async function sendShopEmail(
       recipient,
       subject,
       status: "pending",
-      errorMessage: "SMTP não configurado.",
+      errorMessage: "RESEND_API_KEY não configurada.",
     };
   }
 
-  // TODO: ligar a Nodemailer ou ao provider transacional escolhido.
-  // As credenciais devem vir sempre de SMTP_HOST, SMTP_PORT, SMTP_USER e SMTP_PASSWORD.
-  return {
-    type,
-    recipient,
-    subject,
-    status: "pending",
-    errorMessage: "Transport SMTP preparado, provider ainda não ligado.",
-  };
+  try {
+    await sendTransactionalEmail({
+      to: recipient,
+      subject,
+      text: body,
+      html: textToHtml(body),
+      from: `${getFromName()} <${getFromAddress()}>`,
+    });
+
+    return { type, recipient, subject, status: "sent", errorMessage: null };
+  } catch (error) {
+    return {
+      type,
+      recipient,
+      subject,
+      status: "failed",
+      errorMessage: error instanceof Error ? error.message : "Não foi possível enviar o email.",
+    };
+  }
 }
 
 export async function buildOrderCreatedEmails(order: ShopOrder) {
