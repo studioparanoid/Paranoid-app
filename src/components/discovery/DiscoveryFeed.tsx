@@ -96,17 +96,25 @@ export function DiscoveryFeed({ history, standalone = false, variant = "compact"
 
   return (
     <section className={`content-transition pb-3 ${variant === "immersive" ? "pt-5 sm:px-6" : ""}`} aria-labelledby={standalone ? "standalone-discovery-title" : "discovery-title"} aria-busy={loading}>
-      <header className={`flex items-end justify-between gap-4 ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>
+      <header className={`flex items-center justify-between gap-4 ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>
         <div className="min-w-0">
-          <p className="text-xs font-black uppercase text-red-600">Para ti agora</p>
-          <h2 id={standalone ? "standalone-discovery-title" : "discovery-title"} className="mt-1 text-xl font-black text-[var(--foreground)] sm:text-2xl">
-            {response?.heading || "A preparar possibilidades"}
-          </h2>
+          {variant === "immersive" ? (
+            <p id={standalone ? "standalone-discovery-title" : "discovery-title"} className="truncate text-[0.8rem] font-black text-[var(--foreground-secondary)]">
+              {response?.heading || "A preparar possibilidades"}
+            </p>
+          ) : (
+            <>
+              <p className="text-xs font-black uppercase text-red-600">Para ti agora</p>
+              <h2 id={standalone ? "standalone-discovery-title" : "discovery-title"} className="mt-1 text-xl font-black text-[var(--foreground)] sm:text-2xl">
+                {response?.heading || "A preparar possibilidades"}
+              </h2>
+            </>
+          )}
         </div>
         {loading && response && <span className="shrink-0 text-xs text-[var(--foreground-muted)]">A ajustar</span>}
       </header>
 
-      {response && response.items.length > 0 && <p className={`mt-2 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)] ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>{response.summary}</p>}
+      {response && response.items.length > 0 && variant !== "immersive" && <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--foreground-muted)]">{response.summary}</p>}
       {response && response.signals.length > 0 && (
         <p className={`mt-2 text-xs text-[var(--foreground-muted)] ${variant === "immersive" ? "px-4 sm:px-0" : ""}`}>Com base em {response.signals.join(" · ")}.</p>
       )}
@@ -191,13 +199,20 @@ function DiscoveryActionLink({ action, primary = false, onOpen }: { action: Disc
 function DiscoveryFeedSkeleton({ variant = "compact" }: { variant?: "compact" | "immersive" }) {
   if (variant === "immersive") {
     return (
-      <div className="mt-5" aria-hidden="true">
+      <div className="mt-4" aria-hidden="true">
         {[0, 1].map((item) => (
-          <div key={item} className="border-b border-[var(--border)] pb-7 pt-4">
-            <div className="mx-4 h-3 w-20 animate-pulse rounded bg-[var(--surface-secondary)]" />
-            <div className="mx-4 mt-3 h-5 w-2/3 animate-pulse rounded bg-[var(--surface-secondary)]" />
-            <div className="mt-4 aspect-[4/3] w-full animate-pulse bg-[var(--surface-secondary)]" />
-            <div className="mx-4 mt-4 h-3 w-4/5 animate-pulse rounded bg-[var(--surface-secondary)]" />
+          <div key={item} className="mx-4 mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+            <div className="flex items-center gap-2.5 px-3 py-2.5">
+              <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-[var(--surface-secondary)]" />
+              <div className="min-w-0 flex-1">
+                <div className="h-2.5 w-16 animate-pulse rounded bg-[var(--surface-secondary)]" />
+                <div className="mt-2 h-3 w-2/3 animate-pulse rounded bg-[var(--surface-secondary)]" />
+              </div>
+            </div>
+            <div className="aspect-square w-full animate-pulse bg-[var(--surface-secondary)]" />
+            <div className="px-3.5 pb-3.5 pt-3">
+              <div className="h-3 w-4/5 animate-pulse rounded bg-[var(--surface-secondary)]" />
+            </div>
           </div>
         ))}
       </div>

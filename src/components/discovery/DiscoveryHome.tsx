@@ -59,7 +59,7 @@ export function DiscoveryHome({
 
   return (
     <div className="min-h-[calc(100dvh-4.25rem-env(safe-area-inset-bottom))]">
-      <div className="sticky top-0 z-20 bg-[color:var(--background)]/94 px-4 backdrop-blur-md">
+      <div className="sticky top-0 z-20 bg-[color:var(--background)]/94 px-4 py-2 backdrop-blur-md">
         <CompactHubTrigger />
       </div>
       <DiscoveryFeed history={history} variant="immersive" />

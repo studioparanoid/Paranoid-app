@@ -2,15 +2,24 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { AppIcon } from "@/components/AppIcon";
 import { SaveEventButton } from "@/components/SaveEventButton";
 import { useHubOverlay } from "@/components/hub/HubOverlayProvider";
 import { ParanoidCloseIcon, ParanoidMark } from "@/components/navigation/ParanoidIconSystem";
-import type { DiscoveryAction, DiscoveryItem } from "@/lib/discovery/types";
+import type { DiscoveryAction, DiscoveryItem, DiscoveryItemKind } from "@/lib/discovery/types";
 
 type FeedItemProps = {
   item: DiscoveryItem;
   onDismiss: (item: DiscoveryItem) => void;
   onOpen: () => void;
+};
+
+const kindIcon: Record<DiscoveryItemKind, "calendar" | "venue" | "spark" | "store" | "compass"> = {
+  event: "calendar",
+  venue: "venue",
+  promotion: "spark",
+  product: "store",
+  community: "compass",
 };
 
 export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {
@@ -21,20 +30,23 @@ export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {
   const showsHubAction = !showsSaveAction && !secondaryAction;
 
   return (
-    <article className="feed-item-enter relative border-b border-[var(--border)] pb-7 pt-5 last:border-b-0 sm:pb-9 sm:pt-7">
-      <header className="flex items-start justify-between gap-4 px-4 sm:px-0">
-        <div className="min-w-0">
-          <p className="text-[0.68rem] font-black uppercase text-red-600">{item.eyebrow}</p>
-          <h3 className="mt-1 text-[1.05rem] font-black leading-6 text-[var(--foreground)] sm:text-xl">{item.title}</h3>
+    <article className="feed-item-enter mx-4 mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] sm:mx-0">
+      <header className="flex items-center gap-2.5 px-3 py-2.5">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--surface-secondary)] text-[var(--accent)]">
+          <AppIcon name={kindIcon[item.kind]} className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[0.72rem] font-black uppercase text-[var(--accent)]">{item.eyebrow}</p>
+          <h3 className="truncate text-[0.95rem] font-black leading-5 text-[var(--foreground)]">{item.title}</h3>
         </div>
         <button
           type="button"
           onClick={() => onDismiss(item)}
           title="Ocultar recomendação"
           aria-label={`Ocultar ${item.title}`}
-          className="focus-ring pressable grid h-10 w-10 shrink-0 place-items-center text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+          className="focus-ring pressable grid h-9 w-9 shrink-0 place-items-center text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
         >
-          <ParanoidCloseIcon className="h-4 w-4" />
+          <ParanoidCloseIcon className="h-3.5 w-3.5" />
         </button>
       </header>
 
@@ -42,11 +54,8 @@ export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {
         <FeedMediaLink item={item} imageUrl={imageUrl} onOpen={onOpen} />
       )}
 
-      <div className="px-4 pt-4 sm:px-0">
-        {item.reason && <p className="text-sm font-bold text-[var(--foreground-secondary)]">{item.reason}</p>}
-        {item.description && <p className="mt-2 text-[0.94rem] leading-6 text-[var(--foreground-secondary)]">{item.description}</p>}
-        {item.meta.length > 0 && <p className="mt-2 text-xs leading-5 text-[var(--foreground-muted)]">{item.meta.join(" · ")}</p>}
-        <div className="mt-4 flex min-h-10 flex-wrap items-center gap-x-5 gap-y-1 border-t border-[var(--border)] pt-2">
+      <div className="px-3.5 pb-3.5 pt-3">
+        <div className="flex min-h-8 flex-wrap items-center gap-x-5 gap-y-1.5">
           {showsSaveAction && <SaveEventButton eventId={item.id} feed />}
           <FeedActionLink action={item.primaryAction} primary onOpen={onOpen} />
           {secondaryAction && <FeedActionLink action={secondaryAction} onOpen={onOpen} />}
@@ -55,13 +64,16 @@ export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {
               type="button"
               onClick={openHub}
               aria-label={`Perguntar à Paranoid sobre ${item.title}`}
-              className="focus-ring pressable ml-auto inline-flex min-h-9 items-center gap-1.5 text-xs font-black text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+              className="focus-ring pressable ml-auto inline-flex min-h-8 items-center gap-1.5 text-xs font-black text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             >
               <ParanoidMark className="h-4 w-4" />
               Perguntar
             </button>
           )}
         </div>
+        {item.reason && <p className="mt-2 text-[0.85rem] font-bold text-[var(--foreground-secondary)]">{item.reason}</p>}
+        {item.description && <p className="mt-1.5 line-clamp-2 text-[0.85rem] leading-5 text-[var(--foreground-secondary)]">{item.description}</p>}
+        {item.meta.length > 0 && <p className="mt-1.5 text-xs leading-4 text-[var(--foreground-muted)]">{item.meta.join(" · ")}</p>}
       </div>
     </article>
   );
@@ -90,14 +102,14 @@ function FeedMediaLink({ item, imageUrl, onOpen }: { item: DiscoveryItem; imageU
       className="object-cover transition-transform duration-300 motion-safe:hover:scale-[1.015]"
     />
   );
-  const className = "focus-ring relative mt-3 block aspect-[4/3] w-full overflow-hidden bg-[var(--surface-secondary)] sm:rounded-sm";
+  const className = "focus-ring relative block aspect-square w-full overflow-hidden bg-[var(--surface-secondary)]";
   if (item.primaryAction.external) return <a href={item.primaryAction.href} target="_blank" rel="noreferrer" onClick={onOpen} className={className}>{media}</a>;
   return <Link href={item.primaryAction.href} onClick={onOpen} className={className}>{media}</Link>;
 }
 
 function FeedActionLink({ action, onOpen, primary = false }: { action: DiscoveryAction; onOpen: () => void; primary?: boolean }) {
-  const className = `focus-ring pressable inline-flex min-h-9 items-center text-xs font-black ${
-    primary ? "text-red-600 hover:text-red-500" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"
+  const className = `focus-ring pressable inline-flex min-h-8 items-center text-xs font-black ${
+    primary ? "text-[var(--accent)] hover:text-[var(--accent-hover)]" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"
   }`;
   if (action.external) return <a href={action.href} target="_blank" rel="noreferrer" onClick={onOpen} className={className}>{action.label}</a>;
   return <Link href={action.href} onClick={onOpen} className={className}>{action.label}</Link>;
