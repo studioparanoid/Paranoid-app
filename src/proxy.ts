@@ -1,11 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { loginPath } from "@/lib/auth/redirects";
+import { computeMfaCookieValue, mfaCookieName } from "@/lib/auth/mfaCookie";
 
 const protectedPrefixes = ["/admin", "/organizador", "/submeter"];
+const mfaExemptPrefixes = ["/auth/mfa-email", "/auth/mfa", "/login", "/registar", "/auth/callback", "/api/auth/mfa-email"];
 
 function isProtected(pathname: string) {
   return protectedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+function isMfaExempt(pathname: string) {
+  return mfaExemptPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 export async function proxy(request: NextRequest) {
@@ -31,6 +37,27 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(loginPath(`${request.nextUrl.pathname}${request.nextUrl.search}`), request.url));
     }
     return response;
+  }
+
+  if (!isMfaExempt(request.nextUrl.pathname)) {
+    const expectedCookie = await computeMfaCookieValue(user.id);
+    const currentCookie = request.cookies.get(mfaCookieName)?.value;
+
+    if (currentCookie !== expectedCookie) {
+      const { data: profile } = await supabase.from("profiles").select("email_mfa_enabled").eq("id", user.id).maybeSingle();
+
+      if (profile?.email_mfa_enabled) {
+        const next = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+        return NextResponse.redirect(new URL(`/auth/mfa-email?next=${encodeURIComponent(next)}`, request.url));
+      }
+
+      response.cookies.set(mfaCookieName, expectedCookie, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+    }
   }
 
   return response;

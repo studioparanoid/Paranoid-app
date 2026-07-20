@@ -10,10 +10,15 @@ import {
   hashEmailMfaCode,
   parseEmailMfaPurpose,
 } from "@/lib/auth/emailMfa";
+import { getClientIp, isRateLimited } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  if (isRateLimited(`mfa-send:${getClientIp(request)}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Demasiados pedidos. Tenta novamente daqui a pouco." }, { status: 429 });
+  }
+
   const body = await request.json().catch(() => ({}));
   const purpose = parseEmailMfaPurpose(body.purpose);
   if (!purpose) return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });

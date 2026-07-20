@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { createBillingPayment } from "@/lib/billing/payments";
-import { getShopApiUser } from "@/lib/shop/api-auth";
+import { getShopApiUser, isShopAdminUser } from "@/lib/shop/api-auth";
 import { type BillingPaymentDraft } from "@/lib/billing/types";
 
 export async function POST(request: Request) {
+  const user = await getShopApiUser(request);
+  if (!user) return NextResponse.json({ error: "Sessão necessária." }, { status: 401 });
+  if (!(await isShopAdminUser(user.id))) {
+    return NextResponse.json({ error: "Sem permissão para concluir esta ação." }, { status: 403 });
+  }
+
   try {
-    const user = await getShopApiUser(request);
     const body = (await request.json()) as Partial<BillingPaymentDraft>;
 
     if (!body.productCode || !body.relatedType) {
@@ -22,7 +27,7 @@ export async function POST(request: Request) {
       amountCents: body.amountCents,
       provider: body.provider || "mock",
       metadata: body.metadata || {},
-      userId: user?.id || body.userId || null,
+      userId: body.userId || null,
     });
 
     return NextResponse.json(result);

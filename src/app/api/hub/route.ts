@@ -4,6 +4,7 @@ import { getHubPersonalityResponse } from "@/lib/hub/hub-personality.js";
 import { HubTimeoutError, withHubTimeout } from "@/lib/hub/timeout";
 import { createClient } from "@/lib/supabase/server";
 import { tryStructuredHubResponse } from "@/lib/hub/structured-router";
+import { getClientIp, isRateLimited } from "@/lib/rateLimit";
 import type { HubConversationContext } from "@/lib/hub/types";
 
 type HubPayload = { query?: unknown; context?: unknown };
@@ -53,6 +54,10 @@ async function resolveHubRequest(query: string, conversationContext: HubConversa
 }
 
 export async function POST(request: Request) {
+  if (isRateLimited(`hub:${getClientIp(request)}`, 40, 60_000)) {
+    return NextResponse.json({ error: "Demasiados pedidos. Tenta novamente daqui a pouco." }, { status: 429 });
+  }
+
   let payload: HubPayload;
   try {
     payload = await request.json() as HubPayload;

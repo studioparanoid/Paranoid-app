@@ -3,6 +3,7 @@ import {
   normalizeGeocodingResult,
   type GeocodingProviderAddress,
 } from "@/lib/location/normalizeGeocodingResult";
+import { getClientIp, isRateLimited } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -146,6 +147,10 @@ function normalizedPayload(result: NominatimResult, fallbacks: { venue: string; 
 }
 
 export async function POST(request: Request) {
+  if (isRateLimited(`geocode:${getClientIp(request)}`, 20, 60_000)) {
+    return NextResponse.json({ error: "Demasiados pedidos. Tenta novamente daqui a pouco." }, { status: 429 });
+  }
+
   let body: GeocodeRequestBody;
 
   try {

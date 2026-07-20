@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getRequiredSupabaseAdminClient } from "@/lib/supabase/admin";
 import { emailMfaMaxAttempts, hashEmailMfaCode, parseEmailMfaPurpose } from "@/lib/auth/emailMfa";
+import { computeMfaCookieValue, mfaCookieName } from "@/lib/auth/mfaCookie";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,9 @@ export async function POST(request: Request) {
   }
 
   if (pending.code_hash !== hashEmailMfaCode(code)) {
-    await admin.from("mfa_email_codes").update({ attempts: pending.attempts + 1 }).eq("id", pending.id);
+    // Conditioned on the attempts count we just read, so a losing race with a
+    // concurrent request can't silently push attempts past the cap.
+    await admin.from("mfa_email_codes").update({ attempts: pending.attempts + 1 }).eq("id", pending.id).lt("attempts", emailMfaMaxAttempts);
     return NextResponse.json({ error: "Código incorreto." }, { status: 400 });
   }
 
@@ -51,5 +54,12 @@ export async function POST(request: Request) {
     if (updateError) return NextResponse.json({ error: "Não foi possível ativar a verificação por email." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(mfaCookieName, await computeMfaCookieValue(user.id), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+  return response;
 }
