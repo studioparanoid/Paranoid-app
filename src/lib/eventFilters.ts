@@ -16,11 +16,16 @@ export const fallbackEventCategories = [
   "Concertos",
   "Festivais",
   "DJ Sets",
+  "Teatro",
+  "Dança",
   "Cinema",
   "Exposições",
+  "Literatura",
+  "Performance",
+  "Comédia",
+  "Circo",
   "Mercados",
   "Workshops",
-  "Teatro",
   "Outros",
 ];
 

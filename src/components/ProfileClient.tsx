@@ -15,9 +15,11 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { Button, LinkButton, LoadingButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { CityCombobox, isKnownPortugueseMunicipality } from "@/components/profile/CityCombobox";
+import { CityMultiSelect } from "@/components/profile/CityMultiSelect";
 import { GenreMultiSelect } from "@/components/profile/GenreMultiSelect";
 import { ProfileImageField } from "@/components/profile/ProfileImageField";
 import { profilePurchaseNavigation } from "@/config/navigation";
+import { fallbackEventCategories } from "@/lib/eventFilters";
 import { removeProfileImage, uploadProfileImage } from "@/lib/profileImages";
 import { artistCategories, maxProfileDescriptionLength, organizerTypes } from "@/lib/profileOptions";
 import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
@@ -44,8 +46,7 @@ type ProfileRow = {
 
 type SavedPreviewItem = { id: string; slug: string; title: string; imageUrl: string | null };
 
-const cities = ["Pombal", "Leiria", "Coimbra", "Figueira da Foz", "Caldas da Rainha", "Marinha Grande"];
-const categories = ["Concertos", "Festivais", "DJ Sets", "Cinema", "Exposições", "Mercados", "Workshops", "Teatro", "Outros"];
+const categories = fallbackEventCategories;
 
 function toggle(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
@@ -312,7 +313,7 @@ export function ProfileClient() {
         {accountType === "organizer" && <><label><span className="mb-2 block text-xs font-bold text-foreground-muted">Tipo</span><select value={organizerType} onChange={(event) => setOrganizerType(event.target.value)} className="focus-ring h-12 w-full rounded-md border border-input-border bg-input px-4 text-foreground outline-none"><option value="">Escolher tipo</option>{organizerTypes.map((value) => <option key={value}>{value}</option>)}</select></label>{organizerType === "Outro" && <Field label="Especificar tipo" value={organizerTypeOther} onChange={setOrganizerTypeOther} />}</>}
         {accountType === "artist" && <><label><span className="mb-2 block text-xs font-bold text-foreground-muted">Categoria</span><select value={artistCategory} onChange={(event) => { setArtistCategory(event.target.value); if (event.target.value !== "Música") setMusicGenres([]); }} className="focus-ring h-12 w-full rounded-md border border-input-border bg-input px-4 text-foreground outline-none"><option value="">Escolher categoria</option>{artistCategories.map((value) => <option key={value}>{value}</option>)}</select></label>{artistCategory === "Outro" && <Field label="Especificar categoria" value={artistCategoryOther} onChange={setArtistCategoryOther} />}{artistCategory === "Música" && <GenreMultiSelect values={musicGenres} onChange={setMusicGenres} />}</>}
         {accountType !== "community" && <label className="sm:col-span-2"><span className="mb-2 flex justify-between gap-3 text-xs font-bold text-foreground-muted"><span>Descrição</span><span>{description.length}/{maxProfileDescriptionLength}</span></span><textarea value={description} maxLength={maxProfileDescriptionLength} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder={accountType === "artist" ? "Apresenta o projeto, influências e percurso." : accountType === "organizer" ? "Fala sobre o projeto, espaço ou eventos que organizas." : "Apresenta o espaço e a sua atividade."} className="focus-ring w-full resize-y rounded-md border border-input-border bg-input px-4 py-3 text-foreground outline-none" /></label>}
-        <PreferencePicker label="Cidades" values={cities} selected={preferredCities} onToggle={(value) => setPreferredCities((current) => toggle(current, value))} />
+        <CityMultiSelect label="Cidades" values={preferredCities} onChange={setPreferredCities} />
         <PreferencePicker label="Categorias" values={categories} selected={preferredCategories} onToggle={(value) => setPreferredCategories((current) => toggle(current, value))} />
       </div>
       {message && <p className="mt-4 text-sm text-foreground-secondary" role="status">{message}</p>}

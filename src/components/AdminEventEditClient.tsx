@@ -4,18 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 import { findExistingEntity } from "@/lib/data/find-existing-entity";
+import { fallbackEventCategories } from "@/lib/eventFilters";
 
-const categories = [
-  "Concertos",
-  "Festivais",
-  "DJ Sets",
-  "Cinema",
-  "Exposições",
-  "Mercados",
-  "Workshops",
-  "Teatro",
-  "Outros",
-];
+const categories = fallbackEventCategories;
 
 const cities = [
   "Pombal",

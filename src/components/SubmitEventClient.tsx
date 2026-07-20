@@ -7,6 +7,7 @@ import {
   getCanonicalMunicipality,
   portugalDistricts,
 } from "@/lib/portugalLocations";
+import { fallbackEventCategories } from "@/lib/eventFilters";
 import { formatPortuguesePostalCode, isValidPortuguesePostalCode, normalizeDecimalValue, normalizePortuguesePostalCode } from "@/lib/inputFormatting";
 import { supabase } from "@/lib/supabase/public";
 import { CurrencyInput } from "@/components/ui/CurrencyInput";
@@ -59,17 +60,7 @@ type ResolvedLocation = {
   district: string;
 };
 
-const categories = [
-  "Concertos",
-  "Festivais",
-  "DJ Sets",
-  "Cinema",
-  "Exposições",
-  "Mercados",
-  "Workshops",
-  "Teatro",
-  "Outros",
-];
+const categories = fallbackEventCategories;
 
 function slugifyFileName(value: string) {
   return value

@@ -4,18 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/public";
 import { type EventSubmission } from "@/lib/submissions";
+import { fallbackEventCategories } from "@/lib/eventFilters";
 
-const categories = [
-  "Concertos",
-  "Festivais",
-  "DJ Sets",
-  "Cinema",
-  "Exposições",
-  "Mercados",
-  "Workshops",
-  "Teatro",
-  "Outros",
-];
+const categories = fallbackEventCategories;
 
 const cities = [
   "Pombal",
