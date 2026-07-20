@@ -78,6 +78,16 @@ export function LoginClient() {
     const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (assurance?.currentLevel === "aal1" && assurance.nextLevel === "aal2") {
       router.push(`/auth/mfa?next=${encodeURIComponent(next)}`);
+      router.refresh();
+      return;
+    }
+
+    const { data: userData } = await supabase.auth.getUser();
+    const { data: profile } = userData.user
+      ? await supabase.from("profiles").select("email_mfa_enabled").eq("id", userData.user.id).maybeSingle()
+      : { data: null };
+    if (profile?.email_mfa_enabled) {
+      router.push(`/auth/mfa-email?next=${encodeURIComponent(next)}`);
     } else {
       router.push(next);
     }
