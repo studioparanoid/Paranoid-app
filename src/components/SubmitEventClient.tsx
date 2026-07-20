@@ -788,7 +788,6 @@ export function SubmitEventClient() {
                 required
                 className="w-full rounded-lg border border-input-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-input-placeholder focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
-              <LocationSuggestions query={venue} context={{ city, municipality, district, postal_code: postalCode }} onSelect={(result: LocationResult) => applyGeocodingResult(result)} />
             </div>
             <div>
               <label htmlFor="event-category" className="mb-2 block text-sm font-bold text-foreground-secondary">
@@ -818,7 +817,7 @@ export function SubmitEventClient() {
                 required
                 className="w-full rounded-lg border border-input-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-input-placeholder focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
-              <LocationSuggestions query={address} context={{ venue, city, municipality, district, postal_code: postalCode }} onSelect={(result: LocationResult) => applyGeocodingResult(result)} />
+              <LocationSuggestions query={venue} context={{ city, municipality, district, postal_code: postalCode }} onSelect={(result: LocationResult) => applyGeocodingResult(result)} />
             </div>
           </div>
         </section>
@@ -897,11 +896,11 @@ export function SubmitEventClient() {
             4. Localização
           </h2>
           <p className="mt-2 text-sm text-foreground-muted">
-            Pesquisa pela morada, código postal ou localidade. A zona é confirmada automaticamente.
+            Preenche pelo menos um destes campos — morada, código postal ou localidade — e depois carrega em &quot;Procurar localização&quot;. A zona é confirmada automaticamente.
           </p>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label htmlFor="event-address" className="mb-2 block text-sm font-bold text-foreground-secondary">Morada</label>
+              <label htmlFor="event-address" className="mb-2 block text-sm font-bold text-foreground-secondary">Morada <span className="font-normal text-foreground-muted">(opcional)</span></label>
               <input
                 ref={addressInputRef}
                 id="event-address"
@@ -914,9 +913,10 @@ export function SubmitEventClient() {
                 aria-describedby="location-feedback"
                 className="w-full rounded-lg border border-input-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-input-placeholder focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
+              <LocationSuggestions query={address} context={{ venue, city, municipality, district, postal_code: postalCode }} onSelect={(result: LocationResult) => applyGeocodingResult(result)} />
             </div>
             <div>
-              <label htmlFor="event-postal-code" className="mb-2 block text-sm font-bold text-foreground-secondary">Código postal</label>
+              <label htmlFor="event-postal-code" className="mb-2 block text-sm font-bold text-foreground-secondary">Código postal <span className="font-normal text-foreground-muted">(opcional)</span></label>
               <input
                 id="event-postal-code"
                 value={postalCode}
@@ -932,7 +932,7 @@ export function SubmitEventClient() {
               />
             </div>
             <div>
-              <label htmlFor="event-locality" className="mb-2 block text-sm font-bold text-foreground-secondary">Localidade</label>
+              <label htmlFor="event-locality" className="mb-2 block text-sm font-bold text-foreground-secondary">Localidade <span className="font-normal text-foreground-muted">(opcional)</span></label>
               <input
                 id="event-locality"
                 value={city}

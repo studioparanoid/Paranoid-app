@@ -237,7 +237,7 @@ export function SmartHub({
           </div>
 
           <div
-            className={`absolute inset-x-0 top-4 z-10 flex justify-center gap-2 px-4 transition-opacity duration-500 ease-out sm:top-6 sm:gap-3 ${
+            className={`absolute inset-x-0 top-4 z-10 flex flex-wrap justify-center gap-2 px-4 transition-opacity duration-500 ease-out sm:top-6 sm:gap-3 ${
               showChatZone ? "pointer-events-none opacity-0" : "opacity-100"
             }`}
             aria-hidden={showChatZone}
@@ -314,9 +314,9 @@ export function SmartHub({
 
 function SatelliteLink({ href, icon, label, onClick }: { href: string; icon: "calendar" | "store" | "compass" | "spark"; label: string; onClick?: () => void }) {
   return (
-    <Link href={href} onClick={onClick} className="pressable focus-ring flex flex-col items-center gap-1.5 rounded-lg border border-white/10 bg-black/35 px-3 py-2.5 backdrop-blur-md transition-colors hover:border-white/25 hover:bg-black/50">
+    <Link href={href} onClick={onClick} className="pressable focus-ring flex shrink-0 flex-col items-center gap-1.5 rounded-lg border border-white/10 bg-black/35 px-2.5 py-2 backdrop-blur-md transition-colors hover:border-white/25 hover:bg-black/50 sm:px-3 sm:py-2.5">
       <AppIcon name={icon} className="h-4 w-4 text-[var(--foreground)]" />
-      <span className="text-[10px] font-black uppercase tracking-wide text-[var(--foreground-secondary)]">{label}</span>
+      <span className="whitespace-nowrap text-[10px] font-black uppercase tracking-wide text-[var(--foreground-secondary)]">{label}</span>
     </Link>
   );
 }

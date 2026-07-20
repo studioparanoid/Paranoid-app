@@ -49,7 +49,7 @@ export function LocationSuggestions({ query, context, onSelect }: { query: strin
 
   if (query.trim().length < 3 || (!results.length && !message)) return null;
   return <div className="relative z-20 mt-2">
-    {results.length > 0 ? <ul className="shadow-dropdown max-h-60 overflow-y-auto rounded border border-zinc-700 bg-black p-1" aria-label="Sugestões de localização">{results.map((result) => <li key={`${result.latitude}-${result.longitude}`}><button type="button" onClick={() => { onSelect(result); setResults([]); setMessage(""); }} className="w-full rounded px-3 py-3 text-left text-sm text-zinc-200 hover:bg-zinc-900 focus:bg-zinc-900 focus:outline-none"><strong className="block text-zinc-100">{result.address || result.locality || result.city || "Localização"}</strong><span className="mt-1 block text-xs text-zinc-500">{result.display_name}</span></button></li>)}</ul> : <p className="text-xs text-amber-400">{message}</p>}
+    {results.length > 0 ? <ul className="shadow-dropdown max-h-60 overflow-y-auto rounded-xl border border-border-strong bg-surface p-1" aria-label="Sugestões de localização">{results.map((result) => <li key={`${result.latitude}-${result.longitude}`}><button type="button" onClick={() => { onSelect(result); setResults([]); setMessage(""); }} className="w-full rounded-lg px-3 py-3 text-left text-sm text-foreground-secondary hover:bg-surface-hover focus:bg-surface-hover focus:outline-none"><strong className="block text-foreground">{result.address || result.locality || result.city || "Localização"}</strong><span className="mt-1 block text-xs text-foreground-muted">{result.display_name}</span></button></li>)}</ul> : <p className="text-xs text-warning">{message}</p>}
   </div>;
 }
 
@@ -111,5 +111,5 @@ export function LocationMapPicker({ latitude, longitude, onSelect }: { latitude:
     map.easeTo({ center: [longitude, latitude], zoom: Math.max(map.getZoom(), 15), duration: 500 });
   }, [latitude, longitude, placeMarker]);
 
-  return <div><div ref={containerRef} className="h-64 w-full overflow-hidden rounded border border-zinc-800 bg-zinc-950" /><p className="mt-2 text-xs text-zinc-500">{message} O marcador também pode ser arrastado.</p></div>;
+  return <div><div ref={containerRef} className="h-64 w-full overflow-hidden rounded-xl border border-border bg-surface" /><p className="mt-2 text-xs text-foreground-muted">{message} O marcador também pode ser arrastado.</p></div>;
 }
