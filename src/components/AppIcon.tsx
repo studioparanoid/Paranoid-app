@@ -1,6 +1,6 @@
 import type { NavigationIcon } from "@/config/navigation";
 
-type AppIconName = NavigationIcon | "search" | "profile" | "close" | "chevron" | "send" | "gallery" | "camera";
+type AppIconName = NavigationIcon | "search" | "profile" | "close" | "chevron" | "send" | "gallery" | "camera" | "messages";
 
 type AppIconProps = {
   name: AppIconName;
@@ -36,6 +36,7 @@ const paths: Record<AppIconName, React.ReactNode> = {
   send: <><path d="m22 2-7 20-4-9-9-4 20-7Z" /><path d="M22 2 11 13" /></>,
   gallery: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>,
   camera: <><path d="M4 8a2 2 0 0 1 2-2h1l1.5-2h7L17 6h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" /><circle cx="12" cy="13" r="3.5" /></>,
+  messages: <path d="M4 5h16v11H8l-4 4V5Z" />,
 };
 
 export function AppIcon({ name, className = "h-5 w-5" }: AppIconProps) {

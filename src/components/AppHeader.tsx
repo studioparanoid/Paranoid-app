@@ -6,14 +6,35 @@ import { usePathname, useRouter } from "next/navigation";
 import { AppIcon } from "@/components/AppIcon";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SearchButton } from "@/components/SearchButton";
+import { IconButton } from "@/components/ui/Button";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useHubOverlay } from "@/components/hub/HubOverlayProvider";
 import { ParanoidBackIcon, ParanoidMark } from "@/components/navigation/ParanoidIconSystem";
 import { isNavigationActive, mobileNavigation } from "@/config/navigation";
+import { usePendingBookingRequestCount } from "@/hooks/usePendingBookingRequestCount";
 import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
+
+function MessagesButton() {
+  const router = useRouter();
+  const count = usePendingBookingRequestCount();
+  return (
+    <div className="relative">
+      <IconButton label="Mensagens" onClick={() => router.push("/reservas")}>
+        <AppIcon name="messages" />
+      </IconButton>
+      {count > 0 && (
+        <span className="pointer-events-none absolute -right-0.5 -top-0.5 min-w-4 rounded-full border border-black bg-[var(--accent)] px-1 text-center text-[9px] font-black leading-[1rem] text-white">
+          {count > 9 ? "9+" : count}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
   const { isHubOpen, openHub } = useHubOverlay();
   const [agenda, map, tickets, shop] = mobileNavigation;
   const items = [agenda, map, tickets, shop];
@@ -73,7 +94,7 @@ export function AppHeader() {
         })}
       </nav>
 
-      <div className="flex items-center gap-1"><SearchButton /><ProfileMenu /></div>
+      <div className="flex items-center gap-1"><SearchButton />{user && <MessagesButton />}<ProfileMenu /></div>
     </div>
   </header>;
 }

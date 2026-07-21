@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { type ComponentType, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useHubOverlay } from "@/components/hub/HubOverlayProvider";
+import { usePendingBookingRequestCount } from "@/hooks/usePendingBookingRequestCount";
 import {
   ParanoidHomeIcon,
   ParanoidMapIcon,
@@ -54,6 +55,7 @@ export function MobileBottomNavigation() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { isHubOpen, openHub } = useHubOverlay();
+  const pendingRequestCount = usePendingBookingRequestCount();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [avatar, setAvatar] = useState<{ userId: string; url: string | null } | null>(null);
 
@@ -112,7 +114,7 @@ export function MobileBottomNavigation() {
           <ActiveSignal active={isHubOpen} />
         </button>
         <NavigationLink item={tickets} active={tickets.matches(pathname)} />
-        <NavigationLink item={profile} active={profile.matches(pathname)} avatarUrl={avatarUrl} />
+        <NavigationLink item={profile} active={profile.matches(pathname)} avatarUrl={avatarUrl} badge={pendingRequestCount} />
       </div>
     </nav>
   );
