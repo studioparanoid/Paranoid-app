@@ -75,7 +75,7 @@ export function ProfileClient() {
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"guardados" | "atividade" | "definicoes">("guardados");
+  const [activeTab, setActiveTab] = useState<"guardados" | "atividade" | "definicoes">("atividade");
   const [savedCount, setSavedCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [ticketCount, setTicketCount] = useState(0);
@@ -421,8 +421,8 @@ function ProfileTabs({ active, onChange }: { active: LocalTab; onChange: (tab: L
   const itemClassName = (isActive: boolean) => `pressable focus-ring flex flex-1 items-center justify-center border-t-2 py-3 ${isActive ? "border-foreground text-foreground" : "border-transparent text-foreground-muted hover:text-foreground"}`;
   return (
     <nav aria-label="Secções do perfil" className="-mt-px flex border-t border-border">
-      <button type="button" onClick={() => onChange("guardados")} aria-current={active === "guardados" ? "page" : undefined} aria-label="Guardados" title="Guardados" className={itemClassName(active === "guardados")}>
-        <AppIcon name="bookmark" className="h-5 w-5" />
+      <button type="button" onClick={() => onChange("atividade")} aria-current={active === "atividade" ? "page" : undefined} aria-label="Atividade" title="Atividade" className={itemClassName(active === "atividade")}>
+        <AppIcon name="spark" className="h-5 w-5" />
       </button>
       <Link href="/descobrir" aria-label="Seguir" title="Seguir" className={itemClassName(false)}>
         <AppIcon name="compass" className="h-5 w-5" />
@@ -430,8 +430,8 @@ function ProfileTabs({ active, onChange }: { active: LocalTab; onChange: (tab: L
       <Link href="/bilhetes" aria-label="Bilhetes" title="Bilhetes" className={itemClassName(false)}>
         <AppIcon name="ticket" className="h-5 w-5" />
       </Link>
-      <button type="button" onClick={() => onChange("atividade")} aria-current={active === "atividade" ? "page" : undefined} aria-label="Atividade" title="Atividade" className={itemClassName(active === "atividade")}>
-        <AppIcon name="spark" className="h-5 w-5" />
+      <button type="button" onClick={() => onChange("guardados")} aria-current={active === "guardados" ? "page" : undefined} aria-label="Guardados" title="Guardados" className={itemClassName(active === "guardados")}>
+        <AppIcon name="bookmark" className="h-5 w-5" />
       </button>
       <button type="button" onClick={() => onChange("definicoes")} aria-current={active === "definicoes" ? "page" : undefined} aria-label="Definições" title="Definições" className={itemClassName(active === "definicoes")}>
         <AppIcon name="settings" className="h-5 w-5" />
