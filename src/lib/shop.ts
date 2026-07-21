@@ -591,3 +591,73 @@ export async function findShopLinkForUserIds(userIds: string[]): Promise<{ name:
     return null;
   }
 }
+
+export type FollowedShopEntity = {
+  type: "artist" | "organizer";
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  vendorName: string;
+};
+
+export async function listFollowedShopEntities(userId: string): Promise<FollowedShopEntity[]> {
+  if (!userId) return [];
+
+  try {
+    const { data: followRows } = await supabase.from("follows").select("target_type,target_id").eq("user_id", userId).in("target_type", ["artist", "organizer"]);
+    const artistIds = (followRows || []).filter((row) => row.target_type === "artist").map((row) => row.target_id);
+    const organizerIds = (followRows || []).filter((row) => row.target_type === "organizer").map((row) => row.target_id);
+    if (artistIds.length === 0 && organizerIds.length === 0) return [];
+
+    const [artistsResponse, organizersResponse, artistProfilesResponse, organizerMembersResponse] = await Promise.all([
+      artistIds.length > 0 ? supabase.from("artists").select("id,name,image_url").in("id", artistIds) : Promise.resolve({ data: [] as Array<{ id: string; name: string; image_url: string | null }> }),
+      organizerIds.length > 0 ? supabase.from("organizers").select("id,name,image_url").in("id", organizerIds) : Promise.resolve({ data: [] as Array<{ id: string; name: string; image_url: string | null }> }),
+      artistIds.length > 0 ? supabase.from("profiles").select("id,entity_id").eq("account_type", "artist").eq("account_status", "approved").in("entity_id", artistIds) : Promise.resolve({ data: [] as Array<{ id: string; entity_id: string | null }> }),
+      organizerIds.length > 0 ? supabase.from("organizer_members").select("user_id,organizer_id").eq("status", "active").in("organizer_id", organizerIds) : Promise.resolve({ data: [] as Array<{ user_id: string; organizer_id: string }> }),
+    ]);
+
+    const userIdsByArtist = new Map<string, string[]>();
+    (artistProfilesResponse.data || []).forEach((row) => {
+      if (!row.entity_id) return;
+      userIdsByArtist.set(row.entity_id, [...(userIdsByArtist.get(row.entity_id) || []), row.id]);
+    });
+
+    const userIdsByOrganizer = new Map<string, string[]>();
+    (organizerMembersResponse.data || []).forEach((row) => {
+      userIdsByOrganizer.set(row.organizer_id, [...(userIdsByOrganizer.get(row.organizer_id) || []), row.user_id]);
+    });
+
+    const allUserIds = Array.from(new Set([...userIdsByArtist.values(), ...userIdsByOrganizer.values()].flat()));
+    if (allUserIds.length === 0) return [];
+
+    const { data: sellers } = await supabase.from("shop_sellers").select("id,user_id,display_name,slug").in("user_id", allUserIds);
+    if (!sellers || sellers.length === 0) return [];
+
+    const sellerIds = sellers.map((seller) => seller.id);
+    const { data: activeProducts } = await supabase.from("shop_products").select("seller_id").in("seller_id", sellerIds).eq("status", "active");
+    const activeSellerIds = new Set((activeProducts || []).map((product) => product.seller_id));
+    const sellersByUserId = new Map(sellers.map((seller) => [seller.user_id, seller]));
+
+    function findActiveSeller(userIds: string[]) {
+      for (const id of userIds) {
+        const seller = sellersByUserId.get(id);
+        if (seller && activeSellerIds.has(seller.id)) return seller;
+      }
+      return null;
+    }
+
+    const results: FollowedShopEntity[] = [];
+    (artistsResponse.data || []).forEach((artist) => {
+      const seller = findActiveSeller(userIdsByArtist.get(artist.id) || []);
+      if (seller) results.push({ type: "artist", id: artist.id, name: artist.name, imageUrl: artist.image_url, vendorName: seller.display_name });
+    });
+    (organizersResponse.data || []).forEach((organizer) => {
+      const seller = findActiveSeller(userIdsByOrganizer.get(organizer.id) || []);
+      if (seller) results.push({ type: "organizer", id: organizer.id, name: organizer.name, imageUrl: organizer.image_url, vendorName: seller.display_name });
+    });
+
+    return results;
+  } catch {
+    return [];
+  }
+}

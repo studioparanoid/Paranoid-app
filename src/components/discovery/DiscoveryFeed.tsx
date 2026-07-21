@@ -165,7 +165,8 @@ function DiscoveryFeedItem({ item, intent, onDismiss }: { item: DiscoveryItem; i
   const imageUrl = safeImageUrl(item.imageUrl);
   const open = () => sendInteraction(item, "open", intent);
   return (
-    <article className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+    <article className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+      <DiscoveryStretchedLink action={item.primaryAction} title={item.title} onOpen={open} />
       <header className="flex items-center gap-2.5 px-3.5 py-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--surface-secondary)] text-[var(--accent)]">
           <AppIcon name={kindIcon[item.kind]} className="h-4 w-4" />
@@ -174,7 +175,7 @@ function DiscoveryFeedItem({ item, intent, onDismiss }: { item: DiscoveryItem; i
           <p className="truncate text-[0.7rem] font-black uppercase text-[var(--accent)]">{item.eyebrow}</p>
           <h3 className="truncate text-[0.98rem] font-black leading-5 text-[var(--foreground)]">{item.title}</h3>
         </div>
-        <button type="button" onClick={() => onDismiss(item)} title="Ocultar recomendação" aria-label={`Ocultar ${item.title}`} className="pressable focus-ring grid h-9 w-9 shrink-0 place-items-center rounded text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
+        <button type="button" onClick={() => onDismiss(item)} title="Ocultar recomendação" aria-label={`Ocultar ${item.title}`} className="pressable focus-ring relative z-[1] grid h-9 w-9 shrink-0 place-items-center rounded text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
           <AppIcon name="close" className="h-4 w-4" />
         </button>
       </header>
@@ -188,18 +189,26 @@ function DiscoveryFeedItem({ item, intent, onDismiss }: { item: DiscoveryItem; i
           {item.reason && <p className="text-xs font-bold text-[var(--foreground-secondary)]">{item.reason}</p>}
           {item.description && <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-[var(--foreground-muted)]">{item.description}</p>}
           {item.meta.length > 0 && <p className="mt-1.5 text-xs leading-5 text-[var(--foreground-muted)]">{item.meta.join(" · ")}</p>}
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-            <DiscoveryActionLink action={item.primaryAction} primary onOpen={open} />
-            {item.secondaryAction && <DiscoveryActionLink action={item.secondaryAction} onOpen={open} />}
-          </div>
+          {item.secondaryAction && (
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+              <DiscoveryActionLink action={item.secondaryAction} onOpen={open} />
+            </div>
+          )}
         </div>
       </div>
     </article>
   );
 }
 
-function DiscoveryActionLink({ action, primary = false, onOpen }: { action: DiscoveryAction; primary?: boolean; onOpen: () => void }) {
-  const className = `pressable focus-ring inline-flex min-h-8 items-center gap-0.5 rounded text-xs font-black ${primary ? "text-[var(--accent)] hover:text-[var(--accent-hover)]" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"}`;
+function DiscoveryStretchedLink({ action, title, onOpen }: { action: DiscoveryAction; title: string; onOpen: () => void }) {
+  const className = "focus-ring absolute inset-0 z-0";
+  const label = action.label ? `${action.label}: ${title}` : title;
+  if (action.external) return <a href={action.href} target="_blank" rel="noreferrer" onClick={onOpen} aria-label={label} className={className} />;
+  return <Link href={action.href} onClick={onOpen} aria-label={label} className={className} />;
+}
+
+function DiscoveryActionLink({ action, onOpen }: { action: DiscoveryAction; onOpen: () => void }) {
+  const className = "pressable focus-ring relative z-[1] inline-flex min-h-8 items-center gap-0.5 rounded text-xs font-black text-[var(--foreground-secondary)] hover:text-[var(--foreground)]";
   const content = <>{action.label}<AppIcon name="chevron" className="h-3 w-3" /></>;
   if (action.external) return <a href={action.href} target="_blank" rel="noreferrer" onClick={onOpen} className={className}>{content}</a>;
   return <Link href={action.href} onClick={onOpen} className={className}>{content}</Link>;

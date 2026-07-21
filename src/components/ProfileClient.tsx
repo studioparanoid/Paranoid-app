@@ -284,6 +284,9 @@ export function ProfileClient() {
       { href: "/organizador/espacos", label: "Os meus espaços", description: "Criar e gerir os espaços do organizador", icon: "venue" },
     );
   }
+  if (approved && accountType === "artist") {
+    creatorItems.push({ href: "/artista", label: "Área do artista", description: "Eventos, loja e perfil", icon: "artist" });
+  }
   if (approved && (accountType === "organizer" || accountType === "artist")) {
     creatorItems.push({ href: "/reservas", label: "Pedidos de reserva", description: "Conversas com organizadores e artistas", icon: "calendar" });
   }
@@ -320,7 +323,12 @@ export function ProfileClient() {
         {accountType === "community" && city && <p className="mt-1 text-sm text-foreground-muted">{city}</p>}
       </div>
 
-      <Button type="button" variant="secondary" onClick={() => { setEditing(true); setActiveTab("definicoes"); }} className="mt-4 w-full">Editar perfil</Button>
+      <div className="mt-4 flex gap-2">
+        <Button type="button" variant="secondary" size="sm" onClick={() => { setEditing(true); setActiveTab("definicoes"); }} className={approved && (accountType === "organizer" || accountType === "artist") ? "" : "w-full"}>Editar perfil</Button>
+        {approved && (accountType === "organizer" || accountType === "artist") && (
+          <LinkButton href={accountType === "organizer" ? "/organizador" : "/artista"} size="sm" className="flex-1">Criar e gerir</LinkButton>
+        )}
+      </div>
     </header>
 
     {editing && <section className="slide-up border-b border-border py-7">
@@ -372,14 +380,18 @@ export function ProfileClient() {
 
     {!editing && activeTab === "atividade" && <div className="content-transition space-y-8 py-8">
       <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-black uppercase tracking-wide text-foreground-muted">Os meus álbuns</h2>
-          <LinkButton href="/albuns/novo" variant="ghost" size="sm">Criar álbum</LinkButton>
-        </div>
         {myAlbums.length === 0 ? (
-          <p className="text-sm text-foreground-muted">Ainda não criaste nenhum álbum.</p>
+          <Link href="/albuns/novo" className="interactive focus-ring block rounded-lg border border-dashed border-border px-6 py-8 text-center hover:border-foreground-muted">
+            <AppIcon name="camera" className="mx-auto h-6 w-6 text-foreground-muted" />
+            <p className="mt-3 text-sm font-bold text-foreground">Mostra o que estás a criar.</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm text-foreground-muted">Cria um álbum e partilha fotos com quem te segue.</p>
+            <span className="mt-4 inline-block rounded-md bg-[var(--accent)] px-5 py-2.5 text-sm font-black text-white">Criar álbum</span>
+          </Link>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Link href="/albuns/novo" className="interactive focus-ring grid aspect-square place-items-center rounded-lg border border-dashed border-border text-foreground-muted hover:border-foreground-muted hover:text-foreground">
+              <span className="text-3xl font-black leading-none">+</span>
+            </Link>
             {myAlbums.map((album) => (
               <AlbumStackedPreview key={album.id} photos={myAlbumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} />
             ))}

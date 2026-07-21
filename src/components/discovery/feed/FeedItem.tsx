@@ -31,7 +31,8 @@ export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {
   const showsHubAction = !showsSaveAction && !secondaryAction;
 
   return (
-    <article className="feed-item-enter mx-4 mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] sm:mx-0">
+    <article className="feed-item-enter relative mx-4 mb-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] sm:mx-0">
+      <FeedStretchedLink action={item.primaryAction} title={item.title} onOpen={onOpen} />
       <header className="flex items-center gap-2.5 px-3 py-2.5">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--surface-secondary)] text-[var(--accent)]">
           <AppIcon name={kindIcon[item.kind]} className="h-4 w-4" />
@@ -45,7 +46,7 @@ export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {
           onClick={() => onDismiss(item)}
           title="Ocultar recomendação"
           aria-label={`Ocultar ${item.title}`}
-          className="focus-ring pressable grid h-9 w-9 shrink-0 place-items-center text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+          className="focus-ring pressable relative z-[1] grid h-9 w-9 shrink-0 place-items-center text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
         >
           <ParanoidCloseIcon className="h-3.5 w-3.5" />
         </button>
@@ -57,15 +58,14 @@ export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {
 
       <div className="px-3.5 pb-3.5 pt-3">
         <div className="flex min-h-8 flex-wrap items-center gap-x-5 gap-y-1.5">
-          {showsSaveAction && <SaveEventButton eventId={item.id} feed />}
-          <FeedActionLink action={item.primaryAction} primary onOpen={onOpen} />
+          {showsSaveAction && <span className="relative z-[1]"><SaveEventButton eventId={item.id} feed /></span>}
           {secondaryAction && <FeedActionLink action={secondaryAction} onOpen={onOpen} />}
           {showsHubAction && (
             <button
               type="button"
               onClick={openHub}
               aria-label={`Perguntar à Paranoid sobre ${item.title}`}
-              className="focus-ring pressable ml-auto inline-flex min-h-8 items-center gap-1.5 text-xs font-black text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+              className="focus-ring pressable relative z-[1] ml-auto inline-flex min-h-8 items-center gap-1.5 text-xs font-black text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
             >
               <ParanoidMark className="h-4 w-4" />
               Perguntar
@@ -103,15 +103,20 @@ function FeedMediaLink({ item, imageUrl, onOpen }: { item: DiscoveryItem; imageU
       className="object-cover transition-transform duration-300 motion-safe:hover:scale-[1.015]"
     />
   );
-  const className = "focus-ring relative block aspect-square w-full overflow-hidden bg-[var(--surface-secondary)]";
+  const className = "focus-ring relative z-[1] block aspect-square w-full overflow-hidden bg-[var(--surface-secondary)]";
   if (item.primaryAction.external) return <a href={item.primaryAction.href} target="_blank" rel="noreferrer" onClick={onOpen} className={className}>{media}</a>;
   return <Link href={item.primaryAction.href} onClick={onOpen} className={className}>{media}</Link>;
 }
 
-function FeedActionLink({ action, onOpen, primary = false }: { action: DiscoveryAction; onOpen: () => void; primary?: boolean }) {
-  const className = `focus-ring pressable inline-flex min-h-8 items-center text-xs font-black ${
-    primary ? "text-[var(--accent)] hover:text-[var(--accent-hover)]" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"
-  }`;
+function FeedStretchedLink({ action, title, onOpen }: { action: DiscoveryAction; title: string; onOpen: () => void }) {
+  const className = "focus-ring absolute inset-0 z-0";
+  const label = action.label ? `${action.label}: ${title}` : title;
+  if (action.external) return <a href={action.href} target="_blank" rel="noreferrer" onClick={onOpen} aria-label={label} className={className} />;
+  return <Link href={action.href} onClick={onOpen} aria-label={label} className={className} />;
+}
+
+function FeedActionLink({ action, onOpen }: { action: DiscoveryAction; onOpen: () => void }) {
+  const className = "focus-ring pressable relative z-[1] inline-flex min-h-8 items-center text-xs font-black text-[var(--foreground-secondary)] hover:text-[var(--foreground)]";
   if (action.external) return <a href={action.href} target="_blank" rel="noreferrer" onClick={onOpen} className={className}>{action.label}</a>;
   return <Link href={action.href} onClick={onOpen} className={className}>{action.label}</Link>;
 }

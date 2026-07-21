@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DiscoveryFeed } from "@/components/discovery/DiscoveryFeed";
-import { CompactHubTrigger } from "@/components/hub/CompactHubTrigger";
+import { FollowedShopsStrip } from "@/components/discovery/FollowedShopsStrip";
 import { SmartHub } from "@/components/home/SmartHub";
 import { HUB_HISTORY_CHANGE_EVENT, readHubHistory } from "@/lib/hub/client-history";
 import type { HubHistoryItem } from "@/lib/hub/types";
@@ -42,8 +42,8 @@ export function DiscoveryHome({
 
   return (
     <div className="mx-auto min-h-[calc(100dvh-4.25rem-env(safe-area-inset-bottom))] w-full max-w-2xl">
-      <div className="sticky top-0 z-20 bg-[color:var(--background)]/94 px-4 py-2 backdrop-blur-md lg:top-16">
-        <CompactHubTrigger />
+      <div className="px-4 py-2">
+        <FollowedShopsStrip />
       </div>
       <DiscoveryFeed history={history} variant="immersive" />
     </div>
