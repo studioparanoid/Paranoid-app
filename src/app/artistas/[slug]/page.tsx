@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CardGrid } from "@/components/CardGrid";
+import { AlbumStackedPreview } from "@/components/albums/AlbumStackedPreview";
 import { EntityProfileHeader } from "@/components/EntityProfileHeader";
 import { EventCard } from "@/components/EventCard";
+import { LinkButton } from "@/components/ui/Button";
+import { listCoverPhotosForAlbums, listPublicAlbumsForEntity, type PhotoAlbum } from "@/lib/albums";
 import { supabase } from "@/lib/supabase/public";
 
 type ArtistRow = {
@@ -159,6 +162,9 @@ export default function ArtistPage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followId, setFollowId] = useState("");
   const [canRequestBooking, setCanRequestBooking] = useState(false);
+  const [canPublishAlbums, setCanPublishAlbums] = useState(false);
+  const [albums, setAlbums] = useState<PhotoAlbum[]>([]);
+  const [albumCovers, setAlbumCovers] = useState<Record<string, string[]>>({});
 
   async function loadArtist() {
     if (!slug) {
@@ -191,6 +197,10 @@ export default function ArtistPage() {
       setLoading(false);
       return;
     }
+
+    const loadedAlbums = await listPublicAlbumsForEntity("artist", loadedArtist.id);
+    setAlbums(loadedAlbums);
+    setAlbumCovers(await listCoverPhotosForAlbums(loadedAlbums.map((album) => album.id)));
 
     const { data: eventArtistData } = await supabase
       .from("event_artists")
@@ -241,10 +251,19 @@ export default function ArtistPage() {
         .eq("status", "active");
 
       setCanRequestBooking((memberships || []).some((membership) => ["owner", "admin"].includes(membership.role) || membership.can_manage_events));
+
+      const { data: viewerProfile } = await supabase
+        .from("profiles")
+        .select("account_type,entity_id,account_status")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      setCanPublishAlbums(viewerProfile?.account_type === "artist" && viewerProfile.account_status === "approved" && viewerProfile.entity_id === loadedArtist.id);
     } else {
       setIsFollowing(false);
       setFollowId("");
       setCanRequestBooking(false);
+      setCanPublishAlbums(false);
     }
 
     setLoading(false);
@@ -393,6 +412,22 @@ export default function ArtistPage() {
             </CardGrid>
           )}
         </section>
+
+        {(albums.length > 0 || canPublishAlbums) && (
+          <section className="mt-8">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-black">Álbuns</h2>
+              {canPublishAlbums && <LinkButton href={`/albuns/novo?type=artist&entityId=${artist.id}`} variant="secondary" size="sm">Publicar fotos</LinkButton>}
+            </div>
+            {albums.length > 0 && (
+              <CardGrid>
+                {albums.map((album) => (
+                  <AlbumStackedPreview key={album.id} photos={albumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} />
+                ))}
+              </CardGrid>
+            )}
+          </section>
+        )}
       </section>
     </main>
   );

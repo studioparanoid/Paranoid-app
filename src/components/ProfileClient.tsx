@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppIcon } from "@/components/AppIcon";
+import { AlbumStackedPreview } from "@/components/albums/AlbumStackedPreview";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SettingsList, type SettingsListItem } from "@/components/SettingsList";
@@ -14,6 +15,7 @@ import { themeLabel } from "@/components/theme/ThemeSelector";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { Button, LinkButton, LoadingButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { listCoverPhotosForAlbums, listMyAlbums, type PhotoAlbum } from "@/lib/albums";
 import { CityCombobox, isKnownPortugueseMunicipality } from "@/components/profile/CityCombobox";
 import { CityMultiSelect } from "@/components/profile/CityMultiSelect";
 import { GenreMultiSelect } from "@/components/profile/GenreMultiSelect";
@@ -101,6 +103,8 @@ export function ProfileClient() {
   const [preferredCities, setPreferredCities] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [pendingInviteCount, setPendingInviteCount] = useState(0);
+  const [myAlbums, setMyAlbums] = useState<PhotoAlbum[]>([]);
+  const [myAlbumCovers, setMyAlbumCovers] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
   const { preferredTheme } = useTheme();
 
@@ -119,6 +123,9 @@ export function ProfileClient() {
       supabase.from("organizer_members").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "invited"),
     ]);
     setPendingInviteCount(pendingInviteResponse.count || 0);
+    const loadedAlbums = await listMyAlbums();
+    setMyAlbums(loadedAlbums);
+    setMyAlbumCovers(await listCoverPhotosForAlbums(loadedAlbums.map((album) => album.id)));
     const nextProfile = profileResponse.data as ProfileRow | null;
     setUserId(user.id);
     setEmail(user.email || "");
@@ -274,6 +281,7 @@ export function ProfileClient() {
     creatorItems.push(
       { href: "/submeter", label: "Submeter evento", description: "Publicar é gratuito", icon: "plus" },
       { href: "/organizador", label: "Área do organizador", description: "Eventos, destaques, loja e perfil", icon: "organizer" },
+      { href: "/organizador/espacos", label: "Os meus espaços", description: "Criar e gerir os espaços do organizador", icon: "venue" },
     );
   }
   if (approved && (accountType === "organizer" || accountType === "artist")) {
@@ -362,10 +370,28 @@ export function ProfileClient() {
       </div>
     )}
 
-    {!editing && activeTab === "atividade" && <div className="content-transition grid gap-x-10 gap-y-8 py-8 lg:grid-cols-2">
-      {creatorItems.length > 0 && <ProfileSection title="Criar e gerir" items={creatorItems} />}
-      {approved && accountType === "organizer" && <ProfileSection title="Visibilidade e parcerias" items={[{ href: "/organizador/destaques", label: "Destaques e Frequency", icon: "visibility" }, { href: "/patrocinar", label: "Parcerias Paranoid", icon: "organizer" }]} />}
-      {creatorItems.length === 0 && !(approved && accountType === "organizer") && <p className="text-sm text-foreground-muted">Sem atividade de gestão associada a esta conta.</p>}
+    {!editing && activeTab === "atividade" && <div className="content-transition space-y-8 py-8">
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-black uppercase tracking-wide text-foreground-muted">Os meus álbuns</h2>
+          <LinkButton href="/albuns/novo" variant="ghost" size="sm">Criar álbum</LinkButton>
+        </div>
+        {myAlbums.length === 0 ? (
+          <p className="text-sm text-foreground-muted">Ainda não criaste nenhum álbum.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {myAlbums.map((album) => (
+              <AlbumStackedPreview key={album.id} photos={myAlbumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-2">
+        {creatorItems.length > 0 && <ProfileSection title="Criar e gerir" items={creatorItems} />}
+        {approved && accountType === "organizer" && <ProfileSection title="Visibilidade e parcerias" items={[{ href: "/organizador/destaques", label: "Destaques e Frequency", icon: "visibility" }, { href: "/patrocinar", label: "Parcerias Paranoid", icon: "organizer" }]} />}
+        {creatorItems.length === 0 && !(approved && accountType === "organizer") && <p className="text-sm text-foreground-muted">Sem atividade de gestão associada a esta conta.</p>}
+      </div>
     </div>}
 
     {!editing && activeTab === "definicoes" && <div className="content-transition space-y-8 py-8">

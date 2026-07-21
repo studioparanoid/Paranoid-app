@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CardGrid } from "@/components/CardGrid";
+import { AlbumStackedPreview } from "@/components/albums/AlbumStackedPreview";
 import { EntityProfileHeader } from "@/components/EntityProfileHeader";
 import { EventCard } from "@/components/EventCard";
+import { LinkButton } from "@/components/ui/Button";
+import { listCoverPhotosForAlbums, listPublicAlbumsForEntity, type PhotoAlbum } from "@/lib/albums";
 import { supabase } from "@/lib/supabase/public";
 
 type OrganizerRow = {
@@ -128,6 +131,9 @@ export default function OrganizerPage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followId, setFollowId] = useState("");
   const [hasFrequency, setHasFrequency] = useState(false);
+  const [canPublishAlbums, setCanPublishAlbums] = useState(false);
+  const [albums, setAlbums] = useState<PhotoAlbum[]>([]);
+  const [albumCovers, setAlbumCovers] = useState<Record<string, string[]>>({});
 
   async function loadOrganizer() {
     if (!slug) {
@@ -161,6 +167,10 @@ export default function OrganizerPage() {
       setLoading(false);
       return;
     }
+
+    const loadedAlbums = await listPublicAlbumsForEntity("organizer", loadedOrganizer.id);
+    setAlbums(loadedAlbums);
+    setAlbumCovers(await listCoverPhotosForAlbums(loadedAlbums.map((album) => album.id)));
 
     const frequencyResponse = await fetch(
       `/api/billing/frequency/status?organizerId=${loadedOrganizer.id}`
@@ -214,9 +224,20 @@ export default function OrganizerPage() {
 
       setIsFollowing(Boolean(loadedFollow));
       setFollowId(loadedFollow?.id || "");
+
+      const { data: membership } = await supabase
+        .from("organizer_members")
+        .select("role,can_manage_events")
+        .eq("organizer_id", loadedOrganizer.id)
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      setCanPublishAlbums(Boolean(membership && (["owner", "admin"].includes(membership.role) || membership.can_manage_events)));
     } else {
       setIsFollowing(false);
       setFollowId("");
+      setCanPublishAlbums(false);
     }
 
     setLoading(false);
@@ -359,6 +380,22 @@ export default function OrganizerPage() {
             </CardGrid>
           )}
         </section>
+
+        {(albums.length > 0 || canPublishAlbums) && (
+          <section className="mt-8">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-black">Álbuns</h2>
+              {canPublishAlbums && <LinkButton href={`/albuns/novo?type=organizer&entityId=${organizer.id}`} variant="secondary" size="sm">Publicar fotos</LinkButton>}
+            </div>
+            {albums.length > 0 && (
+              <CardGrid>
+                {albums.map((album) => (
+                  <AlbumStackedPreview key={album.id} photos={albumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} />
+                ))}
+              </CardGrid>
+            )}
+          </section>
+        )}
       </section>
     </main>
   );
