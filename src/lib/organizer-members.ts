@@ -40,7 +40,8 @@ export async function getMyOrganizerMemberships(): Promise<OrganizerMembership[]
       )
     `
     )
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("status", "active");
 
   if (error) {
     console.error("Erro ao carregar organizadores do user:", error);

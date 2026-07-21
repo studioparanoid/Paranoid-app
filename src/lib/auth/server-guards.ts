@@ -31,6 +31,7 @@ export async function requireOrganizerMember(organizerId: string, nextPath = "/o
     .select("id, role")
     .eq("organizer_id", organizerId)
     .eq("user_id", access.user.id)
+    .eq("status", "active")
     .maybeSingle();
 
   if (!membership) redirect("/organizador");

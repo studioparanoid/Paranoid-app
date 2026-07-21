@@ -261,7 +261,8 @@ export function OrganizerTicketsClient() {
     const { data: membershipsData, error: membershipsError } = await supabase
       .from("organizer_members")
       .select("organizer_id")
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .eq("status", "active");
 
     if (membershipsError) {
       setMessage(membershipsError.message);
