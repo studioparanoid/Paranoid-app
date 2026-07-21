@@ -144,7 +144,7 @@ function NavigationLink({
     >
       <span className="relative grid h-8 w-8 place-items-center transition-transform duration-150 group-active:translate-y-px group-active:scale-[0.96]">
         {item.label === "Perfil" && avatarUrl ? (
-          <span className={`relative h-[1.65rem] w-[1.65rem] overflow-hidden border ${active ? "border-current" : "border-[var(--border-strong)]"} [clip-path:polygon(50%_0,92%_20%,100%_72%,72%_100%,28%_100%,0_72%,8%_20%)]`}>
+          <span className={`relative h-[1.65rem] w-[1.65rem] overflow-hidden rounded-full border ${active ? "border-current" : "border-[var(--border-strong)]"}`}>
             <Image src={avatarUrl} alt="" fill sizes="27px" className="object-cover" unoptimized />
           </span>
         ) : (

@@ -24,7 +24,6 @@ import { profilePurchaseNavigation } from "@/config/navigation";
 import { fallbackEventCategories } from "@/lib/eventFilters";
 import { removeProfileImage, uploadProfileImage } from "@/lib/profileImages";
 import { artistCategories, maxProfileDescriptionLength, organizerTypes } from "@/lib/profileOptions";
-import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
 import { supabase } from "@/lib/supabase/public";
 import { MfaSecurityPanel } from "@/components/auth/MfaSecurityPanel";
 
@@ -272,7 +271,6 @@ export function ProfileClient() {
   const approved = profile?.account_status === "approved";
   const entityPath = publicPath(accountType, profile?.entity_slug || null);
   const title = entityName || displayName || email.split("@")[0] || "Perfil";
-  const mobileSimplificationEnabled = isMobileSimplificationEnabled();
   const purchaseItems: SettingsListItem[] = profilePurchaseNavigation
     .filter((item) => item.href !== "/bilhetes")
     .map((item) => ({ ...item, description: "Loja e compras" }));
@@ -306,7 +304,7 @@ export function ProfileClient() {
     </div>}
     <header className="pb-5">
       <div className="flex items-center gap-6 sm:gap-10">
-        <div className={`relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden border border-accent/30 bg-accent/12 text-2xl font-black text-accent sm:h-24 sm:w-24 ${mobileSimplificationEnabled ? "[clip-path:polygon(50%_0,92%_20%,100%_72%,72%_100%,28%_100%,0_72%,8%_20%)]" : "rounded-full"}`}>{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
+        <div className="relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border border-accent/30 bg-accent/12 text-2xl font-black text-accent sm:h-24 sm:w-24">{avatarUrl ? <img src={avatarUrl} alt={`Foto de ${title}`} className="h-full w-full object-cover" /> : title.charAt(0).toUpperCase()}</div>
         <div className="flex flex-1 justify-around sm:justify-start sm:gap-10">
           <StatBlock value={savedCount} label="Guardados" onClick={() => setActiveTab("guardados")} active={activeTab === "guardados"} />
           <StatBlock value={followingCount} label="A seguir" href="/descobrir" />
