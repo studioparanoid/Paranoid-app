@@ -90,8 +90,9 @@ export function OrganizerDashboardClient() {
 
     {organizers.length > 1 && <label className="mt-5 block max-w-sm"><span className="mb-2 block text-xs font-bold text-zinc-600">Organizador</span><select value={selectedId} onChange={(event) => { setSelectedId(event.target.value); void loadOrganizerData(event.target.value); }} className="w-full rounded border border-zinc-800 bg-black px-4 py-3">{organizers.map((organizer) => <option key={organizer.id} value={organizer.id}>{organizer.name}</option>)}</select></label>}
 
-    <nav aria-label="Área do organizador" className="my-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <nav aria-label="Área do organizador" className="my-6 grid grid-cols-2 gap-2 sm:grid-cols-5">
       <a href="#eventos" className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Eventos</a>
+      <Link href="/reservas" className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Reservas</Link>
       <Link href="/organizador/destaques" className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Destaques</Link>
       <Link href="/organizador/loja" className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Loja</Link>
       {selectedOrganizer && <Link href={`/organizadores/${selectedOrganizer.slug}`} className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Perfil</Link>}

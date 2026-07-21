@@ -157,6 +157,7 @@ export default function ArtistPage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followId, setFollowId] = useState("");
+  const [canRequestBooking, setCanRequestBooking] = useState(false);
 
   async function loadArtist() {
     if (!slug) {
@@ -231,9 +232,18 @@ export default function ArtistPage() {
 
       setIsFollowing(Boolean(loadedFollow));
       setFollowId(loadedFollow?.id || "");
+
+      const { data: memberships } = await supabase
+        .from("organizer_members")
+        .select("role,status,can_manage_events")
+        .eq("user_id", user.id)
+        .eq("status", "active");
+
+      setCanRequestBooking((memberships || []).some((membership) => ["owner", "admin"].includes(membership.role) || membership.can_manage_events));
     } else {
       setIsFollowing(false);
       setFollowId("");
+      setCanRequestBooking(false);
     }
 
     setLoading(false);
@@ -328,6 +338,7 @@ export default function ArtistPage() {
   const links = [
     ...(instagramUrl ? [{ label: "Instagram", href: instagramUrl, external: true }] : []),
     ...(bandcampUrl ? [{ label: "Bandcamp", href: bandcampUrl, external: true }] : []),
+    ...(canRequestBooking ? [{ label: "Pedir reserva", href: `/reservas/nova?artistId=${artist.id}` }] : []),
     { label: "Submeter evento", href: "/submeter" },
   ];
 

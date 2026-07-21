@@ -273,6 +273,9 @@ export function ProfileClient() {
       { href: "/organizador", label: "Área do organizador", description: "Eventos, destaques, loja e perfil", icon: "organizer" },
     );
   }
+  if (approved && (accountType === "organizer" || accountType === "artist")) {
+    creatorItems.push({ href: "/reservas", label: "Pedidos de reserva", description: "Conversas com organizadores e artistas", icon: "calendar" });
+  }
   if (approved && entityPath) creatorItems.push({ href: entityPath, label: "Ver perfil público", icon: accountType === "artist" ? "artist" : accountType === "venue" ? "venue" : "organizer" });
 
   return <div>
