@@ -114,7 +114,7 @@ export function MobileBottomNavigation() {
           <ActiveSignal active={isHubOpen} />
         </button>
         <NavigationLink item={tickets} active={tickets.matches(pathname)} />
-        <NavigationLink item={profile} active={profile.matches(pathname)} avatarUrl={avatarUrl} badge={pendingRequestCount} />
+        <NavigationLink item={profile} active={profile.matches(pathname)} avatarUrl={avatarUrl} badge={pendingRequestCount} resetOnReclick />
       </div>
     </nav>
   );
@@ -125,11 +125,13 @@ function NavigationLink({
   avatarUrl,
   badge,
   item,
+  resetOnReclick,
 }: {
   active: boolean;
   avatarUrl?: string | null;
   badge?: number;
   item: NavigationItem;
+  resetOnReclick?: boolean;
 }) {
   const Icon = item.icon;
   return (
@@ -138,6 +140,12 @@ function NavigationLink({
       aria-label={item.label}
       aria-current={active ? "page" : undefined}
       title={item.label}
+      onClick={(event) => {
+        if (resetOnReclick && active) {
+          event.preventDefault();
+          window.location.href = item.href;
+        }
+      }}
       className={`group focus-ring pressable relative mx-auto grid h-12 w-full min-w-11 place-items-center transition-colors duration-150 ${
         active ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground-secondary)]"
       }`}
