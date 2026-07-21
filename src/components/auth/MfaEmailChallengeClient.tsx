@@ -84,8 +84,11 @@ export function MfaEmailChallengeClient() {
       return;
     }
     const next = safeInternalPath(new URLSearchParams(window.location.search).get("next"));
-    router.replace(next);
-    router.refresh();
+    // A full navigation (not router.replace) so the freshly-set MFA cookie is
+    // guaranteed to be present on the very next request the browser makes —
+    // a client-side soft navigation right after setting it was landing back
+    // on this same page for some users.
+    window.location.href = next;
   }
 
   async function signOut() {
