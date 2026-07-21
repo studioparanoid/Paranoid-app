@@ -2,6 +2,7 @@ import "server-only";
 
 import { rankDiscoveryContent, classifyDiscoveryIntent } from "@/lib/discovery/ranking";
 import type {
+  DiscoveryAlbumCandidate,
   DiscoveryCommunityCandidate,
   DiscoveryEventCandidate,
   DiscoveryInteraction,
@@ -43,7 +44,7 @@ function discoveryInteraction(row: Row): DiscoveryInteraction | null {
   const itemType = text(row.item_type);
   const itemId = text(row.item_id);
   const action = text(row.action);
-  if (!itemId || !itemType || !["event", "venue", "promotion", "product", "community"].includes(itemType)) return null;
+  if (!itemId || !itemType || !["event", "venue", "promotion", "product", "community", "album"].includes(itemType)) return null;
   if (action !== "open" && action !== "dismiss") return null;
   return { itemType: itemType as DiscoveryInteraction["itemType"], itemId, action };
 }
@@ -295,6 +296,21 @@ export async function buildDiscoveryResponse(request: DiscoveryRequest): Promise
     communities = rows.map((row) => ({ id: String(row.id), name: String(row.name), communityType: String(row.community_type || "Comunidade"), shortDescription: text(row.short_description), city: text(row.city), municipality: text(row.municipality), district: text(row.district), logoUrl: text(row.logo_url), coverUrl: text(row.cover_url), websiteUrl: text(row.website_url), instagramUrl: text(row.instagram_url) }));
   }
 
+  let albums: DiscoveryAlbumCandidate[] = [];
+  if (intent === "community") {
+    const albumRows = await optionalRows(supabase.from("photo_albums").select("id,title").eq("visibility", "public").order("created_at", { ascending: false }).limit(30));
+    const albumIds = albumRows.map((row) => String(row.id));
+    const coverRows = albumIds.length
+      ? await optionalRows(supabase.from("album_photos").select("album_id,image_url").in("album_id", albumIds).order("created_at", { ascending: false }))
+      : [];
+    const coverByAlbum = new Map<string, string>();
+    for (const row of coverRows) {
+      const albumId = String(row.album_id);
+      if (!coverByAlbum.has(albumId)) coverByAlbum.set(albumId, String(row.image_url));
+    }
+    albums = albumRows.map((row) => ({ id: String(row.id), title: String(row.title), coverImageUrl: coverByAlbum.get(String(row.id)) || null }));
+  }
+
   const preferredCities = personalized ? [...strings(profile?.preferred_cities), text(profile?.preferred_municipality), text(profile?.preferred_city), text(profile?.city)].filter((value): value is string => Boolean(value)) : [];
   const preferredCategories = personalized ? [...strings(profile?.preferred_categories), ...strings(preferences?.favorite_categories)] : [];
   const favoriteGenres = personalized ? strings(preferences?.favorite_genres) : [];
@@ -307,6 +323,7 @@ export async function buildDiscoveryResponse(request: DiscoveryRequest): Promise
     promotions,
     products,
     communities,
+    albums,
     followedOrganizerIds,
     followedVenueIds,
     savedEventIds,

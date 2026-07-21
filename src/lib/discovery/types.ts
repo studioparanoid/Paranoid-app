@@ -2,7 +2,7 @@ import type { HubConversationContext, HubHistoryItem, HubIntent } from "@/lib/hu
 
 export type DiscoveryIntent = "general" | "events" | "dining" | "nearby" | "tickets" | "shop" | "community";
 
-export type DiscoveryItemKind = "event" | "venue" | "promotion" | "product" | "community";
+export type DiscoveryItemKind = "event" | "venue" | "promotion" | "product" | "community" | "album";
 
 export type DiscoveryLocation = {
   latitude: number;
@@ -140,6 +140,12 @@ export type DiscoveryCommunityCandidate = {
   instagramUrl: string | null;
 };
 
+export type DiscoveryAlbumCandidate = {
+  id: string;
+  title: string;
+  coverImageUrl: string | null;
+};
+
 export type DiscoveryRankingInput = {
   query: string;
   hubIntent?: HubIntent;
@@ -149,6 +155,7 @@ export type DiscoveryRankingInput = {
   promotions: DiscoveryPromotionCandidate[];
   products: DiscoveryProductCandidate[];
   communities: DiscoveryCommunityCandidate[];
+  albums: DiscoveryAlbumCandidate[];
   followedOrganizerIds: string[];
   followedVenueIds: string[];
   savedEventIds: string[];

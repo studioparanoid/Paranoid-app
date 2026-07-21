@@ -14,12 +14,13 @@ type FeedItemProps = {
   onOpen: () => void;
 };
 
-export const kindIcon: Record<DiscoveryItemKind, "calendar" | "venue" | "spark" | "store" | "compass"> = {
+export const kindIcon: Record<DiscoveryItemKind, "calendar" | "venue" | "spark" | "store" | "compass" | "gallery"> = {
   event: "calendar",
   venue: "venue",
   promotion: "spark",
   product: "store",
   community: "compass",
+  album: "gallery",
 };
 
 export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {

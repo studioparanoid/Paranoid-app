@@ -297,6 +297,24 @@ export function rankDiscoveryContent(input: DiscoveryRankingInput) {
   }
 
   if (intent === "community") {
+    for (const album of input.albums) {
+      if (dismissed.has(`album:${album.id}`)) continue;
+      const matches = queryTerms.filter((term) => normalizeDiscoveryText(album.title).includes(term));
+      scored.push({
+        score: 70 + matches.length * 40,
+        item: {
+          id: album.id,
+          kind: "album",
+          title: album.title,
+          eyebrow: "Álbum",
+          description: "",
+          imageUrl: album.coverImageUrl,
+          reason: matches.length ? "Corresponde ao que pediste" : null,
+          meta: [],
+          primaryAction: { label: "Ver álbum", href: `/albuns/${album.id}` },
+        },
+      });
+    }
     for (const community of input.communities) {
       const href = community.websiteUrl || community.instagramUrl;
       if (!href || dismissed.has(`community:${community.id}`)) continue;
@@ -319,7 +337,7 @@ export function rankDiscoveryContent(input: DiscoveryRankingInput) {
     }
   }
 
-  const limits: Record<DiscoveryItem["kind"], number> = { event: 8, venue: 4, promotion: 2, product: 8, community: 6 };
+  const limits: Record<DiscoveryItem["kind"], number> = { event: 8, venue: 4, promotion: 2, product: 8, community: 6, album: 4 };
   const counts = new Map<DiscoveryItem["kind"], number>();
   const items = scored.sort((first, second) => second.score - first.score).filter(({ item }) => {
     const count = counts.get(item.kind) || 0;
