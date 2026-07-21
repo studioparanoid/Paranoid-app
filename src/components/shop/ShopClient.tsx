@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CardGrid } from "@/components/CardGrid";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { ShopCartLink } from "@/components/shop/ShopCartLink";
-import { type ShopProduct } from "@/lib/shop";
+import { fallbackShopCategories, type ShopProduct } from "@/lib/shop";
 
 type ShopClientProps = {
   products: ShopProduct[];
@@ -16,13 +16,21 @@ export function ShopClient({ products }: ShopClientProps) {
   const [query, setQuery] = useState("");
 
   const categories = useMemo(
-    () => ["Todas", ...Array.from(new Set(products.map((item) => item.category)))],
+    () => ["Todas", ...Array.from(new Set([...fallbackShopCategories, ...products.map((item) => item.category)])).sort()],
     [products]
   );
   const sellers = useMemo(
     () => ["Todos", ...Array.from(new Set(products.map((item) => item.sellerName)))],
     [products]
   );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const vendedor = new URLSearchParams(window.location.search).get("vendedor");
+      if (vendedor && products.some((item) => item.sellerName === vendedor)) setSeller(vendedor);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

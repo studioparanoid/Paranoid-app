@@ -1,5 +1,17 @@
 import { supabase } from "@/lib/supabase/public";
 
+export const fallbackShopCategories = [
+  "Artesanato",
+  "Vinis",
+  "T-shirts",
+  "Zines",
+  "Cartazes",
+  "Acessórios",
+  "Arte",
+  "Livros",
+  "Outros",
+];
+
 export type ShopProductStatus =
   | "draft"
   | "pending"
@@ -560,4 +572,22 @@ export async function getShopProductBySlug(slug: string) {
   }
 
   return fallbackShopProducts.find((product) => product.slug === slug) || null;
+}
+
+export async function findShopLinkForUserIds(userIds: string[]): Promise<{ name: string; slug: string } | null> {
+  if (userIds.length === 0) return null;
+
+  try {
+    const { data: sellers } = await supabase.from("shop_sellers").select("id,display_name,slug").in("user_id", userIds);
+    if (!sellers || sellers.length === 0) return null;
+
+    const sellerIds = sellers.map((seller) => seller.id);
+    const { data: products } = await supabase.from("shop_products").select("seller_id").in("seller_id", sellerIds).eq("status", "active").limit(1);
+    if (!products || products.length === 0) return null;
+
+    const seller = sellers.find((item) => item.id === products[0].seller_id);
+    return seller ? { name: seller.display_name, slug: seller.slug } : null;
+  } catch {
+    return null;
+  }
 }

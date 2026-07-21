@@ -9,6 +9,7 @@ import { EntityProfileHeader } from "@/components/EntityProfileHeader";
 import { EventCard } from "@/components/EventCard";
 import { LinkButton } from "@/components/ui/Button";
 import { listCoverPhotosForAlbums, listPublicAlbumsForEntity, type PhotoAlbum } from "@/lib/albums";
+import { findShopLinkForUserIds } from "@/lib/shop";
 import { supabase } from "@/lib/supabase/public";
 
 type ArtistRow = {
@@ -165,6 +166,7 @@ export default function ArtistPage() {
   const [canPublishAlbums, setCanPublishAlbums] = useState(false);
   const [albums, setAlbums] = useState<PhotoAlbum[]>([]);
   const [albumCovers, setAlbumCovers] = useState<Record<string, string[]>>({});
+  const [shopLink, setShopLink] = useState<{ name: string; slug: string } | null>(null);
 
   async function loadArtist() {
     if (!slug) {
@@ -201,6 +203,9 @@ export default function ArtistPage() {
     const loadedAlbums = await listPublicAlbumsForEntity("artist", loadedArtist.id);
     setAlbums(loadedAlbums);
     setAlbumCovers(await listCoverPhotosForAlbums(loadedAlbums.map((album) => album.id)));
+
+    const { data: artistProfiles } = await supabase.from("profiles").select("id").eq("account_type", "artist").eq("account_status", "approved").eq("entity_id", loadedArtist.id);
+    setShopLink(await findShopLinkForUserIds((artistProfiles || []).map((profile) => profile.id)));
 
     const { data: eventArtistData } = await supabase
       .from("event_artists")
@@ -359,7 +364,8 @@ export default function ArtistPage() {
     ...(instagramUrl ? [{ label: "Instagram", href: instagramUrl, external: true }] : []),
     ...(bandcampUrl ? [{ label: "Bandcamp", href: bandcampUrl, external: true }] : []),
     ...(!artist.verified ? [{ label: "Reivindicar perfil", href: `/reivindicar?type=artist&entityName=${encodeURIComponent(artist.name)}&city=${encodeURIComponent(artist.city || "")}` }] : []),
-    ...(canRequestBooking ? [{ label: "Pedir reserva", href: `/reservas/nova?artistId=${artist.id}` }] : []),
+    ...(shopLink ? [{ label: "Loja", href: `/loja?vendedor=${encodeURIComponent(shopLink.name)}` }] : []),
+    ...(canRequestBooking ? [{ label: "Entra em contacto", href: `/reservas/nova?artistId=${artist.id}` }] : []),
     { label: "Submeter evento", href: "/submeter" },
   ];
 

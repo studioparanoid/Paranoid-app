@@ -9,6 +9,7 @@ import { EntityProfileHeader } from "@/components/EntityProfileHeader";
 import { EventCard } from "@/components/EventCard";
 import { LinkButton } from "@/components/ui/Button";
 import { listCoverPhotosForAlbums, listPublicAlbumsForEntity, type PhotoAlbum } from "@/lib/albums";
+import { findShopLinkForUserIds } from "@/lib/shop";
 import { supabase } from "@/lib/supabase/public";
 
 type OrganizerRow = {
@@ -134,6 +135,8 @@ export default function OrganizerPage() {
   const [canPublishAlbums, setCanPublishAlbums] = useState(false);
   const [albums, setAlbums] = useState<PhotoAlbum[]>([]);
   const [albumCovers, setAlbumCovers] = useState<Record<string, string[]>>({});
+  const [shopLink, setShopLink] = useState<{ name: string; slug: string } | null>(null);
+  const [canContactOrganizer, setCanContactOrganizer] = useState(false);
 
   async function loadOrganizer() {
     if (!slug) {
@@ -171,6 +174,9 @@ export default function OrganizerPage() {
     const loadedAlbums = await listPublicAlbumsForEntity("organizer", loadedOrganizer.id);
     setAlbums(loadedAlbums);
     setAlbumCovers(await listCoverPhotosForAlbums(loadedAlbums.map((album) => album.id)));
+
+    const { data: orgMembers } = await supabase.from("organizer_members").select("user_id").eq("organizer_id", loadedOrganizer.id).eq("status", "active");
+    setShopLink(await findShopLinkForUserIds((orgMembers || []).map((member) => member.user_id)));
 
     const frequencyResponse = await fetch(
       `/api/billing/frequency/status?organizerId=${loadedOrganizer.id}`
@@ -234,10 +240,19 @@ export default function OrganizerPage() {
         .maybeSingle();
 
       setCanPublishAlbums(Boolean(membership && (["owner", "admin"].includes(membership.role) || membership.can_manage_events)));
+
+      const { data: viewerProfile } = await supabase
+        .from("profiles")
+        .select("account_type,entity_id,account_status")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      setCanContactOrganizer(viewerProfile?.account_type === "artist" && viewerProfile.account_status === "approved" && Boolean(viewerProfile.entity_id));
     } else {
       setIsFollowing(false);
       setFollowId("");
       setCanPublishAlbums(false);
+      setCanContactOrganizer(false);
     }
 
     setLoading(false);
@@ -327,7 +342,8 @@ export default function OrganizerPage() {
   const tags = [organizer.pack, organizerType, hasFrequency ? "Frequency" : null].filter((value): value is string => Boolean(value));
   const links = [
     ...(!organizer.verified ? [{ label: "Reivindicar perfil", href: `/reivindicar?type=organizer&entityName=${encodeURIComponent(organizer.name)}&city=${encodeURIComponent(organizer.city || "")}` }] : []),
-    { label: "Submeter evento", href: "/submeter" },
+    ...(shopLink ? [{ label: "Loja", href: `/loja?vendedor=${encodeURIComponent(shopLink.name)}` }] : []),
+    ...(canContactOrganizer ? [{ label: "Entra em contacto", href: `/reservas/nova?organizerId=${organizer.id}` }] : []),
   ];
 
   return (
