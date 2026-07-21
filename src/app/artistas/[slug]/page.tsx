@@ -363,10 +363,8 @@ export default function ArtistPage() {
   const links = [
     ...(instagramUrl ? [{ label: "Instagram", href: instagramUrl, external: true }] : []),
     ...(bandcampUrl ? [{ label: "Bandcamp", href: bandcampUrl, external: true }] : []),
-    ...(!artist.verified ? [{ label: "Reivindicar perfil", href: `/reivindicar?type=artist&entityName=${encodeURIComponent(artist.name)}&city=${encodeURIComponent(artist.city || "")}` }] : []),
     ...(shopLink ? [{ label: "Loja", href: `/loja?vendedor=${encodeURIComponent(shopLink.name)}` }] : []),
     ...(canRequestBooking ? [{ label: "Entra em contacto", href: `/reservas/nova?artistId=${artist.id}` }] : []),
-    { label: "Submeter evento", href: "/submeter" },
   ];
 
   return (

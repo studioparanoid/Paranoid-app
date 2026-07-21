@@ -352,7 +352,6 @@ export default function VenuePage() {
   const tags = venue.city ? [venue.city] : [];
   const links = [
     ...(instagramUrl ? [{ label: "Instagram", href: instagramUrl, external: true }] : []),
-    { label: "Submeter evento", href: "/submeter" },
   ];
 
   return (

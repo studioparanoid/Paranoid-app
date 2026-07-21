@@ -5,12 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ComponentType, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useHubOverlay } from "@/components/hub/HubOverlayProvider";
 import { usePendingBookingRequestCount } from "@/hooks/usePendingBookingRequestCount";
 import {
+  ParanoidAgendaIcon,
   ParanoidHomeIcon,
   ParanoidMapIcon,
-  ParanoidMark,
   ParanoidProfileIcon,
   ParanoidTicketIcon,
   type ParanoidIconProps,
@@ -38,6 +37,12 @@ const navigationItems: NavigationItem[] = [
     matches: (pathname) => pathname === "/mapa",
   },
   {
+    href: "/agenda",
+    icon: ParanoidAgendaIcon,
+    label: "Agenda",
+    matches: (pathname) => pathname.startsWith("/agenda"),
+  },
+  {
     href: "/bilhetes",
     icon: ParanoidTicketIcon,
     label: "Bilhetes",
@@ -54,7 +59,6 @@ const navigationItems: NavigationItem[] = [
 export function MobileBottomNavigation() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { isHubOpen, openHub } = useHubOverlay();
   const pendingRequestCount = usePendingBookingRequestCount();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [avatar, setAvatar] = useState<{ userId: string; url: string | null } | null>(null);
@@ -90,7 +94,7 @@ export function MobileBottomNavigation() {
   if (keyboardOpen) return null;
 
   const avatarUrl = user && avatar?.userId === user.id ? avatar.url : null;
-  const [home, map, tickets, profile] = navigationItems;
+  const [home, map, agenda, tickets, profile] = navigationItems;
 
   return (
     <nav
@@ -100,19 +104,7 @@ export function MobileBottomNavigation() {
       <div className="mx-auto grid h-[3.55rem] max-w-lg grid-cols-5 items-center">
         <NavigationLink item={home} active={home.matches(pathname)} />
         <NavigationLink item={map} active={map.matches(pathname)} />
-        <button
-          type="button"
-          onClick={openHub}
-          aria-label="Paranoid Hub"
-          aria-expanded={isHubOpen}
-          aria-controls="paranoid-hub-overlay"
-          className="group focus-ring pressable relative mx-auto grid h-12 w-full min-w-11 place-items-center text-[var(--foreground)]"
-        >
-          <span className="relative grid h-8 w-8 place-items-center transition-transform duration-150 group-active:translate-y-px group-active:scale-[0.96]">
-            <ParanoidMark className="h-[1.65rem] w-[1.44rem]" active={isHubOpen} />
-          </span>
-          <ActiveSignal active={isHubOpen} />
-        </button>
+        <NavigationLink item={agenda} active={agenda.matches(pathname)} />
         <NavigationLink item={tickets} active={tickets.matches(pathname)} />
         <NavigationLink item={profile} active={profile.matches(pathname)} avatarUrl={avatarUrl} badge={pendingRequestCount} resetOnReclick />
       </div>

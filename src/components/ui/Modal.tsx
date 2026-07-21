@@ -24,15 +24,17 @@ export function Modal({
   if (!open) return null;
   return (
     <div className="ui-overlay fixed inset-0 z-[110] grid items-end p-3 sm:place-items-center" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby={description ? "modal-description" : undefined} className="ui-sheet shadow-modal max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--modal-background)] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-[var(--foreground)] sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="modal-title" className="text-xl font-black">{title}</h2>
-            {description && <p id="modal-description" className="mt-2 text-sm text-[var(--foreground-muted)]">{description}</p>}
+      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby={description ? "modal-description" : undefined} className="ui-sheet shadow-modal flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col rounded-lg border border-[var(--border)] bg-[var(--modal-background)] text-[var(--foreground)]">
+        <div className="min-h-0 overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="modal-title" className="text-xl font-black">{title}</h2>
+              {description && <p id="modal-description" className="mt-2 text-sm text-[var(--foreground-muted)]">{description}</p>}
+            </div>
+            <IconButton label="Fechar" onClick={onClose}><AppIcon name="close" /></IconButton>
           </div>
-          <IconButton label="Fechar" onClick={onClose}><AppIcon name="close" /></IconButton>
+          <div className="mt-6">{children}</div>
         </div>
-        <div className="mt-6">{children}</div>
       </section>
     </div>
   );

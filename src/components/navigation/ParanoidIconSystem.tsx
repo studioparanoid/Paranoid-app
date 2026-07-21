@@ -79,6 +79,17 @@ export function ParanoidCloseIcon({ className }: ParanoidIconProps) {
   return <ParanoidIcon className={className}><path d="M8 8l16 16M24 8 8 24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" /></ParanoidIcon>;
 }
 
+export function ParanoidAgendaIcon({ active = false, className }: ParanoidIconProps) {
+  return (
+    <ParanoidIcon active={active} className={className}>
+      {active && <path d="M6 12h20v14H6V12Z" fill="currentColor" opacity="0.18" />}
+      <path d="M6 9h20v18H6V9Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="miter" />
+      <path d="M6 13h20M11 6v6M21 6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" />
+      <path d="M10 17h4M10 21h9" stroke="currentColor" strokeWidth={active ? 2 : 1.6} strokeLinecap="square" />
+    </ParanoidIcon>
+  );
+}
+
 export function ParanoidBookmarkIcon({ active = false, className }: ParanoidIconProps) {
   return <ParanoidIcon active={active} className={className}><path d="M9 5h14v22l-7-4-7 4V5Z" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="miter" /></ParanoidIcon>;
 }
