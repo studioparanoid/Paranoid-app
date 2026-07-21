@@ -11,10 +11,11 @@ import { useToast } from "@/components/ui/Toast";
 import { createProfileClaim, type ProfileClaimAccountType } from "@/lib/profileClaims";
 import { supabase } from "@/lib/supabase/public";
 
-const accountTypeLabels: Record<ProfileClaimAccountType, string> = {
+type ClaimableAccountType = Exclude<ProfileClaimAccountType, "venue">;
+
+const accountTypeLabels: Record<ClaimableAccountType, string> = {
   artist: "Artista",
   organizer: "Organizador",
-  venue: "Espaço",
 };
 
 export default function ReivindicarPage() {
@@ -24,7 +25,7 @@ export default function ReivindicarPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const [accountType, setAccountType] = useState<ProfileClaimAccountType>("artist");
+  const [accountType, setAccountType] = useState<ClaimableAccountType>("artist");
   const [entityName, setEntityName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [city, setCity] = useState("");
@@ -34,7 +35,7 @@ export default function ReivindicarPage() {
     setLoading(true);
     const params = new URLSearchParams(window.location.search);
     const type = params.get("type");
-    if (type === "artist" || type === "organizer" || type === "venue") setAccountType(type);
+    if (type === "artist" || type === "organizer") setAccountType(type);
     const entityNameParam = params.get("entityName") || "";
     setEntityName(entityNameParam);
     setDisplayName(entityNameParam);
@@ -100,15 +101,15 @@ export default function ReivindicarPage() {
         <form onSubmit={submit} className="space-y-5">
           <label className="block">
             <span className="mb-2 block text-xs font-bold text-foreground-muted">Tipo de conta</span>
-            <select value={accountType} onChange={(event) => setAccountType(event.target.value as ProfileClaimAccountType)} className="focus-ring w-full rounded-md border border-input-border bg-input px-3.5 py-2.5 text-sm text-foreground">
-              {(Object.keys(accountTypeLabels) as ProfileClaimAccountType[]).map((type) => (
+            <select value={accountType} onChange={(event) => setAccountType(event.target.value as ClaimableAccountType)} className="focus-ring w-full rounded-md border border-input-border bg-input px-3.5 py-2.5 text-sm text-foreground">
+              {(Object.keys(accountTypeLabels) as ClaimableAccountType[]).map((type) => (
                 <option key={type} value={type}>{accountTypeLabels[type]}</option>
               ))}
             </select>
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-xs font-bold text-foreground-muted">Nome {accountType === "venue" ? "do espaço" : accountType === "organizer" ? "do organizador" : "artístico"}</span>
+            <span className="mb-2 block text-xs font-bold text-foreground-muted">Nome {accountType === "organizer" ? "do organizador" : "artístico"}</span>
             <Input value={entityName} onChange={(event) => setEntityName(event.target.value)} required maxLength={160} />
           </label>
 

@@ -252,7 +252,8 @@ async function findOrCreateVenue(
   name: string,
   city: string,
   municipality: string | null,
-  location: LocationPayload
+  location: LocationPayload,
+  organizerId: string | null
 ): Promise<VenueLocation | null> {
   const cleanName = name.trim();
 
@@ -334,6 +335,7 @@ async function findOrCreateVenue(
       instagram: null,
       verified: false,
       status: "provisional",
+      organizer_id: organizerId,
     })
     .select(
       "id,slug,name,city,municipality,address,postal_code,district,latitude,longitude,location_source"
@@ -518,21 +520,22 @@ export function AdminSubmissionActions({
       const eventSlug = await createUniqueEventSlug(submission.title);
       const submissionLocation = getSubmissionLocation(submission);
 
+      const organizerId =
+        submission.organizer_id ||
+        (await findOrCreateOrganizer(submission.organizer, submission.city));
+
       const venueLocation = await findOrCreateVenue(
         submission.venue,
         submission.city,
         submission.municipality || null,
-        submissionLocation
+        submissionLocation,
+        organizerId
       );
 
       const eventLocation = mergeEventLocation(
         submissionLocation,
         venueLocation
       );
-
-      const organizerId =
-        submission.organizer_id ||
-        (await findOrCreateOrganizer(submission.organizer, submission.city));
 
       const isMultiDay = Boolean(submission.is_multi_day);
       const finalEndDate = isMultiDay

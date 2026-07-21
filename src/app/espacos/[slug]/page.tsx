@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CardGrid } from "@/components/CardGrid";
+import { AlbumStackedPreview } from "@/components/albums/AlbumStackedPreview";
 import { EntityProfileHeader } from "@/components/EntityProfileHeader";
 import { EventCard } from "@/components/EventCard";
+import { LinkButton } from "@/components/ui/Button";
+import { listCoverPhotosForAlbums, listPublicAlbumsForEntity, type PhotoAlbum } from "@/lib/albums";
 import { supabase } from "@/lib/supabase/public";
 
 type VenueRow = {
@@ -18,6 +21,7 @@ type VenueRow = {
   instagram: string | null;
   image_url: string | null;
   verified: boolean | null;
+  organizer_id: string | null;
 };
 
 type EventRow = {
@@ -140,6 +144,9 @@ export default function VenuePage() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followId, setFollowId] = useState("");
+  const [canPublishAlbums, setCanPublishAlbums] = useState(false);
+  const [albums, setAlbums] = useState<PhotoAlbum[]>([]);
+  const [albumCovers, setAlbumCovers] = useState<Record<string, string[]>>({});
 
   async function loadVenue() {
     if (!slug) {
@@ -150,11 +157,22 @@ export default function VenuePage() {
     setLoading(true);
     setMessage("");
 
-    const { data: venueData, error: venueError } = await supabase
+    let { data: venueData, error: venueError } = await supabase
       .from("venues")
-      .select("id,slug,name,city,address,description,instagram,image_url,verified")
+      .select("id,slug,name,city,address,description,instagram,image_url,verified,organizer_id")
       .eq("slug", slug)
       .maybeSingle();
+
+    if (venueError && (venueError.code === "42703" || venueError.code === "PGRST204")) {
+      // "organizer_id" not migrated yet on this database — fall back to the pre-migration shape.
+      const fallback = await supabase
+        .from("venues")
+        .select("id,slug,name,city,address,description,instagram,image_url,verified")
+        .eq("slug", slug)
+        .maybeSingle();
+      venueData = fallback.data ? { ...fallback.data, organizer_id: null } : null;
+      venueError = fallback.error;
+    }
 
     if (venueError) {
       setMessage(venueError.message);
@@ -172,6 +190,10 @@ export default function VenuePage() {
       setLoading(false);
       return;
     }
+
+    const loadedAlbums = await listPublicAlbumsForEntity("venue", loadedVenue.id);
+    setAlbums(loadedAlbums);
+    setAlbumCovers(await listCoverPhotosForAlbums(loadedAlbums.map((album) => album.id)));
 
     const baseSelect =
       "id,slug,title,status,city,venue_name,organizer_name,display_date,display_time,start_at,start_date,end_date,is_multi_day,category,price,image_url,featured,ticket_mode,ticket_price";
@@ -216,9 +238,31 @@ export default function VenuePage() {
 
       setIsFollowing(Boolean(loadedFollow));
       setFollowId(loadedFollow?.id || "");
+
+      let allowedToPublish = false;
+      if (loadedVenue.organizer_id) {
+        const { data: membership } = await supabase
+          .from("organizer_members")
+          .select("role,can_manage_events")
+          .eq("organizer_id", loadedVenue.organizer_id)
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .maybeSingle();
+        allowedToPublish = Boolean(membership && (["owner", "admin"].includes(membership.role) || membership.can_manage_events));
+      }
+      if (!allowedToPublish) {
+        const { data: viewerProfile } = await supabase
+          .from("profiles")
+          .select("account_type,entity_id,account_status")
+          .eq("id", user.id)
+          .maybeSingle();
+        allowedToPublish = viewerProfile?.account_type === "venue" && viewerProfile.account_status === "approved" && viewerProfile.entity_id === loadedVenue.id;
+      }
+      setCanPublishAlbums(allowedToPublish);
     } else {
       setIsFollowing(false);
       setFollowId("");
+      setCanPublishAlbums(false);
     }
 
     setLoading(false);
@@ -308,7 +352,6 @@ export default function VenuePage() {
   const tags = venue.city ? [venue.city] : [];
   const links = [
     ...(instagramUrl ? [{ label: "Instagram", href: instagramUrl, external: true }] : []),
-    ...(!venue.verified ? [{ label: "Reivindicar perfil", href: `/reivindicar?type=venue&entityName=${encodeURIComponent(venue.name)}&city=${encodeURIComponent(venue.city || "")}` }] : []),
     { label: "Submeter evento", href: "/submeter" },
   ];
 
@@ -361,6 +404,22 @@ export default function VenuePage() {
             </CardGrid>
           )}
         </section>
+
+        {(albums.length > 0 || canPublishAlbums) && (
+          <section className="mt-8">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-black">Álbuns</h2>
+              {canPublishAlbums && <LinkButton href={`/albuns/novo?type=venue&entityId=${venue.id}`} variant="secondary" size="sm">Publicar fotos</LinkButton>}
+            </div>
+            {albums.length > 0 && (
+              <CardGrid>
+                {albums.map((album) => (
+                  <AlbumStackedPreview key={album.id} photos={albumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} />
+                ))}
+              </CardGrid>
+            )}
+          </section>
+        )}
       </section>
     </main>
   );

@@ -238,7 +238,7 @@ async function createUniqueSlug({
   }
 }
 
-async function findOrCreateVenue(name: string, city: string) {
+async function findOrCreateVenue(name: string, city: string, organizerId: string | null) {
   const cleanName = name.trim();
 
   if (!cleanName) {
@@ -264,6 +264,7 @@ async function findOrCreateVenue(name: string, city: string) {
       instagram: null,
       verified: false,
       status: "provisional",
+      organizer_id: organizerId,
     })
     .select("id,slug,name")
     .single();
@@ -668,8 +669,8 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
     try {
       const imageUrl = await uploadSelectedImage();
-      const venueId = await findOrCreateVenue(venue, city);
       const organizerId = await findOrCreateOrganizer(organizer, city);
+      const venueId = await findOrCreateVenue(venue, city, organizerId);
 
       const finalEndDate = isMultiDay ? endDate || eventDate : eventDate;
       const displayDate = buildDisplayDate(eventDate, finalEndDate, isMultiDay);

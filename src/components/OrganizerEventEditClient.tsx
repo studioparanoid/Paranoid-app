@@ -205,7 +205,7 @@ function getArtistRowsFromRelationRows(rows: EventArtistRelationRow[]) {
   return artists;
 }
 
-async function findOrCreateVenue(name: string, city: string) {
+async function findOrCreateVenue(name: string, city: string, organizerId: string | null) {
   const cleanName = name.trim();
 
   if (!cleanName) {
@@ -231,6 +231,7 @@ async function findOrCreateVenue(name: string, city: string) {
       instagram: null,
       verified: false,
       status: "provisional",
+      organizer_id: organizerId,
     })
     .select("id,slug,name")
     .single();
@@ -653,7 +654,7 @@ export function OrganizerEventEditClient({
 
     try {
       const imageUrl = await uploadSelectedImage();
-      const venueId = await findOrCreateVenue(venue, city);
+      const venueId = await findOrCreateVenue(venue, city, loadedEvent?.organizer_id || null);
 
       const finalEndDate = isMultiDay ? endDate || eventDate : eventDate;
       const displayDate = buildDisplayDate(eventDate, finalEndDate, isMultiDay);
