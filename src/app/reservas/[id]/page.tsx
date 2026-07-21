@@ -232,6 +232,7 @@ export default function ReservaDetailPage() {
             <div><dt className="font-bold text-foreground">Data proposta</dt><dd>{formatDate(request.proposed_date)}</dd></div>
             <div><dt className="font-bold text-foreground">Local</dt><dd>{request.proposed_venue_name || "Por definir"}</dd></div>
             <div><dt className="font-bold text-foreground">Cachê</dt><dd>{request.proposed_fee_cents != null ? formatMoney(request.proposed_fee_cents) : "Por combinar"}</dd></div>
+            {request.contact_phone && <div><dt className="font-bold text-foreground">Telefone</dt><dd>{request.contact_phone}</dd></div>}
           </dl>
           {request.note && <p className="mt-4 rounded-lg border border-border bg-surface p-3 text-sm text-foreground-secondary">{request.note}</p>}
 
