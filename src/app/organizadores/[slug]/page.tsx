@@ -305,6 +305,7 @@ export default function OrganizerPage() {
   const organizerType = organizer.organizer_type === "Outro" ? organizer.organizer_type_other : organizer.organizer_type;
   const tags = [organizer.pack, organizerType, hasFrequency ? "Frequency" : null].filter((value): value is string => Boolean(value));
   const links = [
+    { label: "Reivindicar perfil", href: `/reivindicar?type=organizer&entityName=${encodeURIComponent(organizer.name)}&city=${encodeURIComponent(organizer.city || "")}` },
     { label: "Submeter evento", href: "/submeter" },
   ];
 

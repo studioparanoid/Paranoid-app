@@ -100,6 +100,7 @@ export function ProfileClient() {
   const [instagram, setInstagram] = useState("");
   const [preferredCities, setPreferredCities] = useState<string[]>([]);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
+  const [pendingInviteCount, setPendingInviteCount] = useState(0);
   const { toast } = useToast();
   const { preferredTheme } = useTheme();
 
@@ -108,14 +109,16 @@ export function ProfileClient() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const [profileResponse, adminResponse, savedCountResponse, followingCountResponse, ticketCountResponse, savedPreviewResponse] = await Promise.all([
+    const [profileResponse, adminResponse, savedCountResponse, followingCountResponse, ticketCountResponse, savedPreviewResponse, pendingInviteResponse] = await Promise.all([
       supabase.from("profiles").select("id,display_name,account_type,account_status,artist_name,organizer_name,venue_name,city,instagram_url,entity_id,entity_slug,preferred_cities,preferred_categories,avatar_url").eq("id", user.id).maybeSingle(),
       supabase.from("app_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
       supabase.from("saved_events").select("id", { count: "exact", head: true }).eq("user_id", user.id),
       supabase.from("follows").select("id", { count: "exact", head: true }).eq("user_id", user.id),
       supabase.from("ticket_reservations").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "reserved"),
       supabase.from("saved_events").select("event_id, events(id,slug,title,image_url)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(9),
+      supabase.from("organizer_members").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "invited"),
     ]);
+    setPendingInviteCount(pendingInviteResponse.count || 0);
     const nextProfile = profileResponse.data as ProfileRow | null;
     setUserId(user.id);
     setEmail(user.email || "");
@@ -277,6 +280,12 @@ export function ProfileClient() {
     creatorItems.push({ href: "/reservas", label: "Pedidos de reserva", description: "Conversas com organizadores e artistas", icon: "calendar" });
   }
   if (approved && entityPath) creatorItems.push({ href: entityPath, label: "Ver perfil público", icon: accountType === "artist" ? "artist" : accountType === "venue" ? "venue" : "organizer" });
+  if (!approved) {
+    creatorItems.push({ href: "/reivindicar", label: "Reivindicar perfil", description: "Junta-te à rede como artista, organizador ou espaço", icon: "spark" });
+  }
+  if (pendingInviteCount > 0) {
+    creatorItems.push({ href: "/convites", label: "Convites pendentes", description: `${pendingInviteCount} ${pendingInviteCount === 1 ? "convite" : "convites"} por aceitar`, icon: "organizer" });
+  }
 
   return <div>
     <AppearanceSettings open={appearanceOpen} onClose={() => setAppearanceOpen(false)} />

@@ -30,8 +30,10 @@ export function OrganizerDashboardClient() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
   const [frequency, setFrequency] = useState<FrequencySummary>({ active: false, credits: 0 });
+  const [teamManagerIds, setTeamManagerIds] = useState<Set<string>>(new Set());
 
   const selectedOrganizer = useMemo(() => organizers.find((item) => item.id === selectedId) || null, [organizers, selectedId]);
+  const canManageTeam = teamManagerIds.has(selectedId);
   const publishedEvents = useMemo(() => events.filter((event) => event.status === "published"), [events]);
   const pendingSubmissions = useMemo(() => submissions.filter((submission) => submission.status === "pending"), [submissions]);
   const featuredCount = useMemo(() => publishedEvents.filter((event) => event.featured).length, [publishedEvents]);
@@ -61,9 +63,10 @@ export function OrganizerDashboardClient() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     setEmail(user.email || "");
-    const memberships = await supabase.from("organizer_members").select("organizer_id").eq("user_id", user.id);
+    const memberships = await supabase.from("organizer_members").select("organizer_id,role,can_manage_team").eq("user_id", user.id).eq("status", "active");
     const ids = (memberships.data || []).map((item) => item.organizer_id).filter(Boolean);
     if (memberships.error || ids.length === 0) { setMessage(memberships.error?.message || ""); setLoading(false); return; }
+    setTeamManagerIds(new Set((memberships.data || []).filter((item) => ["owner", "admin"].includes(item.role) || item.can_manage_team).map((item) => item.organizer_id)));
     const organizerResponse = await supabase.from("organizers").select("id,slug,name,verified").in("id", ids).order("name");
     const nextOrganizers = (organizerResponse.data || []) as OrganizerRow[];
     const firstId = nextOrganizers[0]?.id || "";
@@ -85,7 +88,10 @@ export function OrganizerDashboardClient() {
   return <div>
     <header className="flex flex-col gap-5 border-b border-zinc-900 pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div><p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">Organizador</p><h1 className="mt-2 text-4xl font-black sm:text-5xl">{selectedOrganizer?.name}</h1><div className="mt-2"><StatusBadge label={selectedOrganizer?.verified ? "Perfil verificado" : "Perfil ativo"} tone="success" /></div></div>
-      <LinkButton href="/submeter">Criar evento</LinkButton>
+      <div className="flex gap-2">
+        {canManageTeam && <LinkButton href="/organizador/equipa" variant="secondary">Equipa</LinkButton>}
+        <LinkButton href="/submeter">Criar evento</LinkButton>
+      </div>
     </header>
 
     {organizers.length > 1 && <label className="mt-5 block max-w-sm"><span className="mb-2 block text-xs font-bold text-zinc-600">Organizador</span><select value={selectedId} onChange={(event) => { setSelectedId(event.target.value); void loadOrganizerData(event.target.value); }} className="w-full rounded border border-zinc-800 bg-black px-4 py-3">{organizers.map((organizer) => <option key={organizer.id} value={organizer.id}>{organizer.name}</option>)}</select></label>}
