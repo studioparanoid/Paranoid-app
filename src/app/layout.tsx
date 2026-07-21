@@ -13,9 +13,21 @@ import { MobileBottomNavigation } from "@/components/navigation/MobileBottomNavi
 import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
 
 export const metadata: Metadata = {
-  title: "Paranoid — Agenda Cultural Alternativa",
+  metadataBase: new URL("https://paranoid.pt"),
+  title: {
+    default: "Paranoid — Agenda Cultural Alternativa",
+    template: "%s — Paranoid",
+  },
   description:
     "Eventos, espaços, artistas e cultura alternativa na zona centro.",
+  openGraph: {
+    siteName: "Paranoid",
+    type: "website",
+    locale: "pt_PT",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
   manifest: "/manifest.webmanifest",
   applicationName: "Paranoid",
   appleWebApp: {

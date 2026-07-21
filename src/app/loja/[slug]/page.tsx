@@ -1,12 +1,32 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppIcon } from "@/components/AppIcon";
 import { ProductDetailClient } from "@/components/shop/ProductDetailClient";
 import { getShopProductBySlug } from "@/lib/shop";
+import { absoluteImageUrl, siteName, siteUrl, truncateDescription } from "@/lib/seo";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getShopProductBySlug(slug);
+  if (!product) return { title: "Produto" };
+
+  const description = truncateDescription(product.description, `${product.name} por ${product.sellerName}, na loja Paranoid.`);
+  const image = absoluteImageUrl(product.images[0]);
+  const url = `${siteUrl}/loja/${slug}`;
+
+  return {
+    title: product.name,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title: product.name, description, url, siteName, type: "website", images: image ? [{ url: image }] : undefined },
+    twitter: { title: product.name, description, images: image ? [image] : undefined },
+  };
+}
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
