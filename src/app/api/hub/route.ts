@@ -5,12 +5,90 @@ import { HubTimeoutError, withHubTimeout } from "@/lib/hub/timeout";
 import { createClient } from "@/lib/supabase/server";
 import { tryStructuredHubResponse } from "@/lib/hub/structured-router";
 import { getClientIp, isRateLimited } from "@/lib/rateLimit";
-import type { HubConversationContext } from "@/lib/hub/types";
+import { getUserTickets } from "@/lib/data/hub-tools";
+import { formatMoney, getActiveShopProducts } from "@/lib/shop";
+import type { HubConversationContext, HubResponse } from "@/lib/hub/types";
 
 type HubPayload = { query?: unknown; context?: unknown };
 
 const intentsWithoutEvents = new Set(["tickets", "shop", "map", "profile", "dining"]);
 const hubTimeoutMs = 8_000;
+
+const lisbonDateTimeFormatter = new Intl.DateTimeFormat("pt-PT", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Lisbon" });
+
+function ticketMeta(row: Record<string, unknown>) {
+  const event = row.events as { starts_at?: string; start_at?: string; venue_name?: string } | null;
+  const when = event?.starts_at || event?.start_at;
+  const date = when ? new Date(when) : null;
+  const dateLabel = date && !Number.isNaN(date.getTime()) ? lisbonDateTimeFormatter.format(date) : null;
+  return [dateLabel, event?.venue_name].filter(Boolean).join(" · ") || null;
+}
+
+async function buildTicketsResponse(authenticated: boolean, conversationContext: HubConversationContext): Promise<HubResponse> {
+  if (!authenticated) {
+    return {
+      intent: "tickets",
+      title: "Entra para veres os teus bilhetes",
+      description: "A carteira é privada e precisa de uma sessão autenticada.",
+      results: [],
+      actions: [{ label: "Iniciar sessão", href: "/login?next=%2Fbilhetes", primary: true }],
+      context: conversationContext,
+    };
+  }
+  const { data: tickets } = await getUserTickets();
+  if (!tickets.length) {
+    return {
+      intent: "tickets",
+      title: "Ainda não tens bilhetes",
+      description: "Quando comprares bilhetes para um evento, aparecem aqui.",
+      results: [],
+      actions: [{ label: "Ver Agenda", href: "/agenda", primary: true }],
+      context: conversationContext,
+    };
+  }
+  const details = tickets.slice(0, 6).map((row) => {
+    const event = row.events as { title?: string } | null;
+    return { id: String(row.id), title: event?.title || "Evento", meta: ticketMeta(row), href: "/bilhetes" };
+  });
+  return {
+    intent: "tickets",
+    title: "Os teus bilhetes estão na carteira",
+    description: `Tens ${tickets.length} ${tickets.length === 1 ? "bilhete ativo" : "bilhetes ativos"}.`,
+    results: [],
+    details,
+    actions: [{ label: "Abrir Bilhetes", href: "/bilhetes", primary: true }],
+    context: conversationContext,
+  };
+}
+
+async function buildShopResponse(conversationContext: HubConversationContext): Promise<HubResponse> {
+  const products = await getActiveShopProducts();
+  if (!products.length) {
+    return {
+      intent: "shop",
+      title: "A loja está a preparar-se",
+      description: "Ainda não há produtos publicados.",
+      results: [],
+      actions: [{ label: "Abrir Loja", href: "/loja", primary: true }],
+      context: conversationContext,
+    };
+  }
+  const details = products.slice(0, 6).map((product) => ({
+    id: product.id,
+    title: product.name,
+    meta: `${formatMoney(product.finalPriceCents)} · ${product.sellerName}`,
+    href: `/loja/${product.slug}`,
+  }));
+  return {
+    intent: "shop",
+    title: "Vamos à loja.",
+    description: "Merch, edições e produtos independentes.",
+    results: [],
+    details,
+    actions: [{ label: "Abrir Loja", href: "/loja", primary: true }],
+    context: conversationContext,
+  };
+}
 
 function cleanContext(value: unknown): HubConversationContext {
   if (!value || typeof value !== "object") return {};
@@ -29,6 +107,8 @@ async function resolveHubRequest(query: string, conversationContext: HubConversa
   const intent = classifyHubQuery(query);
   const structuredResponse = await tryStructuredHubResponse(query, conversationContext);
   if (structuredResponse) return { ...structuredResponse, context: structuredResponse.context || conversationContext };
+  if (intent === "tickets") return buildTicketsResponse(Boolean(user), conversationContext);
+  if (intent === "shop") return buildShopResponse(conversationContext);
   let profileCity: string | null = null;
 
   if (intent === "nearby" && user) {
