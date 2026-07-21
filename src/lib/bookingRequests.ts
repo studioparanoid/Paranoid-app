@@ -14,6 +14,7 @@ export type BookingRequest = {
   currency: string;
   note: string | null;
   event_submission_id: string | null;
+  contact_phone: string | null;
   responded_at: string | null;
   responded_by: string | null;
   created_at: string;
@@ -29,7 +30,7 @@ export type BookingRequestMessage = {
 };
 
 const bookingRequestColumns =
-  "id,organizer_id,artist_id,created_by,status,proposed_date,proposed_venue_name,proposed_fee_cents,currency,note,event_submission_id,responded_at,responded_by,created_at,updated_at";
+  "id,organizer_id,artist_id,created_by,status,proposed_date,proposed_venue_name,proposed_fee_cents,currency,note,event_submission_id,contact_phone,responded_at,responded_by,created_at,updated_at";
 
 export async function createBookingRequest(input: {
   organizerId: string;
@@ -39,6 +40,7 @@ export async function createBookingRequest(input: {
   proposedFeeCents?: number | null;
   currency?: string;
   note?: string | null;
+  contactPhone?: string | null;
 }): Promise<BookingRequest> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Autenticação necessária.");
@@ -54,12 +56,61 @@ export async function createBookingRequest(input: {
       proposed_fee_cents: input.proposedFeeCents ?? null,
       currency: input.currency || "EUR",
       note: input.note?.trim() || null,
+      contact_phone: input.contactPhone?.trim() || null,
     })
     .select(bookingRequestColumns)
     .single();
 
   if (error) throw new Error(error.message);
   return data;
+}
+
+export async function listOrganizerBusyDates(organizerId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("start_at,start_date,display_date")
+    .eq("organizer_id", organizerId)
+    .eq("status", "published");
+
+  if (error) {
+    console.error("Erro ao carregar datas ocupadas:", error);
+    return [];
+  }
+  return extractIsoDates(data || []);
+}
+
+export async function listArtistBusyDates(artistId: string): Promise<string[]> {
+  const { data: links, error: linksError } = await supabase.from("event_artists").select("event_id").eq("artist_id", artistId);
+  if (linksError) {
+    console.error("Erro ao carregar datas ocupadas:", linksError);
+    return [];
+  }
+  const eventIds = (links || []).map((link) => link.event_id).filter(Boolean) as string[];
+  if (eventIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("events")
+    .select("start_at,start_date,display_date")
+    .in("id", eventIds)
+    .eq("status", "published");
+
+  if (error) {
+    console.error("Erro ao carregar datas ocupadas:", error);
+    return [];
+  }
+  return extractIsoDates(data || []);
+}
+
+function extractIsoDates(rows: Array<{ start_at?: string | null; start_date?: string | null; display_date?: string | null }>) {
+  const dates = new Set<string>();
+  for (const row of rows) {
+    const value = row.start_at || row.start_date;
+    if (value) {
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) dates.add(parsed.toISOString().slice(0, 10));
+    }
+  }
+  return Array.from(dates);
 }
 
 export async function listBookingRequestsForArtist(artistId: string): Promise<BookingRequest[]> {
