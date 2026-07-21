@@ -17,6 +17,7 @@ type VenueRow = {
   description: string | null;
   instagram: string | null;
   image_url: string | null;
+  verified: boolean | null;
 };
 
 type EventRow = {
@@ -151,7 +152,7 @@ export default function VenuePage() {
 
     const { data: venueData, error: venueError } = await supabase
       .from("venues")
-      .select("id,slug,name,city,address,description,instagram,image_url")
+      .select("id,slug,name,city,address,description,instagram,image_url,verified")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -307,7 +308,7 @@ export default function VenuePage() {
   const tags = venue.city ? [venue.city] : [];
   const links = [
     ...(instagramUrl ? [{ label: "Instagram", href: instagramUrl, external: true }] : []),
-    { label: "Reivindicar perfil", href: `/reivindicar?type=venue&entityName=${encodeURIComponent(venue.name)}&city=${encodeURIComponent(venue.city || "")}` },
+    ...(!venue.verified ? [{ label: "Reivindicar perfil", href: `/reivindicar?type=venue&entityName=${encodeURIComponent(venue.name)}&city=${encodeURIComponent(venue.city || "")}` }] : []),
     { label: "Submeter evento", href: "/submeter" },
   ];
 

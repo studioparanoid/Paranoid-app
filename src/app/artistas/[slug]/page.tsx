@@ -21,6 +21,7 @@ type ArtistRow = {
   artist_category: string | null;
   artist_category_other: string | null;
   music_genres: string[] | null;
+  verified: boolean | null;
 };
 
 type EventArtistRow = {
@@ -170,7 +171,7 @@ export default function ArtistPage() {
 
     const { data: artistData, error: artistError } = await supabase
       .from("artists")
-      .select("id,slug,name,city,genres,description,instagram,bandcamp,image_url,artist_category,artist_category_other,music_genres")
+      .select("id,slug,name,city,genres,description,instagram,bandcamp,image_url,artist_category,artist_category_other,music_genres,verified")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -338,7 +339,7 @@ export default function ArtistPage() {
   const links = [
     ...(instagramUrl ? [{ label: "Instagram", href: instagramUrl, external: true }] : []),
     ...(bandcampUrl ? [{ label: "Bandcamp", href: bandcampUrl, external: true }] : []),
-    { label: "Reivindicar perfil", href: `/reivindicar?type=artist&entityName=${encodeURIComponent(artist.name)}&city=${encodeURIComponent(artist.city || "")}` },
+    ...(!artist.verified ? [{ label: "Reivindicar perfil", href: `/reivindicar?type=artist&entityName=${encodeURIComponent(artist.name)}&city=${encodeURIComponent(artist.city || "")}` }] : []),
     ...(canRequestBooking ? [{ label: "Pedir reserva", href: `/reservas/nova?artistId=${artist.id}` }] : []),
     { label: "Submeter evento", href: "/submeter" },
   ];
