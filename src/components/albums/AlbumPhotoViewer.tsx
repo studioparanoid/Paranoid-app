@@ -66,17 +66,19 @@ export function AlbumPhotoViewer({
         <section
           key={photo.id}
           data-photo-id={photo.id}
-          className="relative h-[100dvh] snap-start snap-always overflow-hidden"
+          className="flex h-[100dvh] snap-start snap-always flex-col"
         >
-          <img src={photo.image_url} alt="" className="h-full w-full object-contain" />
-          <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/75 to-transparent px-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-12">
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+            <img src={photo.image_url} alt="" className="max-h-full max-w-full object-contain" />
+          </div>
+          <div className="flex shrink-0 items-center justify-center gap-6 bg-black px-3 pb-[calc(0.9rem+env(safe-area-inset-bottom))] pt-2.5">
             <IconButton label="Adicionar aos favoritos" disabled={busy} onClick={() => onFavorite(photo)} className="text-white hover:bg-white/15">
               <AppIcon name="star" />
             </IconButton>
             <IconButton label="Comentar" onClick={() => onOpenComments(photo)} className="text-white hover:bg-white/15">
               <AppIcon name="messages" />
             </IconButton>
-            <IconButton label="Guardar no telemóvel" disabled={busy} onClick={() => onSave(photo)} className="ml-auto text-white hover:bg-white/15">
+            <IconButton label="Guardar no telemóvel" disabled={busy} onClick={() => onSave(photo)} className="text-white hover:bg-white/15">
               <AppIcon name="save" />
             </IconButton>
           </div>
