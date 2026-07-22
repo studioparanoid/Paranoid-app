@@ -66,9 +66,9 @@ export function AlbumPhotoViewer({
         <section
           key={photo.id}
           data-photo-id={photo.id}
-          className="relative flex min-h-[100dvh] snap-start snap-always items-center justify-center"
+          className="relative h-[100dvh] snap-start snap-always overflow-hidden"
         >
-          <img src={photo.image_url} alt="" className="max-h-[100dvh] w-full object-contain" />
+          <img src={photo.image_url} alt="" className="h-full w-full object-contain" />
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/75 to-transparent px-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-12">
             <IconButton label="Adicionar aos favoritos" disabled={busy} onClick={() => onFavorite(photo)} className="text-white hover:bg-white/15">
               <AppIcon name="star" />
