@@ -378,6 +378,18 @@ export function ProfileClient() {
 
     {!editing && activeTab === "atividade" && <div className="content-transition space-y-8 py-8">
       <div>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase text-accent">Fotografias</p>
+            <h2 className="mt-1 text-xl font-black text-foreground">Álbuns</h2>
+          </div>
+          {myAlbums.length > 0 && (
+            <Link href="/albuns/novo" className="focus-ring pressable inline-flex min-h-10 items-center gap-2 border border-border-strong px-3 text-xs font-black text-foreground hover:border-foreground-muted">
+              <AppIcon name="plus" className="h-4 w-4" />
+              Novo álbum
+            </Link>
+          )}
+        </div>
         {myAlbums.length === 0 ? (
           <Link href="/albuns/novo" className="interactive focus-ring block rounded-lg border border-dashed border-border px-6 py-8 text-center hover:border-foreground-muted">
             <AppIcon name="camera" className="mx-auto h-6 w-6 text-foreground-muted" />
@@ -386,12 +398,9 @@ export function ProfileClient() {
             <span className="mt-4 inline-block rounded-md bg-[var(--accent)] px-5 py-2.5 text-sm font-black text-white">Criar álbum</span>
           </Link>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Link href="/albuns/novo" className="interactive focus-ring grid aspect-square place-items-center rounded-lg border border-dashed border-border text-foreground-muted hover:border-foreground-muted hover:text-foreground">
-              <span className="text-3xl font-black leading-none">+</span>
-            </Link>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4">
             {myAlbums.map((album) => (
-              <AlbumStackedPreview key={album.id} photos={myAlbumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} />
+              <AlbumStackedPreview key={album.id} photos={myAlbumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} visibility={album.visibility} />
             ))}
           </div>
         )}

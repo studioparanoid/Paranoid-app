@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AppIcon } from "@/components/AppIcon";
 import { Button, IconButton, LoadingButton } from "@/components/ui/Button";
 import { useDialogBehavior } from "@/hooks/useDialogBehavior";
@@ -22,7 +23,7 @@ export function Modal({
   useDialogBehavior({ open, onClose, containerRef: dialogRef });
 
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="ui-overlay fixed inset-0 z-[110] grid place-items-center p-3" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby={description ? "modal-description" : undefined} className="ui-sheet shadow-modal flex max-h-[calc(100dvh-6rem)] w-full max-w-lg flex-col rounded-lg border border-[var(--border)] bg-[var(--modal-background)] text-[var(--foreground)]">
         <div className="min-h-0 overflow-y-auto overscroll-contain p-5 pb-[calc(2rem+env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] sm:p-6">
@@ -36,7 +37,8 @@ export function Modal({
           <div className="mt-6">{children}</div>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

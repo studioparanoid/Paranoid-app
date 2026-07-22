@@ -426,7 +426,7 @@ export default function ArtistPage() {
             {albums.length > 0 && (
               <CardGrid>
                 {albums.map((album) => (
-                  <AlbumStackedPreview key={album.id} photos={albumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} />
+                  <AlbumStackedPreview key={album.id} photos={albumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} visibility={album.visibility} />
                 ))}
               </CardGrid>
             )}

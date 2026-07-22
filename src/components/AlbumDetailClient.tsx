@@ -12,8 +12,7 @@ import { FilterDrawer } from "@/components/FilterDrawer";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button, IconButton } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import {
   addAlbumComment,
@@ -62,6 +61,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [savingPhotos, setSavingPhotos] = useState(false);
   const [deletingPhotos, setDeletingPhotos] = useState(false);
+  const [deleteTargets, setDeleteTargets] = useState<AlbumPhoto[]>([]);
   const [favoritingPhotos, setFavoritingPhotos] = useState(false);
   const [renamingTitle, setRenamingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
@@ -144,14 +144,17 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
     setSelectedIds(new Set());
   }
 
-  async function deleteSelectedPhotos() {
-    const targets = photos.filter((photo) => selectedIds.has(photo.id));
+  async function confirmDeletePhotos() {
+    const targets = deleteTargets;
     if (targets.length === 0 || deletingPhotos) return;
     setDeletingPhotos(true);
     try {
       await Promise.all(targets.map((photo) => deleteAlbumPhoto(photo.id)));
-      setPhotos(await listAlbumPhotos(albumId));
+      const deletedIds = new Set(targets.map((photo) => photo.id));
+      setPhotos((current) => current.filter((photo) => !deletedIds.has(photo.id)));
+      if (focusedPhoto && deletedIds.has(focusedPhoto.id)) setFocusedPhoto(null);
       toast({ message: targets.length === 1 ? "Foto apagada." : `${targets.length} fotos apagadas.`, tone: "success" });
+      setDeleteTargets([]);
       exitSelectMode();
     } catch (error) {
       toast({ message: error instanceof Error ? error.message : "Não foi possível apagar as fotos.", tone: "error" });
@@ -311,9 +314,10 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-accent">Álbum</p>
+      <header className="mb-5 border-b border-border pb-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-black uppercase text-accent">Álbum</p>
           {renamingTitle ? (
             <div className="mt-2 flex items-center gap-2">
               <input
@@ -332,32 +336,36 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
               {isOwner && <IconButton label="Mudar nome do álbum" variant="ghost" onClick={startRenaming}><AppIcon name="edit" className="h-4 w-4" /></IconButton>}
             </div>
           )}
+            <p className="mt-2 text-xs font-bold text-foreground-muted">{photos.length} {photos.length === 1 ? "fotografia" : "fotografias"}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <StatusBadge label={album.visibility === "public" ? "Público" : "Privado"} tone={album.visibility === "public" ? "success" : "neutral"} />
+            {isOwner && <Button size="sm" variant="secondary" onClick={() => void openShare()}>Partilhar</Button>}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge label={album.visibility === "public" ? "Público" : "Privado"} tone={album.visibility === "public" ? "success" : "neutral"} />
-          {isOwner && <Button size="sm" variant="secondary" onClick={() => void openShare()}>Partilhar</Button>}
-        </div>
-      </div>
+      </header>
 
-      <Card className="mb-6 flex flex-wrap gap-2 p-4">
-        <label htmlFor={galleryInputId}>
-          <Button type="button" variant="secondary" disabled={uploading} onClick={() => galleryInputRef.current?.click()}>Adicionar foto</Button>
-        </label>
+      <div className="mb-5 flex flex-wrap items-center gap-2 border-y border-border py-3">
+        <Button type="button" variant="secondary" size="sm" disabled={uploading} onClick={() => galleryInputRef.current?.click()}>
+          <AppIcon name="gallery" className="h-4 w-4" />
+          Adicionar
+        </Button>
         <input ref={galleryInputRef} id={galleryInputId} type="file" accept="image/*" multiple className="sr-only" onChange={(event) => void handleFiles(event.target.files)} />
 
-        <label htmlFor={cameraInputId}>
-          <Button type="button" variant="secondary" disabled={uploading} onClick={() => cameraInputRef.current?.click()}>Tirar foto</Button>
-        </label>
+        <Button type="button" variant="secondary" size="sm" disabled={uploading} onClick={() => cameraInputRef.current?.click()}>
+          <AppIcon name="camera" className="h-4 w-4" />
+          Câmara
+        </Button>
         <input ref={cameraInputRef} id={cameraInputId} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(event) => void handleFiles(event.target.files)} />
 
         {uploading && <span className="self-center text-xs font-bold text-foreground-muted">A enviar...</span>}
-      </Card>
+      </div>
 
       {photos.length === 0 && <EmptyState title="Ainda não há fotos." description={isOwner ? "Adiciona a primeira foto acima." : "Quando alguém adicionar fotos, aparecem aqui."} />}
 
       {photos.length > 0 && (
-        <div className="grid grid-cols-3 gap-0.5 pb-24">
-          {photos.map((photo) => {
+        <div className="-mx-4 grid grid-cols-3 gap-px bg-border pb-24 sm:mx-0 sm:gap-0.5">
+          {photos.map((photo, index) => {
             const selected = selectedIds.has(photo.id);
             return (
               <button
@@ -372,9 +380,11 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
                 onMouseLeave={cancelLongPress}
                 onContextMenu={(event) => event.preventDefault()}
                 onClick={() => handlePhotoActivate(photo)}
+                aria-label={`${selectMode ? selected ? "Remover da seleção" : "Selecionar" : "Abrir"} foto ${index + 1}`}
+                aria-pressed={selectMode ? selected : undefined}
                 className="pressable focus-ring relative aspect-square touch-manipulation select-none overflow-hidden bg-surface [-webkit-touch-callout:none] [-webkit-user-select:none]"
               >
-                <img src={photo.image_url} alt="" draggable={false} className="h-full w-full touch-manipulation select-none object-cover [-webkit-touch-callout:none] [-webkit-user-select:none]" />
+                <img src={photo.image_url} alt={`Foto ${index + 1} do álbum ${album.title}`} draggable={false} className="h-full w-full touch-manipulation select-none object-cover transition-transform duration-300 hover:scale-[1.02] [-webkit-touch-callout:none] [-webkit-user-select:none]" />
                 {selectMode && (
                   <>
                     {selected && <span className="absolute inset-0 bg-black/35" />}
@@ -390,14 +400,16 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       )}
 
       {selectMode && (
-        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-[80] border-t border-border bg-[var(--background)] px-4 py-3 lg:bottom-0 lg:pb-3">
-          <div className="mx-auto flex max-w-lg items-center justify-between gap-2">
-            <IconButton label="Cancelar seleção" variant="secondary" onClick={exitSelectMode}><AppIcon name="close" /></IconButton>
-            <p className="text-sm font-bold text-foreground-muted">{selectedIds.size} selecionada{selectedIds.size === 1 ? "" : "s"}</p>
+        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-[85] border-y border-white/10 bg-black px-3 py-2 text-white shadow-[0_-16px_40px_rgb(0_0_0_/_0.35)] lg:bottom-0">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <IconButton label="Cancelar seleção" onClick={exitSelectMode} className="text-white hover:bg-white/10"><AppIcon name="close" /></IconButton>
+              <p className="truncate text-xs font-black text-zinc-300">{selectedIds.size} selecionada{selectedIds.size === 1 ? "" : "s"}</p>
+            </div>
             <div className="flex items-center gap-2">
-              <IconButton label="Guardar no telemóvel" disabled={savingPhotos} onClick={() => void savePhotos(photos.filter((photo) => selectedIds.has(photo.id)))}><AppIcon name="save" /></IconButton>
-              <IconButton label="Adicionar aos favoritos" disabled={favoritingPhotos} onClick={() => void favoriteSelectedPhotos()}><AppIcon name="star" /></IconButton>
-              <IconButton label="Apagar" disabled={deletingPhotos} onClick={() => void deleteSelectedPhotos()} className="text-danger hover:bg-danger/10"><AppIcon name="trash" /></IconButton>
+              <IconButton label="Guardar no telemóvel" disabled={savingPhotos} onClick={() => void savePhotos(photos.filter((photo) => selectedIds.has(photo.id)))} className="text-white hover:bg-white/10"><AppIcon name="save" /></IconButton>
+              <IconButton label="Adicionar aos favoritos" disabled={favoritingPhotos} onClick={() => void favoriteSelectedPhotos()} className="text-white hover:bg-white/10"><AppIcon name="star" /></IconButton>
+              {isOwner && <IconButton label="Apagar" disabled={deletingPhotos} onClick={() => setDeleteTargets(photos.filter((photo) => selectedIds.has(photo.id)))} className="text-red-500 hover:bg-red-500/10"><AppIcon name="trash" /></IconButton>}
             </div>
           </div>
         </div>
@@ -407,11 +419,14 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
         <AlbumPhotoViewer
           photos={photos}
           initialPhotoId={focusedPhoto.id}
+          albumTitle={album.title}
+          canDelete={isOwner}
           onClose={() => setFocusedPhoto(null)}
           onSave={(photo) => void savePhotos([photo])}
           onFavorite={(photo) => void favoritePhoto(photo)}
+          onDelete={(photo) => setDeleteTargets([photo])}
           onOpenComments={(photo) => void openComments(photo)}
-          busy={savingPhotos || favoritingPhotos}
+          busy={savingPhotos || favoritingPhotos || deletingPhotos}
         />
       )}
 
@@ -437,6 +452,17 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
           ))}
         </div>
       </FilterDrawer>
+
+      <ConfirmDialog
+        open={deleteTargets.length > 0}
+        onClose={() => { if (!deletingPhotos) setDeleteTargets([]); }}
+        onConfirm={() => void confirmDeletePhotos()}
+        title={deleteTargets.length === 1 ? "Apagar fotografia?" : `Apagar ${deleteTargets.length} fotografias?`}
+        description="Esta ação remove definitivamente as fotografias deste álbum."
+        confirmLabel="Apagar"
+        loading={deletingPhotos}
+        danger
+      />
 
       <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="Partilhar álbum" description="Quem ler este código com a câmara do telemóvel entra diretamente no álbum.">
         <div className="scale-in rounded-lg border border-zinc-800 bg-[#f2f1ec] p-4 text-black">
