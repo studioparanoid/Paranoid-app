@@ -9,9 +9,8 @@ import { AppIcon } from "@/components/AppIcon";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button, IconButton, LoadingButton } from "@/components/ui/Button";
+import { Button, IconButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -40,6 +39,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
   const cameraInputId = useId();
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressTriggeredRef = useRef(false);
 
@@ -165,6 +165,19 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       const added = await addPhotosToFavorites(targets);
       toast({ message: added > 0 ? `${added} foto${added === 1 ? "" : "s"} adicionada${added === 1 ? "" : "s"} aos favoritos.` : "Não foi possível adicionar aos favoritos.", tone: added > 0 ? "success" : "error" });
       exitSelectMode();
+    } catch (error) {
+      toast({ message: error instanceof Error ? error.message : "Não foi possível adicionar aos favoritos.", tone: "error" });
+    } finally {
+      setFavoritingPhotos(false);
+    }
+  }
+
+  async function favoritePhoto(photo: AlbumPhoto) {
+    if (favoritingPhotos) return;
+    setFavoritingPhotos(true);
+    try {
+      const added = await addPhotosToFavorites([photo]);
+      toast({ message: added > 0 ? "Adicionado aos favoritos." : "Não foi possível adicionar aos favoritos.", tone: added > 0 ? "success" : "error" });
     } catch (error) {
       toast({ message: error instanceof Error ? error.message : "Não foi possível adicionar aos favoritos.", tone: "error" });
     } finally {
@@ -336,7 +349,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       {photos.length === 0 && <EmptyState title="Ainda não há fotos." description={isOwner ? "Adiciona a primeira foto acima." : "Quando alguém adicionar fotos, aparecem aqui."} />}
 
       {photos.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 pb-24 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-0.5 pb-24">
           {photos.map((photo) => {
             const selected = selectedIds.has(photo.id);
             return (
@@ -352,13 +365,16 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
                 onMouseLeave={cancelLongPress}
                 onContextMenu={(event) => event.preventDefault()}
                 onClick={() => handlePhotoActivate(photo)}
-                className={`pressable focus-ring relative aspect-square touch-manipulation select-none overflow-hidden rounded-lg border bg-surface [-webkit-touch-callout:none] [-webkit-user-select:none] ${selected ? "border-accent" : "border-border"}`}
+                className="pressable focus-ring relative aspect-square touch-manipulation select-none overflow-hidden bg-surface [-webkit-touch-callout:none] [-webkit-user-select:none]"
               >
                 <img src={photo.image_url} alt="" draggable={false} className="h-full w-full touch-manipulation select-none object-cover [-webkit-touch-callout:none] [-webkit-user-select:none]" />
                 {selectMode && (
-                  <span className={`absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full border-2 ${selected ? "border-accent bg-accent text-white" : "border-white/80 bg-black/30"}`}>
-                    {selected && <AppIcon name="check" className="h-3.5 w-3.5" />}
-                  </span>
+                  <>
+                    {selected && <span className="absolute inset-0 bg-black/35" />}
+                    <span className={`absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full border-2 ${selected ? "border-accent bg-accent text-white" : "border-white/90"}`}>
+                      {selected && <AppIcon name="check" className="h-3 w-3" />}
+                    </span>
+                  </>
                 )}
               </button>
             );
@@ -367,7 +383,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       )}
 
       {selectMode && (
-        <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-[var(--background)] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+        <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-[var(--background)] px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-3">
           <div className="mx-auto flex max-w-lg items-center justify-between gap-2">
             <IconButton label="Cancelar seleção" variant="secondary" onClick={exitSelectMode}><AppIcon name="close" /></IconButton>
             <p className="text-sm font-bold text-foreground-muted">{selectedIds.size} selecionada{selectedIds.size === 1 ? "" : "s"}</p>
@@ -383,28 +399,30 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       <Modal open={Boolean(focusedPhoto)} onClose={() => setFocusedPhoto(null)} title="Foto">
         {focusedPhoto && (
           <div>
-            <div className="overflow-hidden rounded-lg border border-border">
-              <img src={focusedPhoto.image_url} alt="" className="max-h-[50vh] w-full object-contain bg-black" />
+            <div className="overflow-hidden rounded-lg bg-black">
+              <img src={focusedPhoto.image_url} alt="" className="max-h-[55vh] w-full object-contain" />
             </div>
 
-            <div className="mt-3 flex justify-end">
-              <IconButton label="Guardar no telemóvel" disabled={savingPhotos} onClick={() => void savePhotos([focusedPhoto])}><AppIcon name="save" /></IconButton>
+            <div className="flex items-center gap-1.5 py-2">
+              <IconButton label="Adicionar aos favoritos" disabled={favoritingPhotos} onClick={() => void favoritePhoto(focusedPhoto)}><AppIcon name="star" /></IconButton>
+              <IconButton label="Comentar" onClick={() => commentInputRef.current?.focus()}><AppIcon name="messages" /></IconButton>
+              <IconButton label="Guardar no telemóvel" disabled={savingPhotos} onClick={() => void savePhotos([focusedPhoto])} className="ml-auto"><AppIcon name="save" /></IconButton>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="space-y-2">
               {commentsLoading && <LoadingSkeleton rows={2} />}
-              {!commentsLoading && comments.length === 0 && <p className="text-sm text-foreground-muted">Ainda não há comentários.</p>}
+              {!commentsLoading && comments.length === 0 && <p className="text-sm text-foreground-muted">Sê o primeiro a comentar.</p>}
               {!commentsLoading && comments.map((comment) => (
-                <div key={comment.id} className={`max-w-[85%] rounded-lg border border-border px-3.5 py-2.5 text-sm ${comment.user_id === userId ? "ml-auto bg-surface" : "bg-card"}`}>
-                  <p className="whitespace-pre-wrap">{comment.body}</p>
-                  <p className="mt-1 text-[11px] text-foreground-muted">{formatCommentTime(comment.created_at)}</p>
-                </div>
+                <p key={comment.id} className="text-sm leading-5">
+                  <span className="whitespace-pre-wrap">{comment.body}</span>
+                  <span className="ml-2 text-[11px] text-foreground-muted">{formatCommentTime(comment.created_at)}</span>
+                </p>
               ))}
             </div>
 
-            <form onSubmit={submitComment} className="mt-4 flex gap-2">
-              <Textarea value={commentBody} onChange={(event) => setCommentBody(event.target.value)} rows={2} maxLength={2000} placeholder="Escreve um comentário..." className="flex-1" />
-              <LoadingButton type="submit" loading={sendingComment} loadingText="..." disabled={!commentBody.trim()}>Enviar</LoadingButton>
+            <form onSubmit={submitComment} className="mt-4 flex items-center gap-1 rounded-full border border-input-border bg-input pl-4 pr-1">
+              <input ref={commentInputRef} value={commentBody} onChange={(event) => setCommentBody(event.target.value)} maxLength={2000} placeholder="Escreve um comentário..." className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted" />
+              <IconButton type="submit" label="Enviar comentário" disabled={!commentBody.trim() || sendingComment}><AppIcon name="send" className="h-4 w-4" /></IconButton>
             </form>
           </div>
         )}
