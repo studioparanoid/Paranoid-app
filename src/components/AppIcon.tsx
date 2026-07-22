@@ -1,6 +1,6 @@
 import type { NavigationIcon } from "@/config/navigation";
 
-type AppIconName = NavigationIcon | "search" | "profile" | "close" | "chevron" | "send" | "gallery" | "camera" | "messages";
+type AppIconName = NavigationIcon | "search" | "profile" | "close" | "chevron" | "send" | "gallery" | "camera" | "messages" | "save" | "trash" | "star" | "edit";
 
 type AppIconProps = {
   name: AppIconName;
@@ -37,6 +37,10 @@ const paths: Record<AppIconName, React.ReactNode> = {
   gallery: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>,
   camera: <><path d="M4 8a2 2 0 0 1 2-2h1l1.5-2h7L17 6h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" /><circle cx="12" cy="13" r="3.5" /></>,
   messages: <path d="M4 5h16v11H8l-4 4V5Z" />,
+  save: <><path d="M5 4h11l3 3v13H5V4Z" /><path d="M8 4v5h7V4" /><rect x="8" y="13" width="8" height="7" /></>,
+  trash: <><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13h10l1-13" /><path d="M10 11v6M14 11v6" /></>,
+  star: <path d="m12 3 2.7 5.9 6.3.6-4.8 4.3 1.4 6.2L12 17l-5.6 3 1.4-6.2-4.8-4.3 6.3-.6L12 3Z" />,
+  edit: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" /></>,
 };
 
 export function AppIcon({ name, className = "h-5 w-5" }: AppIconProps) {

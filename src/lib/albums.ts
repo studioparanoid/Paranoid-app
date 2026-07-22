@@ -59,6 +59,21 @@ export async function createAlbum(input: {
   return data;
 }
 
+export async function renameAlbum(albumId: string, title: string): Promise<PhotoAlbum> {
+  const trimmed = title.trim();
+  if (!trimmed) throw new Error("O nome do álbum não pode ficar vazio.");
+
+  const { data, error } = await supabase
+    .from("photo_albums")
+    .update({ title: trimmed })
+    .eq("id", albumId)
+    .select(albumColumns)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function getAlbum(id: string): Promise<PhotoAlbum | null> {
   const { data, error } = await supabase.from("photo_albums").select(albumColumns).eq("id", id).maybeSingle();
   if (error) {
@@ -147,6 +162,35 @@ export async function addAlbumPhoto(albumId: string, imageUrl: string): Promise<
 
   if (error) throw new Error(error.message);
   return data;
+}
+
+export async function deleteAlbumPhoto(photoId: string): Promise<void> {
+  const { error } = await supabase.from("album_photos").delete().eq("id", photoId);
+  if (error) throw new Error(error.message);
+}
+
+const favoritesAlbumTitle = "Favoritos";
+
+export async function addPhotosToFavorites(photos: AlbumPhoto[]): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Autenticação necessária.");
+
+  const { data: existing } = await supabase
+    .from("photo_albums")
+    .select(albumColumns)
+    .eq("owner_user_id", user.id)
+    .is("entity_type", null)
+    .eq("title", favoritesAlbumTitle)
+    .maybeSingle();
+
+  const favoritesAlbum = existing || (await createAlbum({ title: favoritesAlbumTitle, visibility: "private" }));
+
+  let added = 0;
+  for (const photo of photos) {
+    const { error } = await supabase.from("album_photos").insert({ album_id: favoritesAlbum.id, uploaded_by: user.id, image_url: photo.image_url });
+    if (!error) added += 1;
+  }
+  return added;
 }
 
 export async function listAlbumPhotos(albumId: string): Promise<AlbumPhoto[]> {

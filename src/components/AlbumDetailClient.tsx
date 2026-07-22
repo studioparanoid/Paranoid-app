@@ -9,7 +9,7 @@ import { AppIcon } from "@/components/AppIcon";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button, LoadingButton } from "@/components/ui/Button";
+import { Button, IconButton, LoadingButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
@@ -17,9 +17,12 @@ import { useToast } from "@/components/ui/Toast";
 import {
   addAlbumComment,
   addAlbumPhoto,
+  addPhotosToFavorites,
+  deleteAlbumPhoto,
   getAlbum,
   listAlbumComments,
   listAlbumPhotos,
+  renameAlbum,
   uploadAlbumPhoto,
   type AlbumComment,
   type AlbumPhoto,
@@ -37,6 +40,8 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
   const cameraInputId = useId();
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressTriggeredRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState("");
@@ -53,6 +58,11 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [savingPhotos, setSavingPhotos] = useState(false);
+  const [deletingPhotos, setDeletingPhotos] = useState(false);
+  const [favoritingPhotos, setFavoritingPhotos] = useState(false);
+  const [renamingTitle, setRenamingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -87,17 +97,77 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
     }
   }
 
-  function toggleSelectMode() {
-    setSelectMode((value) => !value);
-    setSelectedIds(new Set());
-  }
-
   function togglePhotoSelected(photoId: string) {
     setSelectedIds((current) => {
       const next = new Set(current);
       if (next.has(photoId)) next.delete(photoId); else next.add(photoId);
+      if (next.size === 0) setSelectMode(false);
       return next;
     });
+  }
+
+  function startLongPress(photoId: string) {
+    longPressTriggeredRef.current = false;
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTriggeredRef.current = true;
+      setSelectMode(true);
+      setSelectedIds(new Set([photoId]));
+    }, 500);
+  }
+
+  function cancelLongPress() {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }
+
+  function handlePhotoActivate(photo: AlbumPhoto) {
+    if (longPressTriggeredRef.current) {
+      longPressTriggeredRef.current = false;
+      return;
+    }
+    if (selectMode) {
+      togglePhotoSelected(photo.id);
+    } else {
+      void openPhoto(photo);
+    }
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function deleteSelectedPhotos() {
+    const targets = photos.filter((photo) => selectedIds.has(photo.id));
+    if (targets.length === 0 || deletingPhotos) return;
+    setDeletingPhotos(true);
+    try {
+      await Promise.all(targets.map((photo) => deleteAlbumPhoto(photo.id)));
+      setPhotos(await listAlbumPhotos(albumId));
+      toast({ message: targets.length === 1 ? "Foto apagada." : `${targets.length} fotos apagadas.`, tone: "success" });
+      exitSelectMode();
+    } catch (error) {
+      toast({ message: error instanceof Error ? error.message : "Não foi possível apagar as fotos.", tone: "error" });
+    } finally {
+      setDeletingPhotos(false);
+    }
+  }
+
+  async function favoriteSelectedPhotos() {
+    const targets = photos.filter((photo) => selectedIds.has(photo.id));
+    if (targets.length === 0 || favoritingPhotos) return;
+    setFavoritingPhotos(true);
+    try {
+      const added = await addPhotosToFavorites(targets);
+      toast({ message: added > 0 ? `${added} foto${added === 1 ? "" : "s"} adicionada${added === 1 ? "" : "s"} aos favoritos.` : "Não foi possível adicionar aos favoritos.", tone: added > 0 ? "success" : "error" });
+      exitSelectMode();
+    } catch (error) {
+      toast({ message: error instanceof Error ? error.message : "Não foi possível adicionar aos favoritos.", tone: "error" });
+    } finally {
+      setFavoritingPhotos(false);
+    }
   }
 
   async function fetchPhotoFile(photo: AlbumPhoto, index: number): Promise<File | null> {
@@ -135,8 +205,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
         });
         toast({ message: files.length === 1 ? "Foto descarregada." : `${files.length} fotos descarregadas.`, tone: "success" });
       }
-      setSelectMode(false);
-      setSelectedIds(new Set());
+      exitSelectMode();
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;
       toast({ message: "Não foi possível guardar as fotos.", tone: "error" });
@@ -158,6 +227,31 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       setQrCodeUrl(await QRCode.toDataURL(joinUrl, { width: 280, margin: 1, color: { dark: "#0b0b0b", light: "#f2f1ec" } }));
     } catch {
       setQrCodeUrl("");
+    }
+  }
+
+  function startRenaming() {
+    if (!album) return;
+    setTitleDraft(album.title);
+    setRenamingTitle(true);
+  }
+
+  async function saveRenamedTitle() {
+    if (!album || savingTitle) return;
+    const trimmed = titleDraft.trim();
+    if (!trimmed || trimmed === album.title) {
+      setRenamingTitle(false);
+      return;
+    }
+    setSavingTitle(true);
+    try {
+      const updated = await renameAlbum(album.id, trimmed);
+      setAlbum(updated);
+      setRenamingTitle(false);
+    } catch (error) {
+      toast({ message: error instanceof Error ? error.message : "Não foi possível mudar o nome.", tone: "error" });
+    } finally {
+      setSavingTitle(false);
     }
   }
 
@@ -196,9 +290,26 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-black uppercase tracking-[0.3em] text-accent">Álbum</p>
-          <h1 className="mt-2 text-3xl font-black sm:text-4xl">{album.title}</h1>
+          {renamingTitle ? (
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                value={titleDraft}
+                onChange={(event) => setTitleDraft(event.target.value)}
+                maxLength={120}
+                autoFocus
+                className="focus-ring min-w-0 rounded-md border border-input-border bg-input px-3 py-1.5 text-2xl font-black text-foreground outline-none sm:text-3xl"
+              />
+              <IconButton label="Guardar nome" onClick={() => void saveRenamedTitle()} disabled={savingTitle}><AppIcon name="check" /></IconButton>
+              <IconButton label="Cancelar" variant="ghost" onClick={() => setRenamingTitle(false)} disabled={savingTitle}><AppIcon name="close" /></IconButton>
+            </div>
+          ) : (
+            <div className="mt-2 flex items-center gap-2">
+              <h1 className="truncate text-3xl font-black sm:text-4xl">{album.title}</h1>
+              {isOwner && <IconButton label="Mudar nome do álbum" variant="ghost" onClick={startRenaming}><AppIcon name="edit" className="h-4 w-4" /></IconButton>}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge label={album.visibility === "public" ? "Público" : "Privado"} tone={album.visibility === "public" ? "success" : "neutral"} />
@@ -217,27 +328,29 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
         </label>
         <input ref={cameraInputRef} id={cameraInputId} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(event) => void handleFiles(event.target.files)} />
 
-        {photos.length > 0 && (selectMode ? (
-          <>
-            <LoadingButton type="button" variant="secondary" loading={savingPhotos} loadingText="A guardar..." disabled={selectedIds.size === 0} onClick={() => void savePhotos(photos.filter((photo) => selectedIds.has(photo.id)))}>Guardar ({selectedIds.size})</LoadingButton>
-            <Button type="button" variant="ghost" onClick={toggleSelectMode}>Cancelar</Button>
-          </>
-        ) : (
-          <Button type="button" variant="ghost" onClick={toggleSelectMode}>Selecionar</Button>
-        ))}
-
         {uploading && <span className="self-center text-xs font-bold text-foreground-muted">A enviar...</span>}
       </Card>
+
+      {photos.length > 0 && !selectMode && <p className="mb-3 text-xs font-bold text-foreground-muted">Mantém premida uma foto para selecionar várias.</p>}
 
       {photos.length === 0 && <EmptyState title="Ainda não há fotos." description={isOwner ? "Adiciona a primeira foto acima." : "Quando alguém adicionar fotos, aparecem aqui."} />}
 
       {photos.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 pb-24 sm:grid-cols-3">
           {photos.map((photo) => {
             const selected = selectedIds.has(photo.id);
             return (
-              <button key={photo.id} type="button" onClick={() => (selectMode ? togglePhotoSelected(photo.id) : void openPhoto(photo))} className={`pressable focus-ring relative aspect-square overflow-hidden rounded-lg border bg-surface ${selected ? "border-accent" : "border-border"}`}>
-                <img src={photo.image_url} alt="" className="h-full w-full object-cover" />
+              <button
+                key={photo.id}
+                type="button"
+                onPointerDown={() => startLongPress(photo.id)}
+                onPointerUp={cancelLongPress}
+                onPointerLeave={cancelLongPress}
+                onPointerCancel={cancelLongPress}
+                onClick={() => handlePhotoActivate(photo)}
+                className={`pressable focus-ring relative aspect-square touch-manipulation select-none overflow-hidden rounded-lg border bg-surface [-webkit-touch-callout:none] ${selected ? "border-accent" : "border-border"}`}
+              >
+                <img src={photo.image_url} alt="" draggable={false} className="h-full w-full object-cover" />
                 {selectMode && (
                   <span className={`absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full border-2 ${selected ? "border-accent bg-accent text-white" : "border-white/80 bg-black/30"}`}>
                     {selected && <AppIcon name="check" className="h-3.5 w-3.5" />}
@@ -249,6 +362,20 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
         </div>
       )}
 
+      {selectMode && (
+        <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-[var(--background)] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3">
+          <div className="mx-auto flex max-w-lg items-center justify-between gap-2">
+            <IconButton label="Cancelar seleção" variant="secondary" onClick={exitSelectMode}><AppIcon name="close" /></IconButton>
+            <p className="text-sm font-bold text-foreground-muted">{selectedIds.size} selecionada{selectedIds.size === 1 ? "" : "s"}</p>
+            <div className="flex items-center gap-2">
+              <IconButton label="Guardar no telemóvel" disabled={savingPhotos} onClick={() => void savePhotos(photos.filter((photo) => selectedIds.has(photo.id)))}><AppIcon name="save" /></IconButton>
+              <IconButton label="Adicionar aos favoritos" disabled={favoritingPhotos} onClick={() => void favoriteSelectedPhotos()}><AppIcon name="star" /></IconButton>
+              <IconButton label="Apagar" disabled={deletingPhotos} onClick={() => void deleteSelectedPhotos()} className="text-danger hover:bg-danger/10"><AppIcon name="trash" /></IconButton>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Modal open={Boolean(focusedPhoto)} onClose={() => setFocusedPhoto(null)} title="Foto">
         {focusedPhoto && (
           <div>
@@ -257,7 +384,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
             </div>
 
             <div className="mt-3 flex justify-end">
-              <LoadingButton type="button" variant="secondary" size="sm" loading={savingPhotos} loadingText="A guardar..." onClick={() => void savePhotos([focusedPhoto])}>Guardar no telemóvel</LoadingButton>
+              <IconButton label="Guardar no telemóvel" disabled={savingPhotos} onClick={() => void savePhotos([focusedPhoto])}><AppIcon name="save" /></IconButton>
             </div>
 
             <div className="mt-4 space-y-3">
