@@ -23,9 +23,9 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="ui-overlay fixed inset-0 z-[110] grid items-end p-3 sm:place-items-center" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby={description ? "modal-description" : undefined} className="ui-sheet shadow-modal flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col rounded-lg border border-[var(--border)] bg-[var(--modal-background)] text-[var(--foreground)]">
-        <div className="min-h-0 overflow-y-auto overscroll-contain p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] sm:p-6">
+    <div className="ui-overlay fixed inset-0 z-[110] grid place-items-center p-3" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby={description ? "modal-description" : undefined} className="ui-sheet shadow-modal flex max-h-[calc(100dvh-6rem)] w-full max-w-lg flex-col rounded-lg border border-[var(--border)] bg-[var(--modal-background)] text-[var(--foreground)]">
+        <div className="min-h-0 overflow-y-auto overscroll-contain p-5 pb-[calc(2rem+env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 id="modal-title" className="text-xl font-black">{title}</h2>
