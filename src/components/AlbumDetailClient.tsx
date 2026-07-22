@@ -5,8 +5,10 @@
 import Image from "next/image";
 import * as QRCode from "qrcode";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { AlbumPhotoViewer } from "@/components/albums/AlbumPhotoViewer";
 import { AppIcon } from "@/components/AppIcon";
 import { EmptyState } from "@/components/EmptyState";
+import { FilterDrawer } from "@/components/FilterDrawer";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button, IconButton } from "@/components/ui/Button";
@@ -51,6 +53,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [focusedPhoto, setFocusedPhoto] = useState<AlbumPhoto | null>(null);
+  const [commentsPhoto, setCommentsPhoto] = useState<AlbumPhoto | null>(null);
   const [comments, setComments] = useState<AlbumComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentBody, setCommentBody] = useState("");
@@ -132,7 +135,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
     if (selectMode) {
       togglePhotoSelected(photo.id);
     } else {
-      void openPhoto(photo);
+      openPhoto(photo);
     }
   }
 
@@ -279,8 +282,12 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
     }
   }
 
-  async function openPhoto(photo: AlbumPhoto) {
+  function openPhoto(photo: AlbumPhoto) {
     setFocusedPhoto(photo);
+  }
+
+  async function openComments(photo: AlbumPhoto) {
+    setCommentsPhoto(photo);
     setCommentBody("");
     setCommentsLoading(true);
     setComments(await listAlbumComments(photo.id));
@@ -289,10 +296,10 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
 
   async function submitComment(event: FormEvent) {
     event.preventDefault();
-    if (!focusedPhoto || !commentBody.trim() || sendingComment) return;
+    if (!commentsPhoto || !commentBody.trim() || sendingComment) return;
     setSendingComment(true);
     try {
-      const comment = await addAlbumComment(focusedPhoto.id, commentBody);
+      const comment = await addAlbumComment(commentsPhoto.id, commentBody);
       setComments((current) => [...current, comment]);
       setCommentBody("");
     } catch (error) {
@@ -383,7 +390,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       )}
 
       {selectMode && (
-        <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-[var(--background)] px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-3">
+        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-[80] border-t border-border bg-[var(--background)] px-4 py-3 lg:bottom-0 lg:pb-3">
           <div className="mx-auto flex max-w-lg items-center justify-between gap-2">
             <IconButton label="Cancelar seleção" variant="secondary" onClick={exitSelectMode}><AppIcon name="close" /></IconButton>
             <p className="text-sm font-bold text-foreground-muted">{selectedIds.size} selecionada{selectedIds.size === 1 ? "" : "s"}</p>
@@ -396,37 +403,40 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
         </div>
       )}
 
-      <Modal open={Boolean(focusedPhoto)} onClose={() => setFocusedPhoto(null)} title="Foto">
-        {focusedPhoto && (
-          <div>
-            <div className="overflow-hidden rounded-lg bg-black">
-              <img src={focusedPhoto.image_url} alt="" className="max-h-[55vh] w-full object-contain" />
-            </div>
+      {focusedPhoto && (
+        <AlbumPhotoViewer
+          photos={photos}
+          initialPhotoId={focusedPhoto.id}
+          onClose={() => setFocusedPhoto(null)}
+          onSave={(photo) => void savePhotos([photo])}
+          onFavorite={(photo) => void favoritePhoto(photo)}
+          onOpenComments={(photo) => void openComments(photo)}
+          busy={savingPhotos || favoritingPhotos}
+        />
+      )}
 
-            <div className="flex items-center gap-1.5 py-2">
-              <IconButton label="Adicionar aos favoritos" disabled={favoritingPhotos} onClick={() => void favoritePhoto(focusedPhoto)}><AppIcon name="star" /></IconButton>
-              <IconButton label="Comentar" onClick={() => commentInputRef.current?.focus()}><AppIcon name="messages" /></IconButton>
-              <IconButton label="Guardar no telemóvel" disabled={savingPhotos} onClick={() => void savePhotos([focusedPhoto])} className="ml-auto"><AppIcon name="save" /></IconButton>
-            </div>
-
-            <div className="space-y-2">
-              {commentsLoading && <LoadingSkeleton rows={2} />}
-              {!commentsLoading && comments.length === 0 && <p className="text-sm text-foreground-muted">Sê o primeiro a comentar.</p>}
-              {!commentsLoading && comments.map((comment) => (
-                <p key={comment.id} className="text-sm leading-5">
-                  <span className="whitespace-pre-wrap">{comment.body}</span>
-                  <span className="ml-2 text-[11px] text-foreground-muted">{formatCommentTime(comment.created_at)}</span>
-                </p>
-              ))}
-            </div>
-
-            <form onSubmit={submitComment} className="mt-4 flex items-center gap-1 rounded-full border border-input-border bg-input pl-4 pr-1">
-              <input ref={commentInputRef} value={commentBody} onChange={(event) => setCommentBody(event.target.value)} maxLength={2000} placeholder="Escreve um comentário..." className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted" />
-              <IconButton type="submit" label="Enviar comentário" disabled={!commentBody.trim() || sendingComment}><AppIcon name="send" className="h-4 w-4" /></IconButton>
-            </form>
-          </div>
-        )}
-      </Modal>
+      <FilterDrawer
+        open={Boolean(commentsPhoto)}
+        onClose={() => setCommentsPhoto(null)}
+        title="Comentários"
+        footer={
+          <form onSubmit={submitComment} className="flex items-center gap-1 rounded-full border border-input-border bg-input pl-4 pr-1">
+            <input ref={commentInputRef} value={commentBody} onChange={(event) => setCommentBody(event.target.value)} maxLength={2000} placeholder="Escreve um comentário..." className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted" />
+            <IconButton type="submit" label="Enviar comentário" disabled={!commentBody.trim() || sendingComment}><AppIcon name="send" className="h-4 w-4" /></IconButton>
+          </form>
+        }
+      >
+        <div className="space-y-2">
+          {commentsLoading && <LoadingSkeleton rows={2} />}
+          {!commentsLoading && comments.length === 0 && <p className="text-sm text-foreground-muted">Sê o primeiro a comentar.</p>}
+          {!commentsLoading && comments.map((comment) => (
+            <p key={comment.id} className="text-sm leading-5">
+              <span className="whitespace-pre-wrap">{comment.body}</span>
+              <span className="ml-2 text-[11px] text-foreground-muted">{formatCommentTime(comment.created_at)}</span>
+            </p>
+          ))}
+        </div>
+      </FilterDrawer>
 
       <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="Partilhar álbum" description="Quem ler este código com a câmara do telemóvel entra diretamente no álbum.">
         <div className="scale-in rounded-lg border border-zinc-800 bg-[#f2f1ec] p-4 text-black">
