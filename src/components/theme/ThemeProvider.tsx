@@ -35,11 +35,14 @@ function getStoredTheme(): PreferredTheme {
 
 function applyTheme(preferredTheme: PreferredTheme, resolvedTheme: ResolvedTheme) {
   const root = document.documentElement;
+  const changed = root.dataset.theme !== resolvedTheme;
+  if (changed) root.classList.add("theme-transitioning");
   root.dataset.theme = resolvedTheme;
   root.dataset.themePreference = preferredTheme;
   root.style.colorScheme = resolvedTheme;
   const themeColor = resolvedTheme === "light" ? LIGHT_THEME_COLOR : DARK_THEME_COLOR;
   document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute("content", themeColor);
+  if (changed) window.setTimeout(() => root.classList.remove("theme-transitioning"), 320);
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

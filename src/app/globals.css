@@ -2,122 +2,124 @@
 @import "../styles/interaction-tokens.css";
 
 :root {
-  --background: #0b0b0b;
-  --background-subtle: #101010;
-  --background-elevated: #141414;
+  --background: #070707;
+  --background-subtle: #0a0a0a;
+  --background-elevated: #111111;
   --surface: #111111;
-  --surface-secondary: #181818;
-  --surface-hover: #1f1f1f;
-  --surface-active: rgb(220 38 38 / 0.16);
-  --foreground: #f2f1ec;
-  --foreground-secondary: #d4d4d8;
-  --foreground-muted: #71717a;
-  --border: #27272a;
-  --border-strong: #52525b;
-  --accent: #dc2626;
-  --accent-hover: #ef4444;
+  --surface-secondary: #161616;
+  --surface-hover: #171717;
+  --surface-active: rgb(239 43 45 / 0.14);
+  --foreground: #f5f5f2;
+  --foreground-secondary: #c7c7c2;
+  --foreground-muted: #9d9d9d;
+  --border: rgb(255 255 255 / 0.08);
+  --border-strong: rgb(255 255 255 / 0.16);
+  --accent: #ef2b2d;
+  --accent-hover: #ff4547;
   --accent-foreground: #fff7f7;
-  --danger: #ef4444;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --overlay: rgb(0 0 0 / 0.72);
-  --input-background: #050505;
-  --input-border: #27272a;
-  --input-placeholder: #52525b;
-  --card-background: #101010;
-  --header-background: rgb(11 11 11 / 0.96);
-  --bottom-nav-background: rgb(11 11 11 / 0.97);
+  --danger: #ef2b2d;
+  --success: #3ba55d;
+  --warning: #c9973a;
+  --overlay: rgb(0 0 0 / 0.7);
+  --input-background: #0d0d0d;
+  --input-border: rgb(255 255 255 / 0.08);
+  --input-placeholder: #6b6b6b;
+  --card-background: #111111;
+  --header-background: rgb(7 7 7 / 0.72);
+  --bottom-nav-background: rgb(7 7 7 / 0.85);
   --dropdown-background: #111111;
-  --modal-background: #0b0b0b;
+  --modal-background: #111111;
   --toast-background: rgb(17 17 17 / 0.98);
-  --skeleton-background: #151515;
-  --skeleton-highlight: rgb(255 255 255 / 0.055);
-  --focus-ring: #dc2626;
-  --brand-surface: #090909;
-  --brand-surface-elevated: #141414;
-  --brand-surface-hover: #1c1c1c;
-  --brand-foreground: #f7f5ef;
-  --brand-muted: #aaa69e;
-  --brand-border: rgb(255 255 255 / 0.1);
+  --skeleton-background: #131313;
+  --skeleton-highlight: rgb(255 255 255 / 0.05);
+  --focus-ring: #ef2b2d;
+  --brand-surface: #070707;
+  --brand-surface-elevated: #111111;
+  --brand-surface-hover: #171717;
+  --brand-foreground: #f5f5f2;
+  --brand-muted: #9d9d9d;
+  --brand-border: rgb(255 255 255 / 0.08);
   --header-height: 4rem;
-  --dark-surface: #090909;
-  --dark-surface-elevated: #141414;
-  --dark-foreground: #f7f5ef;
-  --dark-muted: #aaa69e;
-  --dark-border: rgb(255 255 255 / 0.1);
-  --shadow-header: 0 2px 8px rgb(0 0 0 / 0.22);
-  --shadow-header-light: 0 3px 10px rgb(0 0 0 / 0.28);
-  --shadow-card: 0 8px 22px rgb(0 0 0 / 0.18);
-  --shadow-card-hover: 0 12px 28px rgb(0 0 0 / 0.24);
-  --shadow-panel: 0 10px 26px rgb(0 0 0 / 0.22);
-  --shadow-floating: 0 8px 20px rgb(0 0 0 / 0.28);
-  --shadow-dropdown: 0 12px 30px rgb(0 0 0 / 0.32);
-  --shadow-modal: 0 18px 42px rgb(0 0 0 / 0.38);
-  --shadow-button: 0 3px 8px rgb(0 0 0 / 0.24);
-  --shadow-focus: 0 0 0 3px rgb(220 38 38 / 0.2);
-  --shadow-map-panel: 0 14px 34px rgb(0 0 0 / 0.38);
-  --font-geist-sans: Arial, Helvetica, sans-serif;
-  --font-geist-mono: "Courier New", Courier, monospace;
+  --dark-surface: #070707;
+  --dark-surface-elevated: #111111;
+  --dark-foreground: #f5f5f2;
+  --dark-muted: #9d9d9d;
+  --dark-border: rgb(255 255 255 / 0.08);
+  --shadow-header: 0 1px 0 rgb(255 255 255 / 0.06);
+  --shadow-header-light: 0 1px 0 rgb(255 255 255 / 0.06);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-card-hover: 0 10px 28px rgb(0 0 0 / 0.4);
+  --shadow-panel: 0 10px 28px rgb(0 0 0 / 0.35);
+  --shadow-floating: 0 10px 28px rgb(0 0 0 / 0.4);
+  --shadow-dropdown: 0 14px 34px rgb(0 0 0 / 0.45);
+  --shadow-modal: 0 24px 60px rgb(0 0 0 / 0.55);
+  --shadow-button: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-focus: 0 0 0 3px rgb(239 43 45 / 0.25);
+  --shadow-map-panel: 0 24px 60px rgb(0 0 0 / 0.55);
   color-scheme: dark;
 }
 
 [data-theme="light"] {
-  --background: #f4f0e8;
-  --background-subtle: #eee8dd;
-  --background-elevated: #fffaf2;
-  --surface: #fffaf2;
-  --surface-secondary: #f0eadf;
-  --surface-hover: #ebe3d6;
-  --surface-active: rgb(220 38 38 / 0.11);
-  --foreground: #1b1816;
-  --foreground-secondary: #4d4740;
-  --foreground-muted: #81776c;
-  --border: #ded5c8;
-  --border-strong: #b9ad9f;
-  --accent: #dc2626;
-  --accent-hover: #b91c1c;
-  --accent-foreground: #fff7f2;
-  --overlay: rgb(0 0 0 / 0.62);
-  --input-background: #fffdf8;
-  --input-border: #d7cdbf;
-  --input-placeholder: #9a9085;
-  --card-background: #fffaf2;
-  --header-background: rgb(11 11 11 / 0.96);
-  --bottom-nav-background: rgb(255 250 242 / 0.97);
-  --dropdown-background: #fffaf2;
-  --modal-background: #fffaf2;
-  --toast-background: rgb(27 24 22 / 0.96);
-  --skeleton-background: #e4dbce;
-  --skeleton-highlight: rgb(255 255 255 / 0.55);
-  --brand-surface: #090909;
-  --brand-surface-elevated: #141414;
-  --brand-surface-hover: #1c1c1c;
-  --brand-foreground: #f7f5ef;
-  --brand-muted: #aaa69e;
-  --brand-border: rgb(255 255 255 / 0.1);
-  --dark-surface: #090909;
-  --dark-surface-elevated: #141414;
-  --dark-foreground: #f7f5ef;
-  --dark-muted: #aaa69e;
-  --dark-border: rgb(255 255 255 / 0.1);
-  --shadow-header: 0 3px 10px rgb(27 24 22 / 0.24);
-  --shadow-header-light: 0 3px 10px rgb(27 24 22 / 0.24);
-  --shadow-card: 0 8px 22px rgb(27 24 22 / 0.11);
-  --shadow-card-hover: 0 12px 28px rgb(27 24 22 / 0.17);
-  --shadow-panel: 0 10px 26px rgb(27 24 22 / 0.13);
-  --shadow-floating: 0 8px 22px rgb(27 24 22 / 0.16);
-  --shadow-dropdown: 0 14px 32px rgb(27 24 22 / 0.2);
-  --shadow-modal: 0 18px 42px rgb(27 24 22 / 0.24);
-  --shadow-button: 0 3px 8px rgb(27 24 22 / 0.16);
-  --shadow-focus: 0 0 0 3px rgb(185 28 28 / 0.16);
-  --shadow-map-panel: 0 14px 34px rgb(0 0 0 / 0.42);
+  --background: #f8f8f6;
+  --background-subtle: #f4f4f1;
+  --background-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-secondary: #f1f1ee;
+  --surface-hover: #ececE8;
+  --surface-active: rgb(239 43 45 / 0.1);
+  --foreground: #121212;
+  --foreground-secondary: #4a4a48;
+  --foreground-muted: #5e5e5e;
+  --border: rgb(0 0 0 / 0.08);
+  --border-strong: rgb(0 0 0 / 0.16);
+  --accent: #ef2b2d;
+  --accent-hover: #d81f21;
+  --accent-foreground: #fff7f7;
+  --danger: #ef2b2d;
+  --success: #2f8a4d;
+  --warning: #a97a2a;
+  --overlay: rgb(18 18 18 / 0.55);
+  --input-background: #ffffff;
+  --input-border: rgb(0 0 0 / 0.12);
+  --input-placeholder: #9a9a97;
+  --card-background: #ffffff;
+  --header-background: rgb(248 248 246 / 0.75);
+  --bottom-nav-background: rgb(248 248 246 / 0.9);
+  --dropdown-background: #ffffff;
+  --modal-background: #ffffff;
+  --toast-background: rgb(18 18 18 / 0.96);
+  --skeleton-background: #eeeeea;
+  --skeleton-highlight: rgb(255 255 255 / 0.8);
+  --focus-ring: #ef2b2d;
+  --brand-surface: #070707;
+  --brand-surface-elevated: #111111;
+  --brand-surface-hover: #171717;
+  --brand-foreground: #f5f5f2;
+  --brand-muted: #9d9d9d;
+  --brand-border: rgb(255 255 255 / 0.08);
+  --dark-surface: #070707;
+  --dark-surface-elevated: #111111;
+  --dark-foreground: #f5f5f2;
+  --dark-muted: #9d9d9d;
+  --dark-border: rgb(255 255 255 / 0.08);
+  --shadow-header: 0 1px 0 rgb(0 0 0 / 0.06);
+  --shadow-header-light: 0 1px 0 rgb(0 0 0 / 0.06);
+  --shadow-card: 0 1px 2px rgb(18 18 18 / 0.06);
+  --shadow-card-hover: 0 10px 28px rgb(18 18 18 / 0.12);
+  --shadow-panel: 0 10px 28px rgb(18 18 18 / 0.1);
+  --shadow-floating: 0 10px 28px rgb(18 18 18 / 0.12);
+  --shadow-dropdown: 0 14px 34px rgb(18 18 18 / 0.14);
+  --shadow-modal: 0 24px 60px rgb(18 18 18 / 0.18);
+  --shadow-button: 0 1px 2px rgb(18 18 18 / 0.08);
+  --shadow-focus: 0 0 0 3px rgb(239 43 45 / 0.18);
+  --shadow-map-panel: 0 24px 60px rgb(18 18 18 / 0.24);
   color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 html {
@@ -158,11 +160,13 @@ body {
   --color-toast: var(--toast-background);
   --color-skeleton: var(--skeleton-background);
   --color-skeleton-highlight: var(--skeleton-highlight);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-geist-mono), "Courier New", Courier, monospace;
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
-  --radius-lg: 1rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --spacing: 0.3125rem;
 }
 
 body,
@@ -184,6 +188,27 @@ select {
     color var(--motion-fast) var(--ease-standard),
     fill var(--motion-fast) var(--ease-standard),
     stroke var(--motion-fast) var(--ease-standard);
+}
+
+/* Brief, deliberate window (toggled by ThemeProvider) that makes a theme
+   switch fade smoothly across every element instead of flashing. Scoped to
+   this class only so it never adds transition cost to normal interactions. */
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition:
+    background-color var(--motion-normal) var(--ease-standard),
+    border-color var(--motion-normal) var(--ease-standard),
+    color var(--motion-normal) var(--ease-standard),
+    fill var(--motion-normal) var(--ease-standard),
+    stroke var(--motion-normal) var(--ease-standard),
+    box-shadow var(--motion-normal) var(--ease-standard) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning * {
+    transition: none !important;
+  }
 }
 
 input,

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { DesktopHeader } from "@/components/DesktopHeader";
@@ -11,6 +12,9 @@ import { SplashBootstrapScript, SplashScreen } from "@/components/brand/SplashSc
 import { HubOverlayProvider } from "@/components/hub/HubOverlayProvider";
 import { MobileBottomNavigation } from "@/components/navigation/MobileBottomNavigation";
 import { isMobileSimplificationEnabled } from "@/lib/mobile-simplification/flag";
+
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], display: "swap" });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://paranoid.pt"),
@@ -60,8 +64,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f0e8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0b0b" },
+    { media: "(prefers-color-scheme: light)", color: "#f8f8f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#070707" },
   ],
   colorScheme: "dark light",
   width: "device-width",
@@ -82,7 +86,7 @@ export default function RootLayout({
       data-theme="dark"
       data-theme-preference="dark"
       data-mobile-simplification={mobileSimplificationEnabled ? "enabled" : undefined}
-      className="h-full antialiased"
+      className={`h-full antialiased ${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
       <head>
