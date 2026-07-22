@@ -107,12 +107,14 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
   }
 
   function startLongPress(photoId: string) {
+    if (longPressTimerRef.current) return;
     longPressTriggeredRef.current = false;
     longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
       longPressTriggeredRef.current = true;
       setSelectMode(true);
       setSelectedIds(new Set([photoId]));
-    }, 500);
+    }, 450);
   }
 
   function cancelLongPress() {
@@ -331,8 +333,6 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
         {uploading && <span className="self-center text-xs font-bold text-foreground-muted">A enviar...</span>}
       </Card>
 
-      {photos.length > 0 && !selectMode && <p className="mb-3 text-xs font-bold text-foreground-muted">Mantém premida uma foto para selecionar várias.</p>}
-
       {photos.length === 0 && <EmptyState title="Ainda não há fotos." description={isOwner ? "Adiciona a primeira foto acima." : "Quando alguém adicionar fotos, aparecem aqui."} />}
 
       {photos.length > 0 && (
@@ -343,14 +343,18 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
               <button
                 key={photo.id}
                 type="button"
-                onPointerDown={() => startLongPress(photo.id)}
-                onPointerUp={cancelLongPress}
-                onPointerLeave={cancelLongPress}
-                onPointerCancel={cancelLongPress}
+                onTouchStart={() => startLongPress(photo.id)}
+                onTouchEnd={cancelLongPress}
+                onTouchMove={cancelLongPress}
+                onTouchCancel={cancelLongPress}
+                onMouseDown={() => startLongPress(photo.id)}
+                onMouseUp={cancelLongPress}
+                onMouseLeave={cancelLongPress}
+                onContextMenu={(event) => event.preventDefault()}
                 onClick={() => handlePhotoActivate(photo)}
-                className={`pressable focus-ring relative aspect-square touch-manipulation select-none overflow-hidden rounded-lg border bg-surface [-webkit-touch-callout:none] ${selected ? "border-accent" : "border-border"}`}
+                className={`pressable focus-ring relative aspect-square touch-manipulation select-none overflow-hidden rounded-lg border bg-surface [-webkit-touch-callout:none] [-webkit-user-select:none] ${selected ? "border-accent" : "border-border"}`}
               >
-                <img src={photo.image_url} alt="" draggable={false} className="h-full w-full object-cover" />
+                <img src={photo.image_url} alt="" draggable={false} className="h-full w-full touch-manipulation select-none object-cover [-webkit-touch-callout:none] [-webkit-user-select:none]" />
                 {selectMode && (
                   <span className={`absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full border-2 ${selected ? "border-accent bg-accent text-white" : "border-white/80 bg-black/30"}`}>
                     {selected && <AppIcon name="check" className="h-3.5 w-3.5" />}
