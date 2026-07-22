@@ -36,21 +36,16 @@ export function useDialogBehavior({
       ? document.activeElement
       : null;
 
-    // Locking scroll with only `overflow: hidden` is unreliable on mobile
-    // Safari (the background can still scroll/bounce), which left the page
-    // in a shifted state that needed a resize to shake loose. Pinning the
-    // body with `position: fixed` at the current scroll offset, then
-    // restoring the exact scroll position on close, is the robust fix.
-    const scrollY = window.scrollY;
-    const body = document.body;
-    const previousPosition = body.style.position;
-    const previousTop = body.style.top;
-    const previousWidth = body.style.width;
-    const previousOverflow = body.style.overflow;
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
+    // Pinning body with `position: fixed` to lock background scroll breaks
+    // touch interaction (scroll and even focusing inputs) inside the dialog
+    // itself once the on-screen keyboard opens on iOS Safari. Plain
+    // `overflow: hidden` on the root element avoids that, at the minor cost
+    // of not being bulletproof against background bounce on very old iOS.
+    const html = document.documentElement;
+    const previousOverflow = html.style.overflow;
+    const previousOverscroll = html.style.overscrollBehavior;
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
 
     const frame = window.requestAnimationFrame(() => {
       const firstFocusable = containerRef.current?.querySelector<HTMLElement>(focusableSelector);
@@ -87,11 +82,8 @@ export function useDialogBehavior({
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.cancelAnimationFrame(frame);
-      body.style.position = previousPosition;
-      body.style.top = previousTop;
-      body.style.width = previousWidth;
-      body.style.overflow = previousOverflow;
-      window.scrollTo(0, scrollY);
+      html.style.overflow = previousOverflow;
+      html.style.overscrollBehavior = previousOverscroll;
       window.removeEventListener("keydown", handleKeyDown);
       returnFocusRef.current?.focus();
     };
