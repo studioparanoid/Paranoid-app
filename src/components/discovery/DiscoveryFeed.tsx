@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppIcon } from "@/components/AppIcon";
 import { FeedEventItem, FeedItem, FeedSignalItem, FeedVenueItem, kindIcon } from "@/components/discovery/feed/FeedItem";
+import { Reveal } from "@/components/motion/Reveal";
 import type { DiscoveryAction, DiscoveryItem, DiscoveryLocation, DiscoveryResponse } from "@/lib/discovery/types";
 import type { HubConversationContext, HubHistoryItem } from "@/lib/hub/types";
 
@@ -140,9 +141,13 @@ export function DiscoveryFeed({ history, standalone = false, variant = "compact"
 
       {visibleItems.length > 0 && (
         <div className={variant === "immersive" ? "mt-4" : "mt-5 flex flex-col gap-3"}>
-          {visibleItems.map((item) => variant === "immersive"
-            ? <ImmersiveDiscoveryFeedItem key={`${item.kind}:${item.id}`} item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />
-            : <DiscoveryFeedItem key={`${item.kind}:${item.id}`} item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />)}
+          {visibleItems.map((item, index) => (
+            <Reveal key={`${item.kind}:${item.id}`} delay={Math.min(index * 0.06, 0.3)}>
+              {variant === "immersive"
+                ? <ImmersiveDiscoveryFeedItem item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />
+                : <DiscoveryFeedItem item={item} intent={latest?.response.intent || "general"} onDismiss={dismiss} />}
+            </Reveal>
+          ))}
         </div>
       )}
 

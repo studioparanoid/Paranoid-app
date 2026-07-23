@@ -7,6 +7,7 @@ import { CardGrid } from "@/components/CardGrid";
 import { AlbumStackedPreview } from "@/components/albums/AlbumStackedPreview";
 import { EntityProfileHeader } from "@/components/EntityProfileHeader";
 import { EventCard } from "@/components/EventCard";
+import { Reveal } from "@/components/motion/Reveal";
 import { LinkButton } from "@/components/ui/Button";
 import { listCoverPhotosForAlbums, listPublicAlbumsForEntity, type PhotoAlbum } from "@/lib/albums";
 import { findShopLinkForUserIds } from "@/lib/shop";
@@ -394,24 +395,25 @@ export default function ArtistPage() {
 
           {events.length > 0 && (
             <CardGrid>
-              {events.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={{
-                    id: event.id,
-                    slug: event.slug,
-                    title: event.title,
-                    date: event.display_date || event.start_at || event.start_date || "Data por definir",
-                    time: event.display_time,
-                    venue: event.venue_name,
-                    city: event.city,
-                    price: event.price || event.ticket_price,
-                    category: event.category,
-                    image: event.image_url,
-                    featured: Boolean(event.featured),
-                  }}
-                  showSave
-                />
+              {events.map((event, index) => (
+                <Reveal key={event.id} delay={Math.min(index * 0.05, 0.25)}>
+                  <EventCard
+                    event={{
+                      id: event.id,
+                      slug: event.slug,
+                      title: event.title,
+                      date: event.display_date || event.start_at || event.start_date || "Data por definir",
+                      time: event.display_time,
+                      venue: event.venue_name,
+                      city: event.city,
+                      price: event.price || event.ticket_price,
+                      category: event.category,
+                      image: event.image_url,
+                      featured: Boolean(event.featured),
+                    }}
+                    showSave
+                  />
+                </Reveal>
               ))}
             </CardGrid>
           )}
@@ -425,8 +427,10 @@ export default function ArtistPage() {
             </div>
             {albums.length > 0 && (
               <CardGrid>
-                {albums.map((album) => (
-                  <AlbumStackedPreview key={album.id} photos={albumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} visibility={album.visibility} />
+                {albums.map((album, index) => (
+                  <Reveal key={album.id} delay={Math.min(index * 0.05, 0.25)}>
+                    <AlbumStackedPreview photos={albumCovers[album.id] || []} title={album.title} href={`/albuns/${album.id}`} visibility={album.visibility} />
+                  </Reveal>
                 ))}
               </CardGrid>
             )}

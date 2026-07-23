@@ -5,6 +5,7 @@ import { CardGrid } from "@/components/CardGrid";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { ShopCartLink } from "@/components/shop/ShopCartLink";
 import { Input } from "@/components/ui/Input";
+import { Reveal } from "@/components/motion/Reveal";
 import { fallbackShopCategories, type ShopProduct } from "@/lib/shop";
 
 type ShopClientProps = {
@@ -85,8 +86,10 @@ export function ShopClient({ products }: ShopClientProps) {
       </section>
 
       <CardGrid>
-        {filteredProducts.map((product) => (
-          <ProductCard product={product} key={product.id} />
+        {filteredProducts.map((product, index) => (
+          <Reveal key={product.id} delay={Math.min(index * 0.05, 0.25)}>
+            <ProductCard product={product} />
+          </Reveal>
         ))}
       </CardGrid>
 

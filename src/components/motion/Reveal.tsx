@@ -35,7 +35,7 @@ export function Reveal({ children, className, delay = 0, y = 24, blur = false }:
       className={className}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
+      viewport={{ once: true, amount: 0.2 }}
       variants={variants}
       transition={{ duration: 0.7, delay, ease: easePremium }}
     >
