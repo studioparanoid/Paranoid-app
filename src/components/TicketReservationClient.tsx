@@ -177,7 +177,7 @@ export function TicketReservationClient({
 
   if (loading) {
     return (
-      <div className="rounded-[2rem] border border-border bg-black p-5">
+      <div className="rounded-[2rem] border border-border bg-surface p-5">
         <p className="text-foreground-muted">A carregar bilheteira...</p>
       </div>
     );
@@ -210,7 +210,7 @@ export function TicketReservationClient({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[2rem] border border-border bg-black p-5">
+      <section className="rounded-[2rem] border border-border bg-surface p-5">
         <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Disponibilidade
         </p>
@@ -265,12 +265,12 @@ export function TicketReservationClient({
               setQuantity(Number(inputEvent.target.value))
             }
             disabled={hasActiveReservation}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)] disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)] disabled:opacity-50"
           />
         </div>
 
         {hasActiveReservation ? (
-          <p className="mt-4 rounded-2xl border border-border bg-black px-4 py-3 text-sm font-bold text-foreground-muted">
+          <p className="mt-4 rounded-2xl border border-border bg-input px-4 py-3 text-sm font-bold text-foreground-muted">
             Já tens uma reserva ativa para este evento.
           </p>
         ) : (
@@ -309,11 +309,11 @@ export function TicketReservationClient({
           {myReservations.map((reservation) => (
             <article
               key={reservation.id}
-              className="rounded-[1.5rem] border border-border bg-black p-4"
+              className="rounded-[1.5rem] border border-border bg-surface p-4"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-black text-[#f5f5f2]">
+                  <p className="text-sm font-black text-foreground">
                     {reservation.quantity} bilhete
                     {reservation.quantity === 1 ? "" : "s"}
                   </p>

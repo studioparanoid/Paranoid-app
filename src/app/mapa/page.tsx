@@ -1387,7 +1387,7 @@ export default function MapPage() {
         </div>
 
         {selectedEvent && (
-          <div className="relative z-10 w-full shrink-0 border-t border-white/10 bg-black p-3 lg:p-4">
+          <div className="relative z-10 w-full shrink-0 border-t border-white/10 bg-surface p-3 lg:p-4">
             <div className="flex gap-2">
               <Link
                 href={`/eventos/${selectedEvent.slug}`}

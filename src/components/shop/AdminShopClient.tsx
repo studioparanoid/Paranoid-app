@@ -349,7 +349,7 @@ export function AdminShopClient() {
               value={commission}
               onChange={(event) => setCommission(event.target.value)}
               inputMode="numeric"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
             />
           </label>
           <label className="mt-4 block space-y-2">
@@ -360,7 +360,7 @@ export function AdminShopClient() {
               value={shipping}
               onChange={(event) => setShipping(event.target.value)}
               inputMode="decimal"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
             />
           </label>
         </section>

@@ -3,7 +3,7 @@ import { OrganizerTicketsClient } from "@/components/OrganizerTicketsClient";
 
 export default function OrganizerTicketsPage() {
   return (
-    <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2] lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground lg:px-10 lg:py-12">
       <section className="mx-auto max-w-md lg:max-w-7xl">
         <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
           <div>

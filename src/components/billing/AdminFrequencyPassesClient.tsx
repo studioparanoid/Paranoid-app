@@ -142,25 +142,25 @@ export function AdminFrequencyPassesClient() {
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl border border-border bg-black p-4">
+            <div className="rounded-2xl border border-border bg-surface p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                 Início
               </p>
               <p className="mt-2 font-black">{formatDate(pass.startsAt)}</p>
             </div>
-            <div className="rounded-2xl border border-border bg-black p-4">
+            <div className="rounded-2xl border border-border bg-surface p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                 Fim
               </p>
               <p className="mt-2 font-black">{formatDate(pass.endsAt)}</p>
             </div>
-            <div className="rounded-2xl border border-border bg-black p-4">
+            <div className="rounded-2xl border border-border bg-surface p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                 Elegíveis
               </p>
               <p className="mt-2 font-black">{pass.eligibleEventsCount}</p>
             </div>
-            <div className="rounded-2xl border border-border bg-black p-4">
+            <div className="rounded-2xl border border-border bg-surface p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                 No período
               </p>

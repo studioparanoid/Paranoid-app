@@ -399,28 +399,28 @@ export function AdminTicketsClient() {
           </p>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-3xl font-black">{events.length}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Eventos
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-3xl font-black">{reservations.length}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Reservas
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-3xl font-black">{totalReservedTickets}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Lug. ativos
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-3xl font-black">{totalCheckedInTickets}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Entradas
@@ -504,7 +504,7 @@ export function AdminTicketsClient() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Código, email, evento, cidade..."
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
@@ -524,7 +524,7 @@ export function AdminTicketsClient() {
                         | "cancelled"
                     )
                   }
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
                 >
                   <option value="all">Todos</option>
                   <option value="reserved">Reservados</option>
@@ -541,7 +541,7 @@ export function AdminTicketsClient() {
                 <select
                   value={eventFilter}
                   onChange={(event) => setEventFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
                 >
                   <option value="all">Todos</option>
 
@@ -636,7 +636,7 @@ export function AdminTicketsClient() {
                     </div>
 
                     <div className="mt-5 grid grid-cols-3 gap-2">
-                      <div className="rounded-2xl border border-border bg-black p-3">
+                      <div className="rounded-2xl border border-border bg-surface p-3">
                         <p className="text-xl font-black">
                           {available === null ? "∞" : available}
                         </p>
@@ -645,7 +645,7 @@ export function AdminTicketsClient() {
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-border bg-black p-3">
+                      <div className="rounded-2xl border border-border bg-surface p-3">
                         <p className="text-xl font-black">
                           {eventReservedTickets}
                         </p>
@@ -654,7 +654,7 @@ export function AdminTicketsClient() {
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-border bg-black p-3">
+                      <div className="rounded-2xl border border-border bg-surface p-3">
                         <p className="text-xl font-black">
                           {eventCheckedInTickets}
                         </p>
@@ -736,7 +736,7 @@ export function AdminTicketsClient() {
                     </span>
                   </div>
 
-                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-border bg-black p-4 text-sm text-foreground-muted">
+                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-border bg-surface p-4 text-sm text-foreground-muted">
                     <p>
                       <span className="font-bold text-foreground-secondary">Email:</span>{" "}
                       {reservation.user_email || "Sem email"}

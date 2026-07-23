@@ -232,14 +232,14 @@ export function AdminProfileApprovalsClient() {
         </h2>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-[1.5rem] border border-border bg-black p-4">
+          <div className="rounded-[1.5rem] border border-border bg-surface p-4">
             <p className="text-3xl font-black">{pendingClaims.length}</p>
             <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
               Pendentes
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-border bg-black p-4">
+          <div className="rounded-[1.5rem] border border-border bg-surface p-4">
             <p className="text-3xl font-black">{claims.length}</p>
             <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
               Total
@@ -289,7 +289,7 @@ export function AdminProfileApprovalsClient() {
         </div>
 
         {message && (
-          <p className="mt-5 rounded-2xl border border-border bg-black p-4 text-sm text-foreground-muted">
+          <p className="mt-5 rounded-2xl border border-border bg-surface p-4 text-sm text-foreground-muted">
             {message}
           </p>
         )}

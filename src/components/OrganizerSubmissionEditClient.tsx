@@ -401,7 +401,7 @@ export function OrganizerSubmissionEditClient({
           </p>
         </div>
 
-        <div className="rounded-[2rem] border border-border bg-black p-5">
+        <div className="rounded-[2rem] border border-border bg-surface p-5">
           <p className="text-xs uppercase tracking-[0.25em] text-danger">
             Estado
           </p>
@@ -449,7 +449,7 @@ export function OrganizerSubmissionEditClient({
             value={title}
             disabled={locked}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
 
@@ -462,7 +462,7 @@ export function OrganizerSubmissionEditClient({
             value={organizer}
             disabled={locked}
             onChange={(event) => setOrganizer(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
 
@@ -476,7 +476,7 @@ export function OrganizerSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setArtistsText(event.target.value)}
             placeholder="Separar por vírgulas"
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
 
@@ -489,7 +489,7 @@ export function OrganizerSubmissionEditClient({
             value={category}
             disabled={locked}
             onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -506,7 +506,7 @@ export function OrganizerSubmissionEditClient({
             value={city}
             disabled={locked}
             onChange={(event) => setCity(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           >
             {cities.map((item) => (
               <option key={item}>{item}</option>
@@ -523,11 +523,11 @@ export function OrganizerSubmissionEditClient({
             value={venue}
             disabled={locked}
             onChange={(event) => setVenue(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3 lg:col-span-2">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-input px-4 py-3 lg:col-span-2">
           <input
             type="checkbox"
             checked={isMultiDay}
@@ -550,7 +550,7 @@ export function OrganizerSubmissionEditClient({
             value={eventDate}
             disabled={locked}
             onChange={(event) => handleEventDateChange(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
 
@@ -565,7 +565,7 @@ export function OrganizerSubmissionEditClient({
               value={endDate}
               disabled={locked}
               onChange={(event) => setEndDate(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
             />
           </div>
         )}
@@ -580,7 +580,7 @@ export function OrganizerSubmissionEditClient({
             value={eventTime}
             disabled={locked}
             onChange={(event) => setEventTime(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
 
@@ -594,7 +594,7 @@ export function OrganizerSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setPrice(event.target.value)}
             onBlur={() => setPrice(formatPriceValue(price))}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
 
@@ -613,7 +613,7 @@ export function OrganizerSubmissionEditClient({
             onChange={(event) =>
               handleTicketModeChange(event.target.value as TicketMode)
             }
-            className="w-full rounded-2xl border border-danger bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-danger bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           >
             <option value="none">Sem bilhetes / só informação</option>
             <option value="external">Bilheteira externa</option>
@@ -631,7 +631,7 @@ export function OrganizerSubmissionEditClient({
                 disabled={locked}
                 onChange={(event) => setTicketUrl(event.target.value)}
                 placeholder="https://shotgun.live/..."
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
               />
             </div>
           )}
@@ -649,7 +649,7 @@ export function OrganizerSubmissionEditClient({
                   onChange={(event) => setTicketPrice(event.target.value)}
                   onBlur={() => setTicketPrice(formatPriceValue(ticketPrice))}
                   placeholder="Ex: 10€"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -665,7 +665,7 @@ export function OrganizerSubmissionEditClient({
                   disabled={locked}
                   onChange={(event) => setTicketCapacity(event.target.value)}
                   placeholder="Ex: 100"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -679,7 +679,7 @@ export function OrganizerSubmissionEditClient({
                   disabled={locked}
                   onChange={(event) => setTicketButtonLabel(event.target.value)}
                   placeholder="Comprar na Paranoid"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
                 />
               </div>
             </div>
@@ -696,7 +696,7 @@ export function OrganizerSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setInstagramUrl(event.target.value)}
             placeholder="https://instagram.com/..."
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
 
@@ -710,7 +710,7 @@ export function OrganizerSubmissionEditClient({
             value={description}
             disabled={locked}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none disabled:opacity-50"
           />
         </div>
       </div>

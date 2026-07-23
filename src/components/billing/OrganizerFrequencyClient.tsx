@@ -211,25 +211,25 @@ export function OrganizerFrequencyClient() {
             Organizador: {organizer.name || organizer.id}
           </p>
         ) : (
-          <p className="mt-5 rounded-2xl border border-border bg-black p-4 text-sm text-foreground-muted">
+          <p className="mt-5 rounded-2xl border border-border bg-surface p-4 text-sm text-foreground-muted">
             Esta conta ainda não está ligada a um organizador.
           </p>
         )}
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[1.5rem] border border-border bg-black p-4">
+          <div className="rounded-[1.5rem] border border-border bg-surface p-4">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
               Início
             </p>
             <p className="mt-2 font-black">{formatDate(pass?.startsAt || null)}</p>
           </div>
-          <div className="rounded-[1.5rem] border border-border bg-black p-4">
+          <div className="rounded-[1.5rem] border border-border bg-surface p-4">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
               Válido até
             </p>
             <p className="mt-2 font-black">{formatDate(pass?.endsAt || null)}</p>
           </div>
-          <div className="rounded-[1.5rem] border border-border bg-black p-4">
+          <div className="rounded-[1.5rem] border border-border bg-surface p-4">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
               Dias
             </p>
@@ -256,7 +256,7 @@ export function OrganizerFrequencyClient() {
         </button>
 
         {message && (
-          <p className="mt-4 rounded-2xl border border-border bg-black p-4 text-sm font-bold text-foreground-secondary">
+          <p className="mt-4 rounded-2xl border border-border bg-surface p-4 text-sm font-bold text-foreground-secondary">
             {message}
           </p>
         )}
@@ -273,7 +273,7 @@ export function OrganizerFrequencyClient() {
           <li>Inclusão editorial quando fizer sentido.</li>
           <li>Estatísticas básicas em preparação.</li>
         </ul>
-        <p className="mt-5 rounded-2xl border border-border bg-black p-4 text-sm text-foreground-muted">
+        <p className="mt-5 rounded-2xl border border-border bg-surface p-4 text-sm text-foreground-muted">
           Divulgação editorial dos teus eventos durante o período ativo, de
           acordo com o calendário e critérios da Paranoid.
         </p>
@@ -294,7 +294,7 @@ export function OrganizerFrequencyClient() {
 
         <div className="mt-5 grid gap-3 lg:grid-cols-2">
           {events.length === 0 && (
-            <p className="rounded-[1.5rem] border border-border bg-black p-5 text-foreground-muted">
+            <p className="rounded-[1.5rem] border border-border bg-surface p-5 text-foreground-muted">
               Ainda não há eventos publicados elegíveis.
             </p>
           )}
@@ -302,7 +302,7 @@ export function OrganizerFrequencyClient() {
             <Link
               key={event.id}
               href={event.slug ? `/eventos/${event.slug}` : "/agenda"}
-              className="rounded-[1.5rem] border border-border bg-black p-5"
+              className="rounded-[1.5rem] border border-border bg-surface p-5"
             >
               <p className="text-xs font-black uppercase tracking-[0.25em] text-danger">
                 {formatDate(event.start_at)}

@@ -94,7 +94,7 @@ export function OrganizerDashboardClient() {
       </div>
     </header>
 
-    {organizers.length > 1 && <label className="mt-5 block max-w-sm"><span className="mb-2 block text-xs font-bold text-foreground-muted">Organizador</span><select value={selectedId} onChange={(event) => { setSelectedId(event.target.value); void loadOrganizerData(event.target.value); }} className="w-full rounded border border-border bg-black px-4 py-3">{organizers.map((organizer) => <option key={organizer.id} value={organizer.id}>{organizer.name}</option>)}</select></label>}
+    {organizers.length > 1 && <label className="mt-5 block max-w-sm"><span className="mb-2 block text-xs font-bold text-foreground-muted">Organizador</span><select value={selectedId} onChange={(event) => { setSelectedId(event.target.value); void loadOrganizerData(event.target.value); }} className="w-full rounded border border-border bg-input px-4 py-3">{organizers.map((organizer) => <option key={organizer.id} value={organizer.id}>{organizer.name}</option>)}</select></label>}
 
     <nav aria-label="Área do organizador" className="my-6 grid grid-cols-2 gap-2 sm:grid-cols-6">
       <a href="#eventos" className="pressable focus-ring rounded border border-border px-4 py-3 text-center text-sm font-bold hover:bg-surface-hover">Eventos</a>
@@ -125,5 +125,5 @@ export function OrganizerDashboardClient() {
 }
 
 function Metric({ value, label }: { value: number | string; label: string }) {
-  return <div className="bg-[#070707] p-4"><p className="text-2xl font-black">{value}</p><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-foreground-muted">{label}</p></div>;
+  return <div className="bg-background p-4"><p className="text-2xl font-black">{value}</p><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-foreground-muted">{label}</p></div>;
 }

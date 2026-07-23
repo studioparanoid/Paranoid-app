@@ -226,7 +226,7 @@ export function EventPublicActions({
   });
 
   return (
-    <section className="mt-8 rounded-[2rem] border border-border bg-black p-5">
+    <section className="mt-8 rounded-[2rem] border border-border bg-surface p-5">
       <p className="text-xs uppercase tracking-[0.25em] text-danger">
         Ações
       </p>

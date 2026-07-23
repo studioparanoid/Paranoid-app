@@ -142,7 +142,7 @@ export function AdminArtistEditClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
         <section className="mx-auto max-w-md">
           <p className="text-foreground-muted">A carregar artista...</p>
         </section>
@@ -152,7 +152,7 @@ export function AdminArtistEditClient({
 
   if (!artist) {
     return (
-      <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
         <section className="mx-auto max-w-md">
           <Link
             href="/admin/rede"
@@ -170,7 +170,7 @@ export function AdminArtistEditClient({
   }
 
   return (
-    <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
+    <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
       <section className="mx-auto max-w-md">
         <Link
           href="/admin/rede"
@@ -201,7 +201,7 @@ export function AdminArtistEditClient({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Nome do artista"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
@@ -224,7 +224,7 @@ export function AdminArtistEditClient({
               value={slug}
               onChange={(event) => setSlug(event.target.value)}
               placeholder="ex: dead-static"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <p className="mt-2 text-xs text-foreground-muted">
@@ -240,7 +240,7 @@ export function AdminArtistEditClient({
             <select
               value={city}
               onChange={(event) => setCity(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
             >
               {cities.map((item) => (
                 <option key={item}>{item}</option>
@@ -257,7 +257,7 @@ export function AdminArtistEditClient({
               value={genresText}
               onChange={(event) => setGenresText(event.target.value)}
               placeholder="Ex: Doom, Sludge, Punk"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <p className="mt-2 text-xs text-foreground-muted">
@@ -275,7 +275,7 @@ export function AdminArtistEditClient({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Descrição curta do artista"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
@@ -288,7 +288,7 @@ export function AdminArtistEditClient({
               value={instagram}
               onChange={(event) => setInstagram(event.target.value)}
               placeholder="https://instagram.com/..."
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
@@ -301,7 +301,7 @@ export function AdminArtistEditClient({
               value={bandcamp}
               onChange={(event) => setBandcamp(event.target.value)}
               placeholder="https://..."
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 

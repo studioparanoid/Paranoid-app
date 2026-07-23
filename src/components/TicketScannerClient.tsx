@@ -441,7 +441,7 @@ export function TicketScannerClient() {
               value={manualCode}
               onChange={(event) => setManualCode(event.target.value)}
               placeholder="Ex: A1B2C3D4E5"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <button
@@ -473,7 +473,7 @@ export function TicketScannerClient() {
               {lastResult.text}
             </p>
 
-            <div className="mt-6 rounded-[2rem] border border-black/20 bg-black/30 p-5 text-sm text-[#f5f5f2]">
+            <div className="mt-6 rounded-[2rem] border border-black/20 bg-black/30 p-5 text-sm text-foreground">
               <p>
                 <span className="font-black">Código:</span> {lastResult.code}
               </p>

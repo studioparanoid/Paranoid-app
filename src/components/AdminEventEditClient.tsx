@@ -783,7 +783,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           </p>
         </div>
 
-        <div className="rounded-[2rem] border border-border bg-black p-5">
+        <div className="rounded-[2rem] border border-border bg-surface p-5">
           <p className="text-xs uppercase tracking-[0.25em] text-danger">
             Estado
           </p>
@@ -824,7 +824,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             onChange={(event) =>
               handleImageChange(event.target.files?.[0] || null)
             }
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-sm text-foreground-muted file:mr-4 file:rounded-full file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-sm text-foreground-muted file:mr-4 file:rounded-full file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
           />
         </div>
 
@@ -843,7 +843,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
@@ -855,7 +855,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           <input
             value={slug}
             onChange={(event) => setSlug(slugify(event.target.value))}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
@@ -867,7 +867,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           <input
             value={organizer}
             onChange={(event) => setOrganizer(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
@@ -879,7 +879,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           >
             <option value="published">Publicado</option>
             <option value="archived">Arquivado</option>
@@ -896,7 +896,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             value={artistsText}
             onChange={(event) => setArtistsText(event.target.value)}
             placeholder="Separar por vírgulas"
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
@@ -908,7 +908,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           <select
             value={category}
             onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -924,7 +924,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           <select
             value={city}
             onChange={(event) => setCity(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           >
             {cities.map((item) => (
               <option key={item}>{item}</option>
@@ -940,11 +940,11 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           <input
             value={venue}
             onChange={(event) => setVenue(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3 lg:col-span-2">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-input px-4 py-3 lg:col-span-2">
           <input
             type="checkbox"
             checked={isMultiDay}
@@ -965,7 +965,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             type="date"
             value={eventDate}
             onChange={(event) => handleEventDateChange(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           />
         </div>
 
@@ -979,7 +979,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
               type="date"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
             />
           </div>
         )}
@@ -993,7 +993,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             type="time"
             value={eventTime}
             onChange={(event) => setEventTime(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           />
         </div>
 
@@ -1006,7 +1006,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             value={price}
             onChange={(event) => setPrice(event.target.value)}
             onBlur={() => setPrice(formatPriceValue(price))}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
@@ -1024,7 +1024,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             onChange={(event) =>
               handleTicketModeChange(event.target.value as TicketMode)
             }
-            className="w-full rounded-2xl border border-danger bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-danger bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           >
             <option value="none">Sem bilhetes / só informação</option>
             <option value="external">Bilheteira externa</option>
@@ -1041,7 +1041,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
                 value={ticketUrl}
                 onChange={(event) => setTicketUrl(event.target.value)}
                 placeholder="https://shotgun.live/..."
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
             </div>
           )}
@@ -1058,7 +1058,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
                   onChange={(event) => setTicketPrice(event.target.value)}
                   onBlur={() => setTicketPrice(formatPriceValue(ticketPrice))}
                   placeholder="Ex: 10€"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
@@ -1073,7 +1073,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
                   value={ticketCapacity}
                   onChange={(event) => setTicketCapacity(event.target.value)}
                   placeholder="Ex: 100"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
@@ -1086,7 +1086,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
                   value={ticketButtonLabel}
                   onChange={(event) => setTicketButtonLabel(event.target.value)}
                   placeholder="Comprar na Paranoid"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
             </div>
@@ -1102,11 +1102,11 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             value={instagramUrl}
             onChange={(event) => setInstagramUrl(event.target.value)}
             placeholder="https://instagram.com/..."
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-input px-4 py-3">
           <input
             type="checkbox"
             checked={featured}
@@ -1127,7 +1127,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             rows={8}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
       </div>

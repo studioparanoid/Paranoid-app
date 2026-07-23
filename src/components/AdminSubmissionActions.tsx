@@ -662,13 +662,13 @@ export function AdminSubmissionActions({
       )}
 
       {submission.municipality && (
-        <p className="rounded-2xl border border-border bg-black px-4 py-3 text-center text-xs font-bold text-foreground-muted">
+        <p className="rounded-2xl border border-border bg-input px-4 py-3 text-center text-xs font-bold text-foreground-muted">
           Concelho: {submission.municipality}
         </p>
       )}
 
       {submission.address && (
-        <p className="rounded-2xl border border-border bg-black px-4 py-3 text-center text-xs font-bold text-foreground-muted">
+        <p className="rounded-2xl border border-border bg-input px-4 py-3 text-center text-xs font-bold text-foreground-muted">
           Morada: {submission.address}
         </p>
       )}

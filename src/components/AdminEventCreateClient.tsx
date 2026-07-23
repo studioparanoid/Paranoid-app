@@ -900,7 +900,7 @@ export function AdminEventCreateClient() {
           </p>
         </div>
 
-        <div className="rounded-[2rem] border border-border bg-black p-5">
+        <div className="rounded-[2rem] border border-border bg-surface p-5">
           <p className="text-xs uppercase tracking-[0.25em] text-danger">
             Pré-visualização
           </p>
@@ -951,7 +951,7 @@ export function AdminEventCreateClient() {
             onChange={(event) =>
               handleImageChange(event.target.files?.[0] || null)
             }
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-sm text-foreground-muted file:mr-4 file:rounded-full file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-sm text-foreground-muted file:mr-4 file:rounded-full file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
           />
         </div>
 
@@ -977,7 +977,7 @@ export function AdminEventCreateClient() {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Ex: Noite Paranoid Vol. I"
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
@@ -999,7 +999,7 @@ export function AdminEventCreateClient() {
               clearGeocode();
             }}
             placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
           <LocationSuggestions query={venue} context={{ city, municipality, district, postal_code: postalCode }} onSelect={applyLocationResult} />
 
@@ -1017,11 +1017,11 @@ export function AdminEventCreateClient() {
             value={organizer}
             onChange={(event) => setOrganizer(event.target.value)}
             placeholder="Nome do coletivo, sala ou promotor"
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <div className="rounded-[2rem] border border-border bg-black p-5 lg:col-span-2">
+        <div className="rounded-[2rem] border border-border bg-surface p-5 lg:col-span-2">
           <p className="text-xs uppercase tracking-[0.3em] text-danger">
             3. Localização automática
           </p>
@@ -1045,7 +1045,7 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="Rua, número, espaço..."
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
               <LocationSuggestions query={address} context={{ venue, city, municipality, district, postal_code: postalCode }} onSelect={applyLocationResult} />
             </div>
@@ -1062,7 +1062,7 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="0000-000"
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
             </div>
 
@@ -1126,7 +1126,7 @@ export function AdminEventCreateClient() {
           <p className="mt-4 text-xs leading-relaxed text-foreground-muted">Pesquisa e mapa por OpenStreetMap/Nominatim. Se falhar, continua com preenchimento manual.</p>
         </div>
 
-        <div className="rounded-[2rem] border border-border bg-black p-5 lg:col-span-2">
+        <div className="rounded-[2rem] border border-border bg-surface p-5 lg:col-span-2">
           <p className="text-xs uppercase tracking-[0.3em] text-danger">
             4. Zona confirmada
           </p>
@@ -1150,7 +1150,7 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="Ex: Alvorge, Pombal, Leiria..."
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
 
               <datalist id="admin-event-city-suggestions">
@@ -1173,7 +1173,7 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="Ex: Ansião, Pombal, Leiria..."
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
 
               <datalist id="admin-event-municipality-suggestions">
@@ -1195,7 +1195,7 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="Ex: Leiria, Coimbra, Lisboa..."
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
             </div>
           </div>
@@ -1215,7 +1215,7 @@ export function AdminEventCreateClient() {
           <select
             value={category}
             onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -1232,11 +1232,11 @@ export function AdminEventCreateClient() {
             value={artistsText}
             onChange={(event) => setArtistsText(event.target.value)}
             placeholder="Separar por vírgulas"
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3 lg:col-span-2">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-input px-4 py-3 lg:col-span-2">
           <input
             type="checkbox"
             checked={isMultiDay}
@@ -1257,7 +1257,7 @@ export function AdminEventCreateClient() {
             type="date"
             value={eventDate}
             onChange={(event) => handleEventDateChange(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           />
         </div>
 
@@ -1271,7 +1271,7 @@ export function AdminEventCreateClient() {
               type="date"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
             />
           </div>
         )}
@@ -1285,7 +1285,7 @@ export function AdminEventCreateClient() {
             type="time"
             value={eventTime}
             onChange={(event) => setEventTime(event.target.value)}
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           />
         </div>
 
@@ -1299,7 +1299,7 @@ export function AdminEventCreateClient() {
             onChange={(event) => setPrice(event.target.value)}
             onBlur={() => setPrice(formatPriceValue(price))}
             placeholder="Ex: 5€, 10€ ou Entrada livre"
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
@@ -1317,7 +1317,7 @@ export function AdminEventCreateClient() {
             onChange={(event) =>
               handleTicketModeChange(event.target.value as TicketMode)
             }
-            className="w-full rounded-2xl border border-danger bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-danger bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
           >
             <option value="none">Sem bilhetes / só informação</option>
             <option value="external">Bilheteira externa</option>
@@ -1334,7 +1334,7 @@ export function AdminEventCreateClient() {
                 value={ticketUrl}
                 onChange={(event) => setTicketUrl(event.target.value)}
                 placeholder="https://shotgun.live/..."
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
             </div>
           )}
@@ -1351,7 +1351,7 @@ export function AdminEventCreateClient() {
                   onChange={(event) => setTicketPrice(event.target.value)}
                   onBlur={() => setTicketPrice(formatPriceValue(ticketPrice))}
                   placeholder="Ex: 10€"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
@@ -1366,7 +1366,7 @@ export function AdminEventCreateClient() {
                   value={ticketCapacity}
                   onChange={(event) => setTicketCapacity(event.target.value)}
                   placeholder="Ex: 100"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
@@ -1379,7 +1379,7 @@ export function AdminEventCreateClient() {
                   value={ticketButtonLabel}
                   onChange={(event) => setTicketButtonLabel(event.target.value)}
                   placeholder="Comprar na Paranoid"
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
             </div>
@@ -1395,11 +1395,11 @@ export function AdminEventCreateClient() {
             value={instagramUrl}
             onChange={(event) => setInstagramUrl(event.target.value)}
             placeholder="https://instagram.com/..."
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-input px-4 py-3">
           <input
             type="checkbox"
             checked={featured}
@@ -1421,7 +1421,7 @@ export function AdminEventCreateClient() {
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Descrição, horários, contexto, links úteis..."
-            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
       </div>

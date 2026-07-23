@@ -289,13 +289,13 @@ export function AdminNetworkClient() {
               value={artistName}
               onChange={(event) => setArtistName(event.target.value)}
               placeholder="Nome do artista"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <select
               value={artistCity}
               onChange={(event) => setArtistCity(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -306,7 +306,7 @@ export function AdminNetworkClient() {
               value={artistGenres}
               onChange={(event) => setArtistGenres(event.target.value)}
               placeholder="Géneros separados por vírgula. Ex: Doom, Sludge"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <textarea
@@ -314,21 +314,21 @@ export function AdminNetworkClient() {
               value={artistDescription}
               onChange={(event) => setArtistDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={artistInstagram}
               onChange={(event) => setArtistInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={artistBandcamp}
               onChange={(event) => setArtistBandcamp(event.target.value)}
               placeholder="Bandcamp URL"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <button
@@ -426,13 +426,13 @@ export function AdminNetworkClient() {
               value={venueName}
               onChange={(event) => setVenueName(event.target.value)}
               placeholder="Nome do espaço"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <select
               value={venueCity}
               onChange={(event) => setVenueCity(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -443,7 +443,7 @@ export function AdminNetworkClient() {
               value={venueAddress}
               onChange={(event) => setVenueAddress(event.target.value)}
               placeholder="Morada"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <textarea
@@ -451,14 +451,14 @@ export function AdminNetworkClient() {
               value={venueDescription}
               onChange={(event) => setVenueDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={venueInstagram}
               onChange={(event) => setVenueInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <button
@@ -543,13 +543,13 @@ export function AdminNetworkClient() {
               value={organizerName}
               onChange={(event) => setOrganizerName(event.target.value)}
               placeholder="Nome do organizador"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <select
               value={organizerCity}
               onChange={(event) => setOrganizerCity(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -561,24 +561,24 @@ export function AdminNetworkClient() {
               value={organizerDescription}
               onChange={(event) => setOrganizerDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={organizerPack}
               onChange={(event) => setOrganizerPack(event.target.value)}
               placeholder="Pack. Ex: Paranoid Crew"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={organizerInstagram}
               onChange={(event) => setOrganizerInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
-            <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3">
+            <label className="flex items-center gap-3 rounded-2xl border border-border bg-input px-4 py-3">
               <input
                 type="checkbox"
                 checked={organizerVerified}

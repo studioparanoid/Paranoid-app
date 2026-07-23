@@ -35,7 +35,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   if (checking) {
     return (
-      <main className="min-h-screen bg-[#070707] px-5 py-8 text-[#f5f5f2]">
+      <main className="min-h-screen bg-background px-5 py-8 text-foreground">
         <section className="mx-auto max-w-md">
           <p className="text-sm font-bold text-foreground-muted">
             A verificar acesso à cave...

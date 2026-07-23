@@ -241,7 +241,7 @@ export function OrganizerShopClient() {
                           : current
                       )
                     }
-                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+                    className="w-full rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
                   />
                 </label>
               ))}
@@ -259,7 +259,7 @@ export function OrganizerShopClient() {
                         : current
                     )
                   }
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
                 >
                   <option value="artist">Artista individual</option>
                   <option value="band">Banda/coletivo</option>
@@ -286,7 +286,7 @@ export function OrganizerShopClient() {
                         : current
                     )
                   }
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
                 >
                   <option value="yes">Consigo emitir</option>
                   <option value="no">Ainda não consigo</option>
@@ -335,7 +335,7 @@ export function OrganizerShopClient() {
                 </span>
                 <input
                   placeholder={placeholder}
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
                 />
               </label>
             ))}
@@ -348,7 +348,7 @@ export function OrganizerShopClient() {
                 value={basePrice}
                 onChange={(event) => setBasePrice(event.target.value)}
                 inputMode="decimal"
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
               />
             </label>
 
@@ -458,7 +458,7 @@ export function OrganizerShopClient() {
                     }))
                   }
                   placeholder="Código de tracking"
-                  className="rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+                  className="rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
                 />
                 <LoadingButton
                   onClick={() => markShipped(order.id)}

@@ -400,7 +400,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       )}
 
       {selectMode && (
-        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-[85] border-y border-white/10 bg-black px-3 py-2 text-white shadow-[0_-16px_40px_rgb(0_0_0_/_0.35)] lg:bottom-0">
+        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-[85] border-y border-white/10 bg-input px-3 py-2 text-white shadow-[0_-16px_40px_rgb(0_0_0_/_0.35)] lg:bottom-0">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <IconButton label="Cancelar seleção" onClick={exitSelectMode} className="text-white hover:bg-white/10"><AppIcon name="close" /></IconButton>

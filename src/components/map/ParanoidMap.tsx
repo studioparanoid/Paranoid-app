@@ -486,7 +486,7 @@ export function ParanoidMap({
         </div>
       ) : null}
       {mapError ? (
-        <div className="absolute inset-0 grid place-items-center bg-black px-6 text-center text-sm font-bold text-[var(--dark-muted)]">
+        <div className="absolute inset-0 grid place-items-center bg-input px-6 text-center text-sm font-bold text-[var(--dark-muted)]">
           Não foi possível carregar o mapa. Tenta novamente.
         </div>
       ) : null}

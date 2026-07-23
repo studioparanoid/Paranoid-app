@@ -560,7 +560,7 @@ export function AdminLocationsClient() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Nome, concelho, cidade, morada..."
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
 
               <select
@@ -568,7 +568,7 @@ export function AdminLocationsClient() {
                 onChange={(event) =>
                   setKindFilter(event.target.value as "all" | LocationKind)
                 }
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
               >
                 <option value="all">Tudo</option>
                 <option value="venue">Espaços</option>
@@ -623,7 +623,7 @@ export function AdminLocationsClient() {
                 className={`w-full rounded-[1.5rem] border p-4 text-left transition ${
                   selectedKind === item.kind && selectedId === item.id
                     ? "border-danger bg-danger/20"
-                    : "border-border bg-black hover:border-border-strong"
+                    : "border-border bg-surface hover:border-border-strong"
                 }`}
               >
                 <div className="flex flex-wrap gap-2">
@@ -723,7 +723,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Rua, número, espaço..."
-                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                    className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
@@ -741,7 +741,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="0000-000"
-                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                    className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
@@ -759,7 +759,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Alvorge, Pombal, Leiria..."
-                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                    className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
@@ -777,7 +777,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Ansião, Pombal, Leiria..."
-                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                    className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
@@ -795,7 +795,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Leiria, Coimbra, Lisboa..."
-                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                    className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
@@ -813,7 +813,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="39.912345"
-                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                    className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
@@ -831,12 +831,12 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="-8.435678"
-                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                    className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
               </div>
 
-              <div className="mt-8 rounded-[2rem] border border-border bg-black p-5">
+              <div className="mt-8 rounded-[2rem] border border-border bg-surface p-5">
                 <p className="text-xs uppercase tracking-[0.3em] text-danger">
                   Localização
                 </p>

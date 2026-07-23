@@ -62,7 +62,7 @@ export function AdminCreateBillingPaymentForm({
           value={relatedId}
           onChange={(event) => setRelatedId(event.target.value)}
           placeholder={idLabel}
-          className="rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
+          className="rounded-2xl border border-border bg-input px-4 py-3 font-bold outline-none"
         />
         <button
           type="button"

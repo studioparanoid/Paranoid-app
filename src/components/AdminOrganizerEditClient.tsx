@@ -137,7 +137,7 @@ export function AdminOrganizerEditClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
         <section className="mx-auto max-w-md">
           <p className="text-foreground-muted">A carregar organizador...</p>
         </section>
@@ -147,7 +147,7 @@ export function AdminOrganizerEditClient({
 
   if (!organizer) {
     return (
-      <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
         <section className="mx-auto max-w-md">
           <Link
             href="/admin/rede"
@@ -165,7 +165,7 @@ export function AdminOrganizerEditClient({
   }
 
   return (
-    <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
+    <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
       <section className="mx-auto max-w-md">
         <Link
           href="/admin/rede"
@@ -197,7 +197,7 @@ export function AdminOrganizerEditClient({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Nome do organizador"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
@@ -220,7 +220,7 @@ export function AdminOrganizerEditClient({
               value={slug}
               onChange={(event) => setSlug(event.target.value)}
               placeholder="ex: paranoid-crew"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <p className="mt-2 text-xs text-foreground-muted">
@@ -236,7 +236,7 @@ export function AdminOrganizerEditClient({
             <select
               value={city}
               onChange={(event) => setCity(event.target.value)}
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
             >
               {cities.map((item) => (
                 <option key={item}>{item}</option>
@@ -254,7 +254,7 @@ export function AdminOrganizerEditClient({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Descrição curta do organizador"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
@@ -267,7 +267,7 @@ export function AdminOrganizerEditClient({
               value={pack}
               onChange={(event) => setPack(event.target.value)}
               placeholder="Ex: Paranoid Crew"
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
@@ -280,11 +280,11 @@ export function AdminOrganizerEditClient({
               value={instagram}
               onChange={(event) => setInstagram(event.target.value)}
               placeholder="https://instagram.com/..."
-              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
-          <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3">
+          <label className="flex items-center gap-3 rounded-2xl border border-border bg-input px-4 py-3">
             <input
               type="checkbox"
               checked={verified}

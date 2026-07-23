@@ -435,7 +435,7 @@ export function OrganizerTicketsClient() {
               <select
                 value={selectedOrganizerId}
                 onChange={(event) => handleSelectOrganizer(event.target.value)}
-                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
               >
                 {organizers.map((organizer) => (
                   <option key={organizer.id} value={organizer.id}>
@@ -447,7 +447,7 @@ export function OrganizerTicketsClient() {
           )}
 
           {selectedOrganizer && (
-            <div className="mt-6 rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="mt-6 rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-danger">
                 Ativo
               </p>
@@ -465,28 +465,28 @@ export function OrganizerTicketsClient() {
           )}
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-3xl font-black">{reservedCount}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Reserv.
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-3xl font-black">{checkedInCount}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Check
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-3xl font-black">{totalReservedTickets}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Lug.
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-surface p-4">
               <p className="text-3xl font-black">{cancelledCount}</p>
               <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Canc.
@@ -553,7 +553,7 @@ export function OrganizerTicketsClient() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Código, email, evento..."
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
@@ -573,7 +573,7 @@ export function OrganizerTicketsClient() {
                         | "cancelled"
                     )
                   }
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
                 >
                   <option value="all">Todos</option>
                   <option value="reserved">Reservados</option>
@@ -590,7 +590,7 @@ export function OrganizerTicketsClient() {
                 <select
                   value={eventFilter}
                   onChange={(event) => setEventFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-2xl border border-border bg-input px-4 py-3 text-foreground outline-none focus:border-[var(--accent)]"
                 >
                   <option value="all">Todos</option>
 
@@ -705,7 +705,7 @@ export function OrganizerTicketsClient() {
                     </span>
                   </div>
 
-                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-border bg-black p-4 text-sm text-foreground-muted">
+                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-border bg-surface p-4 text-sm text-foreground-muted">
                     <p>
                       <span className="font-bold text-foreground-secondary">Email:</span>{" "}
                       {reservation.user_email || "Sem email"}

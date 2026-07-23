@@ -122,7 +122,7 @@ export function OrganizerVenuesClient() {
       {organizers.length > 1 && (
         <label className="mb-6 block max-w-sm">
           <span className="mb-2 block text-xs font-bold text-foreground-muted">Organizador</span>
-          <select value={organizerId} onChange={(event) => setOrganizerId(event.target.value)} className="w-full rounded border border-border bg-black px-4 py-3">
+          <select value={organizerId} onChange={(event) => setOrganizerId(event.target.value)} className="w-full rounded border border-border bg-input px-4 py-3">
             {organizers.map((organizer) => <option key={organizer.id} value={organizer.id}>{organizer.name}</option>)}
           </select>
         </label>
