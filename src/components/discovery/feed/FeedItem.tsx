@@ -38,8 +38,8 @@ export function FeedItem({ item, onDismiss, onOpen }: FeedItemProps) {
           <AppIcon name={kindIcon[item.kind]} className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[0.72rem] font-black uppercase text-[var(--accent)]">{item.eyebrow}</p>
-          <h3 className="truncate text-[0.95rem] font-black leading-5 text-[var(--foreground)]">{item.title}</h3>
+          <p className="truncate text-[0.72rem] font-bold uppercase tracking-wide text-[var(--accent)]">{item.eyebrow}</p>
+          <h3 className="truncate text-base font-bold leading-5 tracking-tight text-[var(--foreground)]">{item.title}</h3>
         </div>
         <button
           type="button"

@@ -236,8 +236,8 @@ export function SmartHub({
           </div>
 
           {!showChatZone && (
-            <div className="feed-item-enter absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-8 text-center sm:pb-10">
-              <p className="text-lg text-[var(--foreground)] sm:text-xl">O que te apetece fazer?</p>
+            <div className="feed-item-enter absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-10 text-center sm:pb-14">
+              <p className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">O que te apetece fazer?</p>
             </div>
           )}
 
@@ -265,7 +265,7 @@ export function SmartHub({
 
       <form onSubmit={submit} className="shrink-0 pb-3 pt-2 sm:pb-5" aria-busy={loading}>
         <label htmlFor={inputId} className="sr-only">Fala com a Paranoid</label>
-        <div className="hub-composer flex min-h-14 items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2 pl-3.5 focus-within:border-[var(--border-strong)]">
+        <div className="hub-composer flex min-h-16 items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-2.5 pl-5 focus-within:border-[var(--border-strong)]">
           <textarea
             ref={inputRef}
             id={inputId}

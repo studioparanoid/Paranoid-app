@@ -71,19 +71,15 @@ function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: 
   const [dragOffset, setDragOffset] = useState(0);
 
   useEffect(() => {
-    const scrollY = window.scrollY;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previous = {
-      overflow: document.body.style.overflow,
-      position: document.body.style.position,
-      top: document.body.style.top,
-      width: document.body.style.width,
-    };
-
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
+    // Plain overflow:hidden on <html>, not position:fixed on <body> — the
+    // fixed-body lock breaks touch/keyboard focus inside the overlay itself
+    // once the on-screen keyboard opens on iOS Safari (see useDialogBehavior.ts).
+    const html = document.documentElement;
+    const previousOverflow = html.style.overflow;
+    const previousOverscroll = html.style.overscrollBehavior;
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
 
     const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus({ preventScroll: true }), 80);
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -111,11 +107,8 @@ function HubOverlay({ onClose, onResponse }: { onClose: () => void; onResponse: 
     return () => {
       window.clearTimeout(focusTimer);
       window.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previous.overflow;
-      document.body.style.position = previous.position;
-      document.body.style.top = previous.top;
-      document.body.style.width = previous.width;
-      window.scrollTo(0, scrollY);
+      html.style.overflow = previousOverflow;
+      html.style.overscrollBehavior = previousOverscroll;
       previousFocus?.focus({ preventScroll: true });
     };
   }, [onClose]);
