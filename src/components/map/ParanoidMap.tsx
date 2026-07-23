@@ -43,10 +43,10 @@ type ParanoidMapProps = {
 
 const PORTUGAL_CENTER: [number, number] = [-8.0, 39.68];
 const WORLD_START_CENTER: [number, number] = [-28, 37];
-// MapLibre renders OpenFreeMap's public Liberty style using OpenMapTiles and
+// MapLibre renders OpenFreeMap's public Dark style using OpenMapTiles and
 // OpenStreetMap data. Attribution is kept visible, no API key is required,
 // and the public OpenFreeMap instance has no availability SLA.
-const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 
 type GeoJSONFeatureCollection = {
   type: "FeatureCollection";
@@ -340,7 +340,7 @@ export function ParanoidMap({
     if (userLocation) {
       const locationElement = document.createElement("div");
       locationElement.className =
-        "h-5 w-5 rounded-full border-2 border-black bg-[#f2f1ec] shadow-[0_0_0_8px_rgba(242,241,236,0.18)]";
+        "h-5 w-5 rounded-full border-2 border-black bg-[#f5f5f2] shadow-[0_0_0_8px_rgba(245,245,242,0.18)]";
 
       const marker = new maplibregl.Marker({ element: locationElement })
         .setLngLat([userLocation.longitude, userLocation.latitude])
@@ -429,7 +429,7 @@ export function ParanoidMap({
         type: "fill",
         source: sourceId,
         paint: {
-          "fill-color": "#dc2626",
+          "fill-color": "#ef2b2d",
           "fill-opacity": 0.12,
         },
       });
@@ -441,7 +441,7 @@ export function ParanoidMap({
         type: "line",
         source: sourceId,
         paint: {
-          "line-color": "#f2f1ec",
+          "line-color": "#f5f5f2",
           "line-opacity": 0.8,
           "line-width": 2,
           "line-dasharray": [2, 2],
@@ -481,12 +481,12 @@ export function ParanoidMap({
     <div className="paranoid-map relative h-full min-h-0 w-full bg-black">
       <div ref={containerRef} className="h-full min-h-0 w-full" />
       {!mapReady && !mapError ? (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black text-sm font-bold text-zinc-500">
+        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black text-sm font-bold text-[var(--dark-muted)]">
           A carregar mapa...
         </div>
       ) : null}
       {mapError ? (
-        <div className="absolute inset-0 grid place-items-center bg-black px-6 text-center text-sm font-bold text-zinc-400">
+        <div className="absolute inset-0 grid place-items-center bg-black px-6 text-center text-sm font-bold text-[var(--dark-muted)]">
           Não foi possível carregar o mapa. Tenta novamente.
         </div>
       ) : null}

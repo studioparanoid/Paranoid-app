@@ -1091,7 +1091,7 @@ export default function MapPage() {
             <span className="rounded-full border border-accent/50 px-3 py-2 text-xs font-black text-accent">
               Filtros
             </span>
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#f2f1ec] text-sm font-black text-black">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#f5f5f2] text-sm font-black text-black">
               +
             </span>
           </button>
@@ -1132,7 +1132,7 @@ export default function MapPage() {
 
               <button
                 type="submit"
-                className="rounded-xl bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black"
+                className="rounded-xl bg-[#f5f5f2] px-4 py-3 text-sm font-black text-black"
               >
                 Usar
               </button>
@@ -1161,7 +1161,7 @@ export default function MapPage() {
                   onChange={(event) =>
                     handleRadiusChange(event.target.value as RadiusFilter)
                   }
-                  className="h-2 w-full accent-[#f2f1ec]"
+                  className="h-2 w-full accent-[#f5f5f2]"
                 />
 
                 <p className="whitespace-nowrap text-sm font-black text-foreground-secondary">
@@ -1191,7 +1191,7 @@ export default function MapPage() {
                           }}
                           className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
                             categoryFilter === category
-                              ? "bg-[#f2f1ec] text-black"
+                              ? "bg-[#f5f5f2] text-black"
                               : "text-foreground-secondary hover:bg-surface-hover"
                           }`}
                         >
@@ -1216,7 +1216,7 @@ export default function MapPage() {
                 }}
                 className={`rounded-lg px-2 py-2 text-[11px] font-black ${
                   dateFilter === option.value
-                    ? "bg-[#f2f1ec] text-black"
+                    ? "bg-[#f5f5f2] text-black"
                     : "text-foreground-secondary"
                 }`}
               >
@@ -1267,7 +1267,7 @@ export default function MapPage() {
                 onChange={(event) =>
                   handleRadiusChange(event.target.value as RadiusFilter)
                 }
-                className="h-2 w-full accent-[#f2f1ec]"
+                className="h-2 w-full accent-[#f5f5f2]"
               />
 
               <p className="whitespace-nowrap text-sm font-black text-foreground-muted">
@@ -1297,7 +1297,7 @@ export default function MapPage() {
                         }}
                         className={`rounded-xl px-4 py-3 text-left text-sm font-bold ${
                           categoryFilter === category
-                            ? "bg-[#f2f1ec] text-black"
+                            ? "bg-[#f5f5f2] text-black"
                             : "text-foreground-secondary hover:bg-surface-hover"
                         }`}
                       >
