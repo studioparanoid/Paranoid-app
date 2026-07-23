@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CardGrid } from "@/components/CardGrid";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { ShopCartLink } from "@/components/shop/ShopCartLink";
+import { Input } from "@/components/ui/Input";
 import { fallbackShopCategories, type ShopProduct } from "@/lib/shop";
 
 type ShopClientProps = {
@@ -52,11 +53,11 @@ export function ShopClient({ products }: ShopClientProps) {
     <div className="space-y-6">
       <section className="sticky top-12 z-20 -mx-4 border-y border-border bg-background/96 px-4 py-3 backdrop-blur-xl sm:mx-0 sm:rounded-2xl sm:border sm:px-4 lg:top-16">
         <div className="flex gap-2">
-          <input
+          <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Pesquisar"
-            className="focus-ring h-11 min-w-0 flex-1 rounded-full border border-input-border bg-input px-4 text-sm font-bold text-foreground outline-none placeholder:text-foreground-muted"
+            className="min-w-0 flex-1"
           />
           <ShopCartLink />
         </div>
@@ -64,7 +65,7 @@ export function ShopClient({ products }: ShopClientProps) {
           <select
             value={category}
             onChange={(event) => setCategory(event.target.value)}
-            className="focus-ring h-11 w-full rounded-full border border-input-border bg-input px-4 text-sm font-bold text-foreground outline-none"
+            className="focus-ring interactive h-[3.375rem] w-full rounded-lg border border-input-border bg-input px-4 text-base text-foreground outline-none focus:border-[var(--accent)]"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -74,7 +75,7 @@ export function ShopClient({ products }: ShopClientProps) {
           <select
             value={seller}
             onChange={(event) => setSeller(event.target.value)}
-            className="focus-ring h-11 w-full rounded-full border border-input-border bg-input px-4 text-sm font-bold text-foreground outline-none"
+            className="focus-ring interactive h-[3.375rem] w-full rounded-lg border border-input-border bg-input px-4 text-base text-foreground outline-none focus:border-[var(--accent)]"
           >
             {sellers.map((item) => (
               <option key={item}>{item}</option>
