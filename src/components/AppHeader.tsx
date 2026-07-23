@@ -49,7 +49,7 @@ export function AppHeader() {
 
   const showBackBar = mobileSimplificationEnabled && !isPrimaryMobileRoute(pathname);
 
-  return <header className={`brand-surface app-header-shadow sticky top-0 z-50 border-b border-[var(--brand-border)] bg-black backdrop-blur-lg ${hideMobileHeader ? "hidden lg:block" : "block"}`}>
+  return <header className={`app-header-shadow sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--header-background)] backdrop-blur-xl ${hideMobileHeader ? "hidden lg:block" : "block"}`}>
     {showBackBar && (
       <div className="mx-auto flex h-12 items-center px-3 lg:hidden">
         <button type="button" onClick={goBack} aria-label="Voltar" className="focus-ring pressable grid h-11 w-11 place-items-center text-foreground-secondary hover:text-foreground">
@@ -57,7 +57,7 @@ export function AppHeader() {
         </button>
       </div>
     )}
-    <div className={`mx-auto h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-10 ${mobileSimplificationEnabled ? "hidden lg:flex" : "flex"}`}>
+    <div className={`mx-auto h-16 max-w-7xl items-center justify-between gap-6 px-4 lg:px-12 ${mobileSimplificationEnabled ? "hidden lg:flex" : "flex"}`}>
       <Link href="/" className="pressable focus-ring flex min-w-0 items-center rounded" aria-label="Paranoid Studio - Centro">
         <Image
           src="/brand/paranoid-studio-logo-header-transparent.png"
@@ -70,23 +70,23 @@ export function AppHeader() {
         />
       </Link>
 
-      <nav aria-label="Navegação principal" className="hidden items-center gap-1.5 lg:flex">
+      <nav aria-label="Navegação principal" className="hidden items-center gap-1 lg:flex">
         {items.slice(0, 2).map((item) => {
           const active = isNavigationActive(pathname, item.href);
           return (
-            <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`interactive pressable focus-ring flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${active ? "bg-foreground text-black" : "text-foreground-muted hover:bg-surface-hover hover:text-foreground"}`}>
+            <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`interactive pressable focus-ring flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${active ? "bg-[var(--foreground)] text-[var(--background)]" : "text-foreground-muted hover:bg-surface-hover hover:text-foreground"}`}>
               <AppIcon name={item.icon} className="h-4 w-4" />
               {item.label}
             </Link>
           );
         })}
-        <button type="button" onClick={openHub} aria-label="Paranoid Hub" aria-expanded={isHubOpen} aria-controls="paranoid-hub-overlay" className="focus-ring pressable mx-1 grid h-10 w-10 place-items-center text-foreground hover:text-foreground-secondary">
+        <button type="button" onClick={openHub} aria-label="Paranoid Hub" aria-expanded={isHubOpen} aria-controls="paranoid-hub-overlay" className="focus-ring pressable mx-2 grid h-10 w-10 place-items-center text-foreground hover:text-foreground-secondary">
           <ParanoidMark className="h-7 w-7" active={isHubOpen} />
         </button>
         {items.slice(2).map((item) => {
           const active = isNavigationActive(pathname, item.href);
           return (
-            <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`interactive pressable focus-ring flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${active ? "bg-foreground text-black" : "text-foreground-muted hover:bg-surface-hover hover:text-foreground"}`}>
+            <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`interactive pressable focus-ring flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${active ? "bg-[var(--foreground)] text-[var(--background)]" : "text-foreground-muted hover:bg-surface-hover hover:text-foreground"}`}>
               <AppIcon name={item.icon} className="h-4 w-4" />
               {item.label}
             </Link>
@@ -94,7 +94,7 @@ export function AppHeader() {
         })}
       </nav>
 
-      <div className="flex items-center gap-1"><SearchButton />{user && <MessagesButton />}<ProfileMenu /></div>
+      <div className="flex items-center gap-1.5"><SearchButton />{user && <MessagesButton />}<ProfileMenu /></div>
     </div>
   </header>;
 }

@@ -68,9 +68,12 @@ button:disabled,
   cursor: not-allowed;
 }
 
-.subtle-enter,
-.route-transition {
+.subtle-enter {
   animation: paranoid-fade-in var(--motion-normal) var(--ease-enter) both;
+}
+
+.route-transition {
+  animation: paranoid-fade-in var(--motion-slow) var(--ease-premium) both;
 }
 
 .fade-in {

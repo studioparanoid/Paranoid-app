@@ -99,9 +99,9 @@ export function MobileBottomNavigation() {
   return (
     <nav
       aria-label="Navegação principal"
-      className="paranoid-mobile-nav fixed inset-x-0 bottom-0 z-[70] border-t border-[var(--border)] bg-[color:var(--bottom-nav-background)]/95 px-2 pb-[calc(0.3rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-md lg:hidden"
+      className="paranoid-mobile-nav fixed inset-x-0 bottom-0 z-[70] border-t border-[var(--border)] bg-[color:var(--bottom-nav-background)]/95 px-3 pb-[calc(0.4rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-md lg:hidden"
     >
-      <div className="mx-auto grid h-[3.55rem] max-w-lg grid-cols-5 items-center">
+      <div className="mx-auto grid h-[3.8rem] max-w-lg grid-cols-5 items-center">
         <NavigationLink item={home} active={home.matches(pathname)} />
         <NavigationLink item={map} active={map.matches(pathname)} />
         <NavigationLink item={agenda} active={agenda.matches(pathname)} />
@@ -142,13 +142,13 @@ function NavigationLink({
         active ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground-secondary)]"
       }`}
     >
-      <span className="relative grid h-8 w-8 place-items-center transition-transform duration-150 group-active:translate-y-px group-active:scale-[0.96]">
+      <span className={`relative grid h-9 w-9 place-items-center rounded-xl transition-transform duration-150 group-active:translate-y-px group-active:scale-[0.96] ${active ? "bg-[var(--surface-hover)]" : ""}`}>
         {item.label === "Perfil" && avatarUrl ? (
           <span className={`relative h-[1.65rem] w-[1.65rem] overflow-hidden rounded-full border ${active ? "border-current" : "border-[var(--border-strong)]"}`}>
             <Image src={avatarUrl} alt="" fill sizes="27px" className="object-cover" unoptimized />
           </span>
         ) : (
-          <Icon className="h-[1.65rem] w-[1.65rem]" active={active} />
+          <Icon className="h-[1.55rem] w-[1.55rem]" active={active} />
         )}
         {typeof badge === "number" && badge > 0 && (
           <span className="absolute -right-1 -top-0.5 min-w-4 rounded-sm border border-[var(--background)] bg-[var(--accent)] px-0.5 text-center text-[9px] font-black leading-[0.9rem] text-white" aria-label={`${badge} notificações`}>
@@ -156,16 +156,6 @@ function NavigationLink({
           </span>
         )}
       </span>
-      <ActiveSignal active={active} />
     </Link>
-  );
-}
-
-function ActiveSignal({ active }: { active: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`absolute bottom-0 h-[2px] bg-current transition-[width,opacity] duration-150 ${active ? "w-3 opacity-100" : "w-0 opacity-0"}`}
-    />
   );
 }
