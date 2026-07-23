@@ -2,17 +2,17 @@
 
 export default function AgendaError({ reset }: { reset: () => void }) {
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground lg:px-10 lg:py-12">
       <section className="mx-auto max-w-md lg:max-w-3xl">
-        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-6">
-          <p className="text-xs font-black uppercase tracking-[0.35em] text-red-400">
+        <div className="rounded-2xl border border-danger/30 bg-danger/10 p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.35em] text-danger">
             Agenda
           </p>
-          <h1 className="mt-3 text-4xl font-black">Não consegui carregar.</h1>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight">Não consegui carregar.</h1>
           <button
             type="button"
             onClick={reset}
-            className="mt-5 rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black"
+            className="pressable focus-ring mt-5 rounded-xl bg-[var(--foreground)] px-5 py-3 text-sm font-semibold text-[var(--background)]"
           >
             Tentar outra vez
           </button>

@@ -5,7 +5,7 @@ import { AdminNetworkClient } from "@/components/AdminNetworkClient";
 export default function AdminNetworkPage() {
   return (
     <AdminGuard>
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
+      <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
         <section className="mx-auto max-w-md">
           <Link
             href="/admin"

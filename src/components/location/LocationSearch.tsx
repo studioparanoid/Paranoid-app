@@ -77,7 +77,7 @@ export function LocationMapPicker({ latitude, longitude, onSelect }: { latitude:
 
   const placeMarker = useCallback((map: MapLibreMap, nextLatitude: number, nextLongitude: number) => {
     markerRef.current?.remove();
-    const marker = new maplibregl.Marker({ color: "#dc2626", draggable: true })
+    const marker = new maplibregl.Marker({ color: "#ef2b2d", draggable: true })
       .setLngLat([nextLongitude, nextLatitude])
       .addTo(map);
     marker.on("dragend", () => {

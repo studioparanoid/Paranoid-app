@@ -112,7 +112,7 @@ export function AdminSponsorshipsClient() {
               </p>
             </div>
             {campaign.founding_partner_number && (
-              <p className="rounded-full bg-[#f2f1ec] px-3 py-1 text-sm font-black text-black">
+              <p className="rounded-full bg-[#f5f5f2] px-3 py-1 text-sm font-black text-black">
                 Fundador #{campaign.founding_partner_number}
               </p>
             )}

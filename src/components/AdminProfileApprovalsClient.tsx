@@ -253,7 +253,7 @@ export function AdminProfileApprovalsClient() {
             onClick={() => setFilter("pending")}
             className={`rounded-full px-5 py-4 text-sm font-black ${
               filter === "pending"
-                ? "bg-[#f2f1ec] text-black"
+                ? "bg-[#f5f5f2] text-black"
                 : "border border-zinc-800 text-zinc-400"
             }`}
           >
@@ -265,7 +265,7 @@ export function AdminProfileApprovalsClient() {
             onClick={() => setFilter("all")}
             className={`rounded-full px-5 py-4 text-sm font-black ${
               filter === "all"
-                ? "bg-[#f2f1ec] text-black"
+                ? "bg-[#f5f5f2] text-black"
                 : "border border-zinc-800 text-zinc-400"
             }`}
           >
@@ -360,7 +360,7 @@ export function AdminProfileApprovalsClient() {
                         type="button"
                         onClick={() => approveClaim(claim)}
                         disabled={actionId === claim.id}
-                        className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+                        className="rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
                       >
                         {actionId === claim.id ? "A aprovar..." : "Aprovar"}
                       </button>

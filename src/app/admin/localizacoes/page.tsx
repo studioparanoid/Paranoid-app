@@ -3,7 +3,7 @@ import { AdminLocationsClient } from "@/components/AdminLocationsClient";
 
 export default function AdminLocationsPage() {
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec] lg:px-10 lg:py-12">
+    <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2] lg:px-10 lg:py-12">
       <section className="mx-auto max-w-7xl">
         <Link href="/admin" className="mb-6 inline-block text-sm text-zinc-400">
           ← Voltar ao admin
@@ -33,7 +33,7 @@ export default function AdminLocationsPage() {
 
             <div className="mt-5 grid gap-4">
               <div className="rounded-2xl border border-zinc-800 bg-black/40 p-4">
-                <p className="text-sm font-bold text-[#f2f1ec]">
+                <p className="text-sm font-bold text-[#f5f5f2]">
                   1. Coordenada real
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-zinc-500">
@@ -43,7 +43,7 @@ export default function AdminLocationsPage() {
               </div>
 
               <div className="rounded-2xl border border-zinc-800 bg-black/40 p-4">
-                <p className="text-sm font-bold text-[#f2f1ec]">
+                <p className="text-sm font-bold text-[#f5f5f2]">
                   2. Espaço primeiro
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-zinc-500">
@@ -53,7 +53,7 @@ export default function AdminLocationsPage() {
               </div>
 
               <div className="rounded-2xl border border-zinc-800 bg-black/40 p-4">
-                <p className="text-sm font-bold text-[#f2f1ec]">
+                <p className="text-sm font-bold text-[#f5f5f2]">
                   3. Sem centros de cidade
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-zinc-500">

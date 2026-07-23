@@ -137,7 +137,7 @@ export function AdminOrganizerEditClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
+      <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
         <section className="mx-auto max-w-md">
           <p className="text-zinc-500">A carregar organizador...</p>
         </section>
@@ -147,7 +147,7 @@ export function AdminOrganizerEditClient({
 
   if (!organizer) {
     return (
-      <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
+      <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
         <section className="mx-auto max-w-md">
           <Link
             href="/admin/rede"
@@ -165,7 +165,7 @@ export function AdminOrganizerEditClient({
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] px-5 py-8 pb-28 text-[#f2f1ec]">
+    <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
       <section className="mx-auto max-w-md">
         <Link
           href="/admin/rede"
@@ -197,7 +197,7 @@ export function AdminOrganizerEditClient({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Nome do organizador"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
           </div>
 
@@ -220,7 +220,7 @@ export function AdminOrganizerEditClient({
               value={slug}
               onChange={(event) => setSlug(event.target.value)}
               placeholder="ex: paranoid-crew"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <p className="mt-2 text-xs text-zinc-600">
@@ -236,7 +236,7 @@ export function AdminOrganizerEditClient({
             <select
               value={city}
               onChange={(event) => setCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
             >
               {cities.map((item) => (
                 <option key={item}>{item}</option>
@@ -254,7 +254,7 @@ export function AdminOrganizerEditClient({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Descrição curta do organizador"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
           </div>
 
@@ -267,7 +267,7 @@ export function AdminOrganizerEditClient({
               value={pack}
               onChange={(event) => setPack(event.target.value)}
               placeholder="Ex: Paranoid Crew"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
           </div>
 
@@ -280,7 +280,7 @@ export function AdminOrganizerEditClient({
               value={instagram}
               onChange={(event) => setInstagram(event.target.value)}
               placeholder="https://instagram.com/..."
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
           </div>
 
@@ -300,7 +300,7 @@ export function AdminOrganizerEditClient({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+            className="w-full rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
           >
             {saving ? "A guardar..." : "Guardar organizador"}
           </button>

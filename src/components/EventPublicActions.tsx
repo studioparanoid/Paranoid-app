@@ -238,7 +238,7 @@ export function EventPublicActions({
           className={`rounded-full px-5 py-4 text-sm font-black ${
             saved
               ? "border border-red-900 bg-red-950 text-red-300"
-              : "bg-[#f2f1ec] text-black"
+              : "bg-[#f5f5f2] text-black"
           }`}
         >
           {saved ? "Guardado" : "Guardar evento"}

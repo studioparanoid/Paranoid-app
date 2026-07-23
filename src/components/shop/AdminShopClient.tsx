@@ -142,7 +142,7 @@ export function AdminShopClient() {
               aria-pressed={filter === value}
               className={`pressable focus-ring shrink-0 rounded-full px-4 py-2 text-sm font-black ${
                 filter === value
-                  ? "bg-[#f2f1ec] text-black"
+                  ? "bg-[#f5f5f2] text-black"
                   : "border border-zinc-800 text-zinc-400"
               }`}
             >
@@ -187,7 +187,7 @@ export function AdminShopClient() {
                   {formatMoney(order.paranoidMarginTotalCents)}
                 </p>
               </div>
-              <p className="rounded-full bg-[#f2f1ec] px-3 py-1 text-sm font-black text-black">
+              <p className="rounded-full bg-[#f5f5f2] px-3 py-1 text-sm font-black text-black">
                 {order.paymentStatus}
               </p>
             </div>

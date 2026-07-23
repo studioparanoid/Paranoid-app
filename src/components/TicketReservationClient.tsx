@@ -200,7 +200,7 @@ export function TicketReservationClient({
 
         <Link
           href="/login"
-          className="mt-5 block rounded-full bg-[#f2f1ec] px-5 py-4 text-center text-sm font-black text-black"
+          className="mt-5 block rounded-full bg-[#f5f5f2] px-5 py-4 text-center text-sm font-black text-black"
         >
           Entrar
         </Link>
@@ -265,7 +265,7 @@ export function TicketReservationClient({
               setQuantity(Number(inputEvent.target.value))
             }
             disabled={hasActiveReservation}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900 disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900 disabled:opacity-50"
           />
         </div>
 
@@ -281,7 +281,7 @@ export function TicketReservationClient({
               reserving ||
               (availableTickets !== null && availableTickets <= 0)
             }
-            className="mt-5 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+            className="mt-5 w-full rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
           >
             {reserving ? "A reservar..." : "Reservar lugar"}
           </button>
@@ -313,7 +313,7 @@ export function TicketReservationClient({
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-black text-[#f2f1ec]">
+                  <p className="text-sm font-black text-[#f5f5f2]">
                     {reservation.quantity} bilhete
                     {reservation.quantity === 1 ? "" : "s"}
                   </p>

@@ -31,7 +31,7 @@ export function HubGlobe({ state = "idle", pulse = 0, className = "" }: { state?
     if (!canvas || !ctx) return;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const accentRgb = hexToRgb(getComputedStyle(document.documentElement).getPropertyValue("--accent") || "#dc2626");
+    const accentRgb = hexToRgb(getComputedStyle(document.documentElement).getPropertyValue("--accent") || "#ef2b2d");
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let width = canvas.clientWidth;
     let height = canvas.clientHeight;

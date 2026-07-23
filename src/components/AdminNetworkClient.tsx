@@ -240,7 +240,7 @@ export function AdminNetworkClient() {
           }}
           className={`rounded-2xl px-3 py-3 text-xs font-black uppercase ${
             activeTab === "artist"
-              ? "bg-[#f2f1ec] text-black"
+              ? "bg-[#f5f5f2] text-black"
               : "text-zinc-500"
           }`}
         >
@@ -255,7 +255,7 @@ export function AdminNetworkClient() {
           }}
           className={`rounded-2xl px-3 py-3 text-xs font-black uppercase ${
             activeTab === "venue"
-              ? "bg-[#f2f1ec] text-black"
+              ? "bg-[#f5f5f2] text-black"
               : "text-zinc-500"
           }`}
         >
@@ -270,7 +270,7 @@ export function AdminNetworkClient() {
           }}
           className={`rounded-2xl px-3 py-3 text-xs font-black uppercase ${
             activeTab === "organizer"
-              ? "bg-[#f2f1ec] text-black"
+              ? "bg-[#f5f5f2] text-black"
               : "text-zinc-500"
           }`}
         >
@@ -289,13 +289,13 @@ export function AdminNetworkClient() {
               value={artistName}
               onChange={(event) => setArtistName(event.target.value)}
               placeholder="Nome do artista"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <select
               value={artistCity}
               onChange={(event) => setArtistCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -306,7 +306,7 @@ export function AdminNetworkClient() {
               value={artistGenres}
               onChange={(event) => setArtistGenres(event.target.value)}
               placeholder="Géneros separados por vírgula. Ex: Doom, Sludge"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <textarea
@@ -314,28 +314,28 @@ export function AdminNetworkClient() {
               value={artistDescription}
               onChange={(event) => setArtistDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <input
               value={artistInstagram}
               onChange={(event) => setArtistInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <input
               value={artistBandcamp}
               onChange={(event) => setArtistBandcamp(event.target.value)}
               placeholder="Bandcamp URL"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <button
               type="button"
               onClick={createArtist}
               disabled={saving}
-              className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              className="w-full rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
               {saving ? "A criar..." : "Criar artista"}
             </button>
@@ -390,7 +390,7 @@ export function AdminNetworkClient() {
                     <div className="mt-4 flex gap-2">
                       <Link
                         href={`/admin/rede/artistas/${artist.id}`}
-                        className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+                        className="flex-1 rounded-full bg-[#f5f5f2] px-4 py-3 text-center text-sm font-black text-black"
                       >
                         Editar
                       </Link>
@@ -426,13 +426,13 @@ export function AdminNetworkClient() {
               value={venueName}
               onChange={(event) => setVenueName(event.target.value)}
               placeholder="Nome do espaço"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <select
               value={venueCity}
               onChange={(event) => setVenueCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -443,7 +443,7 @@ export function AdminNetworkClient() {
               value={venueAddress}
               onChange={(event) => setVenueAddress(event.target.value)}
               placeholder="Morada"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <textarea
@@ -451,21 +451,21 @@ export function AdminNetworkClient() {
               value={venueDescription}
               onChange={(event) => setVenueDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <input
               value={venueInstagram}
               onChange={(event) => setVenueInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <button
               type="button"
               onClick={createVenue}
               disabled={saving}
-              className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              className="w-full rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
               {saving ? "A criar..." : "Criar espaço"}
             </button>
@@ -507,7 +507,7 @@ export function AdminNetworkClient() {
                     <div className="mt-4 flex gap-2">
                       <Link
                         href={`/admin/rede/espacos/${venue.id}`}
-                        className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+                        className="flex-1 rounded-full bg-[#f5f5f2] px-4 py-3 text-center text-sm font-black text-black"
                       >
                         Editar
                       </Link>
@@ -543,13 +543,13 @@ export function AdminNetworkClient() {
               value={organizerName}
               onChange={(event) => setOrganizerName(event.target.value)}
               placeholder="Nome do organizador"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <select
               value={organizerCity}
               onChange={(event) => setOrganizerCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -561,21 +561,21 @@ export function AdminNetworkClient() {
               value={organizerDescription}
               onChange={(event) => setOrganizerDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <input
               value={organizerPack}
               onChange={(event) => setOrganizerPack(event.target.value)}
               placeholder="Pack. Ex: Paranoid Crew"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <input
               value={organizerInstagram}
               onChange={(event) => setOrganizerInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
@@ -594,7 +594,7 @@ export function AdminNetworkClient() {
               type="button"
               onClick={createOrganizer}
               disabled={saving}
-              className="w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              className="w-full rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
               {saving ? "A criar..." : "Criar organizador"}
             </button>
@@ -656,7 +656,7 @@ export function AdminNetworkClient() {
                     <div className="mt-4 flex gap-2">
                       <Link
                         href={`/admin/rede/organizadores/${organizer.id}`}
-                        className="flex-1 rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+                        className="flex-1 rounded-full bg-[#f5f5f2] px-4 py-3 text-center text-sm font-black text-black"
                       >
                         Editar
                       </Link>

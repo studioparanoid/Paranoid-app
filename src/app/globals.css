@@ -646,8 +646,8 @@ select:-webkit-autofill {
   height: 0.55rem;
   border-radius: 999px;
   content: "";
-  background: #dc2626;
-  box-shadow: 0 0 0 7px rgb(220 38 38 / 0.12);
+  background: #ef2b2d;
+  box-shadow: 0 0 0 7px rgb(239 43 45 / 0.12);
 }
 
 .interactive-card {

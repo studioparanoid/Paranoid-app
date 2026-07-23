@@ -135,7 +135,7 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="ui-overlay fixed inset-0 z-[100]" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Pesquisa global" className="ui-dialog mx-auto min-h-full w-full bg-[#0b0b0b] p-4 text-[#f2f1ec] sm:mt-[8vh] sm:min-h-0 sm:max-w-2xl sm:rounded-lg sm:border sm:border-zinc-800 sm:p-6">
+      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Pesquisa global" className="ui-dialog mx-auto min-h-full w-full bg-[#070707] p-4 text-[#f5f5f2] sm:mt-[8vh] sm:min-h-0 sm:max-w-2xl sm:rounded-lg sm:border sm:border-zinc-800 sm:p-6">
         <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
           <AppIcon name="search" className="h-5 w-5 shrink-0 text-zinc-500" />
           <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={handleInputKeyDown} placeholder="Eventos, artistas, espaços, loja..." aria-label="Pesquisar na Paranoid" aria-controls="global-search-results" aria-activedescendant={activeIndex >= 0 ? `search-${flatResults[activeIndex]?.key}` : undefined} aria-autocomplete="list" className="min-w-0 flex-1 bg-transparent py-3 text-base font-bold outline-none placeholder:text-zinc-600" />

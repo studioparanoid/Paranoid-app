@@ -374,7 +374,7 @@ export function AdminTicketsClient() {
 
         <Link
           href="/login"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
+          className="mt-6 inline-block rounded-full bg-[#f5f5f2] px-6 py-4 text-sm font-black text-black"
         >
           Entrar
         </Link>
@@ -447,7 +447,7 @@ export function AdminTicketsClient() {
               type="button"
               onClick={loadData}
               disabled={loadingData}
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              className="rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
               {loadingData ? "A atualizar..." : "Atualizar"}
             </button>
@@ -504,7 +504,7 @@ export function AdminTicketsClient() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Código, email, evento, cidade..."
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                 />
               </div>
 
@@ -524,7 +524,7 @@ export function AdminTicketsClient() {
                         | "cancelled"
                     )
                   }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
                 >
                   <option value="all">Todos</option>
                   <option value="reserved">Reservados</option>
@@ -541,7 +541,7 @@ export function AdminTicketsClient() {
                 <select
                   value={eventFilter}
                   onChange={(event) => setEventFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
                 >
                   <option value="all">Todos</option>
 
@@ -667,7 +667,7 @@ export function AdminTicketsClient() {
                     <div className="mt-5 grid gap-2">
                       <Link
                         href={`/eventos/${event.slug}`}
-                        className="rounded-full bg-[#f2f1ec] px-4 py-3 text-center text-sm font-black text-black"
+                        className="rounded-full bg-[#f5f5f2] px-4 py-3 text-center text-sm font-black text-black"
                       >
                         Ver evento
                       </Link>
@@ -782,7 +782,7 @@ export function AdminTicketsClient() {
                               nextStatus: "checked_in",
                             })
                           }
-                          className="rounded-full bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black"
+                          className="rounded-full bg-[#f5f5f2] px-4 py-3 text-sm font-black text-black"
                         >
                           Marcar entrada
                         </button>

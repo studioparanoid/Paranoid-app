@@ -304,7 +304,7 @@ export function AdminSubmissionEditClient({
 
         <Link
           href="/admin"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
+          className="mt-6 inline-block rounded-full bg-[#f5f5f2] px-6 py-4 text-sm font-black text-black"
         >
           Voltar ao admin
         </Link>
@@ -377,7 +377,7 @@ export function AdminSubmissionEditClient({
             value={title}
             disabled={locked}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
@@ -390,7 +390,7 @@ export function AdminSubmissionEditClient({
             value={organizer}
             disabled={locked}
             onChange={(event) => setOrganizer(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
@@ -404,7 +404,7 @@ export function AdminSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setArtistsText(event.target.value)}
             placeholder="Separar por vírgulas"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
@@ -417,7 +417,7 @@ export function AdminSubmissionEditClient({
             value={category}
             disabled={locked}
             onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -434,7 +434,7 @@ export function AdminSubmissionEditClient({
             value={city}
             disabled={locked}
             onChange={(event) => setCity(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           >
             {cities.map((item) => (
               <option key={item}>{item}</option>
@@ -451,7 +451,7 @@ export function AdminSubmissionEditClient({
             value={venue}
             disabled={locked}
             onChange={(event) => setVenue(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
@@ -478,7 +478,7 @@ export function AdminSubmissionEditClient({
             value={eventDate}
             disabled={locked}
             onChange={(event) => handleEventDateChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
@@ -493,7 +493,7 @@ export function AdminSubmissionEditClient({
               value={endDate}
               disabled={locked}
               onChange={(event) => setEndDate(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
             />
           </div>
         )}
@@ -508,7 +508,7 @@ export function AdminSubmissionEditClient({
             value={eventTime}
             disabled={locked}
             onChange={(event) => setEventTime(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
@@ -522,7 +522,7 @@ export function AdminSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setPrice(event.target.value)}
             onBlur={() => setPrice(formatPriceValue(price))}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
@@ -541,7 +541,7 @@ export function AdminSubmissionEditClient({
             onChange={(event) =>
               handleTicketModeChange(event.target.value as TicketMode)
             }
-            className="w-full rounded-2xl border border-red-950 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-red-950 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           >
             <option value="none">Sem bilhetes / só informação</option>
             <option value="external">Bilheteira externa</option>
@@ -559,7 +559,7 @@ export function AdminSubmissionEditClient({
                 disabled={locked}
                 onChange={(event) => setTicketUrl(event.target.value)}
                 placeholder="https://shotgun.live/..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
               />
             </div>
           )}
@@ -577,7 +577,7 @@ export function AdminSubmissionEditClient({
                   onChange={(event) => setTicketPrice(event.target.value)}
                   onBlur={() => setTicketPrice(formatPriceValue(ticketPrice))}
                   placeholder="Ex: 10€"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -593,7 +593,7 @@ export function AdminSubmissionEditClient({
                   disabled={locked}
                   onChange={(event) => setTicketCapacity(event.target.value)}
                   placeholder="Ex: 100"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -607,7 +607,7 @@ export function AdminSubmissionEditClient({
                   disabled={locked}
                   onChange={(event) => setTicketButtonLabel(event.target.value)}
                   placeholder="Comprar na Paranoid"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
                 />
               </div>
             </div>
@@ -624,7 +624,7 @@ export function AdminSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setInstagramUrl(event.target.value)}
             placeholder="https://instagram.com/..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
@@ -638,7 +638,7 @@ export function AdminSubmissionEditClient({
             value={description}
             disabled={locked}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
       </div>
@@ -648,7 +648,7 @@ export function AdminSubmissionEditClient({
           type="button"
           onClick={saveSubmission}
           disabled={saving || locked}
-          className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+          className="rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
         >
           {saving ? "A guardar..." : "Guardar submissão"}
         </button>

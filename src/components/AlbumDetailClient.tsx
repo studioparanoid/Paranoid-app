@@ -245,7 +245,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
     setShareOpen(true);
     if (qrCodeUrl || !joinUrl) return;
     try {
-      setQrCodeUrl(await QRCode.toDataURL(joinUrl, { width: 280, margin: 1, color: { dark: "#0b0b0b", light: "#f2f1ec" } }));
+      setQrCodeUrl(await QRCode.toDataURL(joinUrl, { width: 280, margin: 1, color: { dark: "#070707", light: "#f5f5f2" } }));
     } catch {
       setQrCodeUrl("");
     }
@@ -465,7 +465,7 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       />
 
       <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="Partilhar álbum" description="Quem ler este código com a câmara do telemóvel entra diretamente no álbum.">
-        <div className="scale-in rounded-lg border border-zinc-800 bg-[#f2f1ec] p-4 text-black">
+        <div className="scale-in rounded-lg border border-zinc-800 bg-[#f5f5f2] p-4 text-black">
           {qrCodeUrl ? (
             <Image src={qrCodeUrl} alt="QR code de convite" width={224} height={224} unoptimized className="mx-auto h-56 w-56 rounded-2xl" />
           ) : (

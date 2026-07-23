@@ -376,7 +376,7 @@ export function OrganizerTicketsClient() {
 
         <Link
           href="/login"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
+          className="mt-6 inline-block rounded-full bg-[#f5f5f2] px-6 py-4 text-sm font-black text-black"
         >
           Entrar
         </Link>
@@ -402,7 +402,7 @@ export function OrganizerTicketsClient() {
 
         <Link
           href="/perfil"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
+          className="mt-6 inline-block rounded-full bg-[#f5f5f2] px-6 py-4 text-sm font-black text-black"
         >
           Voltar ao perfil
         </Link>
@@ -435,7 +435,7 @@ export function OrganizerTicketsClient() {
               <select
                 value={selectedOrganizerId}
                 onChange={(event) => handleSelectOrganizer(event.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
               >
                 {organizers.map((organizer) => (
                   <option key={organizer.id} value={organizer.id}>
@@ -511,7 +511,7 @@ export function OrganizerTicketsClient() {
               type="button"
               onClick={() => loadOrganizerData(selectedOrganizerId)}
               disabled={loadingData}
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              className="rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
               {loadingData ? "A atualizar..." : "Atualizar"}
             </button>
@@ -553,7 +553,7 @@ export function OrganizerTicketsClient() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Código, email, evento..."
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                 />
               </div>
 
@@ -573,7 +573,7 @@ export function OrganizerTicketsClient() {
                         | "cancelled"
                     )
                   }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
                 >
                   <option value="all">Todos</option>
                   <option value="reserved">Reservados</option>
@@ -590,7 +590,7 @@ export function OrganizerTicketsClient() {
                 <select
                   value={eventFilter}
                   onChange={(event) => setEventFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
                 >
                   <option value="all">Todos</option>
 
@@ -741,7 +741,7 @@ export function OrganizerTicketsClient() {
                               nextStatus: "checked_in",
                             })
                           }
-                          className="rounded-full bg-[#f2f1ec] px-4 py-3 text-sm font-black text-black"
+                          className="rounded-full bg-[#f5f5f2] px-4 py-3 text-sm font-black text-black"
                         >
                           Marcar entrada
                         </button>

@@ -68,7 +68,7 @@ export function AdminCreateBillingPaymentForm({
           type="button"
           onClick={createPayment}
           disabled={!allowEmptyRelatedId && !relatedId.trim()}
-          className="rounded-full bg-[#f2f1ec] px-5 py-3 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
+          className="rounded-full bg-[#f5f5f2] px-5 py-3 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
         >
           Criar pagamento
         </button>

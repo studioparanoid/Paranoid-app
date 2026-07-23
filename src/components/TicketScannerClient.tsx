@@ -359,7 +359,7 @@ export function TicketScannerClient() {
 
         <Link
           href="/login"
-          className="mt-6 inline-block rounded-full bg-[#f2f1ec] px-6 py-4 text-sm font-black text-black"
+          className="mt-6 inline-block rounded-full bg-[#f5f5f2] px-6 py-4 text-sm font-black text-black"
         >
           Entrar
         </Link>
@@ -393,7 +393,7 @@ export function TicketScannerClient() {
               type="button"
               onClick={startScanner}
               disabled={processing}
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              className="rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
               Abrir scanner
             </button>
@@ -441,14 +441,14 @@ export function TicketScannerClient() {
               value={manualCode}
               onChange={(event) => setManualCode(event.target.value)}
               placeholder="Ex: A1B2C3D4E5"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
             />
 
             <button
               type="button"
               onClick={() => processCode(manualCode)}
               disabled={processing}
-              className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              className="rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
               {processing ? "A validar..." : "Validar"}
             </button>
@@ -473,7 +473,7 @@ export function TicketScannerClient() {
               {lastResult.text}
             </p>
 
-            <div className="mt-6 rounded-[2rem] border border-black/20 bg-black/30 p-5 text-sm text-[#f2f1ec]">
+            <div className="mt-6 rounded-[2rem] border border-black/20 bg-black/30 p-5 text-sm text-[#f5f5f2]">
               <p>
                 <span className="font-black">Código:</span> {lastResult.code}
               </p>
@@ -539,7 +539,7 @@ export function TicketScannerClient() {
               type="button"
               onClick={startScanner}
               disabled={processing || scanning}
-              className="mt-6 w-full rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+              className="mt-6 w-full rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
             >
               Ler próximo QR
             </button>

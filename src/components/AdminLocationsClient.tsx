@@ -496,7 +496,7 @@ export function AdminLocationsClient() {
 
         <Link
           href="/login"
-          className="mt-8 inline-block rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black"
+          className="mt-8 inline-block rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black"
         >
           Entrar
         </Link>
@@ -560,7 +560,7 @@ export function AdminLocationsClient() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Nome, concelho, cidade, morada..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
               />
 
               <select
@@ -568,7 +568,7 @@ export function AdminLocationsClient() {
                 onChange={(event) =>
                   setKindFilter(event.target.value as "all" | LocationKind)
                 }
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none focus:border-red-900"
+                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
               >
                 <option value="all">Tudo</option>
                 <option value="venue">Espaços</option>
@@ -580,7 +580,7 @@ export function AdminLocationsClient() {
                 onClick={() => setOnlyMissing((current) => !current)}
                 className={`w-full rounded-full px-5 py-4 text-sm font-black ${
                   onlyMissing
-                    ? "bg-[#f2f1ec] text-black"
+                    ? "bg-[#f5f5f2] text-black"
                     : "border border-zinc-700 text-zinc-300"
                 }`}
               >
@@ -723,7 +723,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Rua, número, espaço..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                   />
                 </div>
 
@@ -741,7 +741,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="0000-000"
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                   />
                 </div>
 
@@ -759,7 +759,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Alvorge, Pombal, Leiria..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                   />
                 </div>
 
@@ -777,7 +777,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Ansião, Pombal, Leiria..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                   />
                 </div>
 
@@ -795,7 +795,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Leiria, Coimbra, Lisboa..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                   />
                 </div>
 
@@ -813,7 +813,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="39.912345"
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                   />
                 </div>
 
@@ -831,7 +831,7 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="-8.435678"
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f2f1ec] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
                   />
                 </div>
               </div>
@@ -876,7 +876,7 @@ export function AdminLocationsClient() {
                   type="button"
                   onClick={saveLocation}
                   disabled={saving}
-                  className="rounded-full bg-[#f2f1ec] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
+                  className="rounded-full bg-[#f5f5f2] px-5 py-4 text-sm font-black text-black disabled:opacity-50"
                 >
                   {saving ? "A guardar..." : "Guardar localização"}
                 </button>

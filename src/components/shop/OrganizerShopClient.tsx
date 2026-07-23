@@ -389,7 +389,7 @@ export function OrganizerShopClient() {
                   {formatMoney(product.production_cost_cents || 0)}
                 </p>
                 </div>
-                <p className="rounded-full bg-[#f2f1ec] px-3 py-1 text-sm font-black text-black">
+                <p className="rounded-full bg-[#f5f5f2] px-3 py-1 text-sm font-black text-black">
                   {formatMoney(product.final_price_cents || 0)}
                 </p>
               </div>
@@ -426,7 +426,7 @@ export function OrganizerShopClient() {
                     {getOrderStatusLabel(order.orderStatus)}
                   </h3>
                 </div>
-                <p className="rounded-full bg-[#f2f1ec] px-3 py-1 text-sm font-black text-black">
+                <p className="rounded-full bg-[#f5f5f2] px-3 py-1 text-sm font-black text-black">
                   {formatMoney(
                     order.items.reduce(
                       (total, item) => total + item.payoutAmountCents,

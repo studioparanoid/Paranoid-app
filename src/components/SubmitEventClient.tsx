@@ -941,7 +941,7 @@ export function SubmitEventClient() {
             type="button"
             onClick={() => void handleFindLocation()}
             disabled={geocoding || submitting}
-            className="mt-5 min-h-12 w-full rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black transition active:scale-[0.99] disabled:cursor-wait disabled:opacity-50 sm:w-auto"
+            className="mt-5 min-h-12 w-full rounded-full bg-[#f5f5f2] px-5 py-3 text-sm font-black text-black transition active:scale-[0.99] disabled:cursor-wait disabled:opacity-50 sm:w-auto"
           >
             {geocoding ? "A localizar..." : "Procurar localização"}
           </button>
@@ -1054,7 +1054,7 @@ export function SubmitEventClient() {
                 onClick={() => setTicketMode(mode)}
                 className={`min-h-12 rounded-lg border px-4 py-3 text-sm font-black transition active:scale-[0.99] ${
                   ticketMode === mode
-                    ? "border-[#f2f1ec] bg-[#f2f1ec] text-black"
+                    ? "border-[#f5f5f2] bg-[#f5f5f2] text-black"
                     : "border-border text-foreground-muted hover:border-border-strong"
                 }`}
               >{ticketModeLabel(mode)}</button>
@@ -1155,7 +1155,7 @@ export function SubmitEventClient() {
           <button
             type="submit"
             disabled={submitting || geocoding}
-            className="mt-5 min-h-12 w-full rounded-full bg-[#f2f1ec] px-5 py-3 text-sm font-black text-black transition active:scale-[0.99] disabled:cursor-wait disabled:opacity-50 sm:w-auto sm:min-w-56"
+            className="mt-5 min-h-12 w-full rounded-full bg-[#f5f5f2] px-5 py-3 text-sm font-black text-black transition active:scale-[0.99] disabled:cursor-wait disabled:opacity-50 sm:w-auto sm:min-w-56"
           >
             {submitting ? "A enviar..." : "Submeter evento"}
           </button>

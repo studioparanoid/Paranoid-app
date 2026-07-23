@@ -201,7 +201,7 @@ export function OrganizerFrequencyClient() {
               Publicar continua gratuito.
             </p>
           </div>
-          <span className="rounded-full bg-[#f2f1ec] px-4 py-2 text-sm font-black text-black">
+          <span className="rounded-full bg-[#f5f5f2] px-4 py-2 text-sm font-black text-black">
             {active ? "Ativo" : pass?.status || "Inativo"}
           </span>
         </div>
@@ -241,7 +241,7 @@ export function OrganizerFrequencyClient() {
           type="button"
           onClick={() => createOrganizerPayment("organizer_paranoid_frequency")}
           disabled={busy || !organizer}
-          className="mt-6 w-full rounded-full bg-[#f2f1ec] px-6 py-4 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
+          className="mt-6 w-full rounded-full bg-[#f5f5f2] px-6 py-4 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
         >
           {busy ? "A preparar..." : active ? "Renovar por 30 dias" : "Ativar Frequency"}
         </button>

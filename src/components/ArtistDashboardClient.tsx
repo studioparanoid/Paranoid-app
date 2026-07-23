@@ -147,5 +147,5 @@ export function ArtistDashboardClient() {
 }
 
 function Metric({ value, label }: { value: number | string; label: string }) {
-  return <div className="bg-[#0b0b0b] p-4"><p className="text-2xl font-black">{value}</p><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-zinc-600">{label}</p></div>;
+  return <div className="bg-[#070707] p-4"><p className="text-2xl font-black">{value}</p><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-zinc-600">{label}</p></div>;
 }

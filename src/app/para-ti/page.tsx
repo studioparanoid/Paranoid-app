@@ -95,7 +95,7 @@ function LegacyForYouPage() {
   const visible = useMemo(() => tab === "followed" ? scored.filter((event) => event.followed) : tab === "nearby" ? scored.filter((event) => event.nearby) : scored.slice(0, 20), [scored, tab]);
   const hasSignals = follows.length > 0 || preferredCities.length > 0 || preferredCategories.length > 0;
 
-  return <main className="min-h-screen bg-[#0b0b0b] px-4 py-6 pb-28 text-[#f2f1ec] sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-7xl">
+  return <main className="min-h-screen bg-[#070707] px-4 py-6 pb-28 text-[#f5f5f2] sm:px-6 lg:px-10 lg:py-10"><section className="mx-auto max-w-7xl">
     <PageHeader eyebrow="Para ti" title="O teu feed" description={!userId ? "Eventos relevantes agora. Inicia sessão para personalizar." : undefined} />
     <SegmentedControl value={tab} options={feedTabs} onChange={setTab} label="Tipo de recomendações" className="mt-5 sm:max-w-md" />
 
