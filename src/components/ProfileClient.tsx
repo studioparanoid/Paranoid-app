@@ -299,7 +299,7 @@ export function ProfileClient() {
   return <div>
     <AppearanceSettings open={appearanceOpen} onClose={() => setAppearanceOpen(false)} />
     {onboardingStep && <div className="mb-6 border-b border-[var(--border)] pb-4" aria-label="Progresso da configuração">
-      <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-red-600">Configurar conta</p>
+      <p className="text-[0.65rem] font-black uppercase tracking-[0.28em] text-accent">Configurar conta</p>
       <p className="mt-2 text-sm font-bold text-[var(--foreground)]">Completa o perfil</p>
     </div>}
     <header className="pb-5">
@@ -314,7 +314,7 @@ export function ProfileClient() {
 
       <div className="mt-4">
         <div className="flex items-center gap-2">
-          <h1 className="truncate text-base font-black sm:text-lg">{title}</h1>
+          <h1 className="truncate text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
           <StatusBadge label={profile?.account_status === "pending" ? "Pendente" : accountTypeLabel(accountType)} tone={profile?.account_status === "pending" ? "warning" : "neutral"} />
         </div>
         {accountType !== "community" && description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-foreground-secondary">{description}</p>}
