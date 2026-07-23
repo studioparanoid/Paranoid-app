@@ -23,14 +23,14 @@ export function SegmentedControl<T extends string>({
 
   return (
     <div
-      className={`relative grid overflow-hidden rounded border border-[var(--border)] bg-[var(--surface)] p-1 ${className}`}
+      className={`relative grid overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1 ${className}`}
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
       role="group"
       aria-label={label}
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-1 top-1 rounded bg-[var(--foreground)] transition-transform duration-200 ease-out"
+        className="pointer-events-none absolute bottom-1 top-1 rounded-md bg-[var(--foreground)] transition-transform duration-200 ease-out"
         style={{
           left: "0.25rem",
           width: `calc((100% - 0.5rem) / ${options.length})`,

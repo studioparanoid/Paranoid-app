@@ -66,7 +66,7 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: strin
       : "border-[var(--border-strong)] text-[var(--foreground)]";
 
   return (
-    <div className={`ui-toast pointer-events-auto flex min-h-14 items-center gap-3 rounded-lg border bg-[var(--toast-background)] px-4 py-3 shadow-xl shadow-black/25 ${tone}`} role={item.tone === "error" ? "alert" : "status"}>
+    <div className={`ui-toast shadow-dropdown pointer-events-auto flex min-h-14 items-center gap-3 rounded-xl border bg-[var(--toast-background)] px-5 py-4 ${tone}`} role={item.tone === "error" ? "alert" : "status"}>
       <p className="min-w-0 flex-1 text-sm font-bold">{item.message}</p>
       {item.action && (
         <button

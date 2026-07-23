@@ -66,11 +66,11 @@ export function EntityProfileHeader({
       </div>
 
       <div className="mt-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="truncate text-xl font-black sm:text-2xl">{name}</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="truncate text-3xl font-bold tracking-tight sm:text-4xl">{name}</h1>
           {verified && <StatusBadge label="Verificado" tone="success" />}
         </div>
-        <p className="mt-1 text-xs font-black uppercase tracking-[0.15em] text-accent">{kindLabel}{city ? ` · ${city}` : ""}</p>
+        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">{kindLabel}{city ? ` · ${city}` : ""}</p>
         {bio && <p className="mt-3 max-w-xl whitespace-pre-line text-sm leading-6 text-foreground-secondary">{bio}</p>}
         {tags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">

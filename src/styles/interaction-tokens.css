@@ -7,6 +7,7 @@
   --ease-enter: cubic-bezier(0, 0, 0.2, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
   --focus-color: var(--focus-ring, #dc2626);
 }
 
@@ -19,8 +20,8 @@ a,
 input,
 select,
 textarea {
-  transition-duration: var(--motion-fast);
-  transition-timing-function: var(--ease-standard);
+  transition-duration: var(--motion-normal);
+  transition-timing-function: var(--ease-premium);
 }
 
 .interactive,
@@ -49,7 +50,9 @@ button:not(:disabled):active,
 
 @media (hover: hover) and (pointer: fine) {
   .card-hover:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.28), 0 0 0 1px rgb(239 43 45 / 0.06), 0 0 24px rgb(239 43 45 / 0.05);
   }
 }
 

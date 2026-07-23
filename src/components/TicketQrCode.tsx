@@ -21,8 +21,8 @@ export function TicketQrCode({ value, label = "Código de entrada" }: TicketQrCo
           width: 280,
           margin: 1,
           color: {
-            dark: "#0b0b0b",
-            light: "#f2f1ec",
+            dark: "#121212",
+            light: "#ffffff",
           },
         });
 
@@ -44,8 +44,8 @@ export function TicketQrCode({ value, label = "Código de entrada" }: TicketQrCo
   }, [value]);
 
   return (
-    <div className="scale-in rounded-lg border border-zinc-800 bg-[#f2f1ec] p-4 text-black">
-      <p className="text-center text-xs font-black uppercase tracking-[0.25em] text-zinc-700">
+    <div className="scale-in rounded-xl border border-black/10 bg-white p-6 text-[#121212] shadow-[0_1px_2px_rgb(0_0_0_/_0.06)]">
+      <p className="text-center text-xs font-semibold uppercase tracking-[0.25em] text-[#5e5e5e]">
         {label}
       </p>
 
@@ -56,15 +56,15 @@ export function TicketQrCode({ value, label = "Código de entrada" }: TicketQrCo
           width={224}
           height={224}
           unoptimized
-          className="mx-auto mt-4 h-56 w-56 rounded-2xl"
+          className="mx-auto mt-5 h-56 w-56 rounded-xl"
         />
       ) : (
-        <div className="skeleton-shimmer mt-4 flex h-56 items-center justify-center rounded-2xl border border-zinc-300">
-          <p className="text-sm font-black text-zinc-500">QR indisponível</p>
+        <div className="skeleton-shimmer mt-5 flex h-56 items-center justify-center rounded-xl border border-black/10">
+          <p className="text-sm font-semibold text-[#5e5e5e]">QR indisponível</p>
         </div>
       )}
 
-      <p className="mt-4 text-center text-3xl font-black tracking-widest">
+      <p className="mt-5 text-center text-3xl font-bold tracking-widest">
         {value}
       </p>
     </div>

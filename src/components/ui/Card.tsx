@@ -13,7 +13,7 @@ export function Card({ children, interactive = false, className, ...props }: Car
   return (
     <div
       className={join(
-        "rounded-lg border border-border bg-card",
+        "rounded-xl border border-border bg-card",
         interactive && "card-hover pressable focus-ring",
         className
       )}
