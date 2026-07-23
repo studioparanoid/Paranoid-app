@@ -22,7 +22,7 @@ function EntityList({ title, rows, kind }: { title: string; rows: Entity[]; kind
   if (!rows.length) return null;
   return <section className="border-t border-[var(--border)] pt-5">
     <div className="flex items-baseline justify-between gap-3"><h2 className="text-lg font-black">{title}</h2><span className="text-xs text-[var(--foreground-muted)]">{rows.length}</span></div>
-    <ul className="mt-3 divide-y divide-[var(--border)]">{rows.map((row) => <li key={row.id} className="flex items-center justify-between gap-4 py-3"><div><strong>{row.name}</strong><p className="text-xs text-[var(--foreground-muted)]">{[row.city, row.slug].filter(Boolean).join(" · ")}</p></div><Link className="text-xs font-black text-red-700 hover:text-red-600" href={`/admin/rede/${kind}/${row.id}`}>Rever</Link></li>)}</ul>
+    <ul className="mt-3 divide-y divide-[var(--border)]">{rows.map((row) => <li key={row.id} className="flex items-center justify-between gap-4 py-3"><div><strong>{row.name}</strong><p className="text-xs text-[var(--foreground-muted)]">{[row.city, row.slug].filter(Boolean).join(" · ")}</p></div><Link className="text-xs font-black text-danger hover:text-danger" href={`/admin/rede/${kind}/${row.id}`}>Rever</Link></li>)}</ul>
   </section>;
 }
 
@@ -50,7 +50,7 @@ export default async function DataQualityPage() {
 
   return <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)] sm:px-6 lg:px-10">
     <div className="mx-auto max-w-6xl">
-      <header className="border-b border-[var(--border)] pb-6"><p className="text-xs font-black uppercase text-red-700">Administração</p><h1 className="mt-2 text-3xl font-black">Qualidade de dados</h1><p className="mt-2 max-w-3xl text-sm text-[var(--foreground-muted)]">Revisão humana para entidades provisórias, valores antigos ambíguos e possíveis duplicados.</p></header>
+      <header className="border-b border-[var(--border)] pb-6"><p className="text-xs font-black uppercase text-danger">Administração</p><h1 className="mt-2 text-3xl font-black">Qualidade de dados</h1><p className="mt-2 max-w-3xl text-sm text-[var(--foreground-muted)]">Revisão humana para entidades provisórias, valores antigos ambíguos e possíveis duplicados.</p></header>
       {unavailable ? <section className="mt-8 border-l-2 border-amber-600 pl-4"><h2 className="font-black">Estrutura ainda não aplicada</h2><p className="mt-1 text-sm text-[var(--foreground-muted)]">Aplica primeiro as migrations estruturais. Nenhum dado atual foi alterado por esta página.</p></section> : <div className="mt-8 grid gap-10 lg:grid-cols-2">
         <div className="space-y-8">
           <EntityList title="Artistas provisórios" rows={provisionalArtists} kind="artistas" />

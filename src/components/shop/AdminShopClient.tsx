@@ -143,7 +143,7 @@ export function AdminShopClient() {
               className={`pressable focus-ring shrink-0 rounded-full px-4 py-2 text-sm font-black ${
                 filter === value
                   ? "bg-[#f5f5f2] text-black"
-                  : "border border-zinc-800 text-zinc-400"
+                  : "border border-border text-foreground-muted"
               }`}
             >
               {label}
@@ -152,7 +152,7 @@ export function AdminShopClient() {
         </div>
 
         {message && (
-          <p className="rounded-2xl border border-red-900 bg-red-950/40 p-4 font-bold text-red-100">
+          <p className="rounded-2xl border border-danger bg-danger/40 p-4 font-bold text-danger">
             {message}
           </p>
         )}
@@ -160,7 +160,7 @@ export function AdminShopClient() {
         {loading && <AdminListSkeleton />}
 
         {!loading && filteredOrders.length === 0 && (
-          <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-500">
+          <p className="rounded-[1.5rem] border border-border bg-background p-5 text-foreground-muted">
             Ainda não há encomendas neste estado.
           </p>
         )}
@@ -168,21 +168,21 @@ export function AdminShopClient() {
         {filteredOrders.map((order) => (
           <article
             key={order.id}
-            className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5"
+            className="rounded-[1.5rem] border border-border bg-background p-5"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-danger">
                   #{normalizeOrderId(order.id)}
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
                   {order.buyerName}
                 </h2>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-foreground-muted">
                   {getOrderStatusLabel(order.orderStatus)} ·{" "}
                   {formatMoney(order.totalCents)}
                 </p>
-                <p className="mt-1 text-xs font-bold text-zinc-600">
+                <p className="mt-1 text-xs font-bold text-foreground-muted">
                   IVA estimado {formatMoney(order.vatTotalCents)} · margem{" "}
                   {formatMoney(order.paranoidMarginTotalCents)}
                 </p>
@@ -192,10 +192,10 @@ export function AdminShopClient() {
               </p>
             </div>
 
-            <div className="mt-5 space-y-2 text-sm text-zinc-400">
+            <div className="mt-5 space-y-2 text-sm text-foreground-muted">
               {order.items.map((item) => (
                 <div key={item.id} className="rounded-2xl bg-black/40 p-3">
-                  <p className="font-bold text-zinc-200">
+                  <p className="font-bold text-foreground">
                     {item.quantity}x {item.productName}
                   </p>
                   <p>
@@ -212,17 +212,17 @@ export function AdminShopClient() {
             </div>
 
             {order.payouts.length > 0 && (
-              <div className="mt-5 space-y-2 rounded-2xl border border-zinc-900 bg-black/40 p-4 text-sm">
-                <p className="font-black text-zinc-200">Payouts</p>
+              <div className="mt-5 space-y-2 rounded-2xl border border-border bg-black/40 p-4 text-sm">
+                <p className="font-black text-foreground">Payouts</p>
                 {order.payouts.map((payout) => (
-                  <div key={payout.id} className="text-zinc-400">
+                  <div key={payout.id} className="text-foreground-muted">
                     <p>
                       {payout.sellerName || "Parceiro"} ·{" "}
                       {formatMoney(payout.amountCents)} · documento{" "}
                       {payout.fiscalDocumentStatus} · {payout.status}
                     </p>
                     {payout.blockedReason && (
-                      <p className="mt-1 text-red-300">
+                      <p className="mt-1 text-danger">
                         {payout.blockedReason}
                       </p>
                     )}
@@ -276,7 +276,7 @@ export function AdminShopClient() {
                     (payout) => payout.fiscalDocumentStatus !== "approved"
                   )
                 }
-                className="disabled:text-zinc-700"
+                className="disabled:text-foreground-muted"
               >
                 Payout pago
               </LoadingButton>
@@ -317,50 +317,50 @@ export function AdminShopClient() {
       </section>
 
       <aside className="space-y-4">
-        <section className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
+        <section className="rounded-[1.5rem] border border-border bg-background p-5">
           <h2 className="text-2xl font-black">Totais</h2>
           <div className="mt-5 space-y-3 text-sm">
-            <p className="flex justify-between text-zinc-400">
+            <p className="flex justify-between text-foreground-muted">
               <span>IVA estimado</span>
               <span>{formatMoney(totals.vat)}</span>
             </p>
-            <p className="flex justify-between text-zinc-400">
+            <p className="flex justify-between text-foreground-muted">
               <span>Taxa/margem bruta Paranoid</span>
               <span>{formatMoney(totals.commission)}</span>
             </p>
-            <p className="flex justify-between text-zinc-400">
+            <p className="flex justify-between text-foreground-muted">
               <span>Payout parceiros</span>
               <span>{formatMoney(totals.payout)}</span>
             </p>
-            <p className="flex justify-between text-zinc-400">
+            <p className="flex justify-between text-foreground-muted">
               <span>Margem estimada</span>
               <span>{formatMoney(totals.margin)}</span>
             </p>
           </div>
         </section>
 
-        <section className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
+        <section className="rounded-[1.5rem] border border-border bg-background p-5">
           <h2 className="text-2xl font-black">Configuração</h2>
           <label className="mt-5 block space-y-2">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
               Taxa de serviço %
             </span>
             <input
               value={commission}
               onChange={(event) => setCommission(event.target.value)}
               inputMode="numeric"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
             />
           </label>
           <label className="mt-4 block space-y-2">
-            <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+            <span className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
               Envio base
             </span>
             <input
               value={shipping}
               onChange={(event) => setShipping(event.target.value)}
               inputMode="decimal"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
             />
           </label>
         </section>

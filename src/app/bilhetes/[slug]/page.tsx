@@ -56,7 +56,7 @@ export default async function TicketPage({
       <section className="mx-auto max-w-md lg:max-w-6xl">
         <Link
           href={`/eventos/${event.slug}`}
-          className="mb-6 inline-block text-sm text-zinc-400"
+          className="mb-6 inline-block text-sm text-foreground-muted"
         >
           ← Voltar ao evento
         </Link>
@@ -69,8 +69,8 @@ export default async function TicketPage({
                 style={{ backgroundImage: `url(${event.image_url})` }}
               />
             ) : (
-              <div className="flex h-80 items-center justify-center rounded-[2rem] border border-zinc-800 bg-zinc-950 lg:h-[720px] lg:rounded-[3rem]">
-                <p className="text-center text-4xl font-black text-zinc-700">
+              <div className="flex h-80 items-center justify-center rounded-[2rem] border border-border bg-background lg:h-[720px] lg:rounded-[3rem]">
+                <p className="text-center text-4xl font-black text-foreground-muted">
                   Bilheteira Paranoid
                 </p>
               </div>
@@ -78,8 +78,8 @@ export default async function TicketPage({
           </div>
 
           <div className="space-y-6 lg:sticky lg:top-28">
-            <div className="rounded-[2.5rem] border border-red-950 bg-red-950/20 p-6 lg:p-8">
-              <p className="text-xs uppercase tracking-[0.35em] text-red-500">
+            <div className="rounded-[2.5rem] border border-danger bg-danger/20 p-6 lg:p-8">
+              <p className="text-xs uppercase tracking-[0.35em] text-danger">
                 Bilheteira Paranoid
               </p>
 
@@ -87,27 +87,27 @@ export default async function TicketPage({
                 {event.title}
               </h1>
 
-              <div className="mt-8 space-y-4 text-sm text-zinc-400">
+              <div className="mt-8 space-y-4 text-sm text-foreground-muted">
                 <p>
-                  <span className="font-bold text-zinc-300">Data:</span>{" "}
+                  <span className="font-bold text-foreground-secondary">Data:</span>{" "}
                   {event.display_date || "Data por definir"}
                   {event.display_time ? ` · ${event.display_time}` : ""}
                 </p>
 
                 <p>
-                  <span className="font-bold text-zinc-300">Local:</span>{" "}
+                  <span className="font-bold text-foreground-secondary">Local:</span>{" "}
                   {[event.venue_name, event.city].filter(Boolean).join(" · ") ||
                     "Local por definir"}
                 </p>
 
                 <p>
-                  <span className="font-bold text-zinc-300">Preço:</span>{" "}
+                  <span className="font-bold text-foreground-secondary">Preço:</span>{" "}
                   {event.ticket_price || event.price || "Preço por definir"}
                 </p>
 
                 {event.ticket_capacity && (
                   <p>
-                    <span className="font-bold text-zinc-300">Lotação:</span>{" "}
+                    <span className="font-bold text-foreground-secondary">Lotação:</span>{" "}
                     {event.ticket_capacity}
                   </p>
                 )}

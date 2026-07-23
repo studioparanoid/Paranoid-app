@@ -107,7 +107,7 @@ export function AdminEventActions({
 
   if (!resolvedEventId) {
     return (
-      <div className="rounded-2xl border border-red-950 bg-red-950/20 p-4 text-sm font-bold text-red-300">
+      <div className="rounded-2xl border border-danger bg-danger/20 p-4 text-sm font-bold text-danger">
         Evento inválido.
       </div>
     );
@@ -161,7 +161,7 @@ export function AdminEventActions({
       </div>
 
       {message && (
-        <p className="text-center text-xs font-bold text-zinc-500" role="alert">
+        <p className="text-center text-xs font-bold text-foreground-muted" role="alert">
           {message}
         </p>
       )}

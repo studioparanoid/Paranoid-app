@@ -69,7 +69,7 @@ function statusClasses(status: ClaimStatus) {
   }
 
   if (status === "rejected") {
-    return "border-red-900 bg-red-950/30 text-red-400";
+    return "border-danger bg-danger/30 text-danger";
   }
 
   return "border-yellow-900 bg-yellow-950/30 text-yellow-500";
@@ -113,8 +113,8 @@ function publicPathForClaim(claim: ProfileClaimRow) {
 
 function EmptyCard({ text }: { text: string }) {
   return (
-    <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-      <p className="text-zinc-500">{text}</p>
+    <div className="rounded-[2rem] border border-border bg-background p-6">
+      <p className="text-foreground-muted">{text}</p>
     </div>
   );
 }
@@ -214,16 +214,16 @@ export function AdminProfileApprovalsClient() {
 
   if (loading) {
     return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar pedidos...</p>
+      <div className="mt-8 rounded-[2rem] border border-border bg-background p-6">
+        <p className="text-foreground-muted">A carregar pedidos...</p>
       </div>
     );
   }
 
   return (
     <div className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[320px_1fr] lg:items-start">
-      <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+      <aside className="rounded-[2rem] border border-border bg-background p-5 lg:sticky lg:top-28">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Aprovações
         </p>
 
@@ -232,16 +232,16 @@ export function AdminProfileApprovalsClient() {
         </h2>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+          <div className="rounded-[1.5rem] border border-border bg-black p-4">
             <p className="text-3xl font-black">{pendingClaims.length}</p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
               Pendentes
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+          <div className="rounded-[1.5rem] border border-border bg-black p-4">
             <p className="text-3xl font-black">{claims.length}</p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
               Total
             </p>
           </div>
@@ -254,7 +254,7 @@ export function AdminProfileApprovalsClient() {
             className={`rounded-full px-5 py-4 text-sm font-black ${
               filter === "pending"
                 ? "bg-[#f5f5f2] text-black"
-                : "border border-zinc-800 text-zinc-400"
+                : "border border-border text-foreground-muted"
             }`}
           >
             Ver pendentes
@@ -266,7 +266,7 @@ export function AdminProfileApprovalsClient() {
             className={`rounded-full px-5 py-4 text-sm font-black ${
               filter === "all"
                 ? "bg-[#f5f5f2] text-black"
-                : "border border-zinc-800 text-zinc-400"
+                : "border border-border text-foreground-muted"
             }`}
           >
             Ver todos
@@ -275,21 +275,21 @@ export function AdminProfileApprovalsClient() {
           <button
             type="button"
             onClick={loadClaims}
-            className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+            className="rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary"
           >
             Atualizar
           </button>
 
           <Link
             href="/admin/rede"
-            className="rounded-full border border-zinc-800 px-5 py-4 text-center text-sm font-bold text-zinc-500"
+            className="rounded-full border border-border px-5 py-4 text-center text-sm font-bold text-foreground-muted"
           >
             Ver rede
           </Link>
         </div>
 
         {message && (
-          <p className="mt-5 rounded-2xl border border-zinc-800 bg-black p-4 text-sm text-zinc-400">
+          <p className="mt-5 rounded-2xl border border-border bg-black p-4 text-sm text-foreground-muted">
             {message}
           </p>
         )}
@@ -306,12 +306,12 @@ export function AdminProfileApprovalsClient() {
           return (
             <article
               key={claim.id}
-              className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6"
+              className="rounded-[2rem] border border-border bg-background p-5 lg:p-6"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-black uppercase text-zinc-300">
+                    <span className="rounded-full border border-border-strong px-3 py-1 text-xs font-black uppercase text-foreground-secondary">
                       {typeLabel(claim.account_type)}
                     </span>
 
@@ -328,7 +328,7 @@ export function AdminProfileApprovalsClient() {
                     {claim.entity_name}
                   </h3>
 
-                  <div className="mt-4 space-y-1 text-sm text-zinc-500">
+                  <div className="mt-4 space-y-1 text-sm text-foreground-muted">
                     <p>Nome público: {claim.display_name || "Sem nome"}</p>
                     <p>Cidade: {claim.city || "Sem cidade"}</p>
                     <p>Criado: {formatDate(claim.created_at)}</p>
@@ -340,7 +340,7 @@ export function AdminProfileApprovalsClient() {
                           href={normalizeExternalUrl(claim.instagram_url) || "#"}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-zinc-300 underline"
+                          className="text-foreground-secondary underline"
                         >
                           {claim.instagram_url}
                         </a>
@@ -369,7 +369,7 @@ export function AdminProfileApprovalsClient() {
                         type="button"
                         onClick={() => rejectClaim(claim)}
                         disabled={actionId === claim.id}
-                        className="rounded-full border border-red-900 px-5 py-4 text-sm font-bold text-red-400 disabled:opacity-50"
+                        className="rounded-full border border-danger px-5 py-4 text-sm font-bold text-danger disabled:opacity-50"
                       >
                         Rejeitar
                       </button>
@@ -379,7 +379,7 @@ export function AdminProfileApprovalsClient() {
                   {claim.status === "approved" && publicPath && (
                     <Link
                       href={publicPath}
-                      className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+                      className="rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
                     >
                       Ver perfil público
                     </Link>

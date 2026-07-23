@@ -85,7 +85,7 @@ function statusClasses(status: ReservationStatus) {
     return "border-green-900 bg-green-950/30 text-green-500";
   }
 
-  return "border-zinc-800 bg-zinc-950 text-zinc-500";
+  return "border-border bg-background text-foreground-muted";
 }
 
 function escapeCsv(value: string | number | null | undefined) {
@@ -95,8 +95,8 @@ function escapeCsv(value: string | number | null | undefined) {
 
 function EmptyCard({ text }: { text: string }) {
   return (
-    <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-      <p className="text-zinc-500">{text}</p>
+    <div className="rounded-[2rem] border border-border bg-background p-6">
+      <p className="text-foreground-muted">{text}</p>
     </div>
   );
 }
@@ -351,16 +351,16 @@ export function AdminTicketsClient() {
 
   if (loading) {
     return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar bilheteira admin...</p>
+      <div className="mt-8 rounded-[2rem] border border-border bg-background p-6">
+        <p className="text-foreground-muted">A carregar bilheteira admin...</p>
       </div>
     );
   }
 
   if (!email) {
     return (
-      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+      <div className="mt-8 rounded-[2.5rem] border border-border bg-background p-6 lg:p-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Sem sessão
         </p>
 
@@ -368,7 +368,7 @@ export function AdminTicketsClient() {
           Tens de entrar.
         </h2>
 
-        <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-5 text-sm leading-relaxed text-foreground-muted">
           A bilheteira admin só aparece para contas com permissões.
         </p>
 
@@ -385,8 +385,8 @@ export function AdminTicketsClient() {
   return (
     <div className="mt-8 lg:mt-12">
       <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:items-start">
-        <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+        <aside className="rounded-[2rem] border border-border bg-background p-5 lg:sticky lg:top-28">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Conta admin
           </p>
 
@@ -394,42 +394,42 @@ export function AdminTicketsClient() {
             {email}
           </h2>
 
-          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-zinc-600">
+          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-foreground-muted">
             Bilheteira geral
           </p>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-black p-4">
               <p className="text-3xl font-black">{events.length}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Eventos
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-black p-4">
               <p className="text-3xl font-black">{reservations.length}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Reservas
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-black p-4">
               <p className="text-3xl font-black">{totalReservedTickets}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Lug. ativos
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-black p-4">
               <p className="text-3xl font-black">{totalCheckedInTickets}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Entradas
               </p>
             </div>
           </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-red-950 bg-red-950/20 p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-500">
+          <div className="mt-6 rounded-[1.5rem] border border-danger bg-danger/20 p-4">
+            <p className="text-xs uppercase tracking-[0.25em] text-danger">
               Lotação registada
             </p>
 
@@ -437,7 +437,7 @@ export function AdminTicketsClient() {
               {totalCapacity > 0 ? totalCapacity : "∞"}
             </p>
 
-            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
               Capacidade somada
             </p>
           </div>
@@ -455,38 +455,38 @@ export function AdminTicketsClient() {
             <button
               type="button"
               onClick={exportCsv}
-              className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+              className="rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary"
             >
               Exportar CSV
             </button>
 
             <Link
               href="/organizador/bilhetes/scan"
-              className="rounded-full border border-red-900 px-5 py-4 text-center text-sm font-bold text-red-300"
+              className="rounded-full border border-danger px-5 py-4 text-center text-sm font-bold text-danger"
             >
               Abrir scanner
             </Link>
 
             <Link
               href="/admin"
-              className="rounded-full border border-zinc-800 px-5 py-4 text-center text-sm font-bold text-zinc-500"
+              className="rounded-full border border-border px-5 py-4 text-center text-sm font-bold text-foreground-muted"
             >
               Painel admin
             </Link>
           </div>
 
           {message && (
-            <p className="mt-5 rounded-2xl border border-red-950 bg-red-950/20 p-4 text-xs leading-relaxed text-red-300">
+            <p className="mt-5 rounded-2xl border border-danger bg-danger/20 p-4 text-xs leading-relaxed text-danger">
               {message}
             </p>
           )}
         </aside>
 
         <section className="space-y-8">
-          <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+          <section className="rounded-[2.5rem] border border-border bg-background p-5 lg:p-8">
             <div className="grid gap-5 lg:grid-cols-3">
               <div className="lg:col-span-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                <p className="text-xs uppercase tracking-[0.3em] text-danger">
                   Filtros
                 </p>
 
@@ -496,7 +496,7 @@ export function AdminTicketsClient() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Pesquisa
                 </label>
 
@@ -504,12 +504,12 @@ export function AdminTicketsClient() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Código, email, evento, cidade..."
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Estado
                 </label>
 
@@ -524,7 +524,7 @@ export function AdminTicketsClient() {
                         | "cancelled"
                     )
                   }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
                 >
                   <option value="all">Todos</option>
                   <option value="reserved">Reservados</option>
@@ -534,14 +534,14 @@ export function AdminTicketsClient() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Evento
                 </label>
 
                 <select
                   value={eventFilter}
                   onChange={(event) => setEventFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
                 >
                   <option value="all">Todos</option>
 
@@ -558,7 +558,7 @@ export function AdminTicketsClient() {
           <section>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                <p className="text-xs uppercase tracking-[0.3em] text-danger">
                   Eventos
                 </p>
 
@@ -567,7 +567,7 @@ export function AdminTicketsClient() {
                 </h2>
               </div>
 
-              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+              <span className="rounded-full border border-border px-3 py-1 text-sm font-black text-foreground-muted">
                 {events.length}
               </span>
             </div>
@@ -606,7 +606,7 @@ export function AdminTicketsClient() {
                 return (
                   <article
                     key={event.id}
-                    className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
+                    className="rounded-[2rem] border border-border bg-background p-5"
                   >
                     {event.image_url && (
                       <Link
@@ -616,7 +616,7 @@ export function AdminTicketsClient() {
                       />
                     )}
 
-                    <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+                    <p className="text-xs font-bold uppercase tracking-wide text-danger">
                       {event.status || "Evento"}
                     </p>
 
@@ -624,7 +624,7 @@ export function AdminTicketsClient() {
                       {event.title}
                     </h3>
 
-                    <div className="mt-4 space-y-1 text-sm text-zinc-400">
+                    <div className="mt-4 space-y-1 text-sm text-foreground-muted">
                       <p>{event.display_date || "Data por definir"}</p>
                       <p>
                         {[event.venue_name, event.city]
@@ -636,29 +636,29 @@ export function AdminTicketsClient() {
                     </div>
 
                     <div className="mt-5 grid grid-cols-3 gap-2">
-                      <div className="rounded-2xl border border-zinc-800 bg-black p-3">
+                      <div className="rounded-2xl border border-border bg-black p-3">
                         <p className="text-xl font-black">
                           {available === null ? "∞" : available}
                         </p>
-                        <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
                           Disp.
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-zinc-800 bg-black p-3">
+                      <div className="rounded-2xl border border-border bg-black p-3">
                         <p className="text-xl font-black">
                           {eventReservedTickets}
                         </p>
-                        <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
                           Reserv.
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-zinc-800 bg-black p-3">
+                      <div className="rounded-2xl border border-border bg-black p-3">
                         <p className="text-xl font-black">
                           {eventCheckedInTickets}
                         </p>
-                        <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
                           Check
                         </p>
                       </div>
@@ -678,7 +678,7 @@ export function AdminTicketsClient() {
                           setEventFilter(event.id);
                           setStatusFilter("all");
                         }}
-                        className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300"
+                        className="rounded-full border border-border-strong px-4 py-3 text-sm font-bold text-foreground-secondary"
                       >
                         Ver reservas
                       </button>
@@ -692,7 +692,7 @@ export function AdminTicketsClient() {
           <section>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                <p className="text-xs uppercase tracking-[0.3em] text-danger">
                   Reservas
                 </p>
 
@@ -701,7 +701,7 @@ export function AdminTicketsClient() {
                 </h2>
               </div>
 
-              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+              <span className="rounded-full border border-border px-3 py-1 text-sm font-black text-foreground-muted">
                 {filteredReservations.length}
               </span>
             </div>
@@ -714,11 +714,11 @@ export function AdminTicketsClient() {
               {filteredReservations.map((reservation) => (
                 <article
                   key={reservation.id}
-                  className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
+                  className="rounded-[2rem] border border-border bg-background p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+                      <p className="text-xs font-bold uppercase tracking-wide text-danger">
                         {reservation.event?.title || "Evento"}
                       </p>
 
@@ -736,26 +736,26 @@ export function AdminTicketsClient() {
                     </span>
                   </div>
 
-                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-zinc-800 bg-black p-4 text-sm text-zinc-400">
+                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-border bg-black p-4 text-sm text-foreground-muted">
                     <p>
-                      <span className="font-bold text-zinc-300">Email:</span>{" "}
+                      <span className="font-bold text-foreground-secondary">Email:</span>{" "}
                       {reservation.user_email || "Sem email"}
                     </p>
 
                     <p>
-                      <span className="font-bold text-zinc-300">
+                      <span className="font-bold text-foreground-secondary">
                         Quantidade:
                       </span>{" "}
                       {reservation.quantity}
                     </p>
 
                     <p>
-                      <span className="font-bold text-zinc-300">Criado:</span>{" "}
+                      <span className="font-bold text-foreground-secondary">Criado:</span>{" "}
                       {formatDateTime(reservation.created_at)}
                     </p>
 
                     <p>
-                      <span className="font-bold text-zinc-300">Evento:</span>{" "}
+                      <span className="font-bold text-foreground-secondary">Evento:</span>{" "}
                       {reservation.event?.display_date || "Data por definir"} ·{" "}
                       {[reservation.event?.venue_name, reservation.event?.city]
                         .filter(Boolean)
@@ -763,7 +763,7 @@ export function AdminTicketsClient() {
                     </p>
 
                     <p>
-                      <span className="font-bold text-zinc-300">
+                      <span className="font-bold text-foreground-secondary">
                         Organizador:
                       </span>{" "}
                       {reservation.event?.organizer_name ||
@@ -795,7 +795,7 @@ export function AdminTicketsClient() {
                               nextStatus: "cancelled",
                             })
                           }
-                          className="rounded-full border border-red-900 px-4 py-3 text-sm font-bold text-red-400"
+                          className="rounded-full border border-danger px-4 py-3 text-sm font-bold text-danger"
                         >
                           Cancelar reserva
                         </button>
@@ -811,7 +811,7 @@ export function AdminTicketsClient() {
                             nextStatus: "reserved",
                           })
                         }
-                        className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300"
+                        className="rounded-full border border-border-strong px-4 py-3 text-sm font-bold text-foreground-secondary"
                       >
                         Reabrir reserva
                       </button>
@@ -820,7 +820,7 @@ export function AdminTicketsClient() {
                     {reservation.event && (
                       <Link
                         href={`/eventos/${reservation.event.slug}`}
-                        className="rounded-full border border-zinc-800 px-4 py-3 text-center text-sm font-bold text-zinc-500"
+                        className="rounded-full border border-border px-4 py-3 text-center text-sm font-bold text-foreground-muted"
                       >
                         Ver evento
                       </Link>

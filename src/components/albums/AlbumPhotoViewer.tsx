@@ -22,7 +22,7 @@ function ViewerAction({ danger = false, disabled = false, icon, label, onClick }
       disabled={disabled}
       onClick={onClick}
       className={`focus-ring pressable flex min-h-14 min-w-14 flex-col items-center justify-center gap-1 px-2 text-[0.65rem] font-bold transition-colors disabled:pointer-events-none disabled:opacity-40 ${
-        danger ? "text-red-500 hover:text-red-400" : "text-zinc-300 hover:text-white"
+        danger ? "text-danger hover:text-danger" : "text-foreground-secondary hover:text-white"
       }`}
     >
       <AppIcon name={icon} className="h-5 w-5" />
@@ -94,13 +94,13 @@ export function AlbumPhotoViewer({
             type="button"
             onClick={onClose}
             aria-label="Fechar fotografias"
-            className="focus-ring pressable absolute left-2 grid h-11 w-11 place-items-center text-zinc-300 hover:text-white sm:left-4"
+            className="focus-ring pressable absolute left-2 grid h-11 w-11 place-items-center text-foreground-secondary hover:text-white sm:left-4"
           >
             <AppIcon name="close" className="h-5 w-5" />
           </button>
           <div className="min-w-0 text-center">
             <p className="truncate text-sm font-black text-white">{albumTitle}</p>
-            <p className="mt-0.5 text-[0.65rem] font-bold tabular-nums text-zinc-500">{activeIndex + 1} / {photos.length}</p>
+            <p className="mt-0.5 text-[0.65rem] font-bold tabular-nums text-foreground-muted">{activeIndex + 1} / {photos.length}</p>
           </div>
         </div>
       </header>

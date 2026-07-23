@@ -305,7 +305,7 @@ function SatelliteLink({ href, icon, label, onClick }: { href: string; icon: "ca
 }
 
 function ParanoidMessage({ children }: { children: ReactNode }) {
-  return <div className="flex max-w-[44rem] items-start gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-red-600" aria-hidden="true" /><div className="min-w-0 text-[15px] leading-7 text-[var(--foreground-secondary)] sm:text-base">{children}</div></div>;
+  return <div className="flex max-w-[44rem] items-start gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-danger" aria-hidden="true" /><div className="min-w-0 text-[15px] leading-7 text-[var(--foreground-secondary)] sm:text-base">{children}</div></div>;
 }
 
 function UserMessage({ query }: { query: string }) {
@@ -332,7 +332,7 @@ function HubExchange({ item }: { item: HubHistoryItem }) {
             {item.response.results.map((event) => (
               <li key={event.id}>
                 <Link href={`/eventos/${event.slug}`} className="focus-ring -ml-2 flex items-baseline gap-3 rounded-md px-2 py-2 text-[var(--foreground)] hover:bg-[var(--surface-secondary)]">
-                  <span className="shrink-0 text-xs font-bold text-red-600">{event.displayTime || event.displayDate}</span>
+                  <span className="shrink-0 text-xs font-bold text-danger">{event.displayTime || event.displayDate}</span>
                   <span className="min-w-0"><strong className="font-bold">{event.title}</strong>{[event.venueName, event.city].filter(Boolean).length ? ` · ${[event.venueName, event.city].filter(Boolean).join(" · ")}` : ""}</span>
                 </Link>
               </li>
@@ -357,7 +357,7 @@ function HubExchange({ item }: { item: HubHistoryItem }) {
         {item.response.actions.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
             {item.response.actions.map((action) => (
-              <Link key={`${action.href}-${action.label}`} href={action.href} className={`pressable focus-ring inline-flex min-h-8 items-center gap-0.5 rounded text-xs font-bold ${action.primary ? "text-red-600 hover:text-red-500" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}>
+              <Link key={`${action.href}-${action.label}`} href={action.href} className={`pressable focus-ring inline-flex min-h-8 items-center gap-0.5 rounded text-xs font-bold ${action.primary ? "text-danger hover:text-danger" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}>
                 {action.label}<AppIcon name="chevron" className="h-3 w-3" />
               </Link>
             ))}

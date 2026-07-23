@@ -113,7 +113,7 @@ export function OrganizerVenuesClient() {
     <div>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">Organizador</p>
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-danger">Organizador</p>
           <h1 className="mt-2 text-4xl font-black leading-none">Espaços.</h1>
         </div>
         <Button onClick={() => setShowForm((value) => !value)}>{showForm ? "Fechar" : "Adicionar espaço"}</Button>
@@ -121,8 +121,8 @@ export function OrganizerVenuesClient() {
 
       {organizers.length > 1 && (
         <label className="mb-6 block max-w-sm">
-          <span className="mb-2 block text-xs font-bold text-zinc-600">Organizador</span>
-          <select value={organizerId} onChange={(event) => setOrganizerId(event.target.value)} className="w-full rounded border border-zinc-800 bg-black px-4 py-3">
+          <span className="mb-2 block text-xs font-bold text-foreground-muted">Organizador</span>
+          <select value={organizerId} onChange={(event) => setOrganizerId(event.target.value)} className="w-full rounded border border-border bg-black px-4 py-3">
             {organizers.map((organizer) => <option key={organizer.id} value={organizer.id}>{organizer.name}</option>)}
           </select>
         </label>
@@ -162,12 +162,12 @@ export function OrganizerVenuesClient() {
               <p className="font-bold">{venue.name}</p>
               <p className="text-xs text-foreground-muted">{venue.city}{venue.verified ? " · Verificado" : ""}</p>
             </div>
-            <Link href={`/organizador/espacos/${venue.id}`} className="pressable focus-ring text-sm font-bold text-zinc-400 hover:text-zinc-200">Editar</Link>
+            <Link href={`/organizador/espacos/${venue.id}`} className="pressable focus-ring text-sm font-bold text-foreground-muted hover:text-foreground">Editar</Link>
           </Card>
         ))}
       </div>
 
-      <Link href="/organizador" className="pressable focus-ring mt-6 inline-block text-sm font-bold text-zinc-400 hover:text-zinc-200">Voltar ao painel</Link>
+      <Link href="/organizador" className="pressable focus-ring mt-6 inline-block text-sm font-bold text-foreground-muted hover:text-foreground">Voltar ao painel</Link>
     </div>
   );
 }

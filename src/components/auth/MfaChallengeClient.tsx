@@ -64,12 +64,12 @@ export function MfaChallengeClient() {
 
   return (
     <AuthFormCard eyebrow="Segurança" title="Confirma que és tu.">
-      <p className="mb-6 text-sm leading-relaxed text-zinc-400">Introduz o código da tua aplicação autenticadora.</p>
+      <p className="mb-6 text-sm leading-relaxed text-foreground-muted">Introduz o código da tua aplicação autenticadora.</p>
       <form onSubmit={verify}>
-        <label htmlFor="mfa-code" className="mb-2 block text-sm font-bold text-zinc-300">Código de seis dígitos</label>
+        <label htmlFor="mfa-code" className="mb-2 block text-sm font-bold text-foreground-secondary">Código de seis dígitos</label>
         <MfaCodeInput value={code} onChange={setCode} disabled={loading} autoFocus />
         <p id="mfa-code-help" className="sr-only">Código numérico com seis dígitos.</p>
-        {message && <p role="alert" className="mt-4 text-sm font-bold text-red-300">{message}</p>}
+        {message && <p role="alert" className="mt-4 text-sm font-bold text-danger">{message}</p>}
         <div className="mt-6 grid gap-3">
           <LoadingButton type="submit" loading={loading} loadingText="A confirmar..." disabled={code.length !== 6}>Confirmar</LoadingButton>
           <Button type="button" variant="secondary" onClick={() => void signOut()} disabled={loading}>Terminar sessão</Button>

@@ -74,22 +74,22 @@ export function AdminSponsorshipsClient() {
         <button
           type="button"
           onClick={loadCampaigns}
-          className="rounded-full border border-zinc-800 px-4 py-2 text-sm font-black text-zinc-300"
+          className="rounded-full border border-border px-4 py-2 text-sm font-black text-foreground-secondary"
         >
           Atualizar
         </button>
       </div>
 
       {message && (
-        <p className="rounded-2xl border border-red-900 bg-red-950/40 p-4 font-bold text-red-100">
+        <p className="rounded-2xl border border-danger bg-danger/40 p-4 font-bold text-danger">
           {message}
         </p>
       )}
 
-      {loading && <p className="text-zinc-500">A carregar parceiros...</p>}
+      {loading && <p className="text-foreground-muted">A carregar parceiros...</p>}
 
       {!loading && campaigns.length === 0 && (
-        <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-500">
+        <p className="rounded-[1.5rem] border border-border bg-background p-5 text-foreground-muted">
           Ainda não há campanhas.
         </p>
       )}
@@ -97,17 +97,17 @@ export function AdminSponsorshipsClient() {
       {campaigns.map((campaign) => (
         <article
           key={campaign.id}
-          className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5"
+          className="rounded-[1.5rem] border border-border bg-background p-5"
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-danger">
                 {campaign.status}
               </p>
               <h3 className="mt-2 text-2xl font-black">
                 {campaign.product_code}
               </h3>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-foreground-muted">
                 {formatDate(campaign.starts_at)} até {formatDate(campaign.ends_at)}
               </p>
             </div>

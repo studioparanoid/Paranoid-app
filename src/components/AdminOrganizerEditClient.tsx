@@ -139,7 +139,7 @@ export function AdminOrganizerEditClient({
     return (
       <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
         <section className="mx-auto max-w-md">
-          <p className="text-zinc-500">A carregar organizador...</p>
+          <p className="text-foreground-muted">A carregar organizador...</p>
         </section>
       </main>
     );
@@ -151,14 +151,14 @@ export function AdminOrganizerEditClient({
         <section className="mx-auto max-w-md">
           <Link
             href="/admin/rede"
-            className="mb-6 inline-block text-sm text-zinc-400"
+            className="mb-6 inline-block text-sm text-foreground-muted"
           >
             ← Voltar à rede
           </Link>
 
           <h1 className="text-4xl font-black">Organizador não encontrado.</h1>
 
-          {message && <p className="mt-4 text-zinc-400">{message}</p>}
+          {message && <p className="mt-4 text-foreground-muted">{message}</p>}
         </section>
       </main>
     );
@@ -169,12 +169,12 @@ export function AdminOrganizerEditClient({
       <section className="mx-auto max-w-md">
         <Link
           href="/admin/rede"
-          className="mb-6 inline-block text-sm text-zinc-400"
+          className="mb-6 inline-block text-sm text-foreground-muted"
         >
           ← Voltar à rede
         </Link>
 
-        <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
+        <p className="mb-3 text-xs uppercase tracking-[0.35em] text-danger">
           Editar organizador
         </p>
 
@@ -182,14 +182,14 @@ export function AdminOrganizerEditClient({
           Afina quem mexe.
         </h1>
 
-        <p className="mt-5 text-base text-zinc-400">
+        <p className="mt-5 text-base text-foreground-muted">
           Atualiza nome, slug, cidade, descrição, pack e estado verificado deste
           organizador.
         </p>
 
-        <div className="mt-8 space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+        <div className="mt-8 space-y-5 rounded-[2rem] border border-border bg-background p-5">
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Nome do organizador
             </label>
 
@@ -197,20 +197,20 @@ export function AdminOrganizerEditClient({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Nome do organizador"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
           <div>
             <div className="mb-2 flex items-center justify-between gap-4">
-              <label className="block text-sm font-bold text-zinc-300">
+              <label className="block text-sm font-bold text-foreground-secondary">
                 Slug
               </label>
 
               <button
                 type="button"
                 onClick={generateSlugFromName}
-                className="text-xs font-bold uppercase tracking-wide text-red-500"
+                className="text-xs font-bold uppercase tracking-wide text-danger"
               >
                 Gerar pelo nome
               </button>
@@ -220,23 +220,23 @@ export function AdminOrganizerEditClient({
               value={slug}
               onChange={(event) => setSlug(event.target.value)}
               placeholder="ex: paranoid-crew"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
-            <p className="mt-2 text-xs text-zinc-600">
+            <p className="mt-2 text-xs text-foreground-muted">
               O slug define o link público: /organizadores/{slug || "slug"}
             </p>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Cidade
             </label>
 
             <select
               value={city}
               onChange={(event) => setCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
             >
               {cities.map((item) => (
                 <option key={item}>{item}</option>
@@ -245,7 +245,7 @@ export function AdminOrganizerEditClient({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Descrição
             </label>
 
@@ -254,12 +254,12 @@ export function AdminOrganizerEditClient({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Descrição curta do organizador"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Pack
             </label>
 
@@ -267,12 +267,12 @@ export function AdminOrganizerEditClient({
               value={pack}
               onChange={(event) => setPack(event.target.value)}
               placeholder="Ex: Paranoid Crew"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Instagram
             </label>
 
@@ -280,18 +280,18 @@ export function AdminOrganizerEditClient({
               value={instagram}
               onChange={(event) => setInstagram(event.target.value)}
               placeholder="https://instagram.com/..."
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
-          <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+          <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3">
             <input
               type="checkbox"
               checked={verified}
               onChange={(event) => setVerified(event.target.checked)}
             />
 
-            <span className="text-sm font-bold text-zinc-300">
+            <span className="text-sm font-bold text-foreground-secondary">
               Organizador verificado
             </span>
           </label>
@@ -306,7 +306,7 @@ export function AdminOrganizerEditClient({
           </button>
 
           {message && (
-            <p className="text-center text-sm font-bold text-zinc-400">
+            <p className="text-center text-sm font-bold text-foreground-muted">
               {message}
             </p>
           )}
@@ -314,7 +314,7 @@ export function AdminOrganizerEditClient({
           {slug && (
             <Link
               href={`/organizadores/${slug}`}
-              className="block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+              className="block rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
             >
               Ver perfil público
             </Link>

@@ -287,20 +287,20 @@ export function AdminSubmissionEditClient({
 
   if (loading) {
     return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar submissão...</p>
+      <div className="mt-8 rounded-[2rem] border border-border bg-background p-6">
+        <p className="text-foreground-muted">A carregar submissão...</p>
       </div>
     );
   }
 
   if (!submission) {
     return (
-      <div className="mt-8 rounded-[2.5rem] border border-red-950 bg-red-950/20 p-6 lg:p-10">
+      <div className="mt-8 rounded-[2.5rem] border border-danger bg-danger/20 p-6 lg:p-10">
         <h2 className="text-4xl font-black leading-none">
           Submissão não encontrada.
         </h2>
 
-        {message && <p className="mt-4 text-sm text-red-300">{message}</p>}
+        {message && <p className="mt-4 text-sm text-danger">{message}</p>}
 
         <Link
           href="/admin"
@@ -315,10 +315,10 @@ export function AdminSubmissionEditClient({
   const locked = submission.status !== "pending";
 
   return (
-    <section className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:mt-12 lg:p-8">
+    <section className="mt-8 rounded-[2.5rem] border border-border bg-background p-5 lg:mt-12 lg:p-8">
       <div className="grid gap-6 lg:grid-cols-[1fr_0.7fr]">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Submissão
           </p>
 
@@ -326,17 +326,17 @@ export function AdminSubmissionEditClient({
             {title || "Editar submissão"}
           </h2>
 
-          <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+          <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
             Estado: {submission.status}. Só edita antes de aprovar/rejeitar.
           </p>
         </div>
 
-        <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
-          <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+        <div className="rounded-[2rem] border border-border bg-black p-5">
+          <p className="text-xs uppercase tracking-[0.25em] text-danger">
             Bilheteira
           </p>
 
-          <div className="mt-4 space-y-2 text-sm text-zinc-500">
+          <div className="mt-4 space-y-2 text-sm text-foreground-muted">
             <p>
               Tipo:{" "}
               {ticketMode === "internal"
@@ -369,7 +369,7 @@ export function AdminSubmissionEditClient({
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Nome do evento
           </label>
 
@@ -377,12 +377,12 @@ export function AdminSubmissionEditClient({
             value={title}
             disabled={locked}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Organizador
           </label>
 
@@ -390,12 +390,12 @@ export function AdminSubmissionEditClient({
             value={organizer}
             disabled={locked}
             onChange={(event) => setOrganizer(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Artistas / bandas / DJs
           </label>
 
@@ -404,12 +404,12 @@ export function AdminSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setArtistsText(event.target.value)}
             placeholder="Separar por vírgulas"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Categoria
           </label>
 
@@ -417,7 +417,7 @@ export function AdminSubmissionEditClient({
             value={category}
             disabled={locked}
             onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -426,7 +426,7 @@ export function AdminSubmissionEditClient({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Cidade
           </label>
 
@@ -434,7 +434,7 @@ export function AdminSubmissionEditClient({
             value={city}
             disabled={locked}
             onChange={(event) => setCity(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           >
             {cities.map((item) => (
               <option key={item}>{item}</option>
@@ -443,7 +443,7 @@ export function AdminSubmissionEditClient({
         </div>
 
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Espaço / local
           </label>
 
@@ -451,11 +451,11 @@ export function AdminSubmissionEditClient({
             value={venue}
             disabled={locked}
             onChange={(event) => setVenue(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3 lg:col-span-2">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3 lg:col-span-2">
           <input
             type="checkbox"
             checked={isMultiDay}
@@ -463,13 +463,13 @@ export function AdminSubmissionEditClient({
             onChange={(event) => handleMultiDayChange(event.target.checked)}
           />
 
-          <span className="text-sm font-bold text-zinc-300">
+          <span className="text-sm font-bold text-foreground-secondary">
             Festival / evento de vários dias
           </span>
         </label>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Data início
           </label>
 
@@ -478,13 +478,13 @@ export function AdminSubmissionEditClient({
             value={eventDate}
             disabled={locked}
             onChange={(event) => handleEventDateChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
         {isMultiDay && (
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Data fim
             </label>
 
@@ -493,13 +493,13 @@ export function AdminSubmissionEditClient({
               value={endDate}
               disabled={locked}
               onChange={(event) => setEndDate(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
             />
           </div>
         )}
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Hora
           </label>
 
@@ -508,12 +508,12 @@ export function AdminSubmissionEditClient({
             value={eventTime}
             disabled={locked}
             onChange={(event) => setEventTime(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Preço público
           </label>
 
@@ -522,16 +522,16 @@ export function AdminSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setPrice(event.target.value)}
             onBlur={() => setPrice(formatPriceValue(price))}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
-        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5 lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-500">
+        <div className="rounded-[2rem] border border-danger bg-danger/20 p-5 lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Bilheteira
           </p>
 
-          <label className="mt-4 mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mt-4 mb-2 block text-sm font-bold text-foreground-secondary">
             Tipo de bilheteira
           </label>
 
@@ -541,7 +541,7 @@ export function AdminSubmissionEditClient({
             onChange={(event) =>
               handleTicketModeChange(event.target.value as TicketMode)
             }
-            className="w-full rounded-2xl border border-red-950 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-danger bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           >
             <option value="none">Sem bilhetes / só informação</option>
             <option value="external">Bilheteira externa</option>
@@ -550,7 +550,7 @@ export function AdminSubmissionEditClient({
 
           {ticketMode === "external" && (
             <div className="mt-5">
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Link externo
               </label>
 
@@ -559,7 +559,7 @@ export function AdminSubmissionEditClient({
                 disabled={locked}
                 onChange={(event) => setTicketUrl(event.target.value)}
                 placeholder="https://shotgun.live/..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
               />
             </div>
           )}
@@ -567,7 +567,7 @@ export function AdminSubmissionEditClient({
           {ticketMode === "internal" && (
             <div className="mt-5 grid gap-5 lg:grid-cols-3">
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Preço do bilhete
                 </label>
 
@@ -577,12 +577,12 @@ export function AdminSubmissionEditClient({
                   onChange={(event) => setTicketPrice(event.target.value)}
                   onBlur={() => setTicketPrice(formatPriceValue(ticketPrice))}
                   placeholder="Ex: 10€"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Lotação
                 </label>
 
@@ -593,12 +593,12 @@ export function AdminSubmissionEditClient({
                   disabled={locked}
                   onChange={(event) => setTicketCapacity(event.target.value)}
                   placeholder="Ex: 100"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Texto do botão
                 </label>
 
@@ -607,7 +607,7 @@ export function AdminSubmissionEditClient({
                   disabled={locked}
                   onChange={(event) => setTicketButtonLabel(event.target.value)}
                   placeholder="Comprar na Paranoid"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
                 />
               </div>
             </div>
@@ -615,7 +615,7 @@ export function AdminSubmissionEditClient({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Instagram / página do evento
           </label>
 
@@ -624,12 +624,12 @@ export function AdminSubmissionEditClient({
             disabled={locked}
             onChange={(event) => setInstagramUrl(event.target.value)}
             placeholder="https://instagram.com/..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
 
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Descrição
           </label>
 
@@ -638,7 +638,7 @@ export function AdminSubmissionEditClient({
             value={description}
             disabled={locked}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none disabled:opacity-50"
           />
         </div>
       </div>
@@ -655,14 +655,14 @@ export function AdminSubmissionEditClient({
 
         <Link
           href="/admin"
-          className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+          className="rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
         >
           Voltar ao admin
         </Link>
       </div>
 
       {message && (
-        <p className="mt-5 text-center text-sm font-bold text-zinc-400">
+        <p className="mt-5 text-center text-sm font-bold text-foreground-muted">
           {message}
         </p>
       )}

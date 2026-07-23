@@ -231,7 +231,7 @@ export function AdminNetworkClient() {
 
   return (
     <div className="mt-8 space-y-8">
-      <div className="grid grid-cols-3 gap-2 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-2">
+      <div className="grid grid-cols-3 gap-2 rounded-[2rem] border border-border bg-background p-2">
         <button
           type="button"
           onClick={() => {
@@ -241,7 +241,7 @@ export function AdminNetworkClient() {
           className={`rounded-2xl px-3 py-3 text-xs font-black uppercase ${
             activeTab === "artist"
               ? "bg-[#f5f5f2] text-black"
-              : "text-zinc-500"
+              : "text-foreground-muted"
           }`}
         >
           Artista
@@ -256,7 +256,7 @@ export function AdminNetworkClient() {
           className={`rounded-2xl px-3 py-3 text-xs font-black uppercase ${
             activeTab === "venue"
               ? "bg-[#f5f5f2] text-black"
-              : "text-zinc-500"
+              : "text-foreground-muted"
           }`}
         >
           Espaço
@@ -271,7 +271,7 @@ export function AdminNetworkClient() {
           className={`rounded-2xl px-3 py-3 text-xs font-black uppercase ${
             activeTab === "organizer"
               ? "bg-[#f5f5f2] text-black"
-              : "text-zinc-500"
+              : "text-foreground-muted"
           }`}
         >
           Org.
@@ -280,8 +280,8 @@ export function AdminNetworkClient() {
 
       {activeTab === "artist" && (
         <>
-          <section className="space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+          <section className="space-y-5 rounded-[2rem] border border-border bg-background p-5">
+            <p className="text-xs uppercase tracking-[0.25em] text-danger">
               Novo artista
             </p>
 
@@ -289,13 +289,13 @@ export function AdminNetworkClient() {
               value={artistName}
               onChange={(event) => setArtistName(event.target.value)}
               placeholder="Nome do artista"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <select
               value={artistCity}
               onChange={(event) => setArtistCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -306,7 +306,7 @@ export function AdminNetworkClient() {
               value={artistGenres}
               onChange={(event) => setArtistGenres(event.target.value)}
               placeholder="Géneros separados por vírgula. Ex: Doom, Sludge"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <textarea
@@ -314,21 +314,21 @@ export function AdminNetworkClient() {
               value={artistDescription}
               onChange={(event) => setArtistDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={artistInstagram}
               onChange={(event) => setArtistInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={artistBandcamp}
               onChange={(event) => setArtistBandcamp(event.target.value)}
               placeholder="Bandcamp URL"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <button
@@ -345,20 +345,20 @@ export function AdminNetworkClient() {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black">Artistas existentes</h2>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-foreground-muted">
                   Perfis já dentro da rede.
                 </p>
               </div>
 
-              <span className="text-sm font-black text-red-700">
+              <span className="text-sm font-black text-danger">
                 {artists.length}
               </span>
             </div>
 
             <div className="mt-4 space-y-3">
               {loadingNetwork && (
-                <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-                  <p className="text-zinc-400">A carregar artistas...</p>
+                <div className="rounded-3xl border border-border bg-background p-6">
+                  <p className="text-foreground-muted">A carregar artistas...</p>
                 </div>
               )}
 
@@ -366,11 +366,11 @@ export function AdminNetworkClient() {
                 artists.map((artist) => (
                   <article
                     key={artist.id}
-                    className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
+                    className="rounded-3xl border border-border bg-background p-4"
                   >
                     <h3 className="text-xl font-black">{artist.name}</h3>
 
-                    <p className="mt-1 text-sm text-zinc-500">
+                    <p className="mt-1 text-sm text-foreground-muted">
                       {artist.city || "Cidade por definir"}
                     </p>
 
@@ -379,7 +379,7 @@ export function AdminNetworkClient() {
                         {artist.genres.slice(0, 4).map((genre) => (
                           <span
                             key={genre}
-                            className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-bold text-zinc-400"
+                            className="rounded-full border border-border-strong px-3 py-1 text-xs font-bold text-foreground-muted"
                           >
                             {genre}
                           </span>
@@ -397,7 +397,7 @@ export function AdminNetworkClient() {
 
                       <Link
                         href={`/artistas/${artist.slug}`}
-                        className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+                        className="flex-1 rounded-full border border-border-strong px-4 py-3 text-center text-sm font-bold text-foreground-secondary"
                       >
                         Ver perfil
                       </Link>
@@ -406,8 +406,8 @@ export function AdminNetworkClient() {
                 ))}
 
               {!loadingNetwork && artists.length === 0 && (
-                <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-                  <p className="text-zinc-400">Ainda não há artistas.</p>
+                <div className="rounded-3xl border border-border bg-background p-6">
+                  <p className="text-foreground-muted">Ainda não há artistas.</p>
                 </div>
               )}
             </div>
@@ -417,8 +417,8 @@ export function AdminNetworkClient() {
 
       {activeTab === "venue" && (
         <>
-          <section className="space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+          <section className="space-y-5 rounded-[2rem] border border-border bg-background p-5">
+            <p className="text-xs uppercase tracking-[0.25em] text-danger">
               Novo espaço
             </p>
 
@@ -426,13 +426,13 @@ export function AdminNetworkClient() {
               value={venueName}
               onChange={(event) => setVenueName(event.target.value)}
               placeholder="Nome do espaço"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <select
               value={venueCity}
               onChange={(event) => setVenueCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -443,7 +443,7 @@ export function AdminNetworkClient() {
               value={venueAddress}
               onChange={(event) => setVenueAddress(event.target.value)}
               placeholder="Morada"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <textarea
@@ -451,14 +451,14 @@ export function AdminNetworkClient() {
               value={venueDescription}
               onChange={(event) => setVenueDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={venueInstagram}
               onChange={(event) => setVenueInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <button
@@ -475,20 +475,20 @@ export function AdminNetworkClient() {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black">Espaços existentes</h2>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-foreground-muted">
                   Salas, caves, auditórios e pontos ativos.
                 </p>
               </div>
 
-              <span className="text-sm font-black text-red-700">
+              <span className="text-sm font-black text-danger">
                 {venues.length}
               </span>
             </div>
 
             <div className="mt-4 space-y-3">
               {loadingNetwork && (
-                <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-                  <p className="text-zinc-400">A carregar espaços...</p>
+                <div className="rounded-3xl border border-border bg-background p-6">
+                  <p className="text-foreground-muted">A carregar espaços...</p>
                 </div>
               )}
 
@@ -496,11 +496,11 @@ export function AdminNetworkClient() {
                 venues.map((venue) => (
                   <article
                     key={venue.id}
-                    className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
+                    className="rounded-3xl border border-border bg-background p-4"
                   >
                     <h3 className="text-xl font-black">{venue.name}</h3>
 
-                    <p className="mt-1 text-sm text-zinc-500">
+                    <p className="mt-1 text-sm text-foreground-muted">
                       {venue.address || "Morada por definir"}, {venue.city}
                     </p>
 
@@ -514,7 +514,7 @@ export function AdminNetworkClient() {
 
                       <Link
                         href={`/espacos/${venue.slug}`}
-                        className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+                        className="flex-1 rounded-full border border-border-strong px-4 py-3 text-center text-sm font-bold text-foreground-secondary"
                       >
                         Ver perfil
                       </Link>
@@ -523,8 +523,8 @@ export function AdminNetworkClient() {
                 ))}
 
               {!loadingNetwork && venues.length === 0 && (
-                <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-                  <p className="text-zinc-400">Ainda não há espaços.</p>
+                <div className="rounded-3xl border border-border bg-background p-6">
+                  <p className="text-foreground-muted">Ainda não há espaços.</p>
                 </div>
               )}
             </div>
@@ -534,8 +534,8 @@ export function AdminNetworkClient() {
 
       {activeTab === "organizer" && (
         <>
-          <section className="space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+          <section className="space-y-5 rounded-[2rem] border border-border bg-background p-5">
+            <p className="text-xs uppercase tracking-[0.25em] text-danger">
               Novo organizador
             </p>
 
@@ -543,13 +543,13 @@ export function AdminNetworkClient() {
               value={organizerName}
               onChange={(event) => setOrganizerName(event.target.value)}
               placeholder="Nome do organizador"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <select
               value={organizerCity}
               onChange={(event) => setOrganizerCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
             >
               {cities.map((city) => (
                 <option key={city}>{city}</option>
@@ -561,31 +561,31 @@ export function AdminNetworkClient() {
               value={organizerDescription}
               onChange={(event) => setOrganizerDescription(event.target.value)}
               placeholder="Descrição"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={organizerPack}
               onChange={(event) => setOrganizerPack(event.target.value)}
               placeholder="Pack. Ex: Paranoid Crew"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <input
               value={organizerInstagram}
               onChange={(event) => setOrganizerInstagram(event.target.value)}
               placeholder="Instagram URL"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
-            <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+            <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3">
               <input
                 type="checkbox"
                 checked={organizerVerified}
                 onChange={(event) => setOrganizerVerified(event.target.checked)}
               />
 
-              <span className="text-sm font-bold text-zinc-300">
+              <span className="text-sm font-bold text-foreground-secondary">
                 Organizador verificado
               </span>
             </label>
@@ -606,20 +606,20 @@ export function AdminNetworkClient() {
                 <h2 className="text-2xl font-black">
                   Organizadores existentes
                 </h2>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-foreground-muted">
                   Promotores, coletivos e entidades.
                 </p>
               </div>
 
-              <span className="text-sm font-black text-red-700">
+              <span className="text-sm font-black text-danger">
                 {organizers.length}
               </span>
             </div>
 
             <div className="mt-4 space-y-3">
               {loadingNetwork && (
-                <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-                  <p className="text-zinc-400">A carregar organizadores...</p>
+                <div className="rounded-3xl border border-border bg-background p-6">
+                  <p className="text-foreground-muted">A carregar organizadores...</p>
                 </div>
               )}
 
@@ -627,7 +627,7 @@ export function AdminNetworkClient() {
                 organizers.map((organizer) => (
                   <article
                     key={organizer.id}
-                    className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4"
+                    className="rounded-3xl border border-border bg-background p-4"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -635,19 +635,19 @@ export function AdminNetworkClient() {
                           {organizer.name}
                         </h3>
 
-                        <p className="mt-1 text-sm text-zinc-500">
+                        <p className="mt-1 text-sm text-foreground-muted">
                           {organizer.city || "Cidade por definir"}
                         </p>
 
                         {organizer.pack && (
-                          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-zinc-600">
+                          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                             {organizer.pack}
                           </p>
                         )}
                       </div>
 
                       {organizer.verified && (
-                        <span className="rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-bold text-red-400">
+                        <span className="rounded-full border border-danger bg-danger px-3 py-1 text-xs font-bold text-danger">
                           Verificado
                         </span>
                       )}
@@ -663,7 +663,7 @@ export function AdminNetworkClient() {
 
                       <Link
                         href={`/organizadores/${organizer.slug}`}
-                        className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+                        className="flex-1 rounded-full border border-border-strong px-4 py-3 text-center text-sm font-bold text-foreground-secondary"
                       >
                         Ver perfil
                       </Link>
@@ -672,8 +672,8 @@ export function AdminNetworkClient() {
                 ))}
 
               {!loadingNetwork && organizers.length === 0 && (
-                <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-6">
-                  <p className="text-zinc-400">
+                <div className="rounded-3xl border border-border bg-background p-6">
+                  <p className="text-foreground-muted">
                     Ainda não há organizadores.
                   </p>
                 </div>
@@ -684,7 +684,7 @@ export function AdminNetworkClient() {
       )}
 
       {message && (
-        <p className="rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-center text-sm font-bold text-zinc-400">
+        <p className="rounded-2xl border border-border bg-background px-4 py-3 text-center text-sm font-bold text-foreground-muted">
           {message}
         </p>
       )}

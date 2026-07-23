@@ -9,12 +9,12 @@ export default function AdminNetworkPage() {
         <section className="mx-auto max-w-md">
           <Link
             href="/admin"
-            className="mb-6 inline-block text-sm text-zinc-400"
+            className="mb-6 inline-block text-sm text-foreground-muted"
           >
             ← Voltar ao admin
           </Link>
 
-          <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
+          <p className="mb-3 text-xs uppercase tracking-[0.35em] text-danger">
             Rede Paranoid
           </p>
 
@@ -22,7 +22,7 @@ export default function AdminNetworkPage() {
             Alimenta o mapa.
           </h1>
 
-          <p className="mt-5 text-base text-zinc-400">
+          <p className="mt-5 text-base text-foreground-muted">
             Cria e gere artistas, espaços e organizadores que aparecem no
             Descobrir, nos perfis públicos e no feed Para ti.
           </p>

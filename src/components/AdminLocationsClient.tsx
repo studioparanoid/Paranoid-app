@@ -113,7 +113,7 @@ function locationStatusClasses(item: EditableItem) {
     return "border-green-900 bg-green-950/20 text-green-400";
   }
 
-  return "border-red-900 bg-red-950/20 text-red-300";
+  return "border-danger bg-danger/20 text-danger";
 }
 
 function parseCoordinate(
@@ -473,16 +473,16 @@ export function AdminLocationsClient() {
 
   if (loading) {
     return (
-      <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar localizações...</p>
+      <section className="rounded-[2rem] border border-border bg-background p-6">
+        <p className="text-foreground-muted">A carregar localizações...</p>
       </section>
     );
   }
 
   if (!isAdmin) {
     return (
-      <section className="rounded-[2.5rem] border border-red-900 bg-red-950/20 p-6 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.35em] text-red-400">
+      <section className="rounded-[2.5rem] border border-danger bg-danger/20 p-6 lg:p-10">
+        <p className="text-xs uppercase tracking-[0.35em] text-danger">
           Sem acesso
         </p>
 
@@ -490,7 +490,7 @@ export function AdminLocationsClient() {
           Isto é só para admin.
         </h2>
 
-        <p className="mt-5 text-base leading-relaxed text-red-200">
+        <p className="mt-5 text-base leading-relaxed text-danger">
           Entra com a conta admin da Paranoid para editar coordenadas.
         </p>
 
@@ -513,36 +513,36 @@ export function AdminLocationsClient() {
   return (
     <section className="space-y-6">
       {message && (
-        <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-          <p className="text-sm font-bold text-zinc-300">{message}</p>
+        <div className="rounded-[2rem] border border-border bg-background p-5">
+          <p className="text-sm font-bold text-foreground-secondary">{message}</p>
         </div>
       )}
 
       <section className="grid gap-4 md:grid-cols-4">
-        <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+        <article className="rounded-[2rem] border border-border bg-background p-5">
           <p className="text-4xl font-black">{stats.total}</p>
-          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
+          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-foreground-muted">
             Total
           </p>
         </article>
 
-        <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+        <article className="rounded-[2rem] border border-border bg-background p-5">
           <p className="text-4xl font-black">{stats.withCoordinates}</p>
-          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
+          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-foreground-muted">
             Com geo
           </p>
         </article>
 
-        <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+        <article className="rounded-[2rem] border border-border bg-background p-5">
           <p className="text-4xl font-black">{stats.missing}</p>
-          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
+          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-foreground-muted">
             Em falta
           </p>
         </article>
 
-        <article className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+        <article className="rounded-[2rem] border border-border bg-background p-5">
           <p className="text-4xl font-black">{stats.venues}</p>
-          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
+          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-foreground-muted">
             Espaços
           </p>
         </article>
@@ -550,8 +550,8 @@ export function AdminLocationsClient() {
 
       <section className="grid gap-6 lg:grid-cols-[360px_1fr] lg:items-start">
         <aside className="space-y-6 lg:sticky lg:top-28">
-          <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          <section className="rounded-[2rem] border border-border bg-background p-5">
+            <p className="text-xs uppercase tracking-[0.3em] text-danger">
               Pesquisa
             </p>
 
@@ -560,7 +560,7 @@ export function AdminLocationsClient() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Nome, concelho, cidade, morada..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
 
               <select
@@ -568,7 +568,7 @@ export function AdminLocationsClient() {
                 onChange={(event) =>
                   setKindFilter(event.target.value as "all" | LocationKind)
                 }
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
               >
                 <option value="all">Tudo</option>
                 <option value="venue">Espaços</option>
@@ -581,7 +581,7 @@ export function AdminLocationsClient() {
                 className={`w-full rounded-full px-5 py-4 text-sm font-black ${
                   onlyMissing
                     ? "bg-[#f5f5f2] text-black"
-                    : "border border-zinc-700 text-zinc-300"
+                    : "border border-border-strong text-foreground-secondary"
                 }`}
               >
                 {onlyMissing ? "Só em falta" : "Mostrar tudo"}
@@ -591,7 +591,7 @@ export function AdminLocationsClient() {
                 type="button"
                 onClick={backfillEventsFromVenues}
                 disabled={backfilling}
-                className="w-full rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300 disabled:opacity-50"
+                className="w-full rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary disabled:opacity-50"
               >
                 {backfilling
                   ? "A atualizar..."
@@ -601,16 +601,16 @@ export function AdminLocationsClient() {
               <button
                 type="button"
                 onClick={loadData}
-                className="w-full rounded-full border border-zinc-800 px-5 py-4 text-sm font-bold text-zinc-500"
+                className="w-full rounded-full border border-border px-5 py-4 text-sm font-bold text-foreground-muted"
               >
                 Atualizar lista
               </button>
             </div>
           </section>
 
-          <section className="max-h-[70vh] space-y-3 overflow-y-auto rounded-[2rem] border border-zinc-800 bg-zinc-950 p-3">
+          <section className="max-h-[70vh] space-y-3 overflow-y-auto rounded-[2rem] border border-border bg-background p-3">
             {editableItems.length === 0 && (
-              <p className="p-4 text-sm text-zinc-500">
+              <p className="p-4 text-sm text-foreground-muted">
                 Sem resultados para estes filtros.
               </p>
             )}
@@ -622,8 +622,8 @@ export function AdminLocationsClient() {
                 onClick={() => selectItem(item)}
                 className={`w-full rounded-[1.5rem] border p-4 text-left transition ${
                   selectedKind === item.kind && selectedId === item.id
-                    ? "border-red-900 bg-red-950/20"
-                    : "border-zinc-800 bg-black hover:border-zinc-700"
+                    ? "border-danger bg-danger/20"
+                    : "border-border bg-black hover:border-border-strong"
                 }`}
               >
                 <div className="flex flex-wrap gap-2">
@@ -635,7 +635,7 @@ export function AdminLocationsClient() {
                     {locationStatusLabel(item)}
                   </span>
 
-                  <span className="rounded-full border border-zinc-800 px-3 py-1 text-[10px] font-black uppercase text-zinc-500">
+                  <span className="rounded-full border border-border px-3 py-1 text-[10px] font-black uppercase text-foreground-muted">
                     {item.kind === "venue" ? "Espaço" : "Evento"}
                   </span>
                 </div>
@@ -644,11 +644,11 @@ export function AdminLocationsClient() {
                   {item.title}
                 </h3>
 
-                <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
                   {item.subtitle}
                 </p>
 
-                <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+                <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
                   {[
                     item.address,
                     item.postal_code,
@@ -664,10 +664,10 @@ export function AdminLocationsClient() {
           </section>
         </aside>
 
-        <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+        <section className="rounded-[2.5rem] border border-border bg-background p-5 lg:p-8">
           {!selectedItem ? (
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+              <p className="text-xs uppercase tracking-[0.3em] text-danger">
                 Editar
               </p>
 
@@ -675,7 +675,7 @@ export function AdminLocationsClient() {
                 Escolhe uma localização.
               </h2>
 
-              <p className="mt-5 text-base leading-relaxed text-zinc-400">
+              <p className="mt-5 text-base leading-relaxed text-foreground-muted">
                 Seleciona um espaço ou evento na lista para meter morada,
                 concelho e coordenadas exatas.
               </p>
@@ -684,7 +684,7 @@ export function AdminLocationsClient() {
             <div>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                  <p className="text-xs uppercase tracking-[0.3em] text-danger">
                     Editar localização
                   </p>
 
@@ -692,7 +692,7 @@ export function AdminLocationsClient() {
                     {selectedItem.title}
                   </h2>
 
-                  <p className="mt-4 text-sm text-zinc-500">
+                  <p className="mt-4 text-sm text-foreground-muted">
                     {selectedItem.kind === "venue" ? "Espaço" : "Evento"} ·{" "}
                     {locationStatusLabel(selectedItem)}
                   </p>
@@ -701,7 +701,7 @@ export function AdminLocationsClient() {
                 {selectedItem.href && (
                   <Link
                     href={selectedItem.href}
-                    className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+                    className="rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary"
                   >
                     Ver público
                   </Link>
@@ -710,7 +710,7 @@ export function AdminLocationsClient() {
 
               <div className="mt-8 grid gap-5 lg:grid-cols-2">
                 <div className="lg:col-span-2">
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                     Morada completa
                   </label>
 
@@ -723,12 +723,12 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Rua, número, espaço..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                     Código postal
                   </label>
 
@@ -741,12 +741,12 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="0000-000"
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                     Localidade
                   </label>
 
@@ -759,12 +759,12 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Alvorge, Pombal, Leiria..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                     Concelho
                   </label>
 
@@ -777,12 +777,12 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Ansião, Pombal, Leiria..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                     Distrito
                   </label>
 
@@ -795,12 +795,12 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="Leiria, Coimbra, Lisboa..."
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                     Latitude
                   </label>
 
@@ -813,12 +813,12 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="39.912345"
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-300">
+                  <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                     Longitude
                   </label>
 
@@ -831,17 +831,17 @@ export function AdminLocationsClient() {
                       }))
                     }
                     placeholder="-8.435678"
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                   />
                 </div>
               </div>
 
-              <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-black p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+              <div className="mt-8 rounded-[2rem] border border-border bg-black p-5">
+                <p className="text-xs uppercase tracking-[0.3em] text-danger">
                   Localização
                 </p>
 
-                <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+                <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
                   Para distância real, usa coordenadas exatas da porta. Para
                   filtros, usa localidade, concelho e distrito.
                 </p>
@@ -852,7 +852,7 @@ export function AdminLocationsClient() {
                       href={mapsSearchUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+                      className="rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary"
                     >
                       Procurar morada no Maps
                     </a>
@@ -890,7 +890,7 @@ export function AdminLocationsClient() {
                       longitude: "",
                     }))
                   }
-                  className="rounded-full border border-red-900 px-5 py-4 text-sm font-bold text-red-300"
+                  className="rounded-full border border-danger px-5 py-4 text-sm font-bold text-danger"
                 >
                   Limpar coordenadas
                 </button>

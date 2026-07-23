@@ -93,13 +93,13 @@ function statusClasses(status: ReservationRow["status"]) {
     return "border-green-900 bg-green-950/30 text-green-500";
   }
 
-  return "border-zinc-800 bg-zinc-950 text-zinc-500";
+  return "border-border bg-background text-foreground-muted";
 }
 
 function EmptyCard({ text }: { text: string }) {
   return (
-    <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-      <p className="text-zinc-500">{text}</p>
+    <div className="rounded-[2rem] border border-border bg-background p-6">
+      <p className="text-foreground-muted">{text}</p>
     </div>
   );
 }
@@ -352,16 +352,16 @@ export function OrganizerTicketsClient() {
 
   if (loading) {
     return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar bilheteira...</p>
+      <div className="mt-8 rounded-[2rem] border border-border bg-background p-6">
+        <p className="text-foreground-muted">A carregar bilheteira...</p>
       </div>
     );
   }
 
   if (!email) {
     return (
-      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+      <div className="mt-8 rounded-[2.5rem] border border-border bg-background p-6 lg:p-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Sem sessão
         </p>
 
@@ -369,7 +369,7 @@ export function OrganizerTicketsClient() {
           Tens de entrar.
         </h2>
 
-        <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-5 text-sm leading-relaxed text-foreground-muted">
           O check-in da bilheteira só aparece para contas ligadas a um
           organizador.
         </p>
@@ -386,8 +386,8 @@ export function OrganizerTicketsClient() {
 
   if (organizers.length === 0) {
     return (
-      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+      <div className="mt-8 rounded-[2.5rem] border border-border bg-background p-6 lg:p-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Sem organizador
         </p>
 
@@ -395,7 +395,7 @@ export function OrganizerTicketsClient() {
           Esta conta não tem bilheteira.
         </h2>
 
-        <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-5 text-sm leading-relaxed text-foreground-muted">
           Conta atual: {email}. Liga esta conta a um organizador para ver
           reservas e fazer check-in.
         </p>
@@ -413,8 +413,8 @@ export function OrganizerTicketsClient() {
   return (
     <div className="mt-8 lg:mt-12">
       <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:items-start">
-        <aside className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+        <aside className="rounded-[2rem] border border-border bg-background p-5 lg:sticky lg:top-28">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Porta
           </p>
 
@@ -422,20 +422,20 @@ export function OrganizerTicketsClient() {
             {email}
           </h2>
 
-          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-zinc-600">
+          <p className="mt-2 text-sm font-bold uppercase tracking-wide text-foreground-muted">
             Check-in
           </p>
 
           {organizers.length > 1 && (
             <div className="mt-6">
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Organizador
               </label>
 
               <select
                 value={selectedOrganizerId}
                 onChange={(event) => handleSelectOrganizer(event.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
               >
                 {organizers.map((organizer) => (
                   <option key={organizer.id} value={organizer.id}>
@@ -447,8 +447,8 @@ export function OrganizerTicketsClient() {
           )}
 
           {selectedOrganizer && (
-            <div className="mt-6 rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+            <div className="mt-6 rounded-[1.5rem] border border-border bg-black p-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-danger">
                 Ativo
               </p>
 
@@ -457,7 +457,7 @@ export function OrganizerTicketsClient() {
               </h3>
 
               {selectedOrganizer.city && (
-                <p className="mt-2 text-sm text-zinc-500">
+                <p className="mt-2 text-sm text-foreground-muted">
                   {selectedOrganizer.city}
                 </p>
               )}
@@ -465,43 +465,43 @@ export function OrganizerTicketsClient() {
           )}
 
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-black p-4">
               <p className="text-3xl font-black">{reservedCount}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Reserv.
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-black p-4">
               <p className="text-3xl font-black">{checkedInCount}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Check
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-black p-4">
               <p className="text-3xl font-black">{totalReservedTickets}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Lug.
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
+            <div className="rounded-[1.5rem] border border-border bg-black p-4">
               <p className="text-3xl font-black">{cancelledCount}</p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
                 Canc.
               </p>
             </div>
           </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-red-950 bg-red-950/20 p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-red-500">
+          <div className="mt-6 rounded-[1.5rem] border border-danger bg-danger/20 p-4">
+            <p className="text-xs uppercase tracking-[0.25em] text-danger">
               Entradas
             </p>
 
             <p className="mt-3 text-3xl font-black">{totalCheckedInTickets}</p>
 
-            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
               Pessoas já entradas
             </p>
           </div>
@@ -518,24 +518,24 @@ export function OrganizerTicketsClient() {
 
             <Link
               href="/organizador"
-              className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+              className="rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
             >
               Painel organizador
             </Link>
           </div>
 
           {message && (
-            <p className="mt-5 rounded-2xl border border-red-950 bg-red-950/20 p-4 text-xs leading-relaxed text-red-300">
+            <p className="mt-5 rounded-2xl border border-danger bg-danger/20 p-4 text-xs leading-relaxed text-danger">
               {message}
             </p>
           )}
         </aside>
 
         <section className="space-y-8">
-          <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
+          <section className="rounded-[2.5rem] border border-border bg-background p-5 lg:p-8">
             <div className="grid gap-5 lg:grid-cols-3">
               <div className="lg:col-span-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                <p className="text-xs uppercase tracking-[0.3em] text-danger">
                   Filtros
                 </p>
 
@@ -545,7 +545,7 @@ export function OrganizerTicketsClient() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Pesquisa
                 </label>
 
@@ -553,12 +553,12 @@ export function OrganizerTicketsClient() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Código, email, evento..."
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Estado
                 </label>
 
@@ -573,7 +573,7 @@ export function OrganizerTicketsClient() {
                         | "cancelled"
                     )
                   }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
                 >
                   <option value="all">Todos</option>
                   <option value="reserved">Reservados</option>
@@ -583,14 +583,14 @@ export function OrganizerTicketsClient() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Evento
                 </label>
 
                 <select
                   value={eventFilter}
                   onChange={(event) => setEventFilter(event.target.value)}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
                 >
                   <option value="all">Todos</option>
 
@@ -607,7 +607,7 @@ export function OrganizerTicketsClient() {
           <section>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                <p className="text-xs uppercase tracking-[0.3em] text-danger">
                   Eventos
                 </p>
 
@@ -616,7 +616,7 @@ export function OrganizerTicketsClient() {
                 </h2>
               </div>
 
-              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+              <span className="rounded-full border border-border px-3 py-1 text-sm font-black text-foreground-muted">
                 {events.length}
               </span>
             </div>
@@ -630,7 +630,7 @@ export function OrganizerTicketsClient() {
                 <Link
                   key={event.id}
                   href={`/eventos/${event.slug}`}
-                  className="block rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 transition hover:border-red-950"
+                  className="block rounded-[2rem] border border-border bg-background p-5 transition hover:border-danger"
                 >
                   {event.image_url && (
                     <div
@@ -639,7 +639,7 @@ export function OrganizerTicketsClient() {
                     />
                   )}
 
-                  <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+                  <p className="text-xs font-bold uppercase tracking-wide text-danger">
                     {event.status || "Evento"}
                   </p>
 
@@ -647,7 +647,7 @@ export function OrganizerTicketsClient() {
                     {event.title}
                   </h3>
 
-                  <div className="mt-4 space-y-1 text-sm text-zinc-400">
+                  <div className="mt-4 space-y-1 text-sm text-foreground-muted">
                     <p>{event.display_date || "Data por definir"}</p>
                     <p>{[event.venue_name, event.city].filter(Boolean).join(" · ")}</p>
                     <p>{event.ticket_price || "Preço por definir"}</p>
@@ -661,7 +661,7 @@ export function OrganizerTicketsClient() {
           <section>
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+                <p className="text-xs uppercase tracking-[0.3em] text-danger">
                   Reservas
                 </p>
 
@@ -670,7 +670,7 @@ export function OrganizerTicketsClient() {
                 </h2>
               </div>
 
-              <span className="rounded-full border border-zinc-800 px-3 py-1 text-sm font-black text-zinc-400">
+              <span className="rounded-full border border-border px-3 py-1 text-sm font-black text-foreground-muted">
                 {filteredReservations.length}
               </span>
             </div>
@@ -683,11 +683,11 @@ export function OrganizerTicketsClient() {
               {filteredReservations.map((reservation) => (
                 <article
                   key={reservation.id}
-                  className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5"
+                  className="rounded-[2rem] border border-border bg-background p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-red-700">
+                      <p className="text-xs font-bold uppercase tracking-wide text-danger">
                         {reservation.event?.title || "Evento"}
                       </p>
 
@@ -705,24 +705,24 @@ export function OrganizerTicketsClient() {
                     </span>
                   </div>
 
-                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-zinc-800 bg-black p-4 text-sm text-zinc-400">
+                  <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-border bg-black p-4 text-sm text-foreground-muted">
                     <p>
-                      <span className="font-bold text-zinc-300">Email:</span>{" "}
+                      <span className="font-bold text-foreground-secondary">Email:</span>{" "}
                       {reservation.user_email || "Sem email"}
                     </p>
 
                     <p>
-                      <span className="font-bold text-zinc-300">Quantidade:</span>{" "}
+                      <span className="font-bold text-foreground-secondary">Quantidade:</span>{" "}
                       {reservation.quantity}
                     </p>
 
                     <p>
-                      <span className="font-bold text-zinc-300">Criado:</span>{" "}
+                      <span className="font-bold text-foreground-secondary">Criado:</span>{" "}
                       {formatDateTime(reservation.created_at)}
                     </p>
 
                     <p>
-                      <span className="font-bold text-zinc-300">Evento:</span>{" "}
+                      <span className="font-bold text-foreground-secondary">Evento:</span>{" "}
                       {reservation.event?.display_date || "Data por definir"} ·{" "}
                       {[reservation.event?.venue_name, reservation.event?.city]
                         .filter(Boolean)
@@ -754,7 +754,7 @@ export function OrganizerTicketsClient() {
                               nextStatus: "cancelled",
                             })
                           }
-                          className="rounded-full border border-red-900 px-4 py-3 text-sm font-bold text-red-400"
+                          className="rounded-full border border-danger px-4 py-3 text-sm font-bold text-danger"
                         >
                           Cancelar reserva
                         </button>
@@ -770,7 +770,7 @@ export function OrganizerTicketsClient() {
                             nextStatus: "reserved",
                           })
                         }
-                        className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300"
+                        className="rounded-full border border-border-strong px-4 py-3 text-sm font-bold text-foreground-secondary"
                       >
                         Reabrir reserva
                       </button>

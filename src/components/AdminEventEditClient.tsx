@@ -748,29 +748,29 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
   if (loading) {
     return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A carregar evento...</p>
+      <div className="mt-8 rounded-[2rem] border border-border bg-background p-6">
+        <p className="text-foreground-muted">A carregar evento...</p>
       </div>
     );
   }
 
   if (!loadedEvent) {
     return (
-      <div className="mt-8 rounded-[2.5rem] border border-red-950 bg-red-950/20 p-6 lg:p-10">
+      <div className="mt-8 rounded-[2.5rem] border border-danger bg-danger/20 p-6 lg:p-10">
         <h2 className="text-4xl font-black leading-none">
           Evento não encontrado.
         </h2>
 
-        {message && <p className="mt-4 text-sm text-red-300">{message}</p>}
+        {message && <p className="mt-4 text-sm text-danger">{message}</p>}
       </div>
     );
   }
 
   return (
-    <section className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:mt-12 lg:p-8">
+    <section className="mt-8 rounded-[2.5rem] border border-border bg-background p-5 lg:mt-12 lg:p-8">
       <div className="grid gap-6 lg:grid-cols-[1fr_0.7fr]">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Evento
           </p>
 
@@ -778,17 +778,17 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             {title || "Editar evento"}
           </h2>
 
-          <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+          <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
             ID: {loadedEvent.id}
           </p>
         </div>
 
-        <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
-          <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+        <div className="rounded-[2rem] border border-border bg-black p-5">
+          <p className="text-xs uppercase tracking-[0.25em] text-danger">
             Estado
           </p>
 
-          <div className="mt-4 space-y-2 text-sm text-zinc-500">
+          <div className="mt-4 space-y-2 text-sm text-foreground-muted">
             <p>Slug: {slug}</p>
             <p>Estado: {status}</p>
             <p>
@@ -804,7 +804,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           {status === "published" && (
             <Link
               href={`/eventos/${slug}`}
-              className="mt-5 block rounded-full border border-zinc-700 px-4 py-3 text-center text-sm font-bold text-zinc-300"
+              className="mt-5 block rounded-full border border-border-strong px-4 py-3 text-center text-sm font-bold text-foreground-secondary"
             >
               Ver público
             </Link>
@@ -814,7 +814,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Poster / imagem
           </label>
 
@@ -824,7 +824,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             onChange={(event) =>
               handleImageChange(event.target.files?.[0] || null)
             }
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-full file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-sm text-foreground-muted file:mr-4 file:rounded-full file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
           />
         </div>
 
@@ -836,50 +836,50 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
         )}
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Nome do evento
           </label>
 
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Slug
           </label>
 
           <input
             value={slug}
             onChange={(event) => setSlug(slugify(event.target.value))}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Organizador
           </label>
 
           <input
             value={organizer}
             onChange={(event) => setOrganizer(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Estado
           </label>
 
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           >
             <option value="published">Publicado</option>
             <option value="archived">Arquivado</option>
@@ -888,7 +888,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
         </div>
 
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Artistas / bandas / DJs
           </label>
 
@@ -896,19 +896,19 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             value={artistsText}
             onChange={(event) => setArtistsText(event.target.value)}
             placeholder="Separar por vírgulas"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Categoria
           </label>
 
           <select
             value={category}
             onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -917,14 +917,14 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Cidade
           </label>
 
           <select
             value={city}
             onChange={(event) => setCity(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           >
             {cities.map((item) => (
               <option key={item}>{item}</option>
@@ -933,31 +933,31 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
         </div>
 
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Espaço / local
           </label>
 
           <input
             value={venue}
             onChange={(event) => setVenue(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3 lg:col-span-2">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3 lg:col-span-2">
           <input
             type="checkbox"
             checked={isMultiDay}
             onChange={(event) => handleMultiDayChange(event.target.checked)}
           />
 
-          <span className="text-sm font-bold text-zinc-300">
+          <span className="text-sm font-bold text-foreground-secondary">
             Festival / evento de vários dias
           </span>
         </label>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Data início
           </label>
 
@@ -965,13 +965,13 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             type="date"
             value={eventDate}
             onChange={(event) => handleEventDateChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           />
         </div>
 
         {isMultiDay && (
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Data fim
             </label>
 
@@ -979,13 +979,13 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
               type="date"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
             />
           </div>
         )}
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Hora
           </label>
 
@@ -993,12 +993,12 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             type="time"
             value={eventTime}
             onChange={(event) => setEventTime(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Preço público
           </label>
 
@@ -1006,16 +1006,16 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             value={price}
             onChange={(event) => setPrice(event.target.value)}
             onBlur={() => setPrice(formatPriceValue(price))}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5 lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-500">
+        <div className="rounded-[2rem] border border-danger bg-danger/20 p-5 lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Bilheteira
           </p>
 
-          <label className="mt-4 mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mt-4 mb-2 block text-sm font-bold text-foreground-secondary">
             Tipo de bilheteira
           </label>
 
@@ -1024,7 +1024,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             onChange={(event) =>
               handleTicketModeChange(event.target.value as TicketMode)
             }
-            className="w-full rounded-2xl border border-red-950 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-800"
+            className="w-full rounded-2xl border border-danger bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           >
             <option value="none">Sem bilhetes / só informação</option>
             <option value="external">Bilheteira externa</option>
@@ -1033,7 +1033,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
           {ticketMode === "external" && (
             <div className="mt-5">
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Link externo
               </label>
 
@@ -1041,7 +1041,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
                 value={ticketUrl}
                 onChange={(event) => setTicketUrl(event.target.value)}
                 placeholder="https://shotgun.live/..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
             </div>
           )}
@@ -1049,7 +1049,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
           {ticketMode === "internal" && (
             <div className="mt-5 grid gap-5 lg:grid-cols-3">
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Preço do bilhete
                 </label>
 
@@ -1058,12 +1058,12 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
                   onChange={(event) => setTicketPrice(event.target.value)}
                   onBlur={() => setTicketPrice(formatPriceValue(ticketPrice))}
                   placeholder="Ex: 10€"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Lotação
                 </label>
 
@@ -1073,12 +1073,12 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
                   value={ticketCapacity}
                   onChange={(event) => setTicketCapacity(event.target.value)}
                   placeholder="Ex: 100"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Texto do botão
                 </label>
 
@@ -1086,7 +1086,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
                   value={ticketButtonLabel}
                   onChange={(event) => setTicketButtonLabel(event.target.value)}
                   placeholder="Comprar na Paranoid"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
             </div>
@@ -1094,7 +1094,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Instagram / página do evento
           </label>
 
@@ -1102,24 +1102,24 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             value={instagramUrl}
             onChange={(event) => setInstagramUrl(event.target.value)}
             placeholder="https://instagram.com/..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3">
           <input
             type="checkbox"
             checked={featured}
             onChange={(event) => setFeatured(event.target.checked)}
           />
 
-          <span className="text-sm font-bold text-zinc-300">
+          <span className="text-sm font-bold text-foreground-secondary">
             Destacar evento
           </span>
         </label>
 
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Descrição
           </label>
 
@@ -1127,7 +1127,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
             rows={8}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
       </div>
@@ -1145,7 +1145,7 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
         {status === "published" && (
           <Link
             href={`/eventos/${slug}`}
-            className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+            className="rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
           >
             Ver público
           </Link>
@@ -1153,14 +1153,14 @@ export function AdminEventEditClient({ eventId }: AdminEventEditClientProps) {
 
         <Link
           href="/admin"
-          className="rounded-full border border-zinc-800 px-5 py-4 text-center text-sm font-bold text-zinc-500"
+          className="rounded-full border border-border px-5 py-4 text-center text-sm font-bold text-foreground-muted"
         >
           Voltar ao admin
         </Link>
       </div>
 
       {message && (
-        <p className="mt-5 text-center text-sm font-bold text-zinc-400">
+        <p className="mt-5 text-center text-sm font-bold text-foreground-muted">
           {message}
         </p>
       )}

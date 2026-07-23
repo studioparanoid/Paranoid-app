@@ -135,32 +135,32 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="ui-overlay fixed inset-0 z-[100]" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Pesquisa global" className="ui-dialog mx-auto min-h-full w-full bg-[#070707] p-4 text-[#f5f5f2] sm:mt-[8vh] sm:min-h-0 sm:max-w-2xl sm:rounded-lg sm:border sm:border-zinc-800 sm:p-6">
-        <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
-          <AppIcon name="search" className="h-5 w-5 shrink-0 text-zinc-500" />
-          <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={handleInputKeyDown} placeholder="Eventos, artistas, espaços, loja..." aria-label="Pesquisar na Paranoid" aria-controls="global-search-results" aria-activedescendant={activeIndex >= 0 ? `search-${flatResults[activeIndex]?.key}` : undefined} aria-autocomplete="list" className="min-w-0 flex-1 bg-transparent py-3 text-base font-bold outline-none placeholder:text-zinc-600" />
-          {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-700 border-t-red-500 motion-reduce:animate-none" aria-hidden="true" />}
+      <section ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Pesquisa global" className="ui-dialog mx-auto min-h-full w-full bg-[#070707] p-4 text-[#f5f5f2] sm:mt-[8vh] sm:min-h-0 sm:max-w-2xl sm:rounded-lg sm:border sm:border-border sm:p-6">
+        <div className="flex items-center gap-3 border-b border-border pb-4">
+          <AppIcon name="search" className="h-5 w-5 shrink-0 text-foreground-muted" />
+          <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={handleInputKeyDown} placeholder="Eventos, artistas, espaços, loja..." aria-label="Pesquisar na Paranoid" aria-controls="global-search-results" aria-activedescendant={activeIndex >= 0 ? `search-${flatResults[activeIndex]?.key}` : undefined} aria-autocomplete="list" className="min-w-0 flex-1 bg-transparent py-3 text-base font-bold outline-none placeholder:text-foreground-muted" />
+          {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-border-strong border-t-red-500 motion-reduce:animate-none" aria-hidden="true" />}
           <IconButton label="Fechar pesquisa" onClick={onClose}>
             <AppIcon name="close" />
           </IconButton>
         </div>
 
         <div id="global-search-results" role="listbox" aria-busy={loading} className="max-h-[calc(100dvh-7rem)] overflow-y-auto py-5 sm:max-h-[70vh]">
-          {query.trim().length < 2 && <p className="py-10 text-center text-sm text-zinc-500">Escreve pelo menos duas letras.</p>}
+          {query.trim().length < 2 && <p className="py-10 text-center text-sm text-foreground-muted">Escreve pelo menos duas letras.</p>}
           {loading && total === 0 && <div className="space-y-3" aria-label="A pesquisar"><div className="skeleton-shimmer h-14 rounded" /><div className="skeleton-shimmer h-14 rounded" /></div>}
-          {searchError && <p className="py-5 text-center text-sm font-bold text-red-300" role="alert">{searchError}</p>}
-          {!loading && !searchError && query.trim().length >= 2 && total === 0 && <p className="py-10 text-center text-sm text-zinc-500">Não encontrámos resultados.</p>}
+          {searchError && <p className="py-5 text-center text-sm font-bold text-danger" role="alert">{searchError}</p>}
+          {!loading && !searchError && query.trim().length >= 2 && total === 0 && <p className="py-10 text-center text-sm text-foreground-muted">Não encontrámos resultados.</p>}
           {total > 0 && <div className={`space-y-6 transition-opacity ${loading ? "opacity-55" : "opacity-100"}`}>
             {sections.map(([label, items]) => items.length > 0 && (
               <section key={label}>
-                <h2 className="mb-2 text-xs font-black uppercase tracking-[0.25em] text-red-600">{label}</h2>
-                <div className="divide-y divide-zinc-900">
-                  {items.map((item) => { const resultIndex = flatResults.findIndex((result) => result.key === `${label}-${item.id}`); const active = resultIndex === activeIndex; return <Link id={`search-${label}-${item.id}`} role="option" aria-selected={active} key={item.id} href={item.href} onMouseEnter={() => setActiveIndex(resultIndex)} onFocus={() => setActiveIndex(resultIndex)} onClick={onClose} className={`interactive focus-ring flex min-h-16 items-center gap-3 rounded px-2 py-2 ${active ? "bg-zinc-900" : "hover:bg-zinc-950"}`}>
-                    <span className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded bg-zinc-900 text-sm font-black text-zinc-600">
+                <h2 className="mb-2 text-xs font-black uppercase tracking-[0.25em] text-danger">{label}</h2>
+                <div className="divide-y divide-border">
+                  {items.map((item) => { const resultIndex = flatResults.findIndex((result) => result.key === `${label}-${item.id}`); const active = resultIndex === activeIndex; return <Link id={`search-${label}-${item.id}`} role="option" aria-selected={active} key={item.id} href={item.href} onMouseEnter={() => setActiveIndex(resultIndex)} onFocus={() => setActiveIndex(resultIndex)} onClick={onClose} className={`interactive focus-ring flex min-h-16 items-center gap-3 rounded px-2 py-2 ${active ? "bg-surface" : "hover:bg-surface-hover"}`}>
+                    <span className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded bg-surface text-sm font-black text-foreground-muted">
                       {item.image ? <Image src={item.image} alt="" fill sizes="48px" unoptimized className="object-cover" /> : item.label.slice(0, 1).toUpperCase()}
                     </span>
-                    <span className="min-w-0 flex-1"><span className="block truncate font-bold">{item.label}</span><span className="block truncate text-xs text-zinc-500">{item.meta}</span></span>
-                    <AppIcon name="chevron" className="h-4 w-4 shrink-0 text-zinc-700" />
+                    <span className="min-w-0 flex-1"><span className="block truncate font-bold">{item.label}</span><span className="block truncate text-xs text-foreground-muted">{item.meta}</span></span>
+                    <AppIcon name="chevron" className="h-4 w-4 shrink-0 text-foreground-muted" />
                   </Link>;})}
                 </div>
               </section>

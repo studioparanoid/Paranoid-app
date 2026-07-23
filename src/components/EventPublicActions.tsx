@@ -226,8 +226,8 @@ export function EventPublicActions({
   });
 
   return (
-    <section className="mt-8 rounded-[2rem] border border-zinc-800 bg-black p-5">
-      <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+    <section className="mt-8 rounded-[2rem] border border-border bg-black p-5">
+      <p className="text-xs uppercase tracking-[0.25em] text-danger">
         Ações
       </p>
 
@@ -237,7 +237,7 @@ export function EventPublicActions({
           onClick={toggleSaved}
           className={`rounded-full px-5 py-4 text-sm font-black ${
             saved
-              ? "border border-red-900 bg-red-950 text-red-300"
+              ? "border border-danger bg-danger text-danger"
               : "bg-[#f5f5f2] text-black"
           }`}
         >
@@ -247,7 +247,7 @@ export function EventPublicActions({
         <button
           type="button"
           onClick={shareEvent}
-          className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+          className="rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary"
         >
           Partilhar
         </button>
@@ -256,14 +256,14 @@ export function EventPublicActions({
           href={calendarUrl}
           target="_blank"
           rel="noreferrer"
-          className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+          className="rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
         >
           Adicionar ao Google Calendar
         </a>
       </div>
 
       {message && (
-        <p className="mt-4 text-center text-sm font-bold text-zinc-400">
+        <p className="mt-4 text-center text-sm font-bold text-foreground-muted">
           {message}
         </p>
       )}

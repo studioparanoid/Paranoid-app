@@ -404,12 +404,12 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <IconButton label="Cancelar seleção" onClick={exitSelectMode} className="text-white hover:bg-white/10"><AppIcon name="close" /></IconButton>
-              <p className="truncate text-xs font-black text-zinc-300">{selectedIds.size} selecionada{selectedIds.size === 1 ? "" : "s"}</p>
+              <p className="truncate text-xs font-black text-foreground-secondary">{selectedIds.size} selecionada{selectedIds.size === 1 ? "" : "s"}</p>
             </div>
             <div className="flex items-center gap-2">
               <IconButton label="Guardar no telemóvel" disabled={savingPhotos} onClick={() => void savePhotos(photos.filter((photo) => selectedIds.has(photo.id)))} className="text-white hover:bg-white/10"><AppIcon name="save" /></IconButton>
               <IconButton label="Adicionar aos favoritos" disabled={favoritingPhotos} onClick={() => void favoriteSelectedPhotos()} className="text-white hover:bg-white/10"><AppIcon name="star" /></IconButton>
-              {isOwner && <IconButton label="Apagar" disabled={deletingPhotos} onClick={() => setDeleteTargets(photos.filter((photo) => selectedIds.has(photo.id)))} className="text-red-500 hover:bg-red-500/10"><AppIcon name="trash" /></IconButton>}
+              {isOwner && <IconButton label="Apagar" disabled={deletingPhotos} onClick={() => setDeleteTargets(photos.filter((photo) => selectedIds.has(photo.id)))} className="text-danger hover:bg-danger/10"><AppIcon name="trash" /></IconButton>}
             </div>
           </div>
         </div>
@@ -465,12 +465,12 @@ export function AlbumDetailClient({ albumId }: { albumId: string }) {
       />
 
       <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="Partilhar álbum" description="Quem ler este código com a câmara do telemóvel entra diretamente no álbum.">
-        <div className="scale-in rounded-lg border border-zinc-800 bg-[#f5f5f2] p-4 text-black">
+        <div className="scale-in rounded-lg border border-border bg-[#f5f5f2] p-4 text-black">
           {qrCodeUrl ? (
             <Image src={qrCodeUrl} alt="QR code de convite" width={224} height={224} unoptimized className="mx-auto h-56 w-56 rounded-2xl" />
           ) : (
-            <div className="skeleton-shimmer flex h-56 items-center justify-center rounded-2xl border border-zinc-300">
-              <p className="text-sm font-black text-zinc-500">A preparar o QR...</p>
+            <div className="skeleton-shimmer flex h-56 items-center justify-center rounded-2xl border border-border-strong">
+              <p className="text-sm font-black text-foreground-muted">A preparar o QR...</p>
             </div>
           )}
         </div>

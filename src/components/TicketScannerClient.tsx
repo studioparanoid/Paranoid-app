@@ -60,14 +60,14 @@ function resultClasses(type: ScanResult["type"]) {
   }
 
   if (type === "cancelled") {
-    return "border-red-900 bg-red-950/30 text-red-400";
+    return "border-danger bg-danger/30 text-danger";
   }
 
   if (type === "not_found") {
-    return "border-zinc-800 bg-zinc-950 text-zinc-400";
+    return "border-border bg-background text-foreground-muted";
   }
 
-  return "border-red-900 bg-red-950/30 text-red-400";
+  return "border-danger bg-danger/30 text-danger";
 }
 
 function formatDateTime(value: string | null | undefined) {
@@ -336,16 +336,16 @@ export function TicketScannerClient() {
 
   if (loadingAccount) {
     return (
-      <div className="mt-8 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-6">
-        <p className="text-zinc-500">A verificar conta...</p>
+      <div className="mt-8 rounded-[2rem] border border-border bg-background p-6">
+        <p className="text-foreground-muted">A verificar conta...</p>
       </div>
     );
   }
 
   if (!email) {
     return (
-      <div className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+      <div className="mt-8 rounded-[2.5rem] border border-border bg-background p-6 lg:p-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Sem sessão
         </p>
 
@@ -353,7 +353,7 @@ export function TicketScannerClient() {
           Tens de entrar.
         </h2>
 
-        <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-5 text-sm leading-relaxed text-foreground-muted">
           O scanner só funciona para contas com permissão para gerir reservas.
         </p>
 
@@ -369,8 +369,8 @@ export function TicketScannerClient() {
 
   return (
     <div className="mt-8 grid gap-6 lg:mt-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-      <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:sticky lg:top-28 lg:p-6">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+      <section className="rounded-[2.5rem] border border-border bg-background p-5 lg:sticky lg:top-28 lg:p-6">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Câmara
         </p>
 
@@ -378,7 +378,7 @@ export function TicketScannerClient() {
           Scanner QR.
         </h2>
 
-        <div className="mt-5 overflow-hidden rounded-[2rem] border border-zinc-800 bg-black">
+        <div className="mt-5 overflow-hidden rounded-[2rem] border border-border bg-black">
           <video
             ref={videoRef}
             className="aspect-square w-full object-cover"
@@ -401,7 +401,7 @@ export function TicketScannerClient() {
             <button
               type="button"
               onClick={stopScanner}
-              className="rounded-full border border-red-900 px-5 py-4 text-sm font-bold text-red-400"
+              className="rounded-full border border-danger px-5 py-4 text-sm font-bold text-danger"
             >
               Parar scanner
             </button>
@@ -409,22 +409,22 @@ export function TicketScannerClient() {
 
           <Link
             href="/organizador/bilhetes"
-            className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+            className="rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
           >
             Ver lista de reservas
           </Link>
         </div>
 
         {message && (
-          <p className="mt-5 rounded-2xl border border-red-950 bg-red-950/20 p-4 text-sm text-red-300">
+          <p className="mt-5 rounded-2xl border border-danger bg-danger/20 p-4 text-sm text-danger">
             {message}
           </p>
         )}
       </section>
 
       <section className="space-y-6">
-        <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+        <section className="rounded-[2.5rem] border border-border bg-background p-5 lg:p-8">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Manual
           </p>
 
@@ -432,7 +432,7 @@ export function TicketScannerClient() {
             Inserir código.
           </h2>
 
-          <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+          <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
             Se a câmara falhar, mete o código do bilhete manualmente.
           </p>
 
@@ -441,7 +441,7 @@ export function TicketScannerClient() {
               value={manualCode}
               onChange={(event) => setManualCode(event.target.value)}
               placeholder="Ex: A1B2C3D4E5"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
             <button
@@ -504,7 +504,7 @@ export function TicketScannerClient() {
 
               {lastResult.event && (
                 <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-black/30 p-4">
-                  <p className="text-xs uppercase tracking-[0.25em] text-zinc-400">
+                  <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                     Evento
                   </p>
 
@@ -512,14 +512,14 @@ export function TicketScannerClient() {
                     {lastResult.event.title}
                   </h3>
 
-                  <p className="mt-2 text-zinc-400">
+                  <p className="mt-2 text-foreground-muted">
                     {lastResult.event.display_date || "Data por definir"}
                     {lastResult.event.display_time
                       ? ` · ${lastResult.event.display_time}`
                       : ""}
                   </p>
 
-                  <p className="mt-1 text-zinc-400">
+                  <p className="mt-1 text-foreground-muted">
                     {[lastResult.event.venue_name, lastResult.event.city]
                       .filter(Boolean)
                       .join(" · ") || "Local por definir"}
@@ -527,7 +527,7 @@ export function TicketScannerClient() {
 
                   <Link
                     href={`/eventos/${lastResult.event.slug}`}
-                    className="mt-4 inline-block rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300"
+                    className="mt-4 inline-block rounded-full border border-border-strong px-4 py-3 text-sm font-bold text-foreground-secondary"
                   >
                     Ver evento
                   </Link>
@@ -545,8 +545,8 @@ export function TicketScannerClient() {
             </button>
           </section>
         ) : (
-          <section className="rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-6 lg:p-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          <section className="rounded-[2.5rem] border border-border bg-background p-6 lg:p-8">
+            <p className="text-xs uppercase tracking-[0.3em] text-danger">
               Espera
             </p>
 
@@ -554,7 +554,7 @@ export function TicketScannerClient() {
               Ainda nenhum código lido.
             </h2>
 
-            <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+            <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
               Abre o scanner ou valida um código manualmente.
             </p>
           </section>

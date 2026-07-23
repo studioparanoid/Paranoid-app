@@ -177,8 +177,8 @@ export function TicketReservationClient({
 
   if (loading) {
     return (
-      <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
-        <p className="text-zinc-500">A carregar bilheteira...</p>
+      <div className="rounded-[2rem] border border-border bg-black p-5">
+        <p className="text-foreground-muted">A carregar bilheteira...</p>
       </div>
     );
   }
@@ -194,7 +194,7 @@ export function TicketReservationClient({
           Entra para reservar.
         </h2>
 
-        <p className="mt-4 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
           A reserva fica ligada à tua conta e gera um código de entrada.
         </p>
 
@@ -210,40 +210,40 @@ export function TicketReservationClient({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[2rem] border border-zinc-800 bg-black p-5">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+      <section className="rounded-[2rem] border border-border bg-black p-5">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Disponibilidade
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-4">
+          <div className="rounded-[1.5rem] border border-border bg-background p-4">
             <p className="text-3xl font-black">
               {availableTickets === null ? "∞" : availableTickets}
             </p>
 
-            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
               Disponíveis
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-zinc-800 bg-zinc-950 p-4">
+          <div className="rounded-[1.5rem] border border-border bg-background p-4">
             <p className="text-3xl font-black">{reservedTotal}</p>
 
-            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-zinc-500">
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-foreground-muted">
               Reservados
             </p>
           </div>
         </div>
 
         {capacity && (
-          <p className="mt-4 text-sm text-zinc-500">
+          <p className="mt-4 text-sm text-foreground-muted">
             Lotação total: {capacity}
           </p>
         )}
       </section>
 
-      <section className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-500">
+      <section className="rounded-[2rem] border border-danger bg-danger/20 p-5">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           Reservar
         </p>
 
@@ -252,7 +252,7 @@ export function TicketReservationClient({
         </h2>
 
         <div className="mt-5">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Quantidade
           </label>
 
@@ -265,12 +265,12 @@ export function TicketReservationClient({
               setQuantity(Number(inputEvent.target.value))
             }
             disabled={hasActiveReservation}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900 disabled:opacity-50"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)] disabled:opacity-50"
           />
         </div>
 
         {hasActiveReservation ? (
-          <p className="mt-4 rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm font-bold text-zinc-400">
+          <p className="mt-4 rounded-2xl border border-border bg-black px-4 py-3 text-sm font-bold text-foreground-muted">
             Já tens uma reserva ativa para este evento.
           </p>
         ) : (
@@ -288,20 +288,20 @@ export function TicketReservationClient({
         )}
 
         {message && (
-          <p className="mt-4 text-center text-sm font-bold text-zinc-400">
+          <p className="mt-4 text-center text-sm font-bold text-foreground-muted">
             {message}
           </p>
         )}
       </section>
 
-      <section className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
-        <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+      <section className="rounded-[2rem] border border-border bg-background p-5">
+        <p className="text-xs uppercase tracking-[0.3em] text-danger">
           As tuas reservas
         </p>
 
         <div className="mt-5 space-y-3">
           {myReservations.length === 0 && (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-foreground-muted">
               Ainda não tens reservas para este evento.
             </p>
           )}
@@ -309,7 +309,7 @@ export function TicketReservationClient({
           {myReservations.map((reservation) => (
             <article
               key={reservation.id}
-              className="rounded-[1.5rem] border border-zinc-800 bg-black p-4"
+              className="rounded-[1.5rem] border border-border bg-black p-4"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -318,12 +318,12 @@ export function TicketReservationClient({
                     {reservation.quantity === 1 ? "" : "s"}
                   </p>
 
-                  <p className="mt-1 text-xs uppercase tracking-wide text-zinc-600">
+                  <p className="mt-1 text-xs uppercase tracking-wide text-foreground-muted">
                     Estado: {reservation.status}
                   </p>
                 </div>
 
-                <span className="rounded-full border border-red-900 bg-red-950 px-3 py-1 text-xs font-black uppercase text-red-400">
+                <span className="rounded-full border border-danger bg-danger px-3 py-1 text-xs font-black uppercase text-danger">
                   {reservation.check_in_code}
                 </span>
               </div>
@@ -332,7 +332,7 @@ export function TicketReservationClient({
                 <button
                   type="button"
                   onClick={() => cancelReservation(reservation.id)}
-                  className="mt-4 w-full rounded-full border border-zinc-700 px-4 py-3 text-sm font-bold text-zinc-300"
+                  className="mt-4 w-full rounded-full border border-border-strong px-4 py-3 text-sm font-bold text-foreground-secondary"
                 >
                   Cancelar reserva
                 </button>

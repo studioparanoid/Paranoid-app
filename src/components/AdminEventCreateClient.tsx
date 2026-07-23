@@ -883,10 +883,10 @@ export function AdminEventCreateClient() {
   }
 
   return (
-    <section className="mt-8 rounded-[2.5rem] border border-zinc-800 bg-zinc-950 p-5 lg:mt-12 lg:p-8">
+    <section className="mt-8 rounded-[2.5rem] border border-border bg-background p-5 lg:mt-12 lg:p-8">
       <div className="grid gap-6 lg:grid-cols-[1fr_0.7fr]">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Admin
           </p>
 
@@ -894,14 +894,14 @@ export function AdminEventCreateClient() {
             Criar evento.
           </h2>
 
-          <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+          <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
             Cria eventos diretamente como Paranoid. A localização é calculada
             automaticamente pela morada.
           </p>
         </div>
 
-        <div className="rounded-[2rem] border border-zinc-800 bg-black p-5">
-          <p className="text-xs uppercase tracking-[0.25em] text-red-700">
+        <div className="rounded-[2rem] border border-border bg-black p-5">
+          <p className="text-xs uppercase tracking-[0.25em] text-danger">
             Pré-visualização
           </p>
 
@@ -909,7 +909,7 @@ export function AdminEventCreateClient() {
             {title || "Nome do evento"}
           </h3>
 
-          <div className="mt-4 space-y-1 text-sm text-zinc-500">
+          <div className="mt-4 space-y-1 text-sm text-foreground-muted">
             <p>{category}</p>
             <p>{eventDate || "Data por definir"}</p>
             <p>{eventTime || "Hora por definir"}</p>
@@ -932,8 +932,8 @@ export function AdminEventCreateClient() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-red-950 bg-red-950/20 p-4">
-        <p className="text-sm font-bold text-red-300">
+      <div className="mt-6 rounded-2xl border border-danger bg-danger/20 p-4">
+        <p className="text-sm font-bold text-danger">
           Nova ordem: primeiro nome do evento, depois espaço e organizador,
           depois localização automática pela morada.
         </p>
@@ -941,7 +941,7 @@ export function AdminEventCreateClient() {
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Poster / imagem
           </label>
 
@@ -951,7 +951,7 @@ export function AdminEventCreateClient() {
             onChange={(event) =>
               handleImageChange(event.target.files?.[0] || null)
             }
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-sm text-zinc-400 file:mr-4 file:rounded-full file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-sm text-foreground-muted file:mr-4 file:rounded-full file:border-0 file:bg-[#f5f5f2] file:px-4 file:py-2 file:text-sm file:font-black file:text-black"
           />
         </div>
 
@@ -963,13 +963,13 @@ export function AdminEventCreateClient() {
         )}
 
         <div className="lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             1. Evento
           </p>
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Nome do evento
           </label>
 
@@ -977,18 +977,18 @@ export function AdminEventCreateClient() {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Ex: Noite Paranoid Vol. I"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
         <div className="lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             2. Espaço e organização
           </p>
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Espaço / local
           </label>
 
@@ -999,17 +999,17 @@ export function AdminEventCreateClient() {
               clearGeocode();
             }}
             placeholder="Ex: Stereogun, Teatro-Cine, Praça..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
           <LocationSuggestions query={venue} context={{ city, municipality, district, postal_code: postalCode }} onSelect={applyLocationResult} />
 
-          <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+          <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
             Pesquisa pelo nome do espaço ou completa a morada abaixo.
           </p>
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Organizador
           </label>
 
@@ -1017,16 +1017,16 @@ export function AdminEventCreateClient() {
             value={organizer}
             onChange={(event) => setOrganizer(event.target.value)}
             placeholder="Nome do coletivo, sala ou promotor"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+        <div className="rounded-[2rem] border border-border bg-black p-5 lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             3. Localização automática
           </p>
 
-          <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+          <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
             Mete a morada real do espaço. A Paranoid encontra as coordenadas
             exatas primeiro; só depois guarda localidade, concelho e distrito
             para o mapa.
@@ -1034,7 +1034,7 @@ export function AdminEventCreateClient() {
 
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
             <div className="lg:col-span-2">
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Morada completa
               </label>
 
@@ -1045,13 +1045,13 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="Rua, número, espaço..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
               <LocationSuggestions query={address} context={{ venue, city, municipality, district, postal_code: postalCode }} onSelect={applyLocationResult} />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Código postal
               </label>
 
@@ -1062,7 +1062,7 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="0000-000"
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
             </div>
 
@@ -1085,7 +1085,7 @@ export function AdminEventCreateClient() {
               href={mapsSearchUrl}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-zinc-700 px-5 py-4 text-sm font-bold text-zinc-300"
+              className="rounded-full border border-border-strong px-5 py-4 text-sm font-bold text-foreground-secondary"
             >
               Ver morada no Maps
             </a>
@@ -1108,37 +1108,37 @@ export function AdminEventCreateClient() {
                 Localização encontrada
               </p>
 
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-2 text-sm leading-relaxed text-foreground-muted">
                 {geocodeLabel}
               </p>
 
-              <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+              <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
                 Coordenadas guardadas automaticamente pela app.
               </p>
             </div>
           )}
 
-          <details className="mt-5 border-t border-zinc-800 pt-4">
-            <summary className="cursor-pointer text-sm font-black text-zinc-300">Escolher ponto no mapa</summary>
+          <details className="mt-5 border-t border-border pt-4">
+            <summary className="cursor-pointer text-sm font-black text-foreground-secondary">Escolher ponto no mapa</summary>
             <div className="mt-4"><LocationMapPicker latitude={latitude} longitude={longitude} onSelect={applyLocationResult} /></div>
           </details>
 
-          <p className="mt-4 text-xs leading-relaxed text-zinc-600">Pesquisa e mapa por OpenStreetMap/Nominatim. Se falhar, continua com preenchimento manual.</p>
+          <p className="mt-4 text-xs leading-relaxed text-foreground-muted">Pesquisa e mapa por OpenStreetMap/Nominatim. Se falhar, continua com preenchimento manual.</p>
         </div>
 
-        <div className="rounded-[2rem] border border-zinc-800 bg-black p-5 lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+        <div className="rounded-[2rem] border border-border bg-black p-5 lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             4. Zona confirmada
           </p>
 
-          <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+          <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
             A Paranoid tenta preencher isto pela morada. Corrige manualmente se
             a localização automática não bater certo.
           </p>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Localidade
               </label>
 
@@ -1150,7 +1150,7 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="Ex: Alvorge, Pombal, Leiria..."
-                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
 
               <datalist id="admin-event-city-suggestions">
@@ -1161,7 +1161,7 @@ export function AdminEventCreateClient() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Concelho
               </label>
 
@@ -1173,7 +1173,7 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="Ex: Ansião, Pombal, Leiria..."
-                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
 
               <datalist id="admin-event-municipality-suggestions">
@@ -1184,7 +1184,7 @@ export function AdminEventCreateClient() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Distrito
               </label>
 
@@ -1195,27 +1195,27 @@ export function AdminEventCreateClient() {
                   clearGeocode();
                 }}
                 placeholder="Ex: Leiria, Coimbra, Lisboa..."
-                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-700">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             5. Detalhes do evento
           </p>
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Categoria
           </label>
 
           <select
             value={category}
             onChange={(event) => handleCategoryChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           >
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -1224,7 +1224,7 @@ export function AdminEventCreateClient() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Artistas / bandas / DJs
           </label>
 
@@ -1232,24 +1232,24 @@ export function AdminEventCreateClient() {
             value={artistsText}
             onChange={(event) => setArtistsText(event.target.value)}
             placeholder="Separar por vírgulas"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3 lg:col-span-2">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3 lg:col-span-2">
           <input
             type="checkbox"
             checked={isMultiDay}
             onChange={(event) => handleMultiDayChange(event.target.checked)}
           />
 
-          <span className="text-sm font-bold text-zinc-300">
+          <span className="text-sm font-bold text-foreground-secondary">
             Festival / evento de vários dias
           </span>
         </label>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Data início
           </label>
 
@@ -1257,13 +1257,13 @@ export function AdminEventCreateClient() {
             type="date"
             value={eventDate}
             onChange={(event) => handleEventDateChange(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           />
         </div>
 
         {isMultiDay && (
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Data fim
             </label>
 
@@ -1271,13 +1271,13 @@ export function AdminEventCreateClient() {
               type="date"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
             />
           </div>
         )}
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Hora
           </label>
 
@@ -1285,12 +1285,12 @@ export function AdminEventCreateClient() {
             type="time"
             value={eventTime}
             onChange={(event) => setEventTime(event.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Preço público
           </label>
 
@@ -1299,16 +1299,16 @@ export function AdminEventCreateClient() {
             onChange={(event) => setPrice(event.target.value)}
             onBlur={() => setPrice(formatPriceValue(price))}
             placeholder="Ex: 5€, 10€ ou Entrada livre"
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <div className="rounded-[2rem] border border-red-950 bg-red-950/20 p-5 lg:col-span-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-red-500">
+        <div className="rounded-[2rem] border border-danger bg-danger/20 p-5 lg:col-span-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-danger">
             Bilheteira
           </p>
 
-          <label className="mt-4 mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mt-4 mb-2 block text-sm font-bold text-foreground-secondary">
             Tipo de bilheteira
           </label>
 
@@ -1317,7 +1317,7 @@ export function AdminEventCreateClient() {
             onChange={(event) =>
               handleTicketModeChange(event.target.value as TicketMode)
             }
-            className="w-full rounded-2xl border border-red-950 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-800"
+            className="w-full rounded-2xl border border-danger bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
           >
             <option value="none">Sem bilhetes / só informação</option>
             <option value="external">Bilheteira externa</option>
@@ -1326,7 +1326,7 @@ export function AdminEventCreateClient() {
 
           {ticketMode === "external" && (
             <div className="mt-5">
-              <label className="mb-2 block text-sm font-bold text-zinc-300">
+              <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                 Link externo
               </label>
 
@@ -1334,7 +1334,7 @@ export function AdminEventCreateClient() {
                 value={ticketUrl}
                 onChange={(event) => setTicketUrl(event.target.value)}
                 placeholder="https://shotgun.live/..."
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
               />
             </div>
           )}
@@ -1342,7 +1342,7 @@ export function AdminEventCreateClient() {
           {ticketMode === "internal" && (
             <div className="mt-5 grid gap-5 lg:grid-cols-3">
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Preço do bilhete
                 </label>
 
@@ -1351,12 +1351,12 @@ export function AdminEventCreateClient() {
                   onChange={(event) => setTicketPrice(event.target.value)}
                   onBlur={() => setTicketPrice(formatPriceValue(ticketPrice))}
                   placeholder="Ex: 10€"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Lotação
                 </label>
 
@@ -1366,12 +1366,12 @@ export function AdminEventCreateClient() {
                   value={ticketCapacity}
                   onChange={(event) => setTicketCapacity(event.target.value)}
                   placeholder="Ex: 100"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-bold text-zinc-300">
+                <label className="mb-2 block text-sm font-bold text-foreground-secondary">
                   Texto do botão
                 </label>
 
@@ -1379,7 +1379,7 @@ export function AdminEventCreateClient() {
                   value={ticketButtonLabel}
                   onChange={(event) => setTicketButtonLabel(event.target.value)}
                   placeholder="Comprar na Paranoid"
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
                 />
               </div>
             </div>
@@ -1387,7 +1387,7 @@ export function AdminEventCreateClient() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Instagram / página do evento
           </label>
 
@@ -1395,24 +1395,24 @@ export function AdminEventCreateClient() {
             value={instagramUrl}
             onChange={(event) => setInstagramUrl(event.target.value)}
             placeholder="https://instagram.com/..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
 
-        <label className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-black px-4 py-3">
+        <label className="flex items-center gap-3 rounded-2xl border border-border bg-black px-4 py-3">
           <input
             type="checkbox"
             checked={featured}
             onChange={(event) => setFeatured(event.target.checked)}
           />
 
-          <span className="text-sm font-bold text-zinc-300">
+          <span className="text-sm font-bold text-foreground-secondary">
             Destacar evento
           </span>
         </label>
 
         <div className="lg:col-span-2">
-          <label className="mb-2 block text-sm font-bold text-zinc-300">
+          <label className="mb-2 block text-sm font-bold text-foreground-secondary">
             Descrição
           </label>
 
@@ -1421,7 +1421,7 @@ export function AdminEventCreateClient() {
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Descrição, horários, contexto, links úteis..."
-            className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+            className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
           />
         </div>
       </div>
@@ -1438,14 +1438,14 @@ export function AdminEventCreateClient() {
 
         <Link
           href="/admin"
-          className="rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+          className="rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
         >
           Voltar ao admin
         </Link>
       </div>
 
       {message && (
-        <p className="mt-5 text-center text-sm font-bold text-zinc-400">
+        <p className="mt-5 text-center text-sm font-bold text-foreground-muted">
           {message}
         </p>
       )}

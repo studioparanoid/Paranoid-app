@@ -155,7 +155,7 @@ export function FollowButton({ targetId, targetType }: FollowButtonProps) {
       </LoadingButton>
 
       {message && (
-        <p className="mt-2 text-xs font-bold text-red-500">{message}</p>
+        <p className="mt-2 text-xs font-bold text-danger">{message}</p>
       )}
     </div>
   );

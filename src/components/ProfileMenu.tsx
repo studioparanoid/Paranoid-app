@@ -89,7 +89,7 @@ export function ProfileMenu() {
         <MenuLink href="/loja" label="Encomendas" onSelect={() => setOpen(false)} />
         {profile.isOrganizer && <MenuLink href="/organizador" label="Área do organizador" onSelect={() => setOpen(false)} />}
         {profile.isAdmin && <MenuLink href="/admin" label="Administração" onSelect={() => setOpen(false)} />}
-        <LoadingButton loading={signingOut} loadingText="A sair..." variant="ghost" size="sm" onClick={signOut} className="w-full justify-start px-3 text-red-400">Terminar sessão</LoadingButton>
+        <LoadingButton loading={signingOut} loadingText="A sair..." variant="ghost" size="sm" onClick={signOut} className="w-full justify-start px-3 text-danger">Terminar sessão</LoadingButton>
       </> : <>
         <MenuLink href="/login" label="Entrar" onSelect={() => setOpen(false)} />
         <MenuLink href="/registar" label="Criar conta" onSelect={() => setOpen(false)} />
@@ -103,5 +103,5 @@ export function ProfileMenu() {
 }
 
 function MenuLink({ href, label, onSelect }: { href: string; label: string; onSelect: () => void }) {
-  return <Link href={href} role="menuitem" onClick={onSelect} className="interactive focus-ring block rounded px-3 py-3 text-sm font-bold text-zinc-200 hover:bg-[var(--brand-surface-hover)] hover:text-white">{label}</Link>;
+  return <Link href={href} role="menuitem" onClick={onSelect} className="interactive focus-ring block rounded px-3 py-3 text-sm font-bold text-foreground hover:bg-[var(--brand-surface-hover)] hover:text-white">{label}</Link>;
 }

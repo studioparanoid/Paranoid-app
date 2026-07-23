@@ -125,7 +125,7 @@ export function AdminBillingPaymentsClient({
             className={`shrink-0 rounded-full px-4 py-2 text-sm font-black ${
               filter === status
                 ? "bg-[#f5f5f2] text-black"
-                : "border border-zinc-800 text-zinc-400"
+                : "border border-border text-foreground-muted"
             }`}
           >
             {status}
@@ -134,15 +134,15 @@ export function AdminBillingPaymentsClient({
       </div>
 
       {message && (
-        <p className="rounded-2xl border border-red-900 bg-red-950/40 p-4 font-bold text-red-100">
+        <p className="rounded-2xl border border-danger bg-danger/40 p-4 font-bold text-danger">
           {message}
         </p>
       )}
 
-      {loading && <p className="text-zinc-500">A carregar pagamentos...</p>}
+      {loading && <p className="text-foreground-muted">A carregar pagamentos...</p>}
 
       {!loading && visiblePayments.length === 0 && (
-        <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-500">
+        <p className="rounded-[1.5rem] border border-border bg-background p-5 text-foreground-muted">
           Ainda não há pagamentos para este filtro.
         </p>
       )}
@@ -150,17 +150,17 @@ export function AdminBillingPaymentsClient({
       {visiblePayments.map((payment) => (
         <article
           key={payment.id}
-          className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5"
+          className="rounded-[1.5rem] border border-border bg-background p-5"
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-danger">
                 {payment.relatedType || "serviço"}
               </p>
               <h3 className="mt-2 text-2xl font-black">
                 {payment.productCode || "Pagamento"}
               </h3>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-foreground-muted">
                 {payment.provider} · {payment.status} ·{" "}
                 {payment.relatedId || "sem relação"}
               </p>
@@ -175,21 +175,21 @@ export function AdminBillingPaymentsClient({
               type="button"
               onClick={() => updatePayment(payment.id, "confirm")}
               disabled={payment.status === "paid"}
-              className="rounded-full border border-green-900 px-4 py-3 text-sm font-black text-green-300 disabled:text-zinc-700"
+              className="rounded-full border border-green-900 px-4 py-3 text-sm font-black text-green-300 disabled:text-foreground-muted"
             >
               Marcar pago
             </button>
             <button
               type="button"
               onClick={() => updatePayment(payment.id, "failed")}
-              className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300"
+              className="rounded-full border border-border-strong px-4 py-3 text-sm font-black text-foreground-secondary"
             >
               Falhado
             </button>
             <button
               type="button"
               onClick={() => updatePayment(payment.id, "cancel")}
-              className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300"
+              className="rounded-full border border-border-strong px-4 py-3 text-sm font-black text-foreground-secondary"
             >
               Cancelar
             </button>

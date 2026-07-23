@@ -427,23 +427,23 @@ export default function EventPage() {
             <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/55" aria-hidden="true" />
             <div className="absolute inset-x-0 top-0 z-10 flex flex-wrap gap-2 p-4 sm:p-6">
                 {event.featured && (
-                  <span className="rounded border border-red-500/60 bg-red-950/90 px-3 py-1.5 text-xs font-black uppercase text-red-100">
+                  <span className="rounded border border-danger/60 bg-danger/90 px-3 py-1.5 text-xs font-black uppercase text-danger">
                     Destaque
                   </span>
                 )}
 
-                <span className="rounded border border-zinc-600 bg-black/75 px-3 py-1.5 text-xs font-black uppercase text-zinc-200">
+                <span className="rounded border border-border-strong bg-black/75 px-3 py-1.5 text-xs font-black uppercase text-foreground">
                   {event.category || "Evento"}
                 </span>
 
                 {ticketBadgeText && (
-                  <span className="rounded border border-zinc-600 bg-black/75 px-3 py-1.5 text-xs font-black uppercase text-zinc-200">
+                  <span className="rounded border border-border-strong bg-black/75 px-3 py-1.5 text-xs font-black uppercase text-foreground">
                     {ticketBadgeText}
                   </span>
                 )}
 
                 {isSaved && (
-                  <span className="rounded border border-red-500/60 bg-red-950/90 px-3 py-1.5 text-xs font-black uppercase text-red-100">
+                  <span className="rounded border border-danger/60 bg-danger/90 px-3 py-1.5 text-xs font-black uppercase text-danger">
                     Guardado
                   </span>
                 )}

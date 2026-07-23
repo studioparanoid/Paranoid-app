@@ -53,8 +53,8 @@ export function AdminCreateBillingPaymentForm({
   }
 
   return (
-    <div className="mb-5 rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
-      <p className="text-xs font-black uppercase tracking-[0.35em] text-red-600">
+    <div className="mb-5 rounded-[1.5rem] border border-border bg-background p-5">
+      <p className="text-xs font-black uppercase tracking-[0.35em] text-danger">
         Criar mock
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -62,18 +62,18 @@ export function AdminCreateBillingPaymentForm({
           value={relatedId}
           onChange={(event) => setRelatedId(event.target.value)}
           placeholder={idLabel}
-          className="rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+          className="rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
         />
         <button
           type="button"
           onClick={createPayment}
           disabled={!allowEmptyRelatedId && !relatedId.trim()}
-          className="rounded-full bg-[#f5f5f2] px-5 py-3 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
+          className="rounded-full bg-[#f5f5f2] px-5 py-3 font-black text-black disabled:bg-surface-hover disabled:text-foreground-muted"
         >
           Criar pagamento
         </button>
       </div>
-      {message && <p className="mt-3 text-sm font-bold text-zinc-400">{message}</p>}
+      {message && <p className="mt-3 text-sm font-bold text-foreground-muted">{message}</p>}
     </div>
   );
 }

@@ -133,7 +133,7 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
     return (
       <main className="min-h-screen bg-[#070707] px-5 py-8 pb-28 text-[#f5f5f2]">
         <section className="mx-auto max-w-md">
-          <p className="text-zinc-500">A carregar espaço...</p>
+          <p className="text-foreground-muted">A carregar espaço...</p>
         </section>
       </main>
     );
@@ -145,14 +145,14 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
         <section className="mx-auto max-w-md">
           <Link
             href="/admin/rede"
-            className="mb-6 inline-block text-sm text-zinc-400"
+            className="mb-6 inline-block text-sm text-foreground-muted"
           >
             ← Voltar à rede
           </Link>
 
           <h1 className="text-4xl font-black">Espaço não encontrado.</h1>
 
-          {message && <p className="mt-4 text-zinc-400">{message}</p>}
+          {message && <p className="mt-4 text-foreground-muted">{message}</p>}
         </section>
       </main>
     );
@@ -163,12 +163,12 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
       <section className="mx-auto max-w-md">
         <Link
           href="/admin/rede"
-          className="mb-6 inline-block text-sm text-zinc-400"
+          className="mb-6 inline-block text-sm text-foreground-muted"
         >
           ← Voltar à rede
         </Link>
 
-        <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
+        <p className="mb-3 text-xs uppercase tracking-[0.35em] text-danger">
           Editar espaço
         </p>
 
@@ -176,14 +176,14 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
           Afina o sítio.
         </h1>
 
-        <p className="mt-5 text-base text-zinc-400">
+        <p className="mt-5 text-base text-foreground-muted">
           Atualiza nome, morada, cidade, descrição e links públicos deste
           espaço.
         </p>
 
-        <div className="mt-8 space-y-5 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5">
+        <div className="mt-8 space-y-5 rounded-[2rem] border border-border bg-background p-5">
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Nome do espaço
             </label>
 
@@ -191,20 +191,20 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Nome do espaço"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
           <div>
             <div className="mb-2 flex items-center justify-between gap-4">
-              <label className="block text-sm font-bold text-zinc-300">
+              <label className="block text-sm font-bold text-foreground-secondary">
                 Slug
               </label>
 
               <button
                 type="button"
                 onClick={generateSlugFromName}
-                className="text-xs font-bold uppercase tracking-wide text-red-500"
+                className="text-xs font-bold uppercase tracking-wide text-danger"
               >
                 Gerar pelo nome
               </button>
@@ -214,23 +214,23 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
               value={slug}
               onChange={(event) => setSlug(event.target.value)}
               placeholder="ex: armazem"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
 
-            <p className="mt-2 text-xs text-zinc-600">
+            <p className="mt-2 text-xs text-foreground-muted">
               O slug define o link público: /espacos/{slug || "slug"}
             </p>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Cidade
             </label>
 
             <select
               value={city}
               onChange={(event) => setCity(event.target.value)}
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none focus:border-[var(--accent)]"
             >
               {cities.map((item) => (
                 <option key={item}>{item}</option>
@@ -239,7 +239,7 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Morada
             </label>
 
@@ -247,12 +247,12 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
               value={address}
               onChange={(event) => setAddress(event.target.value)}
               placeholder="Morada do espaço"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Descrição
             </label>
 
@@ -261,12 +261,12 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Descrição curta do espaço"
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-bold text-zinc-300">
+            <label className="mb-2 block text-sm font-bold text-foreground-secondary">
               Instagram
             </label>
 
@@ -274,7 +274,7 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
               value={instagram}
               onChange={(event) => setInstagram(event.target.value)}
               placeholder="https://instagram.com/..."
-              className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-zinc-600 focus:border-red-900"
+              className="w-full rounded-2xl border border-border bg-black px-4 py-3 text-[#f5f5f2] outline-none placeholder:text-foreground-muted focus:border-[var(--accent)]"
             />
           </div>
 
@@ -288,7 +288,7 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
           </button>
 
           {message && (
-            <p className="text-center text-sm font-bold text-zinc-400">
+            <p className="text-center text-sm font-bold text-foreground-muted">
               {message}
             </p>
           )}
@@ -296,7 +296,7 @@ export function AdminVenueEditClient({ venueId }: AdminVenueEditClientProps) {
           {slug && (
             <Link
               href={`/espacos/${slug}`}
-              className="block rounded-full border border-zinc-700 px-5 py-4 text-center text-sm font-bold text-zinc-300"
+              className="block rounded-full border border-border-strong px-5 py-4 text-center text-sm font-bold text-foreground-secondary"
             >
               Ver perfil público
             </Link>

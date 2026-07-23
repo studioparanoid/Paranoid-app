@@ -201,12 +201,12 @@ export function OrganizerShopClient() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
       <section className="space-y-4">
-        <div className="rounded-[1.5rem] border border-red-950 bg-red-950/20 p-5">
-          <p className="text-sm font-bold leading-relaxed text-red-100">
+        <div className="rounded-[1.5rem] border border-danger bg-danger/20 p-5">
+          <p className="text-sm font-bold leading-relaxed text-danger">
             Para receber pagamentos da Paranoid, tens de emitir fatura,
             fatura-recibo, ato isolado ou documento fiscal válido à Paranoid.
           </p>
-          <p className="mt-3 text-xs font-bold text-zinc-500">
+          <p className="mt-3 text-xs font-bold text-foreground-muted">
             A Paranoid só processa pagamentos após receber documento fiscal
             válido. O parceiro é fornecedor/licenciador/parceiro comercial, não
             funcionário da Paranoid.
@@ -214,8 +214,8 @@ export function OrganizerShopClient() {
         </div>
 
         {sellerProfile && (
-          <div className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
-            <p className="text-xs font-black uppercase tracking-[0.35em] text-red-600">
+          <div className="rounded-[1.5rem] border border-border bg-background p-5">
+            <p className="text-xs font-black uppercase tracking-[0.35em] text-danger">
               Fiscal
             </p>
             <h2 className="mt-3 text-3xl font-black">Dados para pagamento</h2>
@@ -227,7 +227,7 @@ export function OrganizerShopClient() {
                 ["iban", "IBAN"],
               ].map(([key, label]) => (
                 <label key={key} className="block space-y-2">
-                  <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+                  <span className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
                     {label}
                   </span>
                   <input
@@ -241,13 +241,13 @@ export function OrganizerShopClient() {
                           : current
                       )
                     }
-                    className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                    className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
                   />
                 </label>
               ))}
 
               <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+                <span className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
                   Tipo de entidade
                 </span>
                 <select
@@ -259,7 +259,7 @@ export function OrganizerShopClient() {
                         : current
                     )
                   }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
                 >
                   <option value="artist">Artista individual</option>
                   <option value="band">Banda/coletivo</option>
@@ -271,7 +271,7 @@ export function OrganizerShopClient() {
               </label>
 
               <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+                <span className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
                   Documento fiscal
                 </span>
                 <select
@@ -286,7 +286,7 @@ export function OrganizerShopClient() {
                         : current
                     )
                   }
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
                 >
                   <option value="yes">Consigo emitir</option>
                   <option value="no">Ainda não consigo</option>
@@ -295,10 +295,10 @@ export function OrganizerShopClient() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
-              <span className="rounded-full border border-zinc-800 px-3 py-2 text-zinc-400">
+              <span className="rounded-full border border-border px-3 py-2 text-foreground-muted">
                 Fiscal: {sellerProfile.fiscal_status || "pending"}
               </span>
-              <span className="rounded-full border border-zinc-800 px-3 py-2 text-zinc-400">
+              <span className="rounded-full border border-border px-3 py-2 text-foreground-muted">
                 Contrato: {sellerProfile.contract_status || "pending"}
               </span>
             </div>
@@ -315,8 +315,8 @@ export function OrganizerShopClient() {
           </div>
         )}
 
-        <div className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
-          <p className="text-xs font-black uppercase tracking-[0.35em] text-red-600">
+        <div className="rounded-[1.5rem] border border-border bg-background p-5">
+          <p className="text-xs font-black uppercase tracking-[0.35em] text-danger">
             Produto
           </p>
           <h2 className="mt-3 text-3xl font-black">Submeter merch</h2>
@@ -330,25 +330,25 @@ export function OrganizerShopClient() {
               ["Tamanho / cor", "M / Preto"],
             ].map(([label, placeholder]) => (
               <label className="block space-y-2" key={label}>
-                <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+                <span className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
                   {label}
                 </span>
                 <input
                   placeholder={placeholder}
-                  className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                  className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
                 />
               </label>
             ))}
 
             <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-[0.25em] text-zinc-500">
+              <span className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
                 Preço base que queres receber
               </span>
               <input
                 value={basePrice}
                 onChange={(event) => setBasePrice(event.target.value)}
                 inputMode="decimal"
-                className="w-full rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                className="w-full rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
               />
             </label>
 
@@ -364,7 +364,7 @@ export function OrganizerShopClient() {
           <h2 className="text-3xl font-black">Produtos</h2>
 
           {products.length === 0 && (
-            <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-500">
+            <p className="rounded-[1.5rem] border border-border bg-background p-5 text-foreground-muted">
               Ainda não tens produtos ligados à tua loja.
             </p>
           )}
@@ -372,19 +372,19 @@ export function OrganizerShopClient() {
           {products.map((product) => (
             <article
               key={product.id}
-              className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5"
+              className="rounded-[1.5rem] border border-border bg-background p-5"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-danger">
                     {product.category || "Merch"}
                   </p>
                   <h3 className="mt-2 text-2xl font-black">{product.name}</h3>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-foreground-muted">
                   {product.status || "sem estado"} · stock{" "}
                   {product.stock_quantity ?? 0}
                 </p>
-                <p className="mt-1 text-xs font-bold text-zinc-600">
+                <p className="mt-1 text-xs font-bold text-foreground-muted">
                   payout {product.partner_payout_type || "none"} · produção{" "}
                   {formatMoney(product.production_cost_cents || 0)}
                 </p>
@@ -407,7 +407,7 @@ export function OrganizerShopClient() {
           )}
 
           {orders.length === 0 && (
-            <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-500">
+            <p className="rounded-[1.5rem] border border-border bg-background p-5 text-foreground-muted">
               Ainda não há encomendas.
             </p>
           )}
@@ -415,11 +415,11 @@ export function OrganizerShopClient() {
           {orders.map((order) => (
             <article
               key={order.id}
-              className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5"
+              className="rounded-[1.5rem] border border-border bg-background p-5"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-danger">
                     #{normalizeOrderId(order.id)}
                   </p>
                   <h3 className="mt-2 text-2xl font-black">
@@ -436,7 +436,7 @@ export function OrganizerShopClient() {
                 </p>
               </div>
 
-              <div className="mt-4 space-y-2 text-sm text-zinc-400">
+              <div className="mt-4 space-y-2 text-sm text-foreground-muted">
                 {order.items.map((item) => (
                   <p key={item.id}>
                     {item.quantity}x {item.productName} ·{" "}
@@ -446,7 +446,7 @@ export function OrganizerShopClient() {
               </div>
 
               <div className="mt-5 grid gap-2">
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-zinc-500">
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-foreground-muted">
                   CTT
                 </p>
                 <input
@@ -458,7 +458,7 @@ export function OrganizerShopClient() {
                     }))
                   }
                   placeholder="Código de tracking"
-                  className="rounded-2xl border border-zinc-800 bg-black px-4 py-3 font-bold outline-none"
+                  className="rounded-2xl border border-border bg-black px-4 py-3 font-bold outline-none"
                 />
                 <LoadingButton
                   onClick={() => markShipped(order.id)}
@@ -476,28 +476,28 @@ export function OrganizerShopClient() {
       </section>
 
       <aside className="space-y-4">
-        <section className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
+        <section className="rounded-[1.5rem] border border-border bg-background p-5">
           <h2 className="text-2xl font-black">Preço final</h2>
           <div className="mt-5 space-y-3 text-sm">
-            <p className="flex justify-between text-zinc-400">
+            <p className="flex justify-between text-foreground-muted">
               <span>Valor parceiro</span>
               <span>{formatMoney(price.basePriceCents)}</span>
             </p>
-            <p className="flex justify-between text-zinc-400">
+            <p className="flex justify-between text-foreground-muted">
               <span>Taxa incluída</span>
               <span>{formatMoney(price.commissionCents)}</span>
             </p>
-            <p className="flex justify-between border-t border-zinc-900 pt-3 text-lg font-black">
+            <p className="flex justify-between border-t border-border pt-3 text-lg font-black">
               <span>Cliente vê</span>
               <span>{formatMoney(price.finalPriceCents)}</span>
             </p>
           </div>
         </section>
 
-        <section className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5">
+        <section className="rounded-[1.5rem] border border-border bg-background p-5">
           <h2 className="text-2xl font-black">Previsto a receber</h2>
           <p className="mt-4 text-4xl font-black">{formatMoney(payoutTotal)}</p>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
             Pagamentos só são processados depois de documento fiscal válido
             aprovado pela Paranoid.
           </p>

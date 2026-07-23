@@ -50,16 +50,16 @@ export function ProfileImageField({ imageUrl, onFile, onRemove, disabled = false
   return <fieldset className="sm:col-span-2" disabled={disabled}>
     <legend className="mb-2 text-xs font-bold text-[var(--foreground-muted)]">Foto de perfil</legend>
     <div className="flex flex-wrap items-center gap-4">
-      <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] text-xl font-black text-red-500">
+      <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-secondary)] text-xl font-black text-danger">
         {preview ? <img src={preview} alt="Pré-visualização da foto de perfil" className="h-full w-full object-cover" /> : <span aria-hidden="true">P</span>}
       </div>
       <div className="flex flex-wrap gap-2">
         <label htmlFor={id} className="pressable focus-ring inline-flex min-h-11 cursor-pointer items-center rounded-full border border-[var(--border-strong)] px-4 text-xs font-black">{preview ? "Substituir foto" : "Escolher foto"}</label>
         <input id={id} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void selectFile(event.target.files?.[0])} className="sr-only" />
-        {preview && <button type="button" onClick={() => { setLocalPreview(""); onRemove(); }} className="min-h-11 rounded-full border border-red-900 px-4 text-xs font-black text-red-500">Remover</button>}
+        {preview && <button type="button" onClick={() => { setLocalPreview(""); onRemove(); }} className="min-h-11 rounded-full border border-danger px-4 text-xs font-black text-danger">Remover</button>}
       </div>
     </div>
     <p className="mt-2 text-xs text-[var(--foreground-muted)]">JPEG, PNG ou WebP. Máximo 5 MB.</p>
-    {error && <p className="mt-2 text-xs font-bold text-red-500" role="alert">{error}</p>}
+    {error && <p className="mt-2 text-xs font-bold text-danger" role="alert">{error}</p>}
   </fieldset>;
 }

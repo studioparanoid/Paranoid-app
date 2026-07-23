@@ -26,7 +26,7 @@ export function MfaCodeInput({ value, onChange, disabled, autoFocus = false }: {
       autoFocus={autoFocus}
       disabled={disabled}
       aria-describedby="mfa-code-help"
-      className="h-14 w-full rounded border border-[var(--input-border)] bg-[var(--input-background)] px-4 text-center font-mono text-2xl font-black tracking-[0.35em] outline-none focus:border-red-700 disabled:opacity-50"
+      className="h-14 w-full rounded border border-[var(--input-border)] bg-[var(--input-background)] px-4 text-center font-mono text-2xl font-black tracking-[0.35em] outline-none focus:border-[var(--accent)] disabled:opacity-50"
     />
   );
 }

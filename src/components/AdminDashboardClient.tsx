@@ -170,21 +170,21 @@ export function AdminDashboardClient() {
   return <div className="mt-8">
     <section className="grid gap-5 lg:grid-cols-2">
       <article className="order-2 shadow-panel rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 lg:order-1 sm:p-6">
-        <p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">Atividade recente</p>
-        {activity.length === 0 ? <p className="mt-5 text-sm text-[var(--foreground-muted)]">Ainda não existe atividade recente.</p> : <ul className="mt-4 divide-y divide-[var(--border)]">{activity.map((item) => <li key={item.id}><Link href={item.href} className="interactive focus-ring flex min-h-14 items-center gap-3 rounded py-2 hover:bg-[var(--surface-hover)]"><AppIcon name="events" className="h-4 w-4 shrink-0 text-red-600" /><span className="min-w-0 flex-1"><span className="block text-sm font-bold">{item.label}</span><span className="block truncate text-xs text-[var(--foreground-muted)]">{item.entity}</span></span><time className="shrink-0 text-xs text-[var(--foreground-muted)]">{relativeDate(item.date)}</time></Link></li>)}</ul>}
+        <p className="text-xs font-black uppercase tracking-[0.25em] text-danger">Atividade recente</p>
+        {activity.length === 0 ? <p className="mt-5 text-sm text-[var(--foreground-muted)]">Ainda não existe atividade recente.</p> : <ul className="mt-4 divide-y divide-[var(--border)]">{activity.map((item) => <li key={item.id}><Link href={item.href} className="interactive focus-ring flex min-h-14 items-center gap-3 rounded py-2 hover:bg-[var(--surface-hover)]"><AppIcon name="events" className="h-4 w-4 shrink-0 text-danger" /><span className="min-w-0 flex-1"><span className="block text-sm font-bold">{item.label}</span><span className="block truncate text-xs text-[var(--foreground-muted)]">{item.entity}</span></span><time className="shrink-0 text-xs text-[var(--foreground-muted)]">{relativeDate(item.date)}</time></Link></li>)}</ul>}
       </article>
       <article className="order-1 shadow-panel rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 lg:order-2 sm:p-6">
-        <p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">Aprovações pendentes</p>
+        <p className="text-xs font-black uppercase tracking-[0.25em] text-danger">Aprovações pendentes</p>
         <ul className="mt-4 divide-y divide-[var(--border)]">{approvalRows.map((item) => <li key={item.label}><Link href={item.href} className="interactive focus-ring flex min-h-14 items-center gap-3 rounded py-2 hover:bg-[var(--surface-hover)]"><span className="min-w-0 flex-1 text-sm font-bold">{item.label}</span><strong className="text-xl">{item.count}</strong><AppIcon name="chevron" className="h-4 w-4 text-[var(--foreground-muted)]" /></Link></li>)}</ul>
-        <Link href="/admin/perfis" className="focus-ring mt-5 inline-flex min-h-11 items-center rounded text-sm font-black text-red-500 hover:text-red-400">Ver aprovações</Link>
+        <Link href="/admin/perfis" className="focus-ring mt-5 inline-flex min-h-11 items-center rounded text-sm font-black text-danger hover:text-danger">Ver aprovações</Link>
       </article>
     </section>
 
-    {message && <p className="mt-5 text-sm font-bold text-red-400" role="alert">{message}</p>}
+    {message && <p className="mt-5 text-sm font-bold text-danger" role="alert">{message}</p>}
 
     <section id="admin-lists" className="mt-10 scroll-mt-24" aria-labelledby="admin-list-title">
       <div className="flex flex-col gap-4 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div><p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">Conteúdo</p><h2 id="admin-list-title" className="mt-2 text-3xl font-black">Eventos e submissões</h2></div>
+        <div><p className="text-xs font-black uppercase tracking-[0.25em] text-danger">Conteúdo</p><h2 id="admin-list-title" className="mt-2 text-3xl font-black">Eventos e submissões</h2></div>
         <label className="w-full sm:max-w-xs"><span className="sr-only">Pesquisar na lista</span><input value={search} onChange={(event) => updateListState(tab, event.target.value)} placeholder="Pesquisar" className="h-11 w-full rounded border px-4 text-sm outline-none" /></label>
       </div>
       <div className="mt-4 flex gap-2" role="tablist" aria-label="Tipo de conteúdo">
@@ -193,25 +193,25 @@ export function AdminDashboardClient() {
       </div>
 
       <div className="mt-5 flex min-h-12 flex-wrap items-center gap-3 border-y border-[var(--border)] py-2">
-        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-bold"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} aria-label="Selecionar todos os itens visíveis" className="h-5 w-5 accent-red-600" />Selecionar todos</label>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-bold"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} aria-label="Selecionar todos os itens visíveis" className="h-5 w-5 accent-[var(--accent)]" />Selecionar todos</label>
         {selected.size > 0 && <><span className="text-sm font-black">{selected.size} selecionados</span><Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Limpar seleção</Button><Button size="sm" variant="danger" onClick={() => setConfirmBulk(true)}>{tab === "submissions" ? "Rejeitar" : "Arquivar"}</Button></>}
       </div>
 
       <div className="mt-4 grid gap-3">
         {tab === "submissions" ? visibleSubmissions.map((item) => {
           const key = rowKey("submissions", item.id); const active = selected.has(key);
-          return <article key={item.id} role="link" tabIndex={0} aria-label={`Abrir submissão ${item.title}`} onClick={() => router.push(`/admin/submissoes/${item.id}`)} onKeyDown={(event) => { if (event.key === "Enter") router.push(`/admin/submissoes/${item.id}`); if (event.key === " " && event.target === event.currentTarget) { event.preventDefault(); toggle(key); } }} className={`interactive-card cursor-pointer rounded-lg border bg-[var(--surface)] p-4 ${active ? "border-red-600 ring-1 ring-red-600" : "border-[var(--border)]"}`}>
+          return <article key={item.id} role="link" tabIndex={0} aria-label={`Abrir submissão ${item.title}`} onClick={() => router.push(`/admin/submissoes/${item.id}`)} onKeyDown={(event) => { if (event.key === "Enter") router.push(`/admin/submissoes/${item.id}`); if (event.key === " " && event.target === event.currentTarget) { event.preventDefault(); toggle(key); } }} className={`interactive-card cursor-pointer rounded-lg border bg-[var(--surface)] p-4 ${active ? "border-danger ring-1 ring-danger" : "border-[var(--border)]"}`}>
             <div className="grid gap-4 md:grid-cols-[auto_1fr_250px] md:items-start">
-              <label className="flex min-h-11 items-center" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={active} onChange={() => toggle(key)} aria-label={`Selecionar submissão ${item.title}`} className="h-5 w-5 accent-red-600" /></label>
+              <label className="flex min-h-11 items-center" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={active} onChange={() => toggle(key)} aria-label={`Selecionar submissão ${item.title}`} className="h-5 w-5 accent-[var(--accent)]" /></label>
               <div className="min-w-0"><h3 className="text-lg font-black">{item.title}</h3><p className="mt-1 text-sm text-[var(--foreground-muted)]">{item.organizer} · {item.city}</p><p className="mt-1 text-xs text-[var(--foreground-muted)]">{item.category} · {item.event_date || "Sem data"} · Pendente</p></div>
               <div onClick={(event) => event.stopPropagation()}><AdminSubmissionActions submission={item} /></div>
             </div>
           </article>;
         }) : visibleEvents.map((item) => {
           const key = rowKey("events", item.id); const active = selected.has(key);
-          return <article key={item.id} role="link" tabIndex={0} aria-label={`Abrir evento ${item.title}`} onClick={() => router.push(`/admin/eventos/${item.id}`)} onKeyDown={(event) => { if (event.key === "Enter") router.push(`/admin/eventos/${item.id}`); if (event.key === " " && event.target === event.currentTarget) { event.preventDefault(); toggle(key); } }} className={`interactive-card cursor-pointer rounded-lg border bg-[var(--surface)] p-4 ${active ? "border-red-600 ring-1 ring-red-600" : "border-[var(--border)]"}`}>
+          return <article key={item.id} role="link" tabIndex={0} aria-label={`Abrir evento ${item.title}`} onClick={() => router.push(`/admin/eventos/${item.id}`)} onKeyDown={(event) => { if (event.key === "Enter") router.push(`/admin/eventos/${item.id}`); if (event.key === " " && event.target === event.currentTarget) { event.preventDefault(); toggle(key); } }} className={`interactive-card cursor-pointer rounded-lg border bg-[var(--surface)] p-4 ${active ? "border-danger ring-1 ring-danger" : "border-[var(--border)]"}`}>
             <div className="grid gap-4 md:grid-cols-[auto_72px_1fr_250px] md:items-center">
-              <label className="flex min-h-11 items-center" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={active} onChange={() => toggle(key)} aria-label={`Selecionar evento ${item.title}`} className="h-5 w-5 accent-red-600" /></label>
+              <label className="flex min-h-11 items-center" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={active} onChange={() => toggle(key)} aria-label={`Selecionar evento ${item.title}`} className="h-5 w-5 accent-[var(--accent)]" /></label>
               <div className="h-16 rounded bg-[var(--surface-secondary)] bg-cover bg-center" style={item.image_url ? { backgroundImage: `url(${item.image_url})` } : undefined} />
               <div className="min-w-0"><h3 className="text-lg font-black">{item.title}</h3><p className="mt-1 text-sm text-[var(--foreground-muted)]">{item.venue_name || "Sem espaço"} · {item.city || "Sem cidade"}</p><p className="mt-1 text-xs font-bold uppercase text-[var(--foreground-muted)]">{item.display_date || "Sem data"} · {item.status === "archived" ? "Arquivado" : "Publicado"}</p></div>
               <div onClick={(event) => event.stopPropagation()}><AdminEventActions event={item} mode={item.status === "archived" ? "archived" : "published"} /></div>

@@ -655,20 +655,20 @@ export function AdminSubmissionActions({
       </div>
 
       {submission.ticket_mode && submission.ticket_mode !== "none" && (
-        <p className="rounded-2xl border border-red-950 bg-red-950/20 px-4 py-3 text-center text-xs font-bold text-red-300">
+        <p className="rounded-2xl border border-danger bg-danger/20 px-4 py-3 text-center text-xs font-bold text-danger">
           Bilheteira:{" "}
           {submission.ticket_mode === "internal" ? "Paranoid" : "externa"}
         </p>
       )}
 
       {submission.municipality && (
-        <p className="rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-center text-xs font-bold text-zinc-400">
+        <p className="rounded-2xl border border-border bg-black px-4 py-3 text-center text-xs font-bold text-foreground-muted">
           Concelho: {submission.municipality}
         </p>
       )}
 
       {submission.address && (
-        <p className="rounded-2xl border border-zinc-800 bg-black px-4 py-3 text-center text-xs font-bold text-zinc-400">
+        <p className="rounded-2xl border border-border bg-black px-4 py-3 text-center text-xs font-bold text-foreground-muted">
           Morada: {submission.address}
         </p>
       )}
@@ -680,7 +680,7 @@ export function AdminSubmissionActions({
       )}
 
       {message && (
-        <p className="text-center text-xs font-bold text-zinc-500" role="alert">
+        <p className="text-center text-xs font-bold text-foreground-muted" role="alert">
           {message}
         </p>
       )}

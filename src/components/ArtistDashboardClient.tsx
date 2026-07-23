@@ -101,8 +101,8 @@ export function ArtistDashboardClient() {
   if (!artist) return <EmptyState title="Esta conta ainda não tem um perfil de artista aprovado." description="Junta-te à rede para teres acesso a esta área." actionLabel="Reivindicar perfil" actionHref="/reivindicar" />;
 
   return <div>
-    <header className="flex flex-col gap-5 border-b border-zinc-900 pb-6 sm:flex-row sm:items-end sm:justify-between">
-      <div><p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">Artista</p><h1 className="mt-2 text-4xl font-black sm:text-5xl">{artist.name}</h1><div className="mt-2"><StatusBadge label={artist.verified ? "Perfil verificado" : "Perfil ativo"} tone="success" /></div></div>
+    <header className="flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <div><p className="text-xs font-black uppercase tracking-[0.3em] text-danger">Artista</p><h1 className="mt-2 text-4xl font-black sm:text-5xl">{artist.name}</h1><div className="mt-2"><StatusBadge label={artist.verified ? "Perfil verificado" : "Perfil ativo"} tone="success" /></div></div>
       <div className="flex gap-2">
         <LinkButton href="/perfil" variant="secondary">Editar perfil</LinkButton>
         <LinkButton href={`/artistas/${artist.slug}`}>Ver perfil público</LinkButton>
@@ -110,15 +110,15 @@ export function ArtistDashboardClient() {
     </header>
 
     <nav aria-label="Área do artista" className="my-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <a href="#eventos" className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Eventos</a>
-      <Link href="/reservas" className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Reservas</Link>
-      <Link href="/artista/loja" className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Loja</Link>
-      <Link href={`/artistas/${artist.slug}`} className="pressable focus-ring rounded border border-zinc-800 px-4 py-3 text-center text-sm font-bold hover:bg-zinc-950">Perfil</Link>
+      <a href="#eventos" className="pressable focus-ring rounded border border-border px-4 py-3 text-center text-sm font-bold hover:bg-surface-hover">Eventos</a>
+      <Link href="/reservas" className="pressable focus-ring rounded border border-border px-4 py-3 text-center text-sm font-bold hover:bg-surface-hover">Reservas</Link>
+      <Link href="/artista/loja" className="pressable focus-ring rounded border border-border px-4 py-3 text-center text-sm font-bold hover:bg-surface-hover">Loja</Link>
+      <Link href={`/artistas/${artist.slug}`} className="pressable focus-ring rounded border border-border px-4 py-3 text-center text-sm font-bold hover:bg-surface-hover">Perfil</Link>
     </nav>
 
-    {message && <p className="mb-6 border-l-2 border-red-800 pl-4 text-sm text-red-300">{message}</p>}
+    {message && <p className="mb-6 border-l-2 border-danger pl-4 text-sm text-danger">{message}</p>}
     {dataLoading ? <AdminListSkeleton /> : <div className="content-transition">
-      <section className="grid grid-cols-2 gap-px overflow-hidden rounded border border-zinc-900 bg-zinc-900 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-px overflow-hidden rounded border border-border bg-surface sm:grid-cols-4">
         <Metric value={events.length} label="Próximos eventos" />
         <Metric value={pendingRequests.length} label="Pedidos pendentes" />
         <Metric value={followerCount} label="Seguidores" />
@@ -126,26 +126,26 @@ export function ArtistDashboardClient() {
       </section>
 
       <section id="eventos" className="mt-9 scroll-mt-24"><SectionHeader title="Próximos eventos" meta={`${events.length} publicados`} />
-        {events.length === 0 ? <EmptyState title="Ainda não tens eventos publicados." description="Os eventos onde participares como artista aparecem aqui." /> : <div className="divide-y divide-zinc-900 border-y border-zinc-900">{events.map((event) => <Link key={event.id} href={`/eventos/${event.slug}`} className="interactive flex items-center gap-4 py-4 hover:bg-zinc-950/60"><div className="w-14 shrink-0 text-center"><p className="text-xs font-black uppercase text-red-500">{formatDate(event.start_at || event.display_date)}</p><p className="text-xs text-zinc-600">{event.display_time || ""}</p></div><div className="min-w-0 flex-1"><h3 className="truncate font-black">{event.title}</h3><p className="truncate text-xs text-zinc-600">{[event.venue_name, event.city].filter(Boolean).join(" · ")}</p></div></Link>)}</div>}
+        {events.length === 0 ? <EmptyState title="Ainda não tens eventos publicados." description="Os eventos onde participares como artista aparecem aqui." /> : <div className="divide-y divide-border border-y border-border">{events.map((event) => <Link key={event.id} href={`/eventos/${event.slug}`} className="interactive flex items-center gap-4 py-4 hover:bg-surface-hover"><div className="w-14 shrink-0 text-center"><p className="text-xs font-black uppercase text-danger">{formatDate(event.start_at || event.display_date)}</p><p className="text-xs text-foreground-muted">{event.display_time || ""}</p></div><div className="min-w-0 flex-1"><h3 className="truncate font-black">{event.title}</h3><p className="truncate text-xs text-foreground-muted">{[event.venue_name, event.city].filter(Boolean).join(" · ")}</p></div></Link>)}</div>}
       </section>
 
       <section className="mt-9"><SectionHeader title="Loja" />
         {productCount === 0 ? (
-          <div className="border-y border-zinc-900 py-8 text-center">
-            <p className="text-sm font-bold text-zinc-300">És artista e tens merch? Ou pintor e tens arte para vender?</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-600">Cria a tua loja e vende diretamente a quem te segue.</p>
+          <div className="border-y border-border py-8 text-center">
+            <p className="text-sm font-bold text-foreground-secondary">És artista e tens merch? Ou pintor e tens arte para vender?</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-foreground-muted">Cria a tua loja e vende diretamente a quem te segue.</p>
             <LinkButton href="/artista/loja" className="mt-5">Começar a vender</LinkButton>
           </div>
         ) : (
-          <div className="flex items-center justify-between border-y border-zinc-900 py-5"><p className="text-sm text-zinc-400">{productCount} {productCount === 1 ? "produto ativo" : "produtos ativos"}</p><LinkButton href="/artista/loja" variant="secondary">Gerir loja</LinkButton></div>
+          <div className="flex items-center justify-between border-y border-border py-5"><p className="text-sm text-foreground-muted">{productCount} {productCount === 1 ? "produto ativo" : "produtos ativos"}</p><LinkButton href="/artista/loja" variant="secondary">Gerir loja</LinkButton></div>
         )}
       </section>
 
-      {pendingRequests.length > 0 && <section className="mt-9"><SectionHeader title="Pedidos de reserva pendentes" /><div className="divide-y divide-zinc-900 border-y border-zinc-900">{pendingRequests.slice(0, 5).map((request) => <Link key={request.id} href={`/reservas/${request.id}`} className="flex items-center gap-4 py-4"><div className="min-w-0 flex-1"><h3 className="truncate font-bold">{request.proposed_venue_name || "Proposta de reserva"}</h3><p className="text-xs text-zinc-600">{formatDate(request.proposed_date)}</p></div><StatusBadge label="Pendente" tone="warning" /></Link>)}</div></section>}
+      {pendingRequests.length > 0 && <section className="mt-9"><SectionHeader title="Pedidos de reserva pendentes" /><div className="divide-y divide-border border-y border-border">{pendingRequests.slice(0, 5).map((request) => <Link key={request.id} href={`/reservas/${request.id}`} className="flex items-center gap-4 py-4"><div className="min-w-0 flex-1"><h3 className="truncate font-bold">{request.proposed_venue_name || "Proposta de reserva"}</h3><p className="text-xs text-foreground-muted">{formatDate(request.proposed_date)}</p></div><StatusBadge label="Pendente" tone="warning" /></Link>)}</div></section>}
     </div>}
   </div>;
 }
 
 function Metric({ value, label }: { value: number | string; label: string }) {
-  return <div className="bg-[#070707] p-4"><p className="text-2xl font-black">{value}</p><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-zinc-600">{label}</p></div>;
+  return <div className="bg-[#070707] p-4"><p className="text-2xl font-black">{value}</p><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-foreground-muted">{label}</p></div>;
 }

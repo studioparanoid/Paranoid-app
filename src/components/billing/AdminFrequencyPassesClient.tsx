@@ -99,22 +99,22 @@ export function AdminFrequencyPassesClient() {
         <button
           type="button"
           onClick={loadPasses}
-          className="rounded-full border border-zinc-800 px-4 py-2 text-sm font-black text-zinc-300"
+          className="rounded-full border border-border px-4 py-2 text-sm font-black text-foreground-secondary"
         >
           Atualizar
         </button>
       </div>
 
       {message && (
-        <p className="rounded-2xl border border-red-900 bg-red-950/40 p-4 font-bold text-red-100">
+        <p className="rounded-2xl border border-danger bg-danger/40 p-4 font-bold text-danger">
           {message}
         </p>
       )}
 
-      {loading && <p className="text-zinc-500">A carregar passes...</p>}
+      {loading && <p className="text-foreground-muted">A carregar passes...</p>}
 
       {!loading && passes.length === 0 && (
-        <p className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5 text-zinc-500">
+        <p className="rounded-[1.5rem] border border-border bg-background p-5 text-foreground-muted">
           Ainda não há passes Frequency.
         </p>
       )}
@@ -122,17 +122,17 @@ export function AdminFrequencyPassesClient() {
       {passes.map((pass) => (
         <article
           key={pass.id}
-          className="rounded-[1.5rem] border border-zinc-900 bg-zinc-950 p-5"
+          className="rounded-[1.5rem] border border-border bg-background p-5"
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-danger">
                 {pass.status}
               </p>
               <h3 className="mt-2 break-all text-xl font-black">
                 {pass.organizerId}
               </h3>
-              <p className="mt-1 break-all text-sm text-zinc-500">
+              <p className="mt-1 break-all text-sm text-foreground-muted">
                 Pagamento: {pass.paymentId || "manual/sem pagamento"}
               </p>
             </div>
@@ -142,26 +142,26 @@ export function AdminFrequencyPassesClient() {
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl border border-zinc-800 bg-black p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-zinc-600">
+            <div className="rounded-2xl border border-border bg-black p-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                 Início
               </p>
               <p className="mt-2 font-black">{formatDate(pass.startsAt)}</p>
             </div>
-            <div className="rounded-2xl border border-zinc-800 bg-black p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-zinc-600">
+            <div className="rounded-2xl border border-border bg-black p-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                 Fim
               </p>
               <p className="mt-2 font-black">{formatDate(pass.endsAt)}</p>
             </div>
-            <div className="rounded-2xl border border-zinc-800 bg-black p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-zinc-600">
+            <div className="rounded-2xl border border-border bg-black p-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                 Elegíveis
               </p>
               <p className="mt-2 font-black">{pass.eligibleEventsCount}</p>
             </div>
-            <div className="rounded-2xl border border-zinc-800 bg-black p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-zinc-600">
+            <div className="rounded-2xl border border-border bg-black p-4">
+              <p className="text-xs uppercase tracking-[0.25em] text-foreground-muted">
                 No período
               </p>
               <p className="mt-2 font-black">{pass.publishedDuringPeriodCount}</p>
@@ -189,14 +189,14 @@ export function AdminFrequencyPassesClient() {
             <button
               type="button"
               onClick={() => updatePass(pass.id, "expire")}
-              className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300"
+              className="rounded-full border border-border-strong px-4 py-3 text-sm font-black text-foreground-secondary"
             >
               Expirar
             </button>
             <button
               type="button"
               onClick={() => updatePass(pass.id, "cancel")}
-              className="rounded-full border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300"
+              className="rounded-full border border-border-strong px-4 py-3 text-sm font-black text-foreground-secondary"
             >
               Cancelar
             </button>

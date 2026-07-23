@@ -7,14 +7,14 @@ export default function OrganizerTicketScannerPage() {
       <section className="mx-auto max-w-md lg:max-w-6xl">
         <Link
           href="/organizador/bilhetes"
-          className="mb-6 inline-block text-sm text-zinc-400"
+          className="mb-6 inline-block text-sm text-foreground-muted"
         >
           ← Voltar à bilheteira
         </Link>
 
         <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
           <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
+            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-danger">
               Scanner
             </p>
 
@@ -23,8 +23,8 @@ export default function OrganizerTicketScannerPage() {
             </h1>
           </div>
 
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
-            <p className="text-base leading-relaxed text-zinc-400 lg:text-lg">
+          <div className="rounded-[2rem] border border-border bg-background p-5 lg:p-6">
+            <p className="text-base leading-relaxed text-foreground-muted lg:text-lg">
               Aponta a câmara ao QR code do bilhete. Se a reserva estiver ativa,
               a entrada fica marcada automaticamente.
             </p>

@@ -39,7 +39,7 @@ export function MobileBottomNav() {
       {items.slice(0, 2).map((item) => {
         const active = isNavigationActive(pathname, item.href);
         return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`interactive pressable focus-ring relative flex min-h-12 flex-col items-center justify-center gap-1 rounded px-1 py-1.5 text-center text-[10px] font-bold ${active ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}>
-          <span className={`interactive grid h-7 min-w-9 place-items-center rounded-full ${active ? "bg-red-950/45 text-red-500" : ""}`}><AppIcon name={item.icon} className="h-5 w-5" /></span>
+          <span className={`interactive grid h-7 min-w-9 place-items-center rounded-full ${active ? "bg-danger/45 text-danger" : ""}`}><AppIcon name={item.icon} className="h-5 w-5" /></span>
           <span>{item.label}</span>
         </Link>;
       })}
@@ -50,12 +50,12 @@ export function MobileBottomNav() {
         aria-current={pathname === "/" ? "page" : undefined}
         className="pressable focus-ring flex min-h-12 items-center justify-center rounded px-1 py-1.5"
       >
-        <span className={`grid h-9 w-9 place-items-center rounded-full border bg-[#080808] text-base font-black leading-none text-white shadow-[0_4px_12px_rgb(0_0_0_/_0.3)] ${pathname === "/" ? "border-red-700" : "border-zinc-700"}`}>P</span>
+        <span className={`grid h-9 w-9 place-items-center rounded-full border bg-[#080808] text-base font-black leading-none text-white shadow-[0_4px_12px_rgb(0_0_0_/_0.3)] ${pathname === "/" ? "border-danger" : "border-border-strong"}`}>P</span>
       </Link>
       {items.slice(2).map((item) => {
         const active = isNavigationActive(pathname, item.href);
         return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`interactive pressable focus-ring relative flex min-h-12 flex-col items-center justify-center gap-1 rounded px-1 py-1.5 text-center text-[10px] font-bold ${active ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)] hover:text-[var(--foreground)]"}`}>
-          <span className={`interactive grid h-7 min-w-9 place-items-center rounded-full ${active ? "bg-red-950/45 text-red-500" : ""}`}><AppIcon name={item.icon} className="h-5 w-5" /></span>
+          <span className={`interactive grid h-7 min-w-9 place-items-center rounded-full ${active ? "bg-danger/45 text-danger" : ""}`}><AppIcon name={item.icon} className="h-5 w-5" /></span>
           <span>{item.label}</span>
         </Link>;
       })}

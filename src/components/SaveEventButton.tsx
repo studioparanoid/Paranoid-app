@@ -145,7 +145,7 @@ export function SaveEventButton({ eventId, event, compact = false, feed = false 
         aria-pressed={saved}
         aria-busy={loading}
         className={`focus-ring pressable inline-flex min-h-9 items-center gap-2 text-xs font-black transition-colors ${
-          saved ? "text-red-600" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"
+          saved ? "text-danger" : "text-[var(--foreground-secondary)] hover:text-[var(--foreground)]"
         } disabled:opacity-45`}
       >
         <ParanoidBookmarkIcon className="h-[1.05rem] w-[1.05rem]" active={saved} />
@@ -165,7 +165,7 @@ export function SaveEventButton({ eventId, event, compact = false, feed = false 
         aria-pressed={saved}
         aria-busy={loading}
         title={saved ? "Remover dos guardados" : "Guardar evento"}
-        className={`border backdrop-blur-sm ${saved ? "border-red-500 bg-red-600 text-white hover:bg-red-500" : "border-white/20 bg-black/70 text-white hover:border-white/40 hover:bg-black/90"}`}
+        className={`border backdrop-blur-sm ${saved ? "border-danger bg-danger text-white hover:bg-danger" : "border-white/20 bg-black/70 text-white hover:border-white/40 hover:bg-black/90"}`}
       >
         <AppIcon name="bookmark" className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
       </Button>

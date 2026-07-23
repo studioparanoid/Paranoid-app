@@ -181,7 +181,7 @@ export function OrganizerFrequencyClient() {
 
   if (loading) {
     return (
-      <div className="rounded-[2rem] border border-zinc-900 bg-zinc-950 p-6 text-zinc-500">
+      <div className="rounded-[2rem] border border-border bg-background p-6 text-foreground-muted">
         A carregar Frequency...
       </div>
     );
@@ -189,14 +189,14 @@ export function OrganizerFrequencyClient() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
-      <section className="rounded-[2rem] border border-red-950 bg-red-950/20 p-6">
-        <p className="text-xs font-black uppercase tracking-[0.35em] text-red-500">
+      <section className="rounded-[2rem] border border-danger bg-danger/20 p-6">
+        <p className="text-xs font-black uppercase tracking-[0.35em] text-danger">
           Paranoid Frequency
         </p>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-4xl font-black leading-none">49 € / 30 dias</h2>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-zinc-300">
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-foreground-secondary">
               Dá visibilidade reforçada a todos os teus eventos durante 30 dias.
               Publicar continua gratuito.
             </p>
@@ -207,30 +207,30 @@ export function OrganizerFrequencyClient() {
         </div>
 
         {organizer ? (
-          <p className="mt-5 text-sm font-bold text-zinc-400">
+          <p className="mt-5 text-sm font-bold text-foreground-muted">
             Organizador: {organizer.name || organizer.id}
           </p>
         ) : (
-          <p className="mt-5 rounded-2xl border border-zinc-800 bg-black p-4 text-sm text-zinc-400">
+          <p className="mt-5 rounded-2xl border border-border bg-black p-4 text-sm text-foreground-muted">
             Esta conta ainda não está ligada a um organizador.
           </p>
         )}
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-600">
+          <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
               Início
             </p>
             <p className="mt-2 font-black">{formatDate(pass?.startsAt || null)}</p>
           </div>
-          <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-600">
+          <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
               Válido até
             </p>
             <p className="mt-2 font-black">{formatDate(pass?.endsAt || null)}</p>
           </div>
-          <div className="rounded-[1.5rem] border border-zinc-800 bg-black p-4">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-zinc-600">
+          <div className="rounded-[1.5rem] border border-border bg-black p-4">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-foreground-muted">
               Dias
             </p>
             <p className="mt-2 font-black">{remaining}</p>
@@ -241,7 +241,7 @@ export function OrganizerFrequencyClient() {
           type="button"
           onClick={() => createOrganizerPayment("organizer_paranoid_frequency")}
           disabled={busy || !organizer}
-          className="mt-6 w-full rounded-full bg-[#f5f5f2] px-6 py-4 font-black text-black disabled:bg-zinc-800 disabled:text-zinc-500"
+          className="mt-6 w-full rounded-full bg-[#f5f5f2] px-6 py-4 font-black text-black disabled:bg-surface-hover disabled:text-foreground-muted"
         >
           {busy ? "A preparar..." : active ? "Renovar por 30 dias" : "Ativar Frequency"}
         </button>
@@ -250,51 +250,51 @@ export function OrganizerFrequencyClient() {
           type="button"
           onClick={() => createOrganizerPayment("event_feature_pack_3")}
           disabled={busy || !organizer}
-          className="mt-3 w-full rounded-full border border-zinc-700 px-6 py-4 font-black text-zinc-200 disabled:border-zinc-900 disabled:text-zinc-600"
+          className="mt-3 w-full rounded-full border border-border-strong px-6 py-4 font-black text-foreground disabled:border-border disabled:text-foreground-muted"
         >
           Comprar pack 3 destaques
         </button>
 
         {message && (
-          <p className="mt-4 rounded-2xl border border-zinc-800 bg-black p-4 text-sm font-bold text-zinc-300">
+          <p className="mt-4 rounded-2xl border border-border bg-black p-4 text-sm font-bold text-foreground-secondary">
             {message}
           </p>
         )}
       </section>
 
-      <aside className="rounded-[2rem] border border-zinc-900 bg-zinc-950 p-6">
-        <p className="text-xs font-black uppercase tracking-[0.35em] text-red-500">
+      <aside className="rounded-[2rem] border border-border bg-background p-6">
+        <p className="text-xs font-black uppercase tracking-[0.35em] text-danger">
           Inclui
         </p>
-        <ul className="mt-4 space-y-3 text-sm text-zinc-300">
+        <ul className="mt-4 space-y-3 text-sm text-foreground-secondary">
           <li>Prioridade na Agenda e no Mapa.</li>
           <li>Elegível para homepage.</li>
           <li>Badge “Organizador Frequency”.</li>
           <li>Inclusão editorial quando fizer sentido.</li>
           <li>Estatísticas básicas em preparação.</li>
         </ul>
-        <p className="mt-5 rounded-2xl border border-zinc-800 bg-black p-4 text-sm text-zinc-500">
+        <p className="mt-5 rounded-2xl border border-border bg-black p-4 text-sm text-foreground-muted">
           Divulgação editorial dos teus eventos durante o período ativo, de
           acordo com o calendário e critérios da Paranoid.
         </p>
       </aside>
 
-      <section className="lg:col-span-2 rounded-[2rem] border border-zinc-900 bg-zinc-950 p-6">
+      <section className="lg:col-span-2 rounded-[2rem] border border-border bg-background p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.35em] text-red-500">
+            <p className="text-xs font-black uppercase tracking-[0.35em] text-danger">
               Eventos elegíveis
             </p>
             <h2 className="mt-2 text-2xl font-black">{events.length} eventos</h2>
           </div>
-            <p className="rounded-full border border-zinc-800 px-3 py-1 text-xs font-black text-zinc-500">
+            <p className="rounded-full border border-border px-3 py-1 text-xs font-black text-foreground-muted">
             {remainingCredits} créditos
           </p>
         </div>
 
         <div className="mt-5 grid gap-3 lg:grid-cols-2">
           {events.length === 0 && (
-            <p className="rounded-[1.5rem] border border-zinc-800 bg-black p-5 text-zinc-500">
+            <p className="rounded-[1.5rem] border border-border bg-black p-5 text-foreground-muted">
               Ainda não há eventos publicados elegíveis.
             </p>
           )}
@@ -302,13 +302,13 @@ export function OrganizerFrequencyClient() {
             <Link
               key={event.id}
               href={event.slug ? `/eventos/${event.slug}` : "/agenda"}
-              className="rounded-[1.5rem] border border-zinc-800 bg-black p-5"
+              className="rounded-[1.5rem] border border-border bg-black p-5"
             >
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-red-600">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-danger">
                 {formatDate(event.start_at)}
               </p>
               <h3 className="mt-2 text-xl font-black">{event.title}</h3>
-              <p className="mt-2 text-sm text-zinc-500">
+              <p className="mt-2 text-sm text-foreground-muted">
                 {event.venue_name || "Espaço por definir"} ·{" "}
                 {event.city || "Cidade por definir"}
               </p>
@@ -319,7 +319,7 @@ export function OrganizerFrequencyClient() {
                   handleUseCredit(event.id);
                 }}
                 disabled={busy || remainingCredits <= 0}
-                className="mt-4 rounded-full border border-red-900 px-4 py-3 text-sm font-black text-red-200 disabled:border-zinc-900 disabled:text-zinc-700"
+                className="mt-4 rounded-full border border-danger px-4 py-3 text-sm font-black text-danger disabled:border-border disabled:text-foreground-muted"
               >
                 Usar crédito
               </button>

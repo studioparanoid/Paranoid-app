@@ -82,7 +82,7 @@ export function OrganizerVenueEditClient({ venueId }: { venueId: string }) {
   return (
     <div>
       <header className="mb-6">
-        <p className="text-xs font-black uppercase tracking-[0.3em] text-red-600">Organizador</p>
+        <p className="text-xs font-black uppercase tracking-[0.3em] text-danger">Organizador</p>
         <h1 className="mt-2 text-4xl font-black leading-none">Editar espaço.</h1>
       </header>
 

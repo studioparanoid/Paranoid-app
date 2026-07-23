@@ -7,7 +7,7 @@ export default function OrganizerTicketsPage() {
       <section className="mx-auto max-w-md lg:max-w-7xl">
         <section className="grid gap-6 lg:grid-cols-[1fr_0.75fr] lg:items-end">
           <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-red-700">
+            <p className="mb-3 text-xs uppercase tracking-[0.35em] text-danger">
               Bilheteira
             </p>
 
@@ -16,8 +16,8 @@ export default function OrganizerTicketsPage() {
             </h1>
           </div>
 
-          <div className="rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 lg:p-6">
-            <p className="text-base leading-relaxed text-zinc-400 lg:text-lg">
+          <div className="rounded-[2rem] border border-border bg-background p-5 lg:p-6">
+            <p className="text-base leading-relaxed text-foreground-muted lg:text-lg">
               Vê reservas da bilheteira Paranoid, procura por código/email e
               marca entradas à porta.
             </p>

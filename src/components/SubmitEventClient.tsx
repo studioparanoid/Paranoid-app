@@ -845,7 +845,7 @@ export function SubmitEventClient() {
               type="checkbox"
               checked={isMultiDay}
               onChange={(event) => setIsMultiDay(event.target.checked)}
-              className="h-5 w-5 accent-red-700"
+              className="h-5 w-5 accent-[var(--accent)]"
             />
             Evento com vários dias
           </label>
@@ -1043,7 +1043,7 @@ export function SubmitEventClient() {
           <div className="mt-5 max-w-sm">
             <label htmlFor="event-price" className="mb-2 block text-sm font-bold text-foreground-secondary">Preço geral</label>
             {isFree ? <input id="event-price" value="Gratuito" disabled className="w-full rounded-lg border border-input-border bg-input px-4 py-3 font-bold text-foreground-muted" /> : <CurrencyInput id="event-price" value={price} onChange={setPrice} placeholder="Ex: 12,50" className="w-full rounded-lg border border-input-border bg-input px-4 py-3 text-foreground outline-none placeholder:text-input-placeholder focus:border-accent focus:ring-2 focus:ring-accent/20" />}
-            <label className="mt-3 flex min-h-11 cursor-pointer items-center gap-3 text-sm font-bold text-foreground-secondary"><input type="checkbox" checked={isFree} onChange={(event) => { setIsFree(event.target.checked); if (event.target.checked) setPrice(""); }} className="h-5 w-5 accent-red-600" />Evento gratuito</label>
+            <label className="mt-3 flex min-h-11 cursor-pointer items-center gap-3 text-sm font-bold text-foreground-secondary"><input type="checkbox" checked={isFree} onChange={(event) => { setIsFree(event.target.checked); if (event.target.checked) setPrice(""); }} className="h-5 w-5 accent-[var(--accent)]" />Evento gratuito</label>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {(["none", "external", "internal"] as TicketMode[]).map((mode) => (
